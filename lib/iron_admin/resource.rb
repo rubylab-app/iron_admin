@@ -57,6 +57,7 @@ module IronAdmin
     class_attribute :denied_crud_actions, default: []
     class_attribute :defined_associations, default: {}
     class_attribute :model_class_override, default: nil
+    class_attribute :adapter_class, default: IronAdmin::Adapters::ActiveRecord
     class_attribute :_soft_delete_scopes, default: []
 
     class << self
@@ -70,6 +71,17 @@ module IronAdmin
           IronAdmin::ResourceRegistry.register(subclass)
         rescue NameError
         end
+      end
+
+      # Returns the adapter instance for this resource's model.
+      #
+      # The adapter provides a uniform interface for schema introspection,
+      # query building, and CRUD operations regardless of the underlying
+      # data source (ActiveRecord, Mongoid, HTTP, etc.).
+      #
+      # @return [IronAdmin::Adapters::Base] The adapter instance
+      def adapter
+        @adapter ||= adapter_class.new(model)
       end
 
       # Returns the ActiveRecord model class for this resource.
