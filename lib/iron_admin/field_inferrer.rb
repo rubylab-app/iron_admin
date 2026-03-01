@@ -44,32 +44,40 @@ module IronAdmin
       jsonb: :json,
     }.freeze
 
-    # Infers fields for a model.
+    # Infers fields for a model or adapter.
     #
-    # @param model [Class] An ActiveRecord model class
+    # @param model_or_adapter [Class, IronAdmin::Adapters::Base] An ActiveRecord model class or adapter instance
     # @return [Array<IronAdmin::Field>] Inferred field objects
     #
-    # @example
+    # @example With a model (backward compatible)
     #   fields = IronAdmin::FieldInferrer.call(User)
-    def self.call(model)
-      new(model).call
+    #
+    # @example With an adapter (preferred)
+    #   fields = IronAdmin::FieldInferrer.call(resource.adapter)
+    def self.call(model_or_adapter)
+      adapter = if model_or_adapter.is_a?(IronAdmin::Adapters::Base)
+                  model_or_adapter
+                else
+                  IronAdmin::Adapters::ActiveRecord.new(model_or_adapter)
+                end
+      new(adapter).call
     end
 
-    # Creates a new FieldInferrer for the given model.
+    # Creates a new FieldInferrer for the given adapter.
     #
-    # @param model [Class] An ActiveRecord model class
-    def initialize(model)
-      @model = model
-      @polymorphic_map = model.reflect_on_all_associations(:belongs_to)
+    # @param adapter [IronAdmin::Adapters::Base] An adapter instance
+    def initialize(adapter)
+      @adapter = adapter
+      @polymorphic_map = adapter.associations(:belongs_to)
         .select(&:polymorphic?)
         .index_by { |a| a.name.to_s }
       @polymorphic_columns = @polymorphic_map.values
         .flat_map { |a| [a.foreign_type, a.foreign_key.to_s] }.to_set
-      @belongs_to_map = model.reflect_on_all_associations(:belongs_to)
+      @belongs_to_map = adapter.associations(:belongs_to)
         .reject(&:polymorphic?)
         .index_by { |a| a.foreign_key.to_s }
-      @shadowed_columns = model.reflect_on_all_associations(:has_many)
-        .concat(model.reflect_on_all_associations(:has_one))
+      @shadowed_columns = adapter.associations(:has_many)
+        .concat(adapter.associations(:has_one))
         .to_set { |a| a.name.to_s }
     end
 
@@ -84,7 +92,7 @@ module IronAdmin
     #
     # @return [Array<IronAdmin::Field>] Inferred field objects
     def call
-      fields = @model.columns.filter_map do |column|
+      fields = @adapter.columns.filter_map do |column|
         next if @shadowed_columns.include?(column.name)
         next if @polymorphic_columns.include?(column.name)
 
@@ -110,7 +118,7 @@ module IronAdmin
       name = column.name.to_sym
 
       if enum_column?(name)
-        Field.new(name, type: :select, choices: @model.defined_enums[name.to_s].keys)
+        Field.new(name, type: :select, choices: @adapter.enums[name.to_s].keys)
       else
         type = infer_type(column)
         Field.new(name, type: type)
@@ -162,15 +170,16 @@ module IronAdmin
     # @api private
     # Checks if a column is backed by an enum.
     def enum_column?(name)
-      @model.defined_enums.key?(name.to_s)
+      @adapter.enums.key?(name.to_s)
     end
 
     # @api private
     # Builds fields for ActiveStorage attachments (has_one_attached / has_many_attached).
     def attachment_fields
-      return [] unless @model.respond_to?(:attachment_reflections)
+      attachments = @adapter.attachments
+      return [] if attachments.empty?
 
-      @model.attachment_reflections.map do |name, reflection|
+      attachments.map do |name, reflection|
         type = reflection.macro == :has_one_attached ? :file : :files
         Field.new(name.to_sym, type: type)
       end
@@ -179,9 +188,10 @@ module IronAdmin
     # @api private
     # Builds fields for ActionText rich text attributes (has_rich_text).
     def rich_text_fields
-      return [] unless @model.respond_to?(:rich_text_association_names)
+      rich_text_attrs = @adapter.rich_text_attributes
+      return [] if rich_text_attrs.empty?
 
-      @model.rich_text_association_names.map do |assoc_name|
+      rich_text_attrs.map do |assoc_name|
         # ActionText associations are named like "rich_text_body" — strip the prefix
         attr_name = assoc_name.to_s.delete_prefix("rich_text_").to_sym
         Field.new(attr_name, type: :rich_text)
