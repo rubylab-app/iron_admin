@@ -221,4 +221,83 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       expect(adapter.count).to eq(2)
     end
   end
+
+  describe "#build" do
+    it "returns a new unsaved record" do
+      record = adapter.build(name: "Test", email: "build@test.com")
+      expect(record).to be_a(User)
+      expect(record).to be_new_record
+      expect(record.name).to eq("Test")
+    end
+
+    it "returns empty record with no args" do
+      record = adapter.build
+      expect(record).to be_a(User)
+      expect(record).to be_new_record
+    end
+  end
+
+  describe "#save" do
+    it "persists a new record" do
+      record = adapter.build(name: "Save Test", email: "save@test.com")
+      expect(adapter.save(record)).to be(true)
+      expect(record).to be_persisted
+    end
+  end
+
+  describe "#update" do
+    it "updates record attributes" do
+      user = create(:user, name: "Old Name")
+      result = adapter.update(user, name: "New Name")
+      expect(result).to be(true)
+      expect(user.reload.name).to eq("New Name")
+    end
+  end
+
+  describe "#destroy!" do
+    it "destroys a record" do
+      user = create(:user)
+      adapter.destroy!(user)
+      expect(User.find_by(id: user.id)).to be_nil
+    end
+  end
+
+  describe "#transaction" do
+    it "wraps operations in a transaction" do
+      user = create(:user, name: "Original")
+      adapter.transaction do
+        adapter.update(user, name: "Changed")
+        raise ActiveRecord::Rollback
+      end
+      expect(user.reload.name).to eq("Original")
+    end
+  end
+
+  describe "#search_column" do
+    it "searches a column with LIKE" do
+      create(:user, name: "Alice Smith")
+      create(:user, name: "Bob Jones")
+      result = adapter.search_column(adapter.all, :name, "Alice")
+      expect(result.count).to eq(1)
+      expect(result.first.name).to eq("Alice Smith")
+    end
+  end
+
+  describe "#search_columns" do
+    it "searches multiple columns with OR" do
+      create(:user, name: "Alice", email: "bob@test.com")
+      create(:user, name: "Carol", email: "alice@test.com")
+      result = adapter.search_columns(adapter.all, %i[name email], "alice")
+      expect(result.count).to eq(2)
+    end
+  end
+
+  describe "#find_each" do
+    it "iterates records in batches" do
+      create_list(:user, 3)
+      names = []
+      adapter.find_each(adapter.all) { |user| names << user.name }
+      expect(names.size).to eq(3)
+    end
+  end
 end

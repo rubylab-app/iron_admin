@@ -96,6 +96,72 @@ module IronAdmin
         scope ||= all
         scope.count
       end
+
+      # --- Search ---
+
+      def search_column(scope, column, query)
+        table = quoted_table_name
+        col = connection.quote_column_name(column)
+        scope.where("#{table}.#{col} #{like_operator} ?", "%#{sanitize_like(query)}%")
+      end
+
+      def search_columns(scope, columns, query)
+        table = quoted_table_name
+        conditions = columns.map { |col| "#{table}.#{connection.quote_column_name(col)} #{like_operator} :q" }
+        scope.where(conditions.join(" OR "), q: "%#{sanitize_like(query)}%")
+      end
+
+      # --- CRUD ---
+
+      def build(attrs = {})
+        model_class.new(attrs)
+      end
+
+      def save(record)
+        record.save
+      end
+
+      def update(record, attrs)
+        record.update(attrs)
+      end
+
+      def destroy!(record)
+        record.destroy!
+      end
+
+      # --- Transactions ---
+
+      def transaction(&)
+        ::ActiveRecord::Base.transaction(&)
+      end
+
+      # --- Batch ---
+
+      def find_each(scope, &)
+        scope.find_each(&)
+      end
+
+      private
+
+      def connection
+        model_class.connection
+      end
+
+      def quoted_table_name
+        connection.quote_table_name(model_class.table_name)
+      end
+
+      def postgresql?
+        connection.adapter_name.downcase.include?("postgresql")
+      end
+
+      def like_operator
+        postgresql? ? "ILIKE" : "LIKE"
+      end
+
+      def sanitize_like(value)
+        value.to_s.gsub(/[%_\\]/) { |match| "\\#{match}" }
+      end
     end
   end
 end
