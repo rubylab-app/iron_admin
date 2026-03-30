@@ -21,6 +21,14 @@ Mount: `mount IronAdmin::Engine => "/admin"`
 | GET | `/admin/:resource/bulk_actions/:name/form` | `resources#bulk_action_form` | Bulk action form |
 | POST | `/admin/:resource/bulk_actions/:name` | `resources#execute_bulk_action` | Bulk action |
 
+### Tool Routes
+
+| Method | Path | Action | Description |
+|--------|------|--------|-------------|
+| GET | `/admin/tools/:tool_name` | `tools#show` | Tool page |
+| GET | `/admin/tools/:tool_name/:action_name/form` | `tools#action_form` | Tool action form |
+| POST | `/admin/tools/:tool_name/:action_name` | `tools#execute` | Execute tool action |
+
 ## Query Parameters (Index)
 
 | Param | Example |

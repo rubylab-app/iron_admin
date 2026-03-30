@@ -20,6 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Stimulus controller for between operator toggle
   - i18n keys for all operator labels
 
+- **Tool System Enhancement** (#24) — Context, DSL, authorization, and forms for tools:
+  - `ToolContext` value object for request context injection (params, current_user, flash)
+  - `ToolAction` value object with label, icon, confirm, form_fields, and condition authorization
+  - `tool_action` class-level DSL for declarative action registration
+  - `find_tool_action` lookup method
+  - `context` accessor on tool instances
+  - Controller: arity-based dispatch (0-arg methods skip context, 1-arg methods receive ToolContext)
+  - Controller: condition-based authorization (returns 403 when denied)
+  - Controller: form route for actions with form_fields
+  - Enhanced show view with action buttons (respects condition visibility)
+  - Backward compatible: existing tools with bare methods unchanged
+
 - **Action Forms** (#22) — Collect user input before action execution:
   - `ActionField` value object with type validation (text, textarea, number, boolean, date, datetime, select)
   - `form_fields:` option on `action` and `bulk_action` DSL
