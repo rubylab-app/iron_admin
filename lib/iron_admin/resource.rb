@@ -218,17 +218,16 @@ module IronAdmin
       end
 
       # @api private
-      # Returns filters automatically inferred from enum columns.
+      # Returns filters automatically inferred from enum columns and database column types.
+      #
+      # String/text columns auto-infer as :string filters.
+      # Integer/float/decimal columns auto-infer as :number filters.
+      # Enum columns auto-infer as :select filters.
       #
       # @return [Array<Hash>] Auto-generated filter configurations
       def auto_inferred_filters
-        adapter.enums.map do |name, values|
-          {
-            name: name.to_sym,
-            type: :select,
-            options: values.keys,
-          }
-        end
+        enum_filters = enum_auto_filters
+        enum_filters + infer_column_filters(enum_filters)
       end
 
       # Returns all filters (auto-inferred + manually defined).
@@ -710,7 +709,42 @@ module IronAdmin
         nil
       end
 
+      SKIP_FILTER_COLUMNS = %w[id created_at updated_at].freeze
+      private_constant :SKIP_FILTER_COLUMNS
+
       private
+
+      def enum_auto_filters
+        adapter.enums.map do |name, values|
+          {
+            name: name.to_sym,
+            type: :select,
+            options: values.keys,
+          }
+        end
+      end
+
+      def infer_column_filters(enum_filters)
+        already_defined = (defined_filters + enum_filters).map { |f| f[:name].to_sym }
+
+        adapter.columns.filter_map do |col|
+          next if already_defined.include?(col.name.to_sym)
+          next if SKIP_FILTER_COLUMNS.include?(col.name)
+
+          infer_filter_from_column(col)
+        end
+      end
+
+      def infer_filter_from_column(col)
+        case col.type
+        when :string, :text
+          { name: col.name.to_sym, type: :string, label: col.name.humanize }
+        when :integer, :float, :decimal
+          return nil if col.name.end_with?("_id")
+
+          { name: col.name.to_sym, type: :number, label: col.name.humanize }
+        end
+      end
 
       # @api private
       def infer_preload_associations

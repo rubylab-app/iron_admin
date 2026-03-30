@@ -172,6 +172,206 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       end
     end
 
+    context "with string operator filter" do
+      let(:string_filter_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "StringFilterUserResource"
+          end
+
+          def self.resource_name
+            "string_filter_users"
+          end
+
+          filter :name, type: :string
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(string_filter_resource)
+        create(:user, name: "Alice Acme")
+        create(:user, name: "Bob Builder")
+      end
+
+      after do
+        IronAdmin::ResourceRegistry.reset!
+        register_test_resources
+      end
+
+      context 'with "contains" operator' do
+        it "returns only matching records" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "contains", value: "Acme" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).not_to include("Bob Builder")
+        end
+      end
+
+      context 'with "equals" operator' do
+        before { create(:user, name: "Alice") }
+
+        it "matches only the exact value" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "equals", value: "Alice" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice")
+          expect(response.body).not_to include("Alice Acme")
+        end
+      end
+
+      context 'with "starts_with" operator' do
+        it "matches records starting with the value" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "starts_with", value: "Alice" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).not_to include("Bob Builder")
+        end
+      end
+
+      context 'with "ends_with" operator' do
+        it "matches records ending with the value" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "ends_with", value: "Acme" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).not_to include("Bob Builder")
+        end
+      end
+
+      context "with blank value" do
+        it "returns all records unfiltered" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "contains", value: "" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).to include("Bob Builder")
+        end
+      end
+
+      context "with invalid operator" do
+        it "returns all records unfiltered" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "drop_table", value: "test" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+        end
+      end
+    end
+
+    context "with number operator filter" do
+      let(:number_filter_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "NumberFilterLicenseResource"
+          end
+
+          def self.resource_name
+            "number_filter_licenses"
+          end
+
+          belongs_to :user, display: :email
+          filter :max_devices, type: :number
+        end
+      end
+
+      let(:user) { create(:user) }
+
+      before do
+        IronAdmin::ResourceRegistry.register(number_filter_resource)
+        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
+        create(:license, user: user, max_devices: 10, license_key: "KEY-TEN")
+      end
+
+      after do
+        IronAdmin::ResourceRegistry.reset!
+        register_test_resources
+      end
+
+      context 'with "equals" operator' do
+        it "matches the exact numeric value" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "equals", value: "5" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+          expect(response.body).not_to include("KEY-TEN")
+        end
+      end
+
+      context 'with "greater_than" operator' do
+        it "matches values above the threshold" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "greater_than", value: "7" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).not_to include("KEY-FIVE")
+          expect(response.body).to include("KEY-TEN")
+        end
+      end
+
+      context 'with "less_than" operator' do
+        it "matches values below the threshold" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "less_than", value: "7" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+          expect(response.body).not_to include("KEY-TEN")
+        end
+      end
+
+      context 'with "between" operator' do
+        before do
+          create(:license, user: user, max_devices: 1, license_key: "KEY-ONE")
+          create(:license, user: user, max_devices: 20, license_key: "KEY-TWENTY")
+        end
+
+        it "matches values in the inclusive range" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "between", value: "5", "value_2" => "10" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+          expect(response.body).to include("KEY-TEN")
+          expect(response.body).not_to include("KEY-ONE")
+          expect(response.body).not_to include("KEY-TWENTY")
+        end
+      end
+
+      context "with non-numeric value" do
+        it "returns all records unfiltered" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "equals", value: "abc" } } },
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+        end
+      end
+    end
+
     context "with scopes" do
       let(:user) { create(:user) }
 
