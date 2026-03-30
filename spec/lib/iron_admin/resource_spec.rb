@@ -180,12 +180,140 @@ RSpec.describe IronAdmin::Resource do
       expect(actions.first[:name]).to eq(:revoke)
       expect(actions.first[:confirm]).to be(true)
     end
+
+    it "defaults form_fields to empty array" do
+      action = TestLicenseResource.defined_actions.first
+      expect(action[:form_fields]).to eq([])
+    end
+  end
+
+  describe "actions with form_fields" do
+    let(:resource_with_form_action) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "FormActionResource"
+        end
+
+        action :suspend_with_reason,
+               icon: "pause",
+               form_fields: [
+                 action_field(:reason, type: :textarea, required: true, label: "Suspension Reason"),
+                 action_field(:duration_days, type: :number, label: "Duration (days)"),
+                 action_field(:notify_user, type: :boolean, label: "Send notification"),
+               ] do |_license, _params|
+          # noop
+        end
+      end
+    end
+
+    it "stores form_fields as ActionField instances" do
+      action = resource_with_form_action.defined_actions.find { |a| a[:name] == :suspend_with_reason }
+      expect(action[:form_fields]).to all(be_a(IronAdmin::ActionField))
+    end
+
+    it "stores the correct number of form fields" do
+      action = resource_with_form_action.defined_actions.find { |a| a[:name] == :suspend_with_reason }
+      expect(action[:form_fields].length).to eq(3)
+    end
+
+    it "preserves field attributes" do
+      action = resource_with_form_action.defined_actions.find { |a| a[:name] == :suspend_with_reason }
+      reason_field = action[:form_fields].first
+      expect(reason_field.name).to eq(:reason)
+      expect(reason_field.type).to eq(:textarea)
+      expect(reason_field.required).to be(true)
+      expect(reason_field.label).to eq("Suspension Reason")
+    end
+
+    it "preserves other action options" do
+      action = resource_with_form_action.defined_actions.find { |a| a[:name] == :suspend_with_reason }
+      expect(action[:icon]).to eq("pause")
+    end
+
+    context "with hash form_fields instead of ActionField instances" do
+      let(:resource_with_hash_fields) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "HashFieldResource"
+          end
+
+          action :test_action,
+                 form_fields: [
+                   { name: :reason, type: :textarea, required: true },
+                 ] do |_license, _params|
+            # noop
+          end
+        end
+      end
+
+      it "coerces hashes into ActionField instances" do
+        action = resource_with_hash_fields.defined_actions.find { |a| a[:name] == :test_action }
+        expect(action[:form_fields].first).to be_a(IronAdmin::ActionField)
+        expect(action[:form_fields].first.name).to eq(:reason)
+      end
+    end
+  end
+
+  describe ".action_field" do
+    it "returns an ActionField instance" do
+      field = described_class.action_field(:reason, type: :textarea, required: true)
+      expect(field).to be_a(IronAdmin::ActionField)
+    end
+
+    it "passes arguments to ActionField.new" do
+      field = described_class.action_field(:duration, type: :number, label: "Days")
+      expect(field.name).to eq(:duration)
+      expect(field.type).to eq(:number)
+      expect(field.label).to eq("Days")
+    end
   end
 
   describe "bulk actions" do
     it "stores bulk actions" do
       expect(TestLicenseResource.defined_bulk_actions.length).to eq(1)
       expect(TestLicenseResource.defined_bulk_actions.first[:name]).to eq(:export)
+    end
+
+    it "defaults form_fields to empty array" do
+      action = TestLicenseResource.defined_bulk_actions.first
+      expect(action[:form_fields]).to eq([])
+    end
+  end
+
+  describe "bulk actions with form_fields" do
+    let(:resource_with_bulk_form) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "BulkFormResource"
+        end
+
+        bulk_action :bulk_revoke_with_note,
+                    icon: "x-circle",
+                    form_fields: [
+                      action_field(:note, type: :textarea, required: true, label: "Revocation Note"),
+                    ] do |_licenses, _params|
+          # noop
+        end
+      end
+    end
+
+    it "stores form_fields as ActionField instances" do
+      action = resource_with_bulk_form.defined_bulk_actions.first
+      expect(action[:form_fields]).to all(be_a(IronAdmin::ActionField))
+    end
+
+    it "preserves field attributes" do
+      action = resource_with_bulk_form.defined_bulk_actions.first
+      note_field = action[:form_fields].first
+      expect(note_field.name).to eq(:note)
+      expect(note_field.type).to eq(:textarea)
+      expect(note_field.label).to eq("Revocation Note")
     end
   end
 

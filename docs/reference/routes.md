@@ -16,7 +16,9 @@ Mount: `mount IronAdmin::Engine => "/admin"`
 | POST | `/admin/:resource` | `resources#create` | Create |
 | PATCH | `/admin/:resource/:id` | `resources#update` | Update |
 | DELETE | `/admin/:resource/:id` | `resources#destroy` | Delete |
+| GET | `/admin/:resource/:id/actions/:name/form` | `resources#action_form` | Action form |
 | POST | `/admin/:resource/:id/actions/:name` | `resources#execute_action` | Custom action |
+| GET | `/admin/:resource/bulk_actions/:name/form` | `resources#bulk_action_form` | Bulk action form |
 | POST | `/admin/:resource/bulk_actions/:name` | `resources#execute_bulk_action` | Bulk action |
 
 ## Query Parameters (Index)

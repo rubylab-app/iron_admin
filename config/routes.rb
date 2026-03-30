@@ -9,10 +9,12 @@ IronAdmin::Engine.routes.draw do
   get "tools/:tool_name", to: "tools#show", as: :tool
   post "tools/:tool_name/:action_name", to: "tools#execute", as: :tool_action
 
+  get ":resource_name/bulk_actions/:action_name/form", to: "resources#bulk_action_form", as: :resource_bulk_action_form
   get ":resource_name", to: "resources#index", as: :resources
   get ":resource_name/new", to: "resources#new", as: :new_resource
   get ":resource_name/:id", to: "resources#show", as: :resource
   get ":resource_name/:id/edit", to: "resources#edit", as: :edit_resource
+  get ":resource_name/:id/actions/:action_name/form", to: "resources#action_form", as: :resource_action_form
   post ":resource_name", to: "resources#create"
   patch ":resource_name/:id", to: "resources#update"
   delete ":resource_name/:id", to: "resources#destroy"

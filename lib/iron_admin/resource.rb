@@ -290,8 +290,9 @@ module IronAdmin
       #   end
       #
       # @return [void]
-      def action(name, **options, &block)
-        self.defined_actions = defined_actions + [{ name: name, block: block, **options }]
+      def action(name, form_fields: [], **options, &block)
+        coerced = coerce_action_fields(form_fields)
+        self.defined_actions = defined_actions + [{ name: name, block: block, form_fields: coerced, **options }]
       end
 
       # Defines a bulk action for multiple selected records.
@@ -319,8 +320,27 @@ module IronAdmin
       #   end
       #
       # @return [void]
-      def bulk_action(name, **options, &block)
-        self.defined_bulk_actions = defined_bulk_actions + [{ name: name, block: block, **options }]
+      def bulk_action(name, form_fields: [], **options, &block)
+        coerced = coerce_action_fields(form_fields)
+        self.defined_bulk_actions = defined_bulk_actions + [{ name: name, block: block, form_fields: coerced, **options }]
+      end
+
+      # Convenience constructor for ActionField instances.
+      #
+      # @param name [Symbol] The field name
+      # @param opts [Hash] Options passed to ActionField.new
+      # @return [IronAdmin::ActionField]
+      #
+      # @example
+      #   action :suspend,
+      #     form_fields: [
+      #       action_field(:reason, type: :textarea, required: true),
+      #       action_field(:notify, type: :boolean)
+      #     ] do |record, params|
+      #     # ...
+      #   end
+      def action_field(name, **)
+        ActionField.new(name: name, **)
       end
 
       # Specifies which fields appear on the index (list) page.
@@ -743,6 +763,12 @@ module IronAdmin
           return nil if col.name.end_with?("_id")
 
           { name: col.name.to_sym, type: :number, label: col.name.humanize }
+        end
+      end
+
+      def coerce_action_fields(fields)
+        Array(fields).map do |f|
+          f.is_a?(ActionField) ? f : ActionField.new(**f)
         end
       end
 

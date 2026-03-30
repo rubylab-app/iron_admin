@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Resource Adapter Pattern** (#25) — Decouples IronAdmin from ActiveRecord via an adapter layer. All controllers, helpers, components, and the FieldInferrer now call through `Resource.adapter` instead of direct ActiveRecord APIs. The `Adapters::Base` abstract class defines a 31-method interface; `Adapters::ActiveRecord` is the default implementation. Custom adapters (Mongoid, HTTP, etc.) can be plugged in via `self.adapter_class = MyAdapter`.
+
+- **Filter Operators** (#21) — New `:string` and `:number` filter types with operator dropdowns:
+  - String operators: contains, equals, starts_with, ends_with (LIKE/ILIKE with wildcard escaping)
+  - Number operators: equals, greater_than, less_than, between
+  - `Filters::QueryBuilder` service class with SQL injection prevention (whitelist operators, parameterized queries, quoted columns)
+  - Auto-inference: string/text columns auto-infer as `:string`, integer/float/decimal as `:number`
+  - `Concerns::Filterable` extracted from ResourcesController for cleaner separation
+  - Stimulus controller for between operator toggle
+  - i18n keys for all operator labels
+
+- **Action Forms** (#22) — Collect user input before action execution:
+  - `ActionField` value object with type validation (text, textarea, number, boolean, date, datetime, select)
+  - `form_fields:` option on `action` and `bulk_action` DSL
+  - `action_field` convenience constructor
+  - Arity-based dispatch: 1-arg blocks (existing) unchanged, 2-arg blocks receive collected params
+  - Strong parameter safety: only declared field keys are permitted
+  - GET routes for action form and bulk action form rendering
+  - `Concerns::ActionExecutable` extracted for arity dispatch logic
+  - HAML form views with all ActionField types
+
+### Migration notes from 0.5.0
+
+All three features are **fully backward compatible** — no code changes are required. However:
+
+- **`auto_inferred_filters` now returns more filters.** In addition to enum-based `:select` filters, it now auto-infers `:string` filters for string/text columns and `:number` filters for integer/float/decimal columns. If your tests assert on `auto_inferred_filters.length` or `all_filters.length`, they may need updating. These auto-inferred filters only appear in the filter bar UI when explicitly declared via `filter :name, type: :string`.
+
+- **Internal AR calls are now routed through the adapter.** If you were monkey-patching or overriding controller/helper methods that called `@resource_class.model.where(...)` or similar AR APIs directly, switch to `@resource_class.adapter.filter(scope, column, value)` or the corresponding adapter method.
+
+- **Action blocks now support 2-arg arity.** Existing 1-arg action blocks continue to work unchanged. Only blocks with arity 2 receive the new `params` hash. No action is required unless you want to use the new `form_fields:` option.
+
 ## [0.5.0] - 2026-02-16
 
 ### Changed

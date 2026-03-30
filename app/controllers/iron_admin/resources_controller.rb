@@ -20,6 +20,7 @@ module IronAdmin
   #
   # @see IronAdmin::Resource
   class ResourcesController < ApplicationController
+    include Concerns::ActionExecutable
     include Concerns::Filterable
     include Concerns::Searchable
 
@@ -112,6 +113,33 @@ module IronAdmin
                   notice: I18n.t("iron_admin.resources.destroy.success", model: adapter.human_name)
     end
 
+    # Renders the action form for a single record action with form_fields.
+    #
+    # @return [void]
+    def action_form
+      action = @resource_class.defined_actions.find { |a| a[:name].to_s == params[:action_name] }
+      return head(:not_found) unless action
+      return head(:forbidden) unless action_authorized?(action[:name])
+
+      @record = record_scope.find(params[:id])
+      @action = action
+      @form_fields = action[:form_fields]
+      @form_url = resource_action_path(@resource_class.resource_name, @record, action[:name])
+    end
+
+    # Renders the action form for a bulk action with form_fields.
+    #
+    # @return [void]
+    def bulk_action_form
+      action = find_bulk_action
+      return head(:not_found) unless action
+      return head(:forbidden) unless action_authorized?(action[:name])
+
+      @action = action
+      @form_fields = action[:form_fields]
+      @form_url = resource_bulk_action_path(@resource_class.resource_name, action[:name])
+    end
+
     # Executes a custom action on a single record.
     #
     # @return [void]
@@ -121,9 +149,10 @@ module IronAdmin
       return head(:forbidden) unless action_authorized?(action[:name])
 
       @record = record_scope.find(params[:id])
+      collected = action_form_params(action)
 
       adapter.transaction do
-        result = action[:block].call(@record)
+        result = call_action_block(action[:block], @record, collected)
         emit_event(params[:action_name], @record)
         raise ActiveRecord::Rollback if result == false
       end
@@ -244,8 +273,9 @@ module IronAdmin
     end
 
     def run_bulk_action_in_transaction(action, records)
+      collected = action_form_params(action)
       adapter.transaction do
-        result = action[:block].call(records)
+        result = call_action_block(action[:block], records, collected)
         raise ActiveRecord::Rollback if result == false
       end
     end
