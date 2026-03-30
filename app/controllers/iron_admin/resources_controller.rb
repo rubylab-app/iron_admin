@@ -20,6 +20,7 @@ module IronAdmin
   #
   # @see IronAdmin::Resource
   class ResourcesController < ApplicationController
+    include Concerns::Filterable
     include Concerns::Searchable
 
     before_action :set_resource_class
@@ -290,39 +291,6 @@ module IronAdmin
 
       @resource_class.habtm_associations.each { |a| permitted << { "#{a[:name].to_s.singularize}_ids": [] } }
       params.require(:record).permit(*permitted) # rubocop:disable Rails/StrongParametersExpect
-    end
-
-    def apply_filters(scope)
-      @resource_class.all_filters.each do |filter|
-        if filter[:type] == :date_range
-          from = params.dig(:filters, "#{filter[:name]}_from")
-          to = params.dig(:filters, "#{filter[:name]}_to")
-          scope = scope.where(filter[:name] => parse_date(from)..) if from.present? && parse_date(from)
-          scope = scope.where(filter[:name] => ..parse_date(to)&.end_of_day) if to.present? && parse_date(to)
-          next
-        end
-
-        value = params.dig(:filters, filter[:name])
-        next if value.blank?
-        next unless value.is_a?(String)
-
-        value = ActiveModel::Type::Boolean.new.cast(value) if filter[:type] == :boolean
-
-        scope = if filter[:scope]
-                  filter[:scope].call(value, scope)
-                else
-                  adapter.filter(scope, filter[:name], value)
-                end
-      end
-      scope
-    end
-
-    def parse_date(value)
-      return nil if value.blank?
-
-      Date.parse(value)
-    rescue ArgumentError, TypeError
-      nil
     end
 
     def current_scope_name
