@@ -40,8 +40,12 @@ module IronAdmin
       head(:not_found) and return unless @resource_class
     end
 
+    def adapter
+      @resource_class.adapter
+    end
+
     def base_scope
-      scope = @resource_class.model.all
+      scope = adapter.all
       scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
       scope
     end
@@ -61,7 +65,7 @@ module IronAdmin
       require "csv"
       CSV.generate do |csv|
         csv << fields.map { |f| f.name.to_s.humanize }
-        records.find_each do |record|
+        adapter.find_each(records) do |record|
           csv << fields.map { |f| safe_field_value(record, f) }
         end
       end

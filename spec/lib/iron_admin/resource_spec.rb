@@ -12,6 +12,43 @@ RSpec.describe IronAdmin::Resource do
     end
   end
 
+  describe ".adapter" do
+    it "returns an ActiveRecord adapter instance" do
+      adapter = TestUserResource.adapter
+      expect(adapter).to be_a(IronAdmin::Adapters::ActiveRecord)
+    end
+
+    it "wraps the resource's model" do
+      adapter = TestUserResource.adapter
+      expect(adapter.model_class).to eq(User)
+    end
+
+    it "memoizes the adapter" do
+      adapter1 = TestUserResource.adapter
+      adapter2 = TestUserResource.adapter
+      expect(adapter1).to equal(adapter2)
+    end
+  end
+
+  describe ".adapter_class" do
+    it "defaults to ActiveRecord adapter" do
+      expect(TestUserResource.adapter_class).to eq(IronAdmin::Adapters::ActiveRecord)
+    end
+
+    it "can be overridden per resource" do
+      custom_adapter = Class.new(IronAdmin::Adapters::Base)
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        self.adapter_class = custom_adapter
+
+        def self.name
+          "CustomAdapterResource"
+        end
+      end
+      expect(resource.adapter_class).to eq(custom_adapter)
+    end
+  end
+
   describe "field overrides" do
     it "merges overrides with inferred fields" do
       fields = TestLicenseResource.resolved_fields

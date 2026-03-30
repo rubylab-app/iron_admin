@@ -2,6 +2,8 @@
 
 require "iron_admin/version"
 require "iron_admin/configuration"
+require "iron_admin/adapters/base"
+require "iron_admin/adapters/active_record"
 require "iron_admin/field"
 require "iron_admin/field_type_config"
 require "iron_admin/field_type_registry"

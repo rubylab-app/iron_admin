@@ -104,17 +104,18 @@ module IronAdmin
     # @param filter [Hash] Filter configuration
     # @return [Array<Array(String, String)>] Options for select tag
     def filter_options_for(resource_class, filter)
-      model = resource_class.model
+      resource_adapter = resource_class.adapter
       column_name = filter[:name].to_s
 
       case filter[:type]
       when :select
-        if model.defined_enums.key?(column_name)
-          model.defined_enums[column_name].keys.map { |k| [k.humanize, k] }
+        enums = resource_adapter.enums
+        if enums.key?(column_name)
+          enums[column_name].keys.map { |k| [k.humanize, k] }
         elsif filter[:options]
           filter[:options]
         else
-          model.distinct.pluck(column_name).compact.sort.map { |v| [v.to_s.humanize, v] }
+          resource_adapter.distinct_values(column_name).map { |v| [v.to_s.humanize, v] }
         end
       when :boolean
         [[I18n.t("iron_admin.filters.true"), "true"], [I18n.t("iron_admin.filters.false"), "false"]]

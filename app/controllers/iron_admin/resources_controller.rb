@@ -52,7 +52,7 @@ module IronAdmin
     #
     # @return [void]
     def new
-      @record = @resource_class.model.new
+      @record = adapter.build
       @fields = form_fields
     end
 
@@ -69,12 +69,12 @@ module IronAdmin
     #
     # @return [void]
     def create
-      @record = @resource_class.model.new(resource_params)
+      @record = adapter.build(resource_params)
 
-      if @record.save
+      if adapter.save(@record)
         emit_event(:create, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
-                    notice: I18n.t("iron_admin.resources.create.success", model: @resource_class.model.model_name.human)
+                    notice: I18n.t("iron_admin.resources.create.success", model: adapter.human_name)
       else
         @fields = form_fields
         render :new, status: :unprocessable_content
@@ -89,10 +89,10 @@ module IronAdmin
       @record = record_scope.find(params[:id])
       purge_attachments(@record)
 
-      if @record.update(resource_params)
+      if adapter.update(@record, resource_params)
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
-                    notice: I18n.t("iron_admin.resources.update.success", model: @resource_class.model.model_name.human)
+                    notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)
       else
         @fields = form_fields
         render :edit, status: :unprocessable_content
@@ -105,10 +105,10 @@ module IronAdmin
     # @raise [ActiveRecord::RecordNotFound] if record doesn't exist
     def destroy
       @record = record_scope.find(params[:id])
-      @record.destroy!
+      adapter.destroy!(@record)
       emit_event(:destroy, @record)
       redirect_to resources_path(@resource_class.resource_name),
-                  notice: I18n.t("iron_admin.resources.destroy.success", model: @resource_class.model.model_name.human)
+                  notice: I18n.t("iron_admin.resources.destroy.success", model: adapter.human_name)
     end
 
     # Executes a custom action on a single record.
@@ -121,7 +121,7 @@ module IronAdmin
 
       @record = record_scope.find(params[:id])
 
-      ActiveRecord::Base.transaction do
+      adapter.transaction do
         result = action[:block].call(@record)
         emit_event(params[:action_name], @record)
         raise ActiveRecord::Rollback if result == false
@@ -146,7 +146,7 @@ module IronAdmin
       ids = bulk_action_ids
       return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.no_records")) if ids.empty?
 
-      records = base_scope.where(id: ids)
+      records = adapter.filter(base_scope, :id, ids)
       action = find_bulk_action
 
       return head(:not_found) unless action
@@ -169,14 +169,8 @@ module IronAdmin
       return render json: [] if query.blank?
 
       display = @resource_class.display_attribute
-      conn = @resource_class.model.connection
-      table = conn.quote_table_name(@resource_class.model.table_name)
-      column = conn.quote_column_name(display)
-      like_operator = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
-
-      records = base_scope
-        .where("#{table}.#{column} #{like_operator} ?", "%#{query}%")
-        .limit(20)
+      scope = adapter.search_column(base_scope, display, query)
+      records = adapter.limit(scope, 20)
         .map { |r| { id: r.id, label: r.public_send(display) } }
 
       render json: records
@@ -184,15 +178,19 @@ module IronAdmin
 
     private
 
+    def adapter
+      @resource_class.adapter
+    end
+
     def base_scope
-      scope = @resource_class.model.all
+      scope = adapter.all
       scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
       scope
     end
 
     def record_scope
       scope = base_scope
-      scope = scope.unscope(where: @resource_class.soft_delete_column.to_sym) if @resource_class.soft_delete?
+      scope = adapter.unscope_column(scope, @resource_class.soft_delete_column) if @resource_class.soft_delete?
       scope
     end
 
@@ -245,7 +243,7 @@ module IronAdmin
     end
 
     def run_bulk_action_in_transaction(action, records)
-      ActiveRecord::Base.transaction do
+      adapter.transaction do
         result = action[:block].call(records)
         raise ActiveRecord::Rollback if result == false
       end
@@ -313,7 +311,7 @@ module IronAdmin
         scope = if filter[:scope]
                   filter[:scope].call(value, scope)
                 else
-                  scope.where(filter[:name] => value)
+                  adapter.filter(scope, filter[:name], value)
                 end
       end
       scope
@@ -345,16 +343,15 @@ module IronAdmin
 
     def apply_sorting(scope)
       sort_col = params[:sort].to_s
-      valid_columns = @resource_class.model.column_names
-      sort_col = IronAdmin.configuration.default_sort.to_s unless valid_columns.include?(sort_col)
+      sort_col = IronAdmin.configuration.default_sort.to_s unless adapter.has_column?(sort_col)
       valid_dir = %w[asc desc].include?(params[:direction].to_s.downcase)
       sort_dir = valid_dir ? params[:direction] : IronAdmin.configuration.default_sort_direction
-      scope.order(sort_col => sort_dir)
+      adapter.order_by(scope, sort_col, sort_dir)
     end
 
     def apply_preloading(scope)
       preloads = @resource_class.preload_associations
-      preloads.any? ? scope.includes(*preloads) : scope
+      preloads.any? ? adapter.preload(scope, preloads) : scope
     end
 
     def emit_event(action, record)

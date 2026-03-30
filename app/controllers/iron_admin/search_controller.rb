@@ -19,11 +19,9 @@ module IronAdmin
         columns = resource_class.searchable_columns
         next if columns.empty?
 
-        conn = resource_class.model.connection
-        table = conn.quote_table_name(resource_class.model.table_name)
-        like_operator = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
-        conditions = columns.map { |col| "#{table}.#{conn.quote_column_name(col)} #{like_operator} :q" }
-        records = resource_class.model.where(conditions.join(" OR "), q: "%#{@query}%").limit(5)
+        resource_adapter = resource_class.adapter
+        records = resource_adapter.search_columns(resource_adapter.all, columns, @query)
+        records = resource_adapter.limit(records, 5)
 
         next if records.empty?
 
