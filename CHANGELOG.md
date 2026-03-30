@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Resource Adapter Pattern** (#25) — Decouples IronAdmin from ActiveRecord via an adapter layer. All controllers, helpers, components, and the FieldInferrer now call through `Resource.adapter` instead of direct ActiveRecord APIs. The `Adapters::Base` abstract class defines a 31-method interface; `Adapters::ActiveRecord` is the default implementation. Custom adapters (Mongoid, HTTP, etc.) can be plugged in via `self.adapter_class = MyAdapter`.
+
+- **Filter Operators** (#21) — New `:string` and `:number` filter types with operator dropdowns:
+  - String operators: contains, equals, starts_with, ends_with (LIKE/ILIKE with wildcard escaping)
+  - Number operators: equals, greater_than, less_than, between
+  - `Filters::QueryBuilder` service class with SQL injection prevention (whitelist operators, parameterized queries, quoted columns)
+  - Auto-inference: string/text columns auto-infer as `:string`, integer/float/decimal as `:number`
+  - `Concerns::Filterable` extracted from ResourcesController for cleaner separation
+  - Stimulus controller for between operator toggle
+  - i18n keys for all operator labels
+
+- **Action Forms** (#22) — Collect user input before action execution:
+  - `ActionField` value object with type validation (text, textarea, number, boolean, date, datetime, select)
+  - `form_fields:` option on `action` and `bulk_action` DSL
+  - `action_field` convenience constructor
+  - Arity-based dispatch: 1-arg blocks (existing) unchanged, 2-arg blocks receive collected params
+  - Strong parameter safety: only declared field keys are permitted
+  - GET routes for action form and bulk action form rendering
+  - `Concerns::ActionExecutable` extracted for arity dispatch logic
+  - HAML form views with all ActionField types
+
 ## [0.5.0] - 2026-02-16
 
 ### Changed
