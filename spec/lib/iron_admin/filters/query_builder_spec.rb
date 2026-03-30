@@ -3,223 +3,258 @@
 require "rails_helper"
 
 RSpec.describe IronAdmin::Filters::QueryBuilder do
+  subject(:result) { described_class.call(base_scope, filter, params_hash) }
+
   let(:base_scope) { User.all }
+  let(:filter) { { name: :name, type: :string } }
+  let(:params_hash) { { "op" => op, "value" => value } }
+  let(:op) { "contains" }
+  let(:value) { "test" }
 
   describe ".call" do
-    it "returns the scope unchanged when value is blank" do
-      filter = { name: :name, type: :string }
-      result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "" })
+    context "when value is blank" do
+      let(:value) { "" }
 
-      expect(result.to_sql).to eq(base_scope.to_sql)
+      it "returns the scope unchanged" do
+        expect(result.to_sql).to eq(base_scope.to_sql)
+      end
     end
 
-    it "returns the scope unchanged when value is nil" do
-      filter = { name: :name, type: :string }
-      result = described_class.call(base_scope, filter, { "op" => "contains", "value" => nil })
+    context "when value is nil" do
+      let(:value) { nil }
 
-      expect(result.to_sql).to eq(base_scope.to_sql)
+      it "returns the scope unchanged" do
+        expect(result.to_sql).to eq(base_scope.to_sql)
+      end
     end
 
-    it "returns the scope unchanged for unknown filter type" do
-      filter = { name: :name, type: :unknown }
-      result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "test" })
+    context "when filter type is unknown" do
+      let(:filter) { { name: :name, type: :unknown } }
 
-      expect(result.to_sql).to eq(base_scope.to_sql)
+      it "returns the scope unchanged" do
+        expect(result.to_sql).to eq(base_scope.to_sql)
+      end
     end
   end
 
-  describe "string operators" do
+  context "with string filter type" do
     let(:filter) { { name: :name, type: :string } }
 
-    describe "contains" do
-      it "matches records with value anywhere in column" do
+    context 'with "contains" operator' do
+      let(:op) { "contains" }
+      let(:value) { "Acme" }
+
+      before do
         create(:user, name: "Alice Acme")
         create(:user, name: "Bob Builder")
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "Acme" })
-
+      it "matches records with value anywhere in column" do
         expect(result.pluck(:name)).to eq(["Alice Acme"])
       end
 
-      it "strips whitespace from value" do
-        create(:user, name: "Alice Acme")
+      context "when value has leading/trailing whitespace" do
+        let(:value) { "  Acme  " }
 
-        result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "  Acme  " })
-
-        expect(result.pluck(:name)).to eq(["Alice Acme"])
+        it "strips whitespace before matching" do
+          expect(result.pluck(:name)).to eq(["Alice Acme"])
+        end
       end
     end
 
-    describe "equals" do
-      it "matches only the exact value" do
+    context 'with "equals" operator' do
+      let(:op) { "equals" }
+      let(:value) { "Alice" }
+
+      before do
         create(:user, name: "Alice")
         create(:user, name: "Alice Acme")
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "equals", "value" => "Alice" })
-
+      it "matches only the exact value" do
         expect(result.pluck(:name)).to eq(["Alice"])
       end
     end
 
-    describe "starts_with" do
-      it "matches records where column starts with value" do
+    context 'with "starts_with" operator' do
+      let(:op) { "starts_with" }
+      let(:value) { "Alice" }
+
+      before do
         create(:user, name: "Alice Acme")
         create(:user, name: "Bob Alice")
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "starts_with", "value" => "Alice" })
-
+      it "matches records where column starts with value" do
         expect(result.pluck(:name)).to eq(["Alice Acme"])
       end
     end
 
-    describe "ends_with" do
-      it "matches records where column ends with value" do
+    context 'with "ends_with" operator' do
+      let(:op) { "ends_with" }
+      let(:value) { "Acme" }
+
+      before do
         create(:user, name: "Alice Acme")
         create(:user, name: "Acme Bob")
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "ends_with", "value" => "Acme" })
-
+      it "matches records where column ends with value" do
         expect(result.pluck(:name)).to eq(["Alice Acme"])
       end
     end
 
     context "with invalid operator" do
+      let(:op) { "drop_table" }
+
       it "returns scope unchanged" do
         create(:user, name: "Alice")
-
-        result = described_class.call(base_scope, filter, { "op" => "drop_table", "value" => "test" })
-
         expect(result.to_sql).to eq(base_scope.to_sql)
       end
     end
   end
 
-  describe "number operators" do
+  context "with number filter type" do
     let(:base_scope) { License.all }
     let(:user) { create(:user) }
     let(:filter) { { name: :max_devices, type: :number } }
 
-    describe "equals" do
-      it "matches exact numeric value" do
+    context 'with "equals" operator' do
+      let(:op) { "equals" }
+      let(:value) { "5" }
+
+      before do
         create(:license, user: user, max_devices: 5)
         create(:license, user: user, max_devices: 10)
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "equals", "value" => "5" })
-
+      it "matches exact numeric value" do
         expect(result.pluck(:max_devices)).to eq([5])
       end
     end
 
-    describe "greater_than" do
-      it "matches values greater than the given number" do
+    context 'with "greater_than" operator' do
+      let(:op) { "greater_than" }
+      let(:value) { "7" }
+
+      before do
         create(:license, user: user, max_devices: 5)
         create(:license, user: user, max_devices: 10)
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "greater_than", "value" => "7" })
-
+      it "matches values above the threshold" do
         expect(result.pluck(:max_devices)).to eq([10])
       end
     end
 
-    describe "less_than" do
-      it "matches values less than the given number" do
+    context 'with "less_than" operator' do
+      let(:op) { "less_than" }
+      let(:value) { "7" }
+
+      before do
         create(:license, user: user, max_devices: 5)
         create(:license, user: user, max_devices: 10)
+      end
 
-        result = described_class.call(base_scope, filter, { "op" => "less_than", "value" => "7" })
-
+      it "matches values below the threshold" do
         expect(result.pluck(:max_devices)).to eq([5])
       end
     end
 
-    describe "between" do
-      it "matches values in the inclusive range" do
+    context 'with "between" operator' do
+      let(:op) { "between" }
+      let(:value) { "5" }
+      let(:params_hash) { { "op" => op, "value" => value, "value_2" => upper_value } }
+      let(:upper_value) { "10" }
+
+      before do
         create(:license, user: user, max_devices: 1)
         create(:license, user: user, max_devices: 5)
         create(:license, user: user, max_devices: 10)
         create(:license, user: user, max_devices: 20)
+      end
 
-        result = described_class.call(base_scope, filter,
-                                      { "op" => "between", "value" => "5", "value_2" => "10" })
-
+      it "matches values in the inclusive range" do
         expect(result.pluck(:max_devices)).to contain_exactly(5, 10)
       end
 
-      it "returns scope unchanged when value_2 is blank" do
-        create(:license, user: user, max_devices: 5)
+      context "when upper bound is blank" do
+        let(:upper_value) { "" }
 
-        result = described_class.call(base_scope, filter,
-                                      { "op" => "between", "value" => "5", "value_2" => "" })
-
-        expect(result.to_sql).to eq(base_scope.to_sql)
+        it "returns scope unchanged" do
+          expect(result.to_sql).to eq(base_scope.to_sql)
+        end
       end
     end
 
     context "with non-numeric value" do
+      let(:op) { "equals" }
+      let(:value) { "abc" }
+
       it "returns scope unchanged" do
         create(:license, user: user, max_devices: 5)
-
-        result = described_class.call(base_scope, filter, { "op" => "equals", "value" => "abc" })
-
         expect(result.to_sql).to eq(base_scope.to_sql)
       end
     end
 
-    context "with float values" do
+    context "with decimal column" do
       let(:base_scope) { Profile.all }
       let(:filter) { { name: :hourly_rate, type: :number } }
+      let(:op) { "greater_than" }
+      let(:value) { "75.0" }
 
-      it "handles decimal values" do
+      it "handles float values correctly" do
         create(:profile, user: user, hourly_rate: 50.00)
         create(:profile, user: create(:user), hourly_rate: 100.50)
-
-        result = described_class.call(base_scope, filter, { "op" => "greater_than", "value" => "75.0" })
 
         expect(result.pluck(:hourly_rate).map(&:to_f)).to eq([100.50])
       end
     end
 
     context "with invalid operator" do
+      let(:op) { "drop_table" }
+      let(:value) { "5" }
+
       it "returns scope unchanged" do
         create(:license, user: user, max_devices: 5)
-
-        result = described_class.call(base_scope, filter, { "op" => "drop_table", "value" => "5" })
-
         expect(result.to_sql).to eq(base_scope.to_sql)
       end
     end
   end
 
-  describe "LIKE wildcard escaping" do
+  context "with LIKE wildcard characters in value" do
     let(:filter) { { name: :name, type: :string } }
+    let(:op) { "contains" }
 
-    it "escapes percent characters in value" do
-      create(:user, name: "100% Complete")
-      create(:user, name: "Alice")
+    context "when value contains percent character" do
+      let(:value) { "100%" }
 
-      result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "100%" })
+      it "escapes the percent and matches literally" do
+        create(:user, name: "100% Complete")
+        create(:user, name: "Alice")
 
-      expect(result.pluck(:name)).to eq(["100% Complete"])
+        expect(result.pluck(:name)).to eq(["100% Complete"])
+      end
     end
 
-    it "escapes underscore characters in value" do
-      create(:user, name: "user_name")
-      create(:user, name: "username")
+    context "when value contains underscore character" do
+      let(:value) { "r_n" }
 
-      result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "r_n" })
+      it "escapes the underscore and matches literally" do
+        create(:user, name: "user_name")
+        create(:user, name: "username")
 
-      expect(result.pluck(:name)).to eq(["user_name"])
+        expect(result.pluck(:name)).to eq(["user_name"])
+      end
     end
   end
 
-  describe "SQL safety" do
+  context "with SQL-sensitive input" do
     let(:filter) { { name: :name, type: :string } }
+    let(:value) { "Alice" }
 
-    it "uses quoted table name in the query" do
+    it "quotes the table name in generated SQL" do
       create(:user, name: "Alice")
-
-      result = described_class.call(base_scope, filter, { "op" => "contains", "value" => "Alice" })
-
       expect(result.to_sql).to include('"users"')
     end
   end

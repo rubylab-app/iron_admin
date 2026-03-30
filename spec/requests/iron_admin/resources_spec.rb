@@ -172,7 +172,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       end
     end
 
-    context "with string filter" do
+    context "with string operator filter" do
       let(:string_filter_resource) do
         Class.new(IronAdmin::Resource) do
           self.model_class_override = User
@@ -189,91 +189,92 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         end
       end
 
-      before { IronAdmin::ResourceRegistry.register(string_filter_resource) }
+      before do
+        IronAdmin::ResourceRegistry.register(string_filter_resource)
+        create(:user, name: "Alice Acme")
+        create(:user, name: "Bob Builder")
+      end
 
       after do
         IronAdmin::ResourceRegistry.reset!
         register_test_resources
       end
 
-      it "filters by string contains operator" do
-        create(:user, name: "Alice Acme")
-        create(:user, name: "Bob Builder")
+      context 'with "contains" operator' do
+        it "returns only matching records" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "contains", value: "Acme" } } },
+              as: :html
 
-        get iron_admin.resources_path("string_filter_users"),
-            params: { filters: { name: { op: "contains", value: "Acme" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Alice Acme")
-        expect(response.body).not_to include("Bob Builder")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).not_to include("Bob Builder")
+        end
       end
 
-      it "filters by string equals operator" do
-        create(:user, name: "Alice")
-        create(:user, name: "Alice Acme")
+      context 'with "equals" operator' do
+        before { create(:user, name: "Alice") }
 
-        get iron_admin.resources_path("string_filter_users"),
-            params: { filters: { name: { op: "equals", value: "Alice" } } },
-            as: :html
+        it "matches only the exact value" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "equals", value: "Alice" } } },
+              as: :html
 
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Alice")
-        expect(response.body).not_to include("Alice Acme")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice")
+          expect(response.body).not_to include("Alice Acme")
+        end
       end
 
-      it "filters by string starts_with operator" do
-        create(:user, name: "Alice Acme")
-        create(:user, name: "Bob Alice")
+      context 'with "starts_with" operator' do
+        it "matches records starting with the value" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "starts_with", value: "Alice" } } },
+              as: :html
 
-        get iron_admin.resources_path("string_filter_users"),
-            params: { filters: { name: { op: "starts_with", value: "Alice" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Alice Acme")
-        expect(response.body).not_to include("Bob Alice")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).not_to include("Bob Builder")
+        end
       end
 
-      it "filters by string ends_with operator" do
-        create(:user, name: "Alice Acme")
-        create(:user, name: "Acme Bob")
+      context 'with "ends_with" operator' do
+        it "matches records ending with the value" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "ends_with", value: "Acme" } } },
+              as: :html
 
-        get iron_admin.resources_path("string_filter_users"),
-            params: { filters: { name: { op: "ends_with", value: "Acme" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Alice Acme")
-        expect(response.body).not_to include("Acme Bob")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).not_to include("Bob Builder")
+        end
       end
 
-      it "ignores string filter with blank value" do
-        create(:user, name: "Alice Acme")
-        create(:user, name: "Bob Builder")
+      context "with blank value" do
+        it "returns all records unfiltered" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "contains", value: "" } } },
+              as: :html
 
-        get iron_admin.resources_path("string_filter_users"),
-            params: { filters: { name: { op: "contains", value: "" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Alice Acme")
-        expect(response.body).to include("Bob Builder")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+          expect(response.body).to include("Bob Builder")
+        end
       end
 
-      it "ignores string filter with invalid operator" do
-        create(:user, name: "Alice Acme")
+      context "with invalid operator" do
+        it "returns all records unfiltered" do
+          get iron_admin.resources_path("string_filter_users"),
+              params: { filters: { name: { op: "drop_table", value: "test" } } },
+              as: :html
 
-        get iron_admin.resources_path("string_filter_users"),
-            params: { filters: { name: { op: "drop_table", value: "test" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Alice Acme")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("Alice Acme")
+        end
       end
     end
 
-    context "with number filter" do
+    context "with number operator filter" do
       let(:number_filter_resource) do
         Class.new(IronAdmin::Resource) do
           self.model_class_override = License
@@ -293,78 +294,81 @@ RSpec.describe "IronAdmin::Resources", type: :request do
 
       let(:user) { create(:user) }
 
-      before { IronAdmin::ResourceRegistry.register(number_filter_resource) }
+      before do
+        IronAdmin::ResourceRegistry.register(number_filter_resource)
+        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
+        create(:license, user: user, max_devices: 10, license_key: "KEY-TEN")
+      end
 
       after do
         IronAdmin::ResourceRegistry.reset!
         register_test_resources
       end
 
-      it "filters by number equals operator" do
-        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
-        create(:license, user: user, max_devices: 10, license_key: "KEY-TEN")
+      context 'with "equals" operator' do
+        it "matches the exact numeric value" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "equals", value: "5" } } },
+              as: :html
 
-        get iron_admin.resources_path("number_filter_licenses"),
-            params: { filters: { max_devices: { op: "equals", value: "5" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("KEY-FIVE")
-        expect(response.body).not_to include("KEY-TEN")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+          expect(response.body).not_to include("KEY-TEN")
+        end
       end
 
-      it "filters by number greater_than operator" do
-        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
-        create(:license, user: user, max_devices: 10, license_key: "KEY-TEN")
+      context 'with "greater_than" operator' do
+        it "matches values above the threshold" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "greater_than", value: "7" } } },
+              as: :html
 
-        get iron_admin.resources_path("number_filter_licenses"),
-            params: { filters: { max_devices: { op: "greater_than", value: "7" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).not_to include("KEY-FIVE")
-        expect(response.body).to include("KEY-TEN")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).not_to include("KEY-FIVE")
+          expect(response.body).to include("KEY-TEN")
+        end
       end
 
-      it "filters by number less_than operator" do
-        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
-        create(:license, user: user, max_devices: 10, license_key: "KEY-TEN")
+      context 'with "less_than" operator' do
+        it "matches values below the threshold" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "less_than", value: "7" } } },
+              as: :html
 
-        get iron_admin.resources_path("number_filter_licenses"),
-            params: { filters: { max_devices: { op: "less_than", value: "7" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("KEY-FIVE")
-        expect(response.body).not_to include("KEY-TEN")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+          expect(response.body).not_to include("KEY-TEN")
+        end
       end
 
-      it "filters by number between operator" do
-        create(:license, user: user, max_devices: 1, license_key: "KEY-ONE")
-        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
-        create(:license, user: user, max_devices: 10, license_key: "KEY-TEN")
-        create(:license, user: user, max_devices: 20, license_key: "KEY-TWENTY")
+      context 'with "between" operator' do
+        before do
+          create(:license, user: user, max_devices: 1, license_key: "KEY-ONE")
+          create(:license, user: user, max_devices: 20, license_key: "KEY-TWENTY")
+        end
 
-        get iron_admin.resources_path("number_filter_licenses"),
-            params: { filters: { max_devices: { op: "between", value: "5", "value_2" => "10" } } },
-            as: :html
+        it "matches values in the inclusive range" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "between", value: "5", "value_2" => "10" } } },
+              as: :html
 
-        expect(response).to have_http_status(:ok)
-        expect(response.body).not_to include("KEY-ONE")
-        expect(response.body).to include("KEY-FIVE")
-        expect(response.body).to include("KEY-TEN")
-        expect(response.body).not_to include("KEY-TWENTY")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+          expect(response.body).to include("KEY-TEN")
+          expect(response.body).not_to include("KEY-ONE")
+          expect(response.body).not_to include("KEY-TWENTY")
+        end
       end
 
-      it "ignores number filter with non-numeric value" do
-        create(:license, user: user, max_devices: 5, license_key: "KEY-FIVE")
+      context "with non-numeric value" do
+        it "returns all records unfiltered" do
+          get iron_admin.resources_path("number_filter_licenses"),
+              params: { filters: { max_devices: { op: "equals", value: "abc" } } },
+              as: :html
 
-        get iron_admin.resources_path("number_filter_licenses"),
-            params: { filters: { max_devices: { op: "equals", value: "abc" } } },
-            as: :html
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("KEY-FIVE")
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("KEY-FIVE")
+        end
       end
     end
 
