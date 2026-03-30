@@ -177,6 +177,29 @@ RSpec.describe "Nested Forms", type: :request do
     end
   end
 
+  describe "GET edit with nested form rendering" do
+    let(:user) { create(:user) }
+
+    before do
+      create(:license, user: user, license_key: "EDIT-KEY-001")
+    end
+
+    it "renders the edit form with nested section" do
+      get iron_admin.edit_resource_path("nested_users", user), as: :html
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Licenses")
+      expect(response.body).to include("EDIT-KEY-001")
+    end
+
+    it "renders the new form with empty nested section" do
+      get iron_admin.new_resource_path("nested_users"), as: :html
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Licenses")
+    end
+  end
+
   describe "nested permits security" do
     let(:user) { create(:user) }
 

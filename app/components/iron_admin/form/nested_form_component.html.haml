@@ -1,0 +1,27 @@
+%div{ data: { controller: "cp-nested-form",
+            "cp-nested-form-association-name-value": name,
+            "cp-nested-form-allow-destroy-value": allow_destroy,
+            "cp-nested-form-sortable-value": sortable? } }
+
+  .flex.items-center.justify-between.mb-4
+    %h3.text-base.font-semibold{ class: "#{theme.heading_weight} #{theme.body_text}" }= title
+    - if show_add_button?
+      %button.inline-flex.items-center.gap-1.px-3.py-1.text-sm.font-medium.rounded-lg.border.border-dashed.cursor-pointer{ type: "button",
+        class: "#{theme.link} border-current hover:bg-gray-50",
+        data: { action: "cp-nested-form#addRow" } }
+        = I18n.t("iron_admin.nested_form.add_button", default: "Add row")
+
+  -# Hidden template for JS cloning of new rows
+  %template{ id: "#{name}-nested-template" }
+    - if form
+      = form.fields_for name, nested_association.reflection.klass.new, child_index: template_index do |child_f|
+        = render "iron_admin/form/nested_row", child_f: child_f, nested_association: nested_association,
+          child: nested_association.reflection.klass.new, current_user: current_user
+
+  -# Existing rows container
+  %div{ data: { "cp-nested-form-target": "rowsContainer" } }
+    - child_records.each do |child|
+      - if form
+        = form.fields_for name, child do |child_f|
+          = render "iron_admin/form/nested_row", child_f: child_f, nested_association: nested_association,
+            child: child, current_user: current_user
