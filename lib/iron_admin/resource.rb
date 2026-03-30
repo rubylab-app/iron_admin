@@ -528,8 +528,17 @@ module IronAdmin
       #   has_many :comments, fields: [:id, :body, :created_at]
       #
       # @return [void]
-      def has_many(name, **options)
-        self.defined_associations = defined_associations.merge(name => { kind: :has_many, **options })
+      def has_many(name, nested: false, allow_destroy: true, position_field: nil, fields: nil, **options)
+        self.defined_associations = defined_associations.merge(
+          name => {
+            kind: :has_many,
+            nested: nested,
+            allow_destroy: allow_destroy,
+            position_field: position_field&.to_sym,
+            fields: fields,
+            **options,
+          }
+        )
       end
 
       # Declares a has_one association for this resource.
@@ -542,8 +551,16 @@ module IronAdmin
       #   has_one :profile
       #
       # @return [void]
-      def has_one(name, **options)
-        self.defined_associations = defined_associations.merge(name => { kind: :has_one, **options })
+      def has_one(name, nested: false, allow_destroy: true, fields: nil, **options)
+        self.defined_associations = defined_associations.merge(
+          name => {
+            kind: :has_one,
+            nested: nested,
+            allow_destroy: allow_destroy,
+            fields: fields,
+            **options,
+          }
+        )
       end
 
       # Declares a has_and_belongs_to_many association for this resource.
@@ -607,6 +624,29 @@ module IronAdmin
       # @return [void]
       def preload(*associations)
         @preload_associations = associations
+      end
+
+      # Returns NestedAssociation objects for associations declared with nested: true.
+      #
+      # Validates that each nested association's model declares
+      # accepts_nested_attributes_for. Resolves fields via FieldInferrer.
+      #
+      # @return [Array<IronAdmin::NestedAssociation>] Nested association configs
+      def nested_associations
+        defined_associations.select { |_, v| v[:nested] }.map do |assoc_name, config|
+          reflection = model.reflect_on_association(assoc_name)
+          NestedAttributesValidator.validate!(model, assoc_name)
+          fields = resolve_nested_fields(config, reflection.klass, reflection.foreign_key)
+
+          NestedAssociation.new(
+            name: assoc_name,
+            kind: config[:kind],
+            reflection: reflection,
+            fields: fields,
+            allow_destroy: config.fetch(:allow_destroy, true),
+            position_field: config[:position_field]
+          )
+        end
       end
 
       # Returns has_many association configurations for related lists.
@@ -763,6 +803,15 @@ module IronAdmin
           return nil if col.name.end_with?("_id")
 
           { name: col.name.to_sym, type: :number, label: col.name.humanize }
+        end
+      end
+
+      def resolve_nested_fields(config, assoc_model, foreign_key)
+        if config[:fields]
+          FieldInferrer.call(assoc_model).select { |f| config[:fields].include?(f.name) }
+        else
+          skip = %i[id created_at updated_at] + [foreign_key.to_sym]
+          FieldInferrer.call(assoc_model).reject { |f| skip.include?(f.name) }
         end
       end
 

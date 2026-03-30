@@ -730,4 +730,148 @@ RSpec.describe IronAdmin::Resource do
       end
     end
   end
+
+  describe "nested associations" do
+    let(:nested_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "NestedTestResource"
+        end
+
+        has_many :licenses, nested: true, allow_destroy: true, fields: %i[license_key status]
+      end
+    end
+
+    context "when nested: true is set on has_many" do
+      it "stores nested flag in defined_associations" do
+        config = nested_resource.defined_associations[:licenses]
+        expect(config[:nested]).to be(true)
+      end
+
+      it "stores allow_destroy in defined_associations" do
+        config = nested_resource.defined_associations[:licenses]
+        expect(config[:allow_destroy]).to be(true)
+      end
+
+      it "stores fields list in defined_associations" do
+        config = nested_resource.defined_associations[:licenses]
+        expect(config[:fields]).to eq(%i[license_key status])
+      end
+    end
+
+    describe ".nested_associations" do
+      it "returns NestedAssociation objects for nested: true associations" do
+        associations = nested_resource.nested_associations
+        expect(associations.length).to eq(1)
+        expect(associations.first).to be_a(IronAdmin::NestedAssociation)
+      end
+
+      it "sets the association name" do
+        assoc = nested_resource.nested_associations.first
+        expect(assoc.name).to eq(:licenses)
+      end
+
+      it "sets the kind" do
+        assoc = nested_resource.nested_associations.first
+        expect(assoc.kind).to eq(:has_many)
+      end
+
+      it "resolves fields from the explicit fields list" do
+        assoc = nested_resource.nested_associations.first
+        field_names = assoc.fields.map(&:name)
+        expect(field_names).to eq(%i[license_key status])
+      end
+
+      it "sets allow_destroy" do
+        assoc = nested_resource.nested_associations.first
+        expect(assoc.allow_destroy).to be(true)
+      end
+
+      it "excludes non-nested associations" do
+        resource = Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "MixedAssocResource"
+          end
+
+          has_many :licenses
+        end
+
+        expect(resource.nested_associations).to eq([])
+      end
+    end
+
+    describe "field auto-inference" do
+      let(:auto_fields_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "AutoFieldsNestedResource"
+          end
+
+          has_many :licenses, nested: true
+        end
+      end
+
+      it "excludes id, timestamps, and foreign key" do
+        assoc = auto_fields_resource.nested_associations.first
+        field_names = assoc.fields.map(&:name)
+        expect(field_names).not_to include(:id)
+        expect(field_names).not_to include(:created_at)
+        expect(field_names).not_to include(:updated_at)
+        expect(field_names).not_to include(:user_id)
+      end
+
+      it "includes data columns" do
+        assoc = auto_fields_resource.nested_associations.first
+        field_names = assoc.fields.map(&:name)
+        expect(field_names).to include(:license_key)
+        expect(field_names).to include(:status)
+      end
+    end
+
+    describe "validation" do
+      it "raises when model lacks accepts_nested_attributes_for" do
+        bad_resource = Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "BadNestedResource"
+          end
+
+          has_many :licenses, nested: true
+        end
+        # Remove the validation from User temporarily
+        allow(User).to receive(:nested_attributes_options).and_return({})
+
+        expect { bad_resource.nested_associations }.to raise_error(
+          ArgumentError,
+          /User must declare `accepts_nested_attributes_for :licenses`/
+        )
+      end
+    end
+
+    describe "position_field" do
+      let(:positional_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "PositionalNestedResource"
+          end
+
+          has_many :licenses, nested: true, position_field: :max_devices
+        end
+      end
+
+      it "stores position_field as symbol" do
+        assoc = positional_resource.nested_associations.first
+        expect(assoc.position_field).to eq(:max_devices)
+      end
+    end
+  end
 end
