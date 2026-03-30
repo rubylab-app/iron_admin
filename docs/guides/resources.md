@@ -112,6 +112,21 @@ remove_filter :some_column
 | `:select` | Dropdown with choices |
 | `:date_range` | Date range picker |
 | `:boolean` | True/false toggle |
+| `:string` | Text input with operator dropdown (contains, equals, starts_with, ends_with) |
+| `:number` | Number input with operator dropdown (equals, greater_than, less_than, between) |
+
+### String and Number Filters
+
+String and number filters provide an operator dropdown alongside the input:
+
+```ruby
+class ProductResource < IronAdmin::Resource
+  filter :name, type: :string       # contains, equals, starts_with, ends_with
+  filter :price, type: :number      # equals, greater_than, less_than, between
+end
+```
+
+**Auto-inference:** String and text columns automatically infer as `:string` filters. Integer, float, and decimal columns automatically infer as `:number` filters. You only need explicit declarations to override defaults or add filters for columns that aren't auto-detected.
 
 ### Auto-Generated Enum Filters
 
@@ -185,6 +200,36 @@ action :process do |record|
   record.process!
 end
 ```
+
+### Action Forms
+
+Actions can collect user input before executing by specifying `form_fields:`. The form is displayed in a modal when the action is triggered.
+
+```ruby
+class OrderResource < IronAdmin::Resource
+  action :reject,
+    form_fields: [
+      action_field(:reason, type: :textarea, required: true),
+      action_field(:notify_customer, type: :boolean, default: true)
+    ] do |record, params|
+      record.reject!(reason: params[:reason])
+      Mailer.rejection(record).deliver_later if params[:notify_customer]
+    end
+end
+```
+
+**ActionField types:** `text`, `textarea`, `number`, `boolean`, `date`, `datetime`, `select`.
+
+ActionField options:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `type` | Symbol | Input type (see list above) |
+| `required` | Boolean | Whether the field must be filled |
+| `default` | Object | Default value for the input |
+| `choices` | Array | Options for `:select` type |
+
+Action forms work with both record actions and bulk actions.
 
 ### Bulk Actions
 

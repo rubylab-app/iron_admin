@@ -80,6 +80,66 @@ IronAdmin::Filters::DateRangeComponent.new(
 
 ---
 
+## StringFilterComponent
+
+Text input with an operator dropdown for string matching.
+
+```ruby
+IronAdmin::Filters::StringFilterComponent.new(
+  name: :name,                   # Required: filter parameter name
+  label: nil,                    # Optional: label text (auto-generated from name)
+  value: nil,                    # Optional: current filter value
+  operator: "contains"           # Optional: current operator (default: "contains")
+)
+```
+
+**Operators:** `contains`, `equals`, `starts_with`, `ends_with`
+
+**Example:**
+
+```haml
+= render IronAdmin::Filters::StringFilterComponent.new(
+  name: :name,
+  label: "Customer Name",
+  value: params.dig(:filters, :name),
+  operator: params.dig(:filters, :name_operator) || "contains"
+)
+```
+
+---
+
+## NumberFilterComponent
+
+Number input with an operator dropdown for numeric comparisons.
+
+```ruby
+IronAdmin::Filters::NumberFilterComponent.new(
+  name: :price,                  # Required: filter parameter name
+  label: nil,                    # Optional: label text (auto-generated from name)
+  value: nil,                    # Optional: current filter value
+  max_value: nil,                # Optional: upper bound for "between" operator
+  operator: "equals"             # Optional: current operator (default: "equals")
+)
+```
+
+**Operators:** `equals`, `greater_than`, `less_than`, `between`
+
+When the `between` operator is selected, a second input for the upper bound is displayed.
+
+**Example:**
+
+```haml
+= render IronAdmin::Filters::NumberFilterComponent.new(
+  name: :price,
+  label: "Price",
+  value: params.dig(:filters, :price),
+  max_value: params.dig(:filters, :price_max),
+  operator: params.dig(:filters, :price_operator) || "equals"
+)
+```
+
+---
+
 ## BarComponent
 
 Container for filter controls with dropdown behavior.

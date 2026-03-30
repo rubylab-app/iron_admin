@@ -30,6 +30,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Concerns::ActionExecutable` extracted for arity dispatch logic
   - HAML form views with all ActionField types
 
+### Migration notes from 0.5.0
+
+All three features are **fully backward compatible** — no code changes are required. However:
+
+- **`auto_inferred_filters` now returns more filters.** In addition to enum-based `:select` filters, it now auto-infers `:string` filters for string/text columns and `:number` filters for integer/float/decimal columns. If your tests assert on `auto_inferred_filters.length` or `all_filters.length`, they may need updating. These auto-inferred filters only appear in the filter bar UI when explicitly declared via `filter :name, type: :string`.
+
+- **Internal AR calls are now routed through the adapter.** If you were monkey-patching or overriding controller/helper methods that called `@resource_class.model.where(...)` or similar AR APIs directly, switch to `@resource_class.adapter.filter(scope, column, value)` or the corresponding adapter method.
+
+- **Action blocks now support 2-arg arity.** Existing 1-arg action blocks continue to work unchanged. Only blocks with arity 2 receive the new `params` hash. No action is required unless you want to use the new `form_fields:` option.
+
 ## [0.5.0] - 2026-02-16
 
 ### Changed

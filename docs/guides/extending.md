@@ -283,6 +283,36 @@ IronAdmin.configure do |config|
 end
 ```
 
+## Custom Adapters
+
+IronAdmin uses an adapter pattern to decouple from ActiveRecord. By default, `Resource.adapter` returns an `Adapters::ActiveRecord` instance. You can create custom adapters for other ORMs by subclassing `Adapters::Base`, which defines 31 interface methods covering schema introspection, querying, CRUD, search, transactions, and batch operations.
+
+### Creating an Adapter
+
+```ruby
+class IronAdmin::Adapters::Mongoid < IronAdmin::Adapters::Base
+  def columns = model_class.fields.values
+  def all = model_class.all
+  def find(id) = model_class.find(id)
+  def build(attrs = {}) = model_class.new(attrs)
+  def save(record) = record.save
+  def destroy(record) = record.destroy
+  # ... implement all 31 methods from Adapters::Base
+end
+```
+
+### Using a Custom Adapter
+
+Set `adapter_class` on your resource to use a custom adapter:
+
+```ruby
+class MongoPostResource < IronAdmin::Resource
+  self.adapter_class = IronAdmin::Adapters::Mongoid
+end
+```
+
+All controllers, helpers, and components go through the adapter, so a fully implemented adapter enables IronAdmin to work with any data source.
+
 ## Testing Resources
 
 ```ruby
