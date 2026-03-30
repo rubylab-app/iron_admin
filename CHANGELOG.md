@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Nested Forms** (#23) — Inline nested form support for has_many/has_one associations:
+  - `nested: true` option on `has_many` and `has_one` DSL
+  - `NestedAssociation` value object, `NestedAttributesValidator` guard
+  - `Concerns::Nestable` with nested_associations reader and field resolution
+  - Auto-infers child fields from `FieldInferrer` (excludes id, timestamps, FK)
+  - Explicit `fields:` option to select specific child fields
+  - `allow_destroy:` option controls `_destroy` parameter permitting
+  - `position_field:` option enables drag-and-drop reordering
+  - `NestedFormComponent` ViewComponent with child row rendering, template cloning
+  - `cp-nested-form` Stimulus controller with add/remove/reorder
+  - Strong params auto-permitting from nested_associations declaration
+  - `Concerns::NestedPermittable` extracted for permit list building
+  - i18n keys for add/remove buttons
+
 - **Resource Adapter Pattern** (#25) — Decouples IronAdmin from ActiveRecord via an adapter layer. All controllers, helpers, components, and the FieldInferrer now call through `Resource.adapter` instead of direct ActiveRecord APIs. The `Adapters::Base` abstract class defines a 31-method interface; `Adapters::ActiveRecord` is the default implementation. Custom adapters (Mongoid, HTTP, etc.) can be plugged in via `self.adapter_class = MyAdapter`.
 
 - **Filter Operators** (#21) — New `:string` and `:number` filter types with operator dropdowns:
