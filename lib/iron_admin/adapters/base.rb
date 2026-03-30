@@ -228,6 +228,16 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # --- Scope Manipulation ---
+
+      # Removes a WHERE condition on a specific column from a scope.
+      # @param scope [Object] The current query scope
+      # @param column [Symbol] Column to unscope
+      # @return [Object] Scope without the column condition
+      def unscope_column(_scope, _column)
+        raise NotImplementedError
+      end
+
       # --- Batch ---
 
       # Iterates records in memory-efficient batches.

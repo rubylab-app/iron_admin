@@ -119,6 +119,12 @@ RSpec.describe IronAdmin::Adapters::Base do
     end
   end
 
+  describe "scope manipulation" do
+    it "raises NotImplementedError for #unscope_column" do
+      expect { adapter.unscope_column(nil, :deleted_at) }.to raise_error(NotImplementedError)
+    end
+  end
+
   describe "batch" do
     it "raises NotImplementedError for #find_each" do
       expect { adapter.find_each(nil) { nil } }.to raise_error(NotImplementedError)

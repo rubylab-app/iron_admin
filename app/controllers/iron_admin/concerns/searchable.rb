@@ -29,38 +29,29 @@ module IronAdmin
       end
 
       def apply_field_search(scope, field, value)
-        return scope unless @resource_class.model.column_names.include?(field)
+        return scope unless adapter.has_column?(field)
         return scope unless field_visible?(field.to_sym)
-
-        conn = @resource_class.model.connection
-        table = conn.quote_table_name(@resource_class.model.table_name)
-        column = conn.quote_column_name(field)
-        like_op = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
 
         if value.include?("..")
           from_str, to_str = value.split("..", 2)
           from_date = parse_date(from_str)
           to_date = parse_date(to_str)
 
-          return scope.where(field => from_date..to_date) if from_date && to_date
-          return scope.where("#{table}.#{column} >= ?", from_date) if from_date
-          return scope.where("#{table}.#{column} <= ?", to_date) if to_date
+          return adapter.filter(scope, field, from_date..to_date) if from_date && to_date
+          return adapter.filter(scope, field, from_date..) if from_date
+          return adapter.filter(scope, field, ..to_date) if to_date
 
           return scope
         end
 
-        scope.where("#{table}.#{column} #{like_op} ?", "%#{value}%")
+        adapter.search_column(scope, field, value)
       end
 
       def apply_general_search(scope, query)
         columns = visible_searchable_columns
         return scope if columns.empty?
 
-        conn = @resource_class.model.connection
-        table = conn.quote_table_name(@resource_class.model.table_name)
-        like_operator = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
-        conditions = columns.map { |col| "#{table}.#{conn.quote_column_name(col)} #{like_operator} :q" }
-        scope.where(conditions.join(" OR "), q: "%#{query}%")
+        adapter.search_columns(scope, columns, query)
       end
 
       def visible_searchable_columns

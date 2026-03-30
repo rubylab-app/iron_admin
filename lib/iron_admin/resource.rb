@@ -174,7 +174,7 @@ module IronAdmin
       def searchable_columns
         return _searchable_columns if _searchable_columns
 
-        model.columns.select { |c| c.type.in?(%i[string text]) }
+        adapter.columns.select { |c| c.type.in?(%i[string text]) }
           .map { |c| c.name.to_sym }
           .reject { |name| name.to_s.end_with?("_digest") }
           .reject { |name| _unsearchable_columns.include?(name) }
@@ -222,9 +222,7 @@ module IronAdmin
       #
       # @return [Array<Hash>] Auto-generated filter configurations
       def auto_inferred_filters
-        return [] unless model.respond_to?(:defined_enums)
-
-        model.defined_enums.map do |name, values|
+        adapter.enums.map do |name, values|
           {
             name: name.to_sym,
             type: :select,
@@ -553,7 +551,7 @@ module IronAdmin
       #
       # @return [Array<IronAdmin::Field>] Configured field objects
       def resolved_fields
-        inferred = FieldInferrer.call(model)
+        inferred = FieldInferrer.call(adapter)
 
         inferred.map do |field|
           overrides = field_overrides[field.name] || {}
@@ -599,7 +597,7 @@ module IronAdmin
         defined_associations.filter_map do |assoc_name, config|
           next unless config[:kind] == :has_many
 
-          reflection = model.reflect_on_association(assoc_name)
+          reflection = adapter.association(assoc_name)
           next unless reflection
 
           resource = ResourceRegistry.find(reflection.klass.model_name.plural)
@@ -616,7 +614,7 @@ module IronAdmin
         defined_associations.filter_map do |assoc_name, config|
           next unless config[:kind] == :has_one
 
-          reflection = model.reflect_on_association(assoc_name)
+          reflection = adapter.association(assoc_name)
           next unless reflection
 
           resource = ResourceRegistry.find(reflection.klass.model_name.plural)
@@ -633,7 +631,7 @@ module IronAdmin
         defined_associations.filter_map do |assoc_name, config|
           next unless config[:kind] == :has_and_belongs_to_many
 
-          reflection = model.reflect_on_association(assoc_name)
+          reflection = adapter.association(assoc_name)
           next unless reflection
 
           resource = ResourceRegistry.find(reflection.klass.model_name.plural)
@@ -645,15 +643,13 @@ module IronAdmin
       # Returns the URL-friendly resource name (pluralized model name).
       #
       # @return [String] The resource name (e.g., "users", "orders")
-      def resource_name
-        model.model_name.plural
-      end
+      delegate :resource_name, to: :adapter
 
       # Returns the human-readable label for this resource.
       #
       # @return [String] Pluralized, humanized model name
       def label
-        model.model_name.human.pluralize
+        adapter.human_name.pluralize
       end
 
       # Returns the attribute used to display individual records.
@@ -664,7 +660,7 @@ module IronAdmin
       # @return [Symbol] The display attribute name
       def display_attribute
         ApplicationHelper::DISPLAY_METHODS.find do |method|
-          model.column_names.include?(method.to_s)
+          adapter.has_column?(method)
         end || :id
       end
 
@@ -672,7 +668,7 @@ module IronAdmin
       #
       # @return [Boolean] True if model has a deleted_at column
       def soft_delete?
-        model.column_names.include?(soft_delete_column)
+        adapter.has_column?(soft_delete_column)
       end
 
       # Returns the column name used for soft delete tracking.

@@ -211,7 +211,12 @@ module IronAdmin
       return if type_value.blank? || id_value.blank?
 
       begin
-        associated = type_value.constantize.find_by(id: id_value)
+        associated_resource = IronAdmin::ResourceRegistry.find(type_value.constantize.model_name.plural)
+        associated = if associated_resource
+                       associated_resource.adapter.find_by(id: id_value)
+                     else
+                       type_value.constantize.find_by(id: id_value)
+                     end
         return "#{type_value}##{id_value}" unless associated
 
         resource = IronAdmin::ResourceRegistry.find(associated.class.model_name.plural)

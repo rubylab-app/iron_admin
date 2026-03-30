@@ -74,8 +74,8 @@ module IronAdmin
       # @api private
       # @return [Array<Array(String, Integer)>] Options array for select tag
       def options
-        scope = options_scope ? association_class.instance_exec(&options_scope) : association_class.all
-        scope.limit(options_limit).map do |record|
+        scope = options_scope ? association_class.instance_exec(&options_scope) : association_adapter.all
+        association_adapter.limit(scope, options_limit).map do |record|
           [record.public_send(display_method), record.id]
         end
       end
@@ -83,7 +83,7 @@ module IronAdmin
       # @api private
       # @return [Boolean] Whether to show hint about more records available
       def show_search_hint?
-        association_class.count > options_limit
+        association_adapter.count > options_limit
       end
 
       # @api private
@@ -104,6 +104,13 @@ module IronAdmin
           "viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' " \
           "stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\"); background-position: right 0.5rem center; " \
           "background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;"
+      end
+
+      private
+
+      # @return [IronAdmin::Adapters::Base] Adapter for the associated model
+      def association_adapter
+        @association_adapter ||= IronAdmin::Adapters::ActiveRecord.new(association_class)
       end
     end
   end

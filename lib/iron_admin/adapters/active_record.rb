@@ -129,6 +129,12 @@ module IronAdmin
         record.destroy!
       end
 
+      # --- Scope Manipulation ---
+
+      def unscope_column(scope, column)
+        scope.unscope(where: column.to_sym)
+      end
+
       # --- Transactions ---
 
       def transaction(&)

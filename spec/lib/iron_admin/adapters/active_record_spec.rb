@@ -292,6 +292,21 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
     end
   end
 
+  describe "#unscope_column" do
+    it "removes a WHERE condition on the specified column" do
+      scope = User.where(role: "admin", active: true)
+      unscoped = adapter.unscope_column(scope, :role)
+      expect(unscoped.to_sql).not_to include("role")
+      expect(unscoped.to_sql).to include("active")
+    end
+
+    it "accepts string column names" do
+      scope = User.where(role: "admin")
+      unscoped = adapter.unscope_column(scope, "role")
+      expect(unscoped.to_sql).not_to include("role")
+    end
+  end
+
   describe "#find_each" do
     it "iterates records in batches" do
       create_list(:user, 3)
