@@ -1,0 +1,57 @@
+.p-8.max-w-lg.mx-auto{ class: t.font_family }
+  %h2.text-xl.mb-6{ class: cp_heading }= @declared_action.label
+
+  = form_tag @form_url, method: :post, class: "space-y-4" do
+    - @form_fields.each do |field|
+      .space-y-1
+        %label.block.text-sm.font-medium{ class: cp_label_text, for: "tool_action_#{field.name}" }
+          = field.label
+          - if field.required
+            %span.text-red-500 *
+
+        - case field.type
+        - when :text
+          = text_field_tag "tool_action[#{field.name}]", field.default,
+            id: "tool_action_#{field.name}",
+            class: cp_filter_input_class,
+            placeholder: field.placeholder,
+            required: field.required
+        - when :textarea
+          = text_area_tag "tool_action[#{field.name}]", field.default,
+            id: "tool_action_#{field.name}",
+            class: "#{cp_filter_input_class} h-24",
+            placeholder: field.placeholder,
+            required: field.required
+        - when :number
+          = number_field_tag "tool_action[#{field.name}]", field.default,
+            id: "tool_action_#{field.name}",
+            class: cp_filter_input_class,
+            placeholder: field.placeholder,
+            step: "any",
+            required: field.required
+        - when :boolean
+          .flex.items-center.gap-2
+            = check_box_tag "tool_action[#{field.name}]", "1", field.default,
+              id: "tool_action_#{field.name}",
+              class: "rounded border-gray-300"
+            %span.text-sm{ class: cp_body_text }= field.label
+        - when :date
+          = date_field_tag "tool_action[#{field.name}]", field.default,
+            id: "tool_action_#{field.name}",
+            class: cp_filter_input_class,
+            required: field.required
+        - when :datetime
+          = datetime_field_tag "tool_action[#{field.name}]", field.default,
+            id: "tool_action_#{field.name}",
+            class: cp_filter_input_class,
+            required: field.required
+        - when :select
+          %select{ name: "tool_action[#{field.name}]", id: "tool_action_#{field.name}",
+            class: cp_filter_input_class, required: field.required }
+            %option{ value: "" }= field.placeholder || "Select..."
+            - (field.options || []).each do |opt|
+              %option{ value: opt, selected: field.default == opt }= opt.to_s.humanize
+
+    .flex.items-center.gap-3.pt-3.border-t.border-gray-100
+      %button{ type: "submit", class: cp_btn_primary }= I18n.t("iron_admin.tools.action_form.submit", default: "Execute")
+      = link_to I18n.t("iron_admin.form.cancel_button"), tool_path(@tool_class.tool_name), class: "text-sm #{cp_link_muted}"

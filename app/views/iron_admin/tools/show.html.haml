@@ -3,5 +3,24 @@
     %h1.text-2xl{ class: cp_heading }= @tool_class.label
   .overflow-hidden{ class: cp_card }
     .p-6
-      %p.text-sm{ class: cp_muted_text }
+      %p.text-sm.mb-6{ class: cp_muted_text }
         = @tool_class.label
+
+      - if @tool_class.defined_tool_actions.any?
+        .space-y-3
+          - @tool_class.defined_tool_actions.each do |action|
+            - next unless action.allowed?(iron_admin_current_user)
+            - if action.has_form?
+              = link_to tool_action_form_path(@tool_class.tool_name, action.name),
+                class: "#{t.btn_secondary} px-4 py-2 text-sm font-medium rounded-lg inline-flex items-center gap-2" do
+                - if action.icon
+                  = heroicon action.icon, variant: :mini, options: { class: "h-4 w-4" }
+                = action.label
+            - else
+              = button_to tool_action_path(@tool_class.tool_name, action.name),
+                method: :post,
+                class: "#{t.btn_secondary} px-4 py-2 text-sm font-medium rounded-lg inline-flex items-center gap-2",
+                data: action.confirm ? { turbo_confirm: action.confirm_message || I18n.t("iron_admin.tools.confirm_default", default: "Are you sure?") } : {} do
+                - if action.icon
+                  = heroicon action.icon, variant: :mini, options: { class: "h-4 w-4" }
+                = action.label
