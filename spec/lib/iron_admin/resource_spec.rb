@@ -430,8 +430,74 @@ RSpec.describe IronAdmin::Resource do
     end
 
     context "when model has no enums" do
-      it "returns empty array" do
-        expect(TestUserResource.auto_inferred_filters).to eq([])
+      it "does not include any :select filters" do
+        select_filters = TestUserResource.auto_inferred_filters.select { |f| f[:type] == :select }
+        expect(select_filters).to be_empty
+      end
+    end
+
+    context "with string/text column inference" do
+      it "infers :string filter for string columns" do
+        filters = TestUserResource.auto_inferred_filters
+        name_filter = filters.find { |f| f[:name] == :name }
+
+        expect(name_filter).to be_present
+        expect(name_filter[:type]).to eq(:string)
+      end
+
+      it "sets a humanized label" do
+        filters = TestUserResource.auto_inferred_filters
+        name_filter = filters.find { |f| f[:name] == :name }
+
+        expect(name_filter[:label]).to eq("Name")
+      end
+
+      it "skips id, created_at, and updated_at columns" do
+        filter_names = TestUserResource.auto_inferred_filters.pluck(:name)
+
+        expect(filter_names).not_to include(:id)
+        expect(filter_names).not_to include(:created_at)
+        expect(filter_names).not_to include(:updated_at)
+      end
+    end
+
+    context "with integer/float/decimal column inference" do
+      it "infers :number filter for integer columns" do
+        filters = TestLicenseResource.auto_inferred_filters
+        max_devices_filter = filters.find { |f| f[:name] == :max_devices }
+
+        expect(max_devices_filter).to be_present
+        expect(max_devices_filter[:type]).to eq(:number)
+      end
+
+      it "skips foreign key columns ending in _id" do
+        filter_names = TestLicenseResource.auto_inferred_filters.pluck(:name)
+
+        expect(filter_names).not_to include(:user_id)
+      end
+    end
+
+    context "when columns overlap with defined or enum filters" do
+      it "does not duplicate already-defined filter columns" do
+        resource = Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "NoDuplicateFilterResource"
+          end
+
+          filter :name, type: :string, label: "Custom Name"
+        end
+
+        inferred_name = resource.auto_inferred_filters.select { |f| f[:name] == :name }
+        expect(inferred_name).to be_empty
+      end
+
+      it "does not duplicate enum-inferred filter columns" do
+        all_status = TestLicenseResource.auto_inferred_filters.select { |f| f[:name] == :status }
+
+        expect(all_status.length).to eq(1)
+        expect(all_status.first[:type]).to eq(:select)
       end
     end
 
@@ -497,11 +563,16 @@ RSpec.describe IronAdmin::Resource do
         end
       end
 
-      it "returns only auto-inferred filters" do
+      it "includes auto-inferred enum filters" do
         filters = resource_with_no_defined_filters.all_filters
-        expect(filters.length).to eq(1)
-        expect(filters.first[:name]).to eq(:status)
-        expect(filters.first[:type]).to eq(:select)
+        status_filter = filters.find { |f| f[:name] == :status }
+        expect(status_filter[:type]).to eq(:select)
+      end
+
+      it "includes auto-inferred column filters" do
+        filters = resource_with_no_defined_filters.all_filters
+        filter_types = filters.pluck(:type).uniq
+        expect(filter_types).to include(:string).or include(:number)
       end
     end
 
@@ -518,10 +589,16 @@ RSpec.describe IronAdmin::Resource do
         end
       end
 
-      it "returns only defined filters" do
+      it "includes defined filters" do
         filters = resource_with_filters_no_enums.all_filters
-        expect(filters.length).to eq(1)
-        expect(filters.first[:name]).to eq(:name)
+        name_filter = filters.find { |f| f[:name] == :name }
+        expect(name_filter).to be_present
+      end
+
+      it "does not include :select type filters" do
+        filters = resource_with_filters_no_enums.all_filters
+        select_filters = filters.select { |f| f[:type] == :select }
+        expect(select_filters).to be_empty
       end
     end
   end
