@@ -184,6 +184,49 @@ Tools are automatically routed at `/admin/tools/:tool_name`:
 | `GET /admin/tools/:tool_name` | `tools#show` | Render the tool's show view |
 | `POST /admin/tools/:tool_name/:action_name` | `tools#execute` | Execute a tool action |
 
+### Declarative Tool Actions
+
+Use `tool_action` to declare actions with metadata, form fields, and authorization:
+
+```ruby
+class CacheManagerTool < IronAdmin::Tool
+  menu label: "Cache Manager", icon: "server", group: "System"
+
+  tool_action :flush_all,
+    label: "Flush All Caches",
+    icon: "trash",
+    confirm: true,
+    condition: ->(user) { user&.admin? }
+
+  tool_action :flush_key,
+    label: "Flush Specific Key",
+    form_fields: [
+      { name: :cache_key, type: :text, required: true, placeholder: "e.g. users/123" }
+    ]
+
+  def flush_all(ctx)
+    Rails.cache.clear
+    ctx.flash[:notice] = "All caches flushed"
+  end
+
+  def flush_key(ctx)
+    key = ctx.action_params(:cache_key)[:cache_key]
+    Rails.cache.delete(key)
+    ctx.flash[:notice] = "Key '#{key}' flushed"
+  end
+end
+```
+
+**ToolContext** is injected into 1-arg methods and provides:
+- `ctx.params` — raw request params
+- `ctx.current_user` — the current admin user
+- `ctx.flash` — flash messages
+- `ctx.action_params(:key1, :key2)` — safe param extraction (strong params)
+
+**Authorization:** The `condition:` proc receives the current user. If it returns false, the action returns 403 and is hidden from the UI.
+
+**Form fields:** Actions with `form_fields:` render a form page before execution. Supported types: `:text`, `:textarea`, `:number`, `:boolean`, `:date`, `:datetime`, `:select`.
+
 ### Menu Options
 
 | Option | Type | Description |
@@ -192,6 +235,14 @@ Tools are automatically routed at `/admin/tools/:tool_name`:
 | `icon` | String | Heroicon name |
 | `priority` | Integer | Sort order (lower = higher in sidebar) |
 | `group` | String | Sidebar group heading (defaults to "Tools") |
+
+### Tool Routes
+
+| Route | Controller Action | Description |
+|-------|-------------------|-------------|
+| `GET /admin/tools/:tool_name` | `tools#show` | Render the tool's show view |
+| `GET /admin/tools/:tool_name/:action_name/form` | `tools#action_form` | Render action form |
+| `POST /admin/tools/:tool_name/:action_name` | `tools#execute` | Execute a tool action |
 
 ### ToolRegistry API
 

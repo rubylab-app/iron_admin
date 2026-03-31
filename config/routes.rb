@@ -7,6 +7,7 @@ IronAdmin::Engine.routes.draw do
   get ":resource_name/export", to: "exports#show", as: :export
 
   get "tools/:tool_name", to: "tools#show", as: :tool
+  get "tools/:tool_name/:action_name/form", to: "tools#action_form", as: :tool_action_form
   post "tools/:tool_name/:action_name", to: "tools#execute", as: :tool_action
 
   get ":resource_name/bulk_actions/:action_name/form", to: "resources#bulk_action_form", as: :resource_bulk_action_form
