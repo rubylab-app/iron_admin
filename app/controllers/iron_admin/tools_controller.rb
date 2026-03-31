@@ -19,8 +19,7 @@ module IronAdmin
 
       if declared
         return head(:forbidden) unless declared.allowed?(iron_admin_current_user)
-
-        run_tool_action(declared)
+        return unless run_tool_action(declared)
       elsif @tool_class.method_defined?(action_name)
         run_legacy_action(action_name)
       else
@@ -48,8 +47,14 @@ module IronAdmin
     end
 
     def run_tool_action(declared)
+      unless @tool_class.method_defined?(declared.name)
+        head(:not_found)
+        return nil
+      end
+
       tool_instance = build_tool_instance
       dispatch_with_arity(tool_instance, declared.name)
+      true
     end
 
     def run_legacy_action(action_name)

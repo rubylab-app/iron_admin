@@ -229,4 +229,24 @@ RSpec.describe "Tool system enhancements", type: :request do
       expect(response.body).not_to include("Hidden")
     end
   end
+
+  describe "declared action without method implementation" do
+    let(:tool_class) do
+      Class.new(IronAdmin::Tool) do
+        def self.name = "MissingMethodTool"
+
+        menu label: "Missing Method"
+
+        tool_action :unimplemented_action, label: "Ghost"
+        # No def unimplemented_action — intentionally missing
+      end
+    end
+
+    before { IronAdmin::ToolRegistry.register(tool_class) }
+
+    it "returns 404 instead of 500" do
+      post tool_action_path("missing_method", "unimplemented_action"), as: :html
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
