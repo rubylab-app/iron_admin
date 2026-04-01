@@ -261,6 +261,10 @@
             = check_box_tag "record[#{assoc[:name].to_s.singularize}_ids][]", option.id, selected_ids.include?(option.id), class: cp_checkbox_class
             %span.text-sm{ class: cp_body_text }= display_record_label(option, assoc[:display])
 
+  - @resource_class.nested_associations.each do |nested_assoc|
+    .mt-6
+      = render IronAdmin::Form::NestedFormComponent.new(form: f, nested_association: nested_assoc, record: @record, current_user: iron_admin_current_user)
+
   .flex.items-center.gap-3.mt-8.pt-6.border-t{ class: t.card_border }
     = f.submit class: cp_btn_primary_lg
     = link_to I18n.t("iron_admin.form.cancel_button"), resources_path(@resource_class.resource_name),

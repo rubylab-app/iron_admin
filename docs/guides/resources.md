@@ -317,6 +317,37 @@ class OrderResource < IronAdmin::Resource
 end
 ```
 
+## Nested Forms
+
+For `has_many` and `has_one` associations, you can enable inline nested editing directly on the parent form. The model must declare `accepts_nested_attributes_for` for the association.
+
+```ruby
+class OrderResource < IronAdmin::Resource
+  # has_many with nested editing
+  has_many :line_items, nested: true, allow_destroy: true
+
+  # Explicit field selection
+  has_many :addresses, nested: true, fields: [:street, :city, :zip]
+
+  # With drag-and-drop ordering (via Stimulus)
+  has_many :sections, nested: true, position_field: :position
+
+  # has_one nested
+  has_one :profile, nested: true
+end
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `nested` | `false` | Enable inline nested form for the association |
+| `allow_destroy` | `true` | Allow removing child records from the form |
+| `fields` | auto-inferred | Explicit list of child fields to display (excludes `id`, timestamps, and FK by default) |
+| `position_field` | `nil` | Column name for drag-and-drop reordering |
+
+Nested forms use the existing `create` and `update` endpoints -- no additional routes are required. Child attributes are submitted as standard Rails nested attributes (`*_attributes` params).
+
 ## Menu Configuration
 
 ```ruby

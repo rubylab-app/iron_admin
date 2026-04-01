@@ -40,6 +40,8 @@ module IronAdmin
   # @see IronAdmin::Field For field configuration options
   # @see IronAdmin::Policy For authorization options
   class Resource
+    include Concerns::Nestable
+
     class_attribute :field_overrides, default: {}
     class_attribute :_searchable_columns, default: nil
     class_attribute :_unsearchable_columns, default: []
@@ -527,24 +529,7 @@ module IronAdmin
       #   has_many :orders
       #   has_many :comments, fields: [:id, :body, :created_at]
       #
-      # @return [void]
-      def has_many(name, **options)
-        self.defined_associations = defined_associations.merge(name => { kind: :has_many, **options })
-      end
-
-      # Declares a has_one association for this resource.
-      #
-      # @param name [Symbol] The association name
-      # @param options [Hash] Configuration options
-      # @option options [Class] :resource The associated resource class
-      #
-      # @example
-      #   has_one :profile
-      #
-      # @return [void]
-      def has_one(name, **options)
-        self.defined_associations = defined_associations.merge(name => { kind: :has_one, **options })
-      end
+      # has_many and has_one are defined in Concerns::Nestable
 
       # Declares a has_and_belongs_to_many association for this resource.
       #

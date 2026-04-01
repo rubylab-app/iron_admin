@@ -1,0 +1,65 @@
+- t = IronAdmin.configuration.theme
+
+%div.relative.border.rounded-lg.p-4.mb-3{ class: "#{t.card_border} #{t.card_bg}", data: { "cp-nested-form-target": "row" } }
+
+  -# Drag handle (only when sortable)
+  - if nested_association.position_field
+    .absolute.top-2.left-2.cursor-grab.text-gray-400{ data: { "cp-nested-form-target": "dragHandle" } }
+      = heroicon "bars-3", variant: :mini, options: { class: "h-5 w-5" }
+    = child_f.hidden_field nested_association.position_field, data: { "cp-nested-form-target": "positionField" }
+
+  -# Remove button (only when allow_destroy)
+  - if nested_association.allow_destroy
+    .absolute.top-2.right-2
+      %button.text-gray-400.transition.cursor-pointer{ type: "button", class: "hover:text-red-500", aria: { label: I18n.t("iron_admin.nested_form.remove_button", default: "Remove") }, data: { action: "cp-nested-form#removeRow" } }
+        = heroicon "x-mark", variant: :mini, options: { class: "h-5 w-5" }
+    = child_f.hidden_field :_destroy, value: "0", data: { "cp-nested-form-target": "destroyField" }
+
+  -# Hidden id field for persisted records
+  - if child.persisted?
+    = child_f.hidden_field :id
+
+  -# Field grid
+  %div{ class: "grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 #{nested_association.position_field ? 'pl-6' : ''}" }
+    - nested_association.fields.each do |field|
+      - next unless field.visible?(current_user)
+      - next if field.readonly?(current_user)
+      - has_error = child.errors[field.name].any?
+      - input_class = "block w-full px-3 py-2 text-sm border #{t.input_border} #{t.border_radius} shadow-sm outline-none transition duration-150 ease-in-out #{t.input_focus}"
+      - input_class += " !border-red-400" if has_error
+      %div
+        %label.block.text-xs.font-medium.text-gray-500.mb-1
+          = field.name.to_s.humanize
+        - case field.type
+        - when :belongs_to
+          - fk = field.options[:foreign_key]
+          - assoc_class = field.options[:association_class]
+          - if assoc_class
+            = child_f.select fk, options_from_collection_for_select(assoc_class.all, :id, :name, child.public_send(fk)), { include_blank: true }, class: input_class
+          - else
+            = child_f.number_field fk, placeholder: field.name.to_s.humanize, class: input_class
+        - when :textarea
+          = child_f.text_area field.name, rows: 2, class: input_class
+        - when :number
+          = child_f.number_field field.name, class: input_class
+        - when :boolean
+          .flex.items-center.gap-2
+            = child_f.check_box field.name, class: "rounded border-gray-300"
+        - when :datetime, :date
+          = child_f.datetime_local_field field.name, class: input_class
+        - when :select, :badge
+          - choices = []
+          - if field.type == :badge
+            - colors = field.options[:colors]
+            - if colors
+              - choices = colors.keys.map { |c| [c.to_s.humanize, c] }
+            - elsif child.class.respond_to?(:defined_enums)
+              - choices = child.class.defined_enums[field.name.to_s]&.keys&.map { |c| [c.humanize, c] } || []
+          - elsif field.options[:choices]
+            - choices = field.options[:choices].map { |c| [c.humanize, c] }
+          = child_f.select field.name, choices, { include_blank: true }, class: input_class
+        - else
+          = child_f.text_field field.name, placeholder: field.name.to_s.humanize, class: input_class
+
+        - if has_error
+          %p.text-xs.text-red-600.mt-1= child.errors[field.name].join(", ")

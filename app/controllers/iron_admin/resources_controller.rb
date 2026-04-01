@@ -22,6 +22,7 @@ module IronAdmin
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
     include Concerns::Filterable
+    include Concerns::NestedPermittable
     include Concerns::Searchable
 
     before_action :set_resource_class
@@ -320,6 +321,11 @@ module IronAdmin
       end
 
       @resource_class.habtm_associations.each { |a| permitted << { "#{a[:name].to_s.singularize}_ids": [] } }
+
+      @resource_class.nested_associations.each do |nested|
+        permitted << { "#{nested.name}_attributes": build_nested_permit_list(nested) }
+      end
+
       params.require(:record).permit(*permitted) # rubocop:disable Rails/StrongParametersExpect
     end
 

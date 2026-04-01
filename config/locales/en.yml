@@ -55,6 +55,9 @@ en:
       cancel_button: "Cancel"
     navigation:
       dashboard: "Dashboard"
+    nested_form:
+      add_button: "Add row"
+      remove_button: "Remove"
     filters:
       "true": "Yes"
       "false": "No"
