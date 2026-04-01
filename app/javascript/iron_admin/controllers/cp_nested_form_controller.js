@@ -9,7 +9,6 @@ export default class extends Controller {
   }
 
   connect() {
-    this.rowIndex = this.rowTargets.length
     if (this.sortableValue) this.initSortable()
   }
 
@@ -79,6 +78,7 @@ export default class extends Controller {
 
     row.addEventListener("dragstart", (e) => {
       e.dataTransfer.effectAllowed = "move"
+      e.dataTransfer.setData("text/plain", "")
       row.classList.add("opacity-50")
       this.draggedRow = row
     })

@@ -5,7 +5,7 @@ module IronAdmin
   # for a given association before allowing nested form configuration.
   #
   # Called during Resource.nested_associations resolution. Raises ArgumentError
-  # in dev/test if the model is misconfigured.
+  # if the model is misconfigured.
   #
   # @example
   #   NestedAttributesValidator.validate!(Order, :line_items)

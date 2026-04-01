@@ -15,7 +15,7 @@ module IronAdmin
           self.defined_associations = defined_associations.merge(
             name => {
               kind: :has_many, nested: nested, allow_destroy: allow_destroy,
-              position_field: position_field&.to_sym, fields: fields, **options,
+              position_field: position_field&.to_sym, fields: fields&.map(&:to_sym), **options,
             }
           )
         end
@@ -24,7 +24,7 @@ module IronAdmin
           self.defined_associations = defined_associations.merge(
             name => {
               kind: :has_one, nested: nested, allow_destroy: allow_destroy,
-              fields: fields, **options,
+              fields: fields&.map(&:to_sym), **options,
             }
           )
         end
@@ -34,7 +34,9 @@ module IronAdmin
       module NestedReader
         def nested_associations
           defined_associations.select { |_, v| v[:nested] }.map do |assoc_name, config|
-            reflection = model.reflect_on_association(assoc_name)
+            reflection = adapter.association(assoc_name)
+            raise ArgumentError, "Unknown association #{assoc_name} for #{model.name}" unless reflection
+
             NestedAttributesValidator.validate!(model, assoc_name)
             fields = resolve_nested_fields(config, reflection.klass, reflection.foreign_key)
 

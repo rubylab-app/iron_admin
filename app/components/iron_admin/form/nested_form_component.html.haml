@@ -14,9 +14,10 @@
   -# Hidden template for JS cloning of new rows
   %template{ id: "#{name}-nested-template" }
     - if form
-      = form.fields_for name, nested_association.reflection.klass.new, child_index: template_index do |child_f|
+      - new_child = nested_association.reflection.klass.new
+      = form.fields_for name, new_child, child_index: template_index do |child_f|
         = render "iron_admin/form/nested_row", child_f: child_f, nested_association: nested_association,
-          child: nested_association.reflection.klass.new, current_user: current_user
+          child: new_child, current_user: current_user
 
   -# Existing rows container
   %div{ data: { "cp-nested-form-target": "rowsContainer" } }

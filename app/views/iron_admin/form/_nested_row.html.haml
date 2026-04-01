@@ -11,7 +11,7 @@
   -# Remove button (only when allow_destroy)
   - if nested_association.allow_destroy
     .absolute.top-2.right-2
-      %button.text-gray-400.transition.cursor-pointer{ type: "button", class: "hover:text-red-500", data: { action: "cp-nested-form#removeRow" } }
+      %button.text-gray-400.transition.cursor-pointer{ type: "button", class: "hover:text-red-500", aria: { label: I18n.t("iron_admin.nested_form.remove_button", default: "Remove") }, data: { action: "cp-nested-form#removeRow" } }
         = heroicon "x-mark", variant: :mini, options: { class: "h-5 w-5" }
     = child_f.hidden_field :_destroy, value: "0", data: { "cp-nested-form-target": "destroyField" }
 
@@ -31,6 +31,13 @@
         %label.block.text-xs.font-medium.text-gray-500.mb-1
           = field.name.to_s.humanize
         - case field.type
+        - when :belongs_to
+          - fk = field.options[:foreign_key]
+          - assoc_class = field.options[:association_class]
+          - if assoc_class
+            = child_f.select fk, options_from_collection_for_select(assoc_class.all, :id, :name, child.public_send(fk)), { include_blank: true }, class: input_class
+          - else
+            = child_f.number_field fk, placeholder: field.name.to_s.humanize, class: input_class
         - when :textarea
           = child_f.text_area field.name, rows: 2, class: input_class
         - when :number
@@ -42,8 +49,12 @@
           = child_f.datetime_local_field field.name, class: input_class
         - when :select, :badge
           - choices = []
-          - if field.type == :badge && child.class.respond_to?(:defined_enums)
-            - choices = child.class.defined_enums[field.name.to_s]&.keys&.map { |c| [c.humanize, c] } || []
+          - if field.type == :badge
+            - colors = field.options[:colors]
+            - if colors
+              - choices = colors.keys.map { |c| [c.to_s.humanize, c] }
+            - elsif child.class.respond_to?(:defined_enums)
+              - choices = child.class.defined_enums[field.name.to_s]&.keys&.map { |c| [c.humanize, c] } || []
           - elsif field.options[:choices]
             - choices = field.options[:choices].map { |c| [c.humanize, c] }
           = child_f.select field.name, choices, { include_blank: true }, class: input_class
