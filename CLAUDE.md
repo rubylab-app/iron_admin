@@ -153,3 +153,16 @@ All UI classes are configurable via `IronAdmin.configure { |c| c.theme { |t| ...
 ### Rubocop Configuration
 
 **NEVER modify `.rubocop.yml` unless absolutely necessary.** Always refactor the code to comply with Rubocop rules instead of adding exceptions. Adding exceptions leads to bad practices accumulating over time. Only modify `.rubocop.yml` as a last resort when there is genuinely no other way to fix the issue.
+
+### Copilot Code Review
+
+After creating a pull request, **wait 10 minutes** and then check if GitHub Copilot has left review comments. Copilot reviews every PR automatically via the repository ruleset.
+
+- **If comments are valid:** apply the fixes, commit, and push to the PR branch.
+- **If comments are invalid:** dismiss them with a brief justification explaining why.
+
+Do NOT merge a PR without first checking for Copilot feedback.
+
+### Git Workflow
+
+**NEVER push directly to main.** All changes must go through a feature branch and pull request — no exceptions, not even for documentation or configuration files.
