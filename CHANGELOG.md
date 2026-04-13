@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Mongoid Adapter** (#50) — Full MongoDB support via a new `IronAdmin::Adapters::Mongoid` adapter:
+  - Implements all 36 adapter interface methods (31 original + 5 new)
+  - `ColumnDescriptor` maps Mongoid field types to IronAdmin symbol types
+  - `AssociationWrapper` normalizes embedded associations (`embeds_many` → `:has_many`, `embeds_one` → `:has_one`)
+  - `MongoidQueryBuilder` for operator filters using `$regex` and MongoDB comparison operators
+  - Case-insensitive regex search with `Regexp.escape` for injection prevention
+  - Transaction fallback for standalone MongoDB (yields without wrapping)
+  - `unscope_column` rebuilds criteria from selector hash
+  - Configure per-resource: `self.adapter_class = :mongoid`
+
+- **Adapter-Agnostic Controller Layer** (#50) — Controllers no longer reference ActiveRecord classes:
+  - Custom exceptions: `IronAdmin::RecordNotFound`, `IronAdmin::Rollback`
+  - `Adapters::Registry` for lazy loading adapters by symbol (`:active_record`, `:mongoid`)
+  - `Adapters::Base` extended with 5 new abstract methods: `record_changes`, `wrap_rollback`, `query_builder_class`, `pagy_method`, `cast_boolean`
+  - `Concerns::Scopeable` extracted for scope building and adapter-agnostic record finding
+  - `BaseQueryBuilder` abstract class with `ActiveRecordQueryBuilder` and `MongoidQueryBuilder` subclasses
+  - `Filterable` concern routes to adapter's query builder, boolean casting, and date range filtering
+
 - **Nested Forms** (#23) — Inline nested form support for has_many/has_one associations:
   - `nested: true` option on `has_many` and `has_one` DSL
   - `NestedAssociation` value object, `NestedAttributesValidator` guard
@@ -55,6 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GET routes for action form and bulk action form rendering
   - `Concerns::ActionExecutable` extracted for arity dispatch logic
   - HAML form views with all ActionField types
+
+### Breaking changes
+
+- **Exception types changed.** `ActiveRecord::RecordNotFound` is now raised as `IronAdmin::RecordNotFound` from adapters and controllers. If you rescue `ActiveRecord::RecordNotFound` in middleware or custom code that wraps IronAdmin, update to rescue `IronAdmin::RecordNotFound` instead.
+- **`adapter_class` default is now a symbol.** `Resource.adapter_class` defaults to `:active_record` (a Symbol) instead of `IronAdmin::Adapters::ActiveRecord` (a Class). Tests that assert `adapter_class == IronAdmin::Adapters::ActiveRecord` must change to `adapter_class == :active_record`. Custom adapters passed as classes still work.
+- **`Filters::QueryBuilder` is now `Filters::ActiveRecordQueryBuilder`.** The original `QueryBuilder` constant is preserved as an alias for backward compatibility, but code that subclasses `QueryBuilder` should update to `ActiveRecordQueryBuilder`.
+- **New abstract methods on `Adapters::Base`.** If you have a custom adapter, implement: `record_changes(record)`, `wrap_rollback(&)`, `query_builder_class`, `pagy_method`, `cast_boolean(value)`.
 
 ### Migration notes from 0.5.0
 
