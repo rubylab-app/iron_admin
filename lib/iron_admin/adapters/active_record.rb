@@ -64,7 +64,11 @@ module IronAdmin
 
       delegate :all, to: :model_class
 
-      delegate :find, to: :model_class
+      def find(id)
+        model_class.find(id)
+      rescue ::ActiveRecord::RecordNotFound => e
+        raise IronAdmin::RecordNotFound, e.message
+      end
 
       delegate :find_by, to: :model_class
 
@@ -145,6 +149,30 @@ module IronAdmin
 
       def find_each(scope, &)
         scope.find_each(&)
+      end
+
+      # --- Adapter-Agnostic Interface ---
+
+      def record_changes(record)
+        record.saved_changes
+      end
+
+      def wrap_rollback
+        yield
+      rescue IronAdmin::Rollback
+        raise ::ActiveRecord::Rollback
+      end
+
+      def query_builder_class
+        IronAdmin::Filters::ActiveRecordQueryBuilder
+      end
+
+      def pagy_method
+        :pagy
+      end
+
+      def cast_boolean(value)
+        ::ActiveModel::Type::Boolean.new.cast(value)
       end
 
       private

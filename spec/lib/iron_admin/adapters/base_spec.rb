@@ -130,4 +130,26 @@ RSpec.describe IronAdmin::Adapters::Base do
       expect { adapter.find_each(nil) { nil } }.to raise_error(NotImplementedError)
     end
   end
+
+  describe "adapter-agnostic interface" do
+    it "raises NotImplementedError for #record_changes" do
+      expect { adapter.record_changes(nil) }.to raise_error(NotImplementedError)
+    end
+
+    it "raises NotImplementedError for #wrap_rollback" do
+      expect { adapter.wrap_rollback { nil } }.to raise_error(NotImplementedError)
+    end
+
+    it "raises NotImplementedError for #query_builder_class" do
+      expect { adapter.query_builder_class }.to raise_error(NotImplementedError)
+    end
+
+    it "raises NotImplementedError for #pagy_method" do
+      expect { adapter.pagy_method }.to raise_error(NotImplementedError)
+    end
+
+    it "raises NotImplementedError for #cast_boolean" do
+      expect { adapter.cast_boolean("true") }.to raise_error(NotImplementedError)
+    end
+  end
 end

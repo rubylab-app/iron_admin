@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "iron_admin/version"
+require "iron_admin/errors"
 require "iron_admin/configuration"
 require "iron_admin/adapters/base"
 require "iron_admin/adapters/active_record"
@@ -13,6 +14,7 @@ require "iron_admin/nested_association"
 require "iron_admin/nested_attributes_validator"
 require "iron_admin/concerns/nestable"
 require "iron_admin/filters/query_builder"
+require "iron_admin/filters/active_record_query_builder"
 require "iron_admin/resource"
 require "iron_admin/resource_registry"
 require "iron_admin/tool"

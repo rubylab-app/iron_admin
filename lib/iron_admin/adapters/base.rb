@@ -247,6 +247,41 @@ module IronAdmin
       def find_each(_scope, &)
         raise NotImplementedError
       end
+
+      # --- Adapter-Agnostic Interface ---
+
+      # Returns the changes hash after a save/update.
+      # @param record [Object] The record
+      # @return [Hash] Changed attributes
+      def record_changes(_record)
+        raise NotImplementedError
+      end
+
+      # Executes a block, converting IronAdmin::Rollback to the adapter-native rollback.
+      # @yield The block to run
+      # @return [void]
+      def wrap_rollback(&)
+        raise NotImplementedError
+      end
+
+      # Returns the query builder class for operator-based filters.
+      # @return [Class] A QueryBuilder subclass
+      def query_builder_class
+        raise NotImplementedError
+      end
+
+      # Returns the Pagy backend method name for this adapter.
+      # @return [Symbol] :pagy or :pagy_mongoid
+      def pagy_method
+        raise NotImplementedError
+      end
+
+      # Casts a string value to a boolean.
+      # @param value [String] The value to cast
+      # @return [Boolean]
+      def cast_boolean(_value)
+        raise NotImplementedError
+      end
     end
   end
 end
