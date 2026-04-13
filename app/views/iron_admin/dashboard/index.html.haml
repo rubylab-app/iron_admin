@@ -5,7 +5,7 @@
     - if @dashboard.defined_metrics.any?
       .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-4.gap-6.mb-8
         - @dashboard.defined_metrics.each do |metric|
-          = render IronAdmin::Dashboards::MetricCardComponent.new(name: metric[:name], value: metric[:block].call, format: metric[:format])
+          = render IronAdmin::Dashboards::MetricCardComponent.new(name: metric[:name], value: metric[:block].call, format: metric[:format], icon: metric[:icon])
 
     - if @dashboard.defined_charts.any?
       = javascript_include_tag "chart.min", defer: true, onload: "document.dispatchEvent(new CustomEvent('chartjs:loaded'))"

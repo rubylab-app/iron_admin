@@ -85,8 +85,8 @@ module IronAdmin
       #   end
       #
       # @return [void]
-      def metric(name, format: :number, &block)
-        self.defined_metrics = defined_metrics + [{ name: name, format: format, block: block }]
+      def metric(name, format: :number, icon: nil, &block)
+        self.defined_metrics = defined_metrics + [{ name: name, format: format, icon: icon, block: block }]
       end
 
       # Defines a chart for the dashboard.

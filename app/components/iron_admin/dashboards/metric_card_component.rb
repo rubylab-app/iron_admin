@@ -7,10 +7,12 @@ module IronAdmin
       # @param name [String, Symbol] Metric name
       # @param value [Numeric] Metric value
       # @param format [Symbol] Format (:number, :currency, :percentage)
-      def initialize(name:, value:, format: :number)
+      # @param icon [String, nil] Optional Heroicon name (e.g., "users", "currency-dollar")
+      def initialize(name:, value:, format: :number, icon: nil)
         @name = name
         @value = value
         @format = format
+        @icon = icon
       end
 
       # @api private
@@ -28,6 +30,10 @@ module IronAdmin
       def label
         @name.to_s.humanize
       end
+
+      # @api private
+      # @return [String, nil] Heroicon name
+      attr_reader :icon
     end
   end
 end
