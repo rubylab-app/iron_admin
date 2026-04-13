@@ -372,7 +372,7 @@ end
 
 ## Custom Adapters
 
-IronAdmin uses an adapter pattern to decouple from ActiveRecord. By default, `Resource.adapter` returns an `Adapters::ActiveRecord` instance. You can create custom adapters for other ORMs by subclassing `Adapters::Base`, which defines 31 interface methods covering schema introspection, querying, CRUD, search, transactions, and batch operations.
+IronAdmin uses an adapter pattern to decouple from any specific ORM. By default, `Resource.adapter` returns an `Adapters::ActiveRecord` instance. IronAdmin also ships with an `Adapters::Mongoid` adapter for MongoDB. You can create custom adapters for other ORMs by subclassing `Adapters::Base`, which defines 36 interface methods covering schema introspection, querying, CRUD, search, transactions, batch operations, and adapter-agnostic helpers.
 
 ### Creating an Adapter
 

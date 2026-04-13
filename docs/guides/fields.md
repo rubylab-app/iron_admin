@@ -1,6 +1,6 @@
 # Fields
 
-IronAdmin automatically infers field types from your ActiveRecord model's database schema.
+IronAdmin automatically infers field types from your model's schema (ActiveRecord columns or Mongoid fields).
 
 ## Automatic Inference
 
