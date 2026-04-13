@@ -121,8 +121,8 @@ module IronAdmin
       #   end
       #
       # @return [void]
-      def chart(name, type: :line, colors: nil, &block)
-        self.defined_charts = defined_charts + [{ name: name, type: type, colors: colors, block: block }]
+      def chart(name, type: :line, colors: nil, label: nil, &block)
+        self.defined_charts = defined_charts + [{ name: name, type: type, colors: colors, label: label, block: block }]
       end
 
       # Displays a list of recent records from a resource.

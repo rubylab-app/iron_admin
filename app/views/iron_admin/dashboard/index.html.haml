@@ -14,7 +14,7 @@
           - chart_data = chart[:block].call
           - labels = chart_data.keys
           - data = chart_data.values
-          = render IronAdmin::Dashboards::ChartComponent.new(title: chart[:name].to_s.humanize, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
+          = render IronAdmin::Dashboards::ChartComponent.new(title: chart[:label] || chart[:name].to_s.humanize, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
 
     - if @dashboard.defined_recents.any?
       .space-y-6

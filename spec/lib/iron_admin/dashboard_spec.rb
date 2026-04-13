@@ -50,6 +50,21 @@ RSpec.describe IronAdmin::Dashboard do
     it "stores per-chart colors when specified" do
       expect(TestDashboard.defined_charts.last[:colors]).to eq(["#10b981", "#3b82f6"])
     end
+
+    it "stores label as nil when not specified" do
+      expect(TestDashboard.defined_charts.first[:label]).to be_nil
+    end
+
+    it "stores label when specified" do
+      dashboard_class = Class.new(IronAdmin::Dashboard) do
+        chart :projects_by_status, type: :bar, label: "Projects by Status" do
+          { "Draft" => 2, "Active" => 5 }
+        end
+      end
+
+      chart = dashboard_class.defined_charts.first
+      expect(chart[:label]).to eq("Projects by Status")
+    end
   end
 
   describe "recents" do
