@@ -59,6 +59,11 @@ RSpec.describe IronAdmin::Policy do
       it "denies when condition is not met" do
         expect(policy.action_allowed?(:archive, :user)).to be(false)
       end
+
+      it "handles string action names by normalizing to symbol" do
+        expect(policy.action_allowed?("archive", :admin)).to be(true)
+        expect(policy.action_allowed?("archive", :user)).to be(false)
+      end
     end
 
     context "when custom action has an unconditional allow rule" do

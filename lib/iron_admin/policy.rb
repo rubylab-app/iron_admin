@@ -146,9 +146,11 @@ module IronAdmin
     #   policy.action_allowed?(:refund, current_user)
     def action_allowed?(action_name, user)
       return true unless @configured
-      return true unless @allow_rules.key?(action_name)
 
-      condition = @allow_rules[action_name]
+      action = action_name.to_sym
+      return true unless @allow_rules.key?(action)
+
+      condition = @allow_rules[action]
       condition.nil? || condition.call(user)
     end
   end
