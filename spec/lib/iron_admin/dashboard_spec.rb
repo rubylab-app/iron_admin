@@ -35,6 +35,22 @@ RSpec.describe IronAdmin::Dashboard do
       metric = TestDashboard.defined_metrics.last
       expect(metric[:format]).to eq(:currency)
     end
+
+    it "stores icon as nil when not specified" do
+      metric = TestDashboard.defined_metrics.first
+      expect(metric).to include(icon: nil)
+    end
+
+    it "stores icon when specified" do
+      dashboard_class = Class.new(IronAdmin::Dashboard) do
+        metric :active_users, icon: "users" do
+          10
+        end
+      end
+
+      metric = dashboard_class.defined_metrics.first
+      expect(metric[:icon]).to eq("users")
+    end
   end
 
   describe "charts" do

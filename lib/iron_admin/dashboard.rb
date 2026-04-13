@@ -66,11 +66,12 @@ module IronAdmin
       #   - :number - Plain number with thousands separators
       #   - :currency - Currency format (uses Rails number_to_currency)
       #   - :percentage - Percentage format
+      # @param icon [String, nil] Optional Heroicon name for visual context (e.g., "users", "currency-dollar")
       # @yield Block that computes and returns the metric value
       # @yieldreturn [Numeric] The metric value
       #
-      # @example User count metric
-      #   metric :total_users, format: :number do
+      # @example User count metric with icon
+      #   metric :total_users, format: :number, icon: "users" do
       #     User.count
       #   end
       #
@@ -79,14 +80,9 @@ module IronAdmin
       #     Order.where(status: "completed").sum(:total)
       #   end
       #
-      # @example Conversion rate metric
-      #   metric :conversion_rate, format: :percentage do
-      #     (Order.count.to_f / Visit.count * 100).round(1)
-      #   end
-      #
       # @return [void]
-      def metric(name, format: :number, &block)
-        self.defined_metrics = defined_metrics + [{ name: name, format: format, block: block }]
+      def metric(name, format: :number, icon: nil, &block)
+        self.defined_metrics = defined_metrics + [{ name: name, format: format, icon: icon, block: block }]
       end
 
       # Defines a chart for the dashboard.

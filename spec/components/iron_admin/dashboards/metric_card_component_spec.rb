@@ -14,4 +14,14 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
 
     expect(result.text).to include("$1,500.50")
   end
+
+  it "exposes icon attribute when provided" do
+    component = described_class.new(name: :total_users, value: 42, format: :number, icon: "users")
+    expect(component.icon).to eq("users")
+  end
+
+  it "has nil icon when not provided" do
+    component = described_class.new(name: :total_users, value: 42, format: :number)
+    expect(component.icon).to be_nil
+  end
 end
