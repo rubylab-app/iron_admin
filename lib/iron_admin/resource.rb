@@ -59,7 +59,7 @@ module IronAdmin
     class_attribute :denied_crud_actions, default: []
     class_attribute :defined_associations, default: {}
     class_attribute :model_class_override, default: nil
-    class_attribute :adapter_class, default: IronAdmin::Adapters::ActiveRecord
+    class_attribute :adapter_class, default: :active_record
     class_attribute :_soft_delete_scopes, default: []
 
     class << self
@@ -83,7 +83,7 @@ module IronAdmin
       #
       # @return [IronAdmin::Adapters::Base] The adapter instance
       def adapter
-        @adapter ||= adapter_class.new(model)
+        @adapter ||= resolve_adapter_class.new(model)
       end
 
       # Returns the ActiveRecord model class for this resource.
@@ -718,6 +718,15 @@ module IronAdmin
       private_constant :SKIP_FILTER_COLUMNS
 
       private
+
+      # Resolves the adapter class from a symbol or class.
+      # Symbols are resolved via the Adapters::Registry (lazy loading).
+      # Classes are used directly (for custom adapters).
+      def resolve_adapter_class
+        return adapter_class unless adapter_class.is_a?(Symbol)
+
+        Adapters::Registry.resolve(adapter_class)
+      end
 
       # Resolves the resource class for an association configuration.
       # Accepts Class, String, or falls back to ResourceRegistry lookup.
