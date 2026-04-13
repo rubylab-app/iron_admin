@@ -154,8 +154,12 @@ Create a tool class that inherits from `IronAdmin::Tool`:
 
 ```ruby
 # app/iron_admin/tools/report_tool.rb
-class ReportTool < IronAdmin::Tool
-  menu label: "Reports", icon: "chart-bar", priority: 1, group: "Analytics"
+module IronAdmin
+  module Tools
+    class ReportTool < IronAdmin::Tool
+      menu label: "Reports", icon: "chart-bar", priority: 1, group: "Analytics"
+    end
+  end
 end
 ```
 
@@ -169,7 +173,7 @@ Create a view template for your tool at:
 app/views/iron_admin/tools/<tool_name>/show.html.erb
 ```
 
-For example, `ReportTool` (which has `tool_name` of `"report"`) would use:
+For example, `IronAdmin::Tools::ReportTool` (which has `tool_name` of `"report"`) would use:
 
 ```
 app/views/iron_admin/tools/report/show.html.erb
@@ -189,30 +193,35 @@ Tools are automatically routed at `/admin/tools/:tool_name`:
 Use `tool_action` to declare actions with metadata, form fields, and authorization:
 
 ```ruby
-class CacheManagerTool < IronAdmin::Tool
-  menu label: "Cache Manager", icon: "server", group: "System"
+# app/iron_admin/tools/cache_manager_tool.rb
+module IronAdmin
+  module Tools
+    class CacheManagerTool < IronAdmin::Tool
+      menu label: "Cache Manager", icon: "server", group: "System"
 
-  tool_action :flush_all,
-    label: "Flush All Caches",
-    icon: "trash",
-    confirm: true,
-    condition: ->(user) { user&.admin? }
+      tool_action :flush_all,
+        label: "Flush All Caches",
+        icon: "trash",
+        confirm: true,
+        condition: ->(user) { user&.admin? }
 
-  tool_action :flush_key,
-    label: "Flush Specific Key",
-    form_fields: [
-      { name: :cache_key, type: :text, required: true, placeholder: "e.g. users/123" }
-    ]
+      tool_action :flush_key,
+        label: "Flush Specific Key",
+        form_fields: [
+          { name: :cache_key, type: :text, required: true, placeholder: "e.g. users/123" }
+        ]
 
-  def flush_all(ctx)
-    Rails.cache.clear
-    ctx.flash[:notice] = "All caches flushed"
-  end
+      def flush_all(ctx)
+        Rails.cache.clear
+        ctx.flash[:notice] = "All caches flushed"
+      end
 
-  def flush_key(ctx)
-    key = ctx.action_params(:cache_key)[:cache_key]
-    Rails.cache.delete(key)
-    ctx.flash[:notice] = "Key '#{key}' flushed"
+      def flush_key(ctx)
+        key = ctx.action_params(:cache_key)[:cache_key]
+        Rails.cache.delete(key)
+        ctx.flash[:notice] = "Key '#{key}' flushed"
+      end
+    end
   end
 end
 ```

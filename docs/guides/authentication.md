@@ -73,7 +73,7 @@ Per-resource access control:
 class UserResource < IronAdmin::Resource
   policy do
     allow :read, :create, :update
-    deny :delete, if: ->(record) { record.admin? }
+    deny :destroy, if: ->(user) { !user.superadmin? }
   end
 end
 ```
@@ -99,13 +99,14 @@ end
 ### Conditional Policies
 
 - `allow` with `if:` receives the **current user**
-- `deny` with `if:` receives the **record**
+- `deny` with `if:` receives the **current user**
+- Deny rules take precedence over allow rules
 
 ```ruby
 policy do
   allow :read
   allow :update, if: ->(user) { user.admin? || user.manager? }
-  deny :delete, if: ->(record) { record.protected? }
+  deny :destroy, if: ->(user) { !user.superadmin? }
 end
 ```
 

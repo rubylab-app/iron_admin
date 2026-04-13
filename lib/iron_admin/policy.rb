@@ -4,29 +4,26 @@ module IronAdmin
   # Authorization policy for controlling access to resource actions.
   #
   # Policies define which actions users can perform on resources.
-  # They use a simple DSL with `allow` to grant permissions.
+  # They use a simple DSL with `allow` and `deny` to manage permissions.
   #
   # When no policy is defined for a resource, all actions are allowed by default.
   # Once a policy block is provided, actions must be explicitly allowed.
+  # Deny rules take precedence over allow rules.
   #
   # @example Basic policy in a resource
   #   class UserResource < IronAdmin::Resource
   #     policy do
   #       allow :read                           # Everyone can view
   #       allow :create, :update, if: ->(user) { user.admin? }
-  #       allow :delete, if: ->(user) { user.superadmin? }
+  #       deny :destroy                         # No one can delete
   #     end
   #   end
   #
-  # @example Policy with custom actions
+  # @example Policy with conditional deny
   #   class OrderResource < IronAdmin::Resource
-  #     action :refund do |record|
-  #       record.refund!
-  #     end
-  #
   #     policy do
-  #       allow :read, :update
-  #       allow :refund, if: ->(user) { user.finance_team? }
+  #       allow :read, :create, :update, :destroy
+  #       deny :destroy, if: ->(user) { !user.superadmin? }
   #     end
   #   end
   #
@@ -61,6 +58,7 @@ module IronAdmin
     #   end
     def initialize(&)
       @allow_rules = {}
+      @deny_rules = {}
       @configured = block_given?
       instance_eval(&) if block_given?
     end
@@ -86,6 +84,27 @@ module IronAdmin
       actions.each { |action| @allow_rules[action] = condition }
     end
 
+    # Denies permission for one or more actions.
+    #
+    # Deny rules take precedence over allow rules. If an action is both
+    # allowed and denied, the deny rule wins.
+    #
+    # @param actions [Array<Symbol>] Action names to deny
+    # @param if [Proc, nil] Optional condition proc that receives the user
+    #   and returns true if the action should be denied
+    #
+    # @example Unconditional deny
+    #   deny :destroy
+    #
+    # @example Conditional deny
+    #   deny :destroy, if: ->(user) { !user.superadmin? }
+    #
+    # @return [void]
+    def deny(*actions, if: nil)
+      condition = binding.local_variable_get(:if)
+      actions.each { |action| @deny_rules[action] = condition }
+    end
+
     # Checks if a CRUD action is allowed for the given user.
     #
     # Handles action aliases automatically:
@@ -102,6 +121,9 @@ module IronAdmin
     #   policy.allowed?(:show, current_user)  #=> true (alias for :read)
     def allowed?(action, user)
       return true unless @configured
+
+      # Deny rules take precedence over allow rules
+      return false if denied?(action, user)
 
       # Check the action directly first
       if @allow_rules.key?(action)
@@ -148,9 +170,40 @@ module IronAdmin
       return true unless @configured
 
       action = action_name.to_sym
+      return false if denied?(action, user)
       return true unless @allow_rules.key?(action)
 
       condition = @allow_rules[action]
+      condition.nil? || condition.call(user)
+    end
+
+    private
+
+    # Checks if an action is denied for the given user.
+    # Applies the same alias resolution as allowed? so that
+    # deny :read also denies :show/:index and vice versa.
+    #
+    # @param action [Symbol] The action to check
+    # @param user [Object] The current user object
+    # @return [Boolean] True if the action is explicitly denied
+    def denied?(action, user)
+      # Check the action directly
+      return deny_rule_matches?(action, user) if @deny_rules.key?(action)
+
+      # Check forward alias (e.g., :show -> :read)
+      aliased_action = ACTION_ALIASES[action]
+      return deny_rule_matches?(aliased_action, user) if aliased_action && @deny_rules.key?(aliased_action)
+
+      # Check reverse aliases (e.g., :read -> [:show, :index])
+      REVERSE_ALIASES[action]&.each do |reverse_action|
+        return deny_rule_matches?(reverse_action, user) if @deny_rules.key?(reverse_action)
+      end
+
+      false
+    end
+
+    def deny_rule_matches?(action, user)
+      condition = @deny_rules[action]
       condition.nil? || condition.call(user)
     end
   end
