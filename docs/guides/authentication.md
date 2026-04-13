@@ -73,7 +73,7 @@ Per-resource access control:
 class UserResource < IronAdmin::Resource
   policy do
     allow :read, :create, :update
-    deny :delete, if: ->(user) { !user.superadmin? }
+    deny :destroy, if: ->(user) { !user.superadmin? }
   end
 end
 ```
@@ -106,7 +106,7 @@ end
 policy do
   allow :read
   allow :update, if: ->(user) { user.admin? || user.manager? }
-  deny :delete, if: ->(user) { !user.superadmin? }
+  deny :destroy, if: ->(user) { !user.superadmin? }
 end
 ```
 

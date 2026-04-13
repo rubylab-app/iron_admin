@@ -174,13 +174,29 @@ module IronAdmin
     private
 
     # Checks if an action is denied for the given user.
+    # Applies the same alias resolution as allowed? so that
+    # deny :read also denies :show/:index and vice versa.
     #
     # @param action [Symbol] The action to check
     # @param user [Object] The current user object
     # @return [Boolean] True if the action is explicitly denied
     def denied?(action, user)
-      return false unless @deny_rules.key?(action)
+      # Check the action directly
+      return deny_rule_matches?(action, user) if @deny_rules.key?(action)
 
+      # Check forward alias (e.g., :show -> :read)
+      aliased_action = ACTION_ALIASES[action]
+      return deny_rule_matches?(aliased_action, user) if aliased_action && @deny_rules.key?(aliased_action)
+
+      # Check reverse aliases (e.g., :read -> [:show, :index])
+      REVERSE_ALIASES[action]&.each do |reverse_action|
+        return deny_rule_matches?(reverse_action, user) if @deny_rules.key?(reverse_action)
+      end
+
+      false
+    end
+
+    def deny_rule_matches?(action, user)
       condition = @deny_rules[action]
       condition.nil? || condition.call(user)
     end

@@ -376,7 +376,7 @@ Exports respect:
 class UserResource < IronAdmin::Resource
   policy do
     allow :read, :update
-    deny :delete, if: ->(user) { !user.superadmin? }
+    deny :destroy, if: ->(user) { !user.superadmin? }
   end
 end
 ```

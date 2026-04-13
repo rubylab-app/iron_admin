@@ -95,6 +95,36 @@ RSpec.describe IronAdmin::Policy do
       end
     end
 
+    context "with deny and action aliases" do
+      subject(:policy) do
+        described_class.new do
+          allow :read, :create, :update, :destroy
+          deny :read
+        end
+      end
+
+      it "deny :read also denies :show" do
+        expect(policy.allowed?(:show, :user)).to be(false)
+      end
+
+      it "deny :read also denies :index" do
+        expect(policy.allowed?(:index, :user)).to be(false)
+      end
+    end
+
+    context "with deny on alias that affects base action" do
+      subject(:policy) do
+        described_class.new do
+          allow :read, :create, :update, :destroy
+          deny :show
+        end
+      end
+
+      it "deny :show also denies :read" do
+        expect(policy.allowed?(:read, :user)).to be(false)
+      end
+    end
+
     context "with multiple deny rules" do
       subject(:policy) do
         described_class.new do
