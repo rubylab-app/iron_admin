@@ -38,7 +38,7 @@ RSpec.describe IronAdmin::Dashboard do
 
     it "stores icon as nil when not specified" do
       metric = TestDashboard.defined_metrics.first
-      expect(metric[:icon]).to be_nil
+      expect(metric).to include(icon: nil)
     end
 
     it "stores icon when specified" do
