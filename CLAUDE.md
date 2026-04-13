@@ -163,6 +163,10 @@ After creating a pull request, **wait 10 minutes** and then check if GitHub Copi
 
 Do NOT merge a PR without first checking for Copilot feedback.
 
+### Changelog
+
+**Always update `CHANGELOG.md`** when fixing bugs, adding features, or making breaking changes. Add entries under the `[Unreleased]` section following the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. Use the appropriate subsection: `Added`, `Changed`, `Fixed`, `Deprecated`, `Removed`, or `Documentation`. Reference the issue number when applicable (e.g., `(#32)`).
+
 ### Git Workflow
 
 **NEVER push directly to main.** All changes must go through a feature branch and pull request — no exceptions, not even for documentation or configuration files.
