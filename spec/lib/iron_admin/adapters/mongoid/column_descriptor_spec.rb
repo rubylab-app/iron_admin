@@ -10,6 +10,14 @@ RSpec.describe IronAdmin::Adapters::Mongoid::ColumnDescriptor do
     it "returns the column name" do
       expect(descriptor.name).to eq("email")
     end
+
+    context "when field is _id" do
+      subject(:descriptor) { described_class.new("_id", :string) }
+
+      it "stores _id as name" do
+        expect(descriptor.name).to eq("_id")
+      end
+    end
   end
 
   describe "#type" do
@@ -21,14 +29,6 @@ RSpec.describe IronAdmin::Adapters::Mongoid::ColumnDescriptor do
   describe "#to_s" do
     it "returns the column name as string" do
       expect(descriptor.to_s).to eq("email")
-    end
-  end
-
-  context "with _id field" do
-    subject(:descriptor) { described_class.new("_id", :string) }
-
-    it "stores _id as name" do
-      expect(descriptor.name).to eq("_id")
     end
   end
 end

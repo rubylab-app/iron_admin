@@ -50,14 +50,6 @@ module IronAdmin
 
       # --- Naming ---
 
-      def resource_name
-        model_class.model_name.plural
-      end
-
-      def human_name
-        model_class.model_name.human
-      end
-
       delegate :table_name, to: :model_class
 
       # --- Query Building ---

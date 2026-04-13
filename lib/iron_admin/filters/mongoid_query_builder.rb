@@ -25,20 +25,21 @@ module IronAdmin
         num = cast_number(@value)
         return @scope unless num
 
+        field = @filter[:name].to_s
         case @op
-        when "equals"       then @scope.where(@filter[:name] => num)
-        when "greater_than" then @scope.where(@filter[:name].gt => num)
-        when "less_than"    then @scope.where(@filter[:name].lt => num)
-        when "between"      then apply_between_filter(num)
+        when "equals"       then @scope.where(field => num)
+        when "greater_than" then @scope.where(field => { "$gt" => num })
+        when "less_than"    then @scope.where(field => { "$lt" => num })
+        when "between"      then apply_between_filter(field, num)
         else @scope
         end
       end
 
-      def apply_between_filter(num)
+      def apply_between_filter(field, num)
         upper_num = cast_number(@upper_value)
         return @scope unless upper_num
 
-        @scope.where(@filter[:name].gte => num, @filter[:name].lte => upper_num)
+        @scope.where(field => { "$gte" => num, "$lte" => upper_num })
       end
     end
   end

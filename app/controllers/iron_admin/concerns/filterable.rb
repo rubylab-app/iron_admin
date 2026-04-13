@@ -13,8 +13,8 @@ module IronAdmin
 
       # Applies all configured filters to the scope.
       #
-      # @param scope [ActiveRecord::Relation] Base scope
-      # @return [ActiveRecord::Relation] Filtered scope
+      # @param scope [Object] Base query scope (ActiveRecord::Relation or Mongoid::Criteria)
+      # @return [Object] Filtered scope
       def apply_filters(scope)
         @resource_class.all_filters.each do |filter|
           scope = case filter[:type]

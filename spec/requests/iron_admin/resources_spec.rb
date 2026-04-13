@@ -2142,7 +2142,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         get iron_admin.autocomplete_path("users"), params: { q: "Test" }, as: :json
 
         data = response.parsed_body
-        expect(data.first).to eq({ "id" => user.id, "label" => "Test User" })
+        expect(data.first).to eq({ "id" => user.id.to_s, "label" => "Test User" })
       end
 
       it "limits results to 20 records" do

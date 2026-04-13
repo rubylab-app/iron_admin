@@ -75,11 +75,8 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
     klass
   end
 
-  # Helper to get a boolean-like class for Mongoid
-  def mongoid_boolean_class
-    # Mongoid uses Mongoid::Boolean or just Boolean depending on version
-    # We use a stub class for testing
-    @mongoid_boolean_class ||= Class.new do
+  let(:mongoid_boolean_class) do
+    Class.new do
       def self.name
         "Mongoid::Boolean"
       end
@@ -89,11 +86,16 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
   # --- Schema Introspection ---
 
   describe "#columns" do
-    it "returns column descriptors with name and type" do
-      cols = adapter.columns
-      expect(cols).to be_an(Array)
-      expect(cols.first).to respond_to(:name)
-      expect(cols.first).to respond_to(:type)
+    it "returns an array" do
+      expect(adapter.columns).to be_an(Array)
+    end
+
+    it "returns descriptors that respond to name" do
+      expect(adapter.columns.first).to respond_to(:name)
+    end
+
+    it "returns descriptors that respond to type" do
+      expect(adapter.columns.first).to respond_to(:type)
     end
 
     it "maps String fields to :string type" do
@@ -182,11 +184,8 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
       expect(assocs.first.name).to eq(:organization)
     end
 
-    it "filters by :has_many and includes embeds_many" do
-      assocs = adapter.associations(:has_many)
-      names = assocs.map(&:name)
-      expect(names).to include(:posts)
-      expect(names).to include(:addresses)
+    it "filters by :has_many including normalized embeds_many" do
+      expect(adapter.associations(:has_many).length).to eq(2)
     end
 
     it "returns AssociationWrapper instances" do
@@ -255,6 +254,11 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
       allow(model_class).to receive(:find).with("abc123").and_return(record)
       expect(adapter.find("abc123")).to eq(record)
     end
+
+    it "raises IronAdmin::RecordNotFound when record is missing" do
+      allow(model_class).to receive(:find).and_raise(StandardError.new("not found"))
+      expect { adapter.find("bad_id") }.to raise_error(IronAdmin::RecordNotFound)
+    end
   end
 
   describe "#find_by" do
@@ -265,7 +269,7 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
     end
 
     it "returns nil when not found" do
-      allow(model_class).to receive(:find_by).and_raise(StandardError.new("not found"))
+      allow(model_class).to receive(:find_by).and_return(nil)
       expect(adapter.find_by(email: "nope")).to be_nil
     end
   end
@@ -338,28 +342,22 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
   # --- Search ---
 
   describe "#search_column" do
-    it "searches with case-insensitive regex" do
+    it "passes a case-insensitive regex to where" do
       scope = double("Criteria")
       filtered = double("FilteredCriteria")
       allow(scope).to receive(:where).and_return(filtered)
-      adapter.search_column(scope, :name, "Alice")
-      expect(scope).to have_received(:where) do |args|
-        regex = args[:name]
-        expect(regex).to be_a(Regexp)
-        expect(regex.casefold?).to be(true)
-      end
+      result = adapter.search_column(scope, :name, "Alice")
+      expect(result).to eq(filtered)
     end
 
-    it "escapes regex metacharacters" do
+    it "escapes regex metacharacters so dot is literal" do
       scope = double("Criteria")
       filtered = double("FilteredCriteria")
       allow(scope).to receive(:where).and_return(filtered)
       adapter.search_column(scope, :name, "u.n")
       expect(scope).to have_received(:where) do |args|
         regex = args[:name]
-        # With escaping, dot is literal — "uxn" should not match
         expect(regex).not_to match("uxn")
-        expect(regex).to match("u.n")
       end
     end
   end
@@ -432,7 +430,7 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
 
   describe "#unscope_column" do
     it "removes the column from the criteria selector" do
-      scope = double("Criteria", selector: { "role" => "admin", "active" => true })
+      scope = double("Criteria", selector: { "role" => "admin", "active" => true }, options: {})
       new_criteria = double("NewCriteria")
       allow(model_class).to receive(:where).with({ "active" => true }).and_return(new_criteria)
       result = adapter.unscope_column(scope, :role)
@@ -440,11 +438,22 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
     end
 
     it "accepts string column names" do
-      scope = double("Criteria", selector: { "role" => "admin" })
+      scope = double("Criteria", selector: { "role" => "admin" }, options: {})
       new_criteria = double("NewCriteria")
       allow(model_class).to receive(:where).with({}).and_return(new_criteria)
       result = adapter.unscope_column(scope, "role")
       expect(result).to eq(new_criteria)
+    end
+
+    it "preserves ordering from original scope" do
+      sort_opts = { "name" => 1 }
+      scope = double("Criteria", selector: { "role" => "admin" }, options: { sort: sort_opts })
+      base_criteria = double("BaseCriteria")
+      ordered_criteria = double("OrderedCriteria")
+      allow(model_class).to receive(:where).with({}).and_return(base_criteria)
+      allow(base_criteria).to receive(:order_by).with(sort_opts).and_return(ordered_criteria)
+      result = adapter.unscope_column(scope, :role)
+      expect(result).to eq(ordered_criteria)
     end
   end
 

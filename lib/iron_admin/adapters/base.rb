@@ -74,15 +74,17 @@ module IronAdmin
       # --- Naming ---
 
       # URL-friendly plural resource name (e.g., "users").
+      # Uses ActiveModel::Naming (available on both AR and Mongoid models).
       # @return [String]
       def resource_name
-        raise NotImplementedError
+        model_class.model_name.plural
       end
 
       # Human-readable model name (e.g., "User").
+      # Uses ActiveModel::Naming (available on both AR and Mongoid models).
       # @return [String]
       def human_name
-        raise NotImplementedError
+        model_class.model_name.human
       end
 
       # Database table name (or nil for non-SQL backends).

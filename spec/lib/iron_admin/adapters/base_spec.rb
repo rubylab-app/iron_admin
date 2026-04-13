@@ -36,10 +36,16 @@ RSpec.describe IronAdmin::Adapters::Base do
   end
 
   describe "naming" do
-    %i[resource_name human_name table_name].each do |method|
-      it "raises NotImplementedError for ##{method}" do
-        expect { adapter.public_send(method) }.to raise_error(NotImplementedError)
-      end
+    it "implements resource_name from model_class" do
+      expect(adapter.resource_name).to eq("users")
+    end
+
+    it "implements human_name from model_class" do
+      expect(adapter.human_name).to eq("User")
+    end
+
+    it "raises NotImplementedError for #table_name" do
+      expect { adapter.table_name }.to raise_error(NotImplementedError)
     end
   end
 

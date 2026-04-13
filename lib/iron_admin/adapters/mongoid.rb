@@ -71,14 +71,6 @@ module IronAdmin
 
       # --- Naming ---
 
-      def resource_name
-        model_class.model_name.plural
-      end
-
-      def human_name
-        model_class.model_name.human
-      end
-
       def table_name
         model_class.collection_name.to_s
       end
@@ -87,13 +79,13 @@ module IronAdmin
 
       delegate :all, to: :model_class
 
-      delegate :find, to: :model_class
-
-      def find_by(attrs)
-        model_class.find_by(attrs)
-      rescue StandardError
-        nil
+      def find(id)
+        model_class.find(id)
+      rescue StandardError => e
+        raise IronAdmin::RecordNotFound, e.message
       end
+
+      delegate :find_by, to: :model_class
 
       def filter(scope, column, value)
         scope.where(column => value)
@@ -165,7 +157,9 @@ module IronAdmin
       def unscope_column(scope, column)
         key = column.to_s
         new_selector = scope.selector.reject { |k, _| k == key }
-        model_class.where(new_selector)
+        new_scope = model_class.where(new_selector)
+        new_scope = new_scope.order_by(scope.options[:sort]) if scope.options[:sort]
+        new_scope
       end
 
       # --- Batch ---

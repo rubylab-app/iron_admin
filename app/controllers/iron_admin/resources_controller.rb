@@ -205,7 +205,7 @@ module IronAdmin
       display = @resource_class.display_attribute
       scope = adapter.search_column(base_scope, display, query)
       records = adapter.limit(scope, 20)
-        .map { |r| { id: r.id, label: r.public_send(display) } }
+        .map { |r| { id: r.id.to_s, label: r.public_send(display) } }
 
       render json: records
     end
@@ -249,7 +249,7 @@ module IronAdmin
     end
 
     def bulk_action_ids
-      Array(params[:ids]).map(&:to_i).reject(&:zero?)
+      Array(params[:ids]).compact_blank
     end
 
     def find_bulk_action

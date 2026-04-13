@@ -8,6 +8,10 @@ RSpec.describe IronAdmin::Adapters::Registry do
       expect(described_class.resolve(:active_record)).to eq(IronAdmin::Adapters::ActiveRecord)
     end
 
+    it "resolves :mongoid to the Mongoid adapter class" do
+      expect(described_class.resolve(:mongoid)).to eq(IronAdmin::Adapters::Mongoid)
+    end
+
     it "raises ArgumentError for unknown adapter identifiers" do
       expect { described_class.resolve(:unknown) }.to raise_error(ArgumentError, /Unknown adapter/)
     end

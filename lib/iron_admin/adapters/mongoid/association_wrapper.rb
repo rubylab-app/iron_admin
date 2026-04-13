@@ -30,6 +30,8 @@ module IronAdmin
 
         def klass
           @relation.class_name.constantize
+        rescue NameError
+          nil
         end
 
         def foreign_key
