@@ -94,7 +94,7 @@ module IronAdmin
       # Charts display time-series or categorical data visually.
       # The block should return data in a format suitable for the chart type.
       #
-      # @param name [Symbol] The chart identifier (used as the chart title)
+      # @param name [Symbol] The chart identifier
       # @param type [Symbol] The chart type
       #   - :line - Line chart for trends over time
       #   - :bar - Bar chart for comparisons
@@ -102,22 +102,19 @@ module IronAdmin
       #   - :doughnut - Doughnut chart for proportions
       # @param colors [Array<String>, nil] Optional per-chart color palette (CSS color values).
       #   Overrides the global theme chart_colors for this chart.
+      # @param label [String, nil] Custom display title for the chart.
+      #   Defaults to `name.to_s.humanize` when not provided.
       # @yield Block that computes and returns the chart data
       # @yieldreturn [Hash, Array] Data for the chart (format depends on type)
       #
-      # @example Line chart of signups over time
-      #   chart :signups_by_month, type: :line do
-      #     User.group_by_month(:created_at).count
+      # @example Chart with custom label
+      #   chart :projects_by_status, type: :bar, label: "Projects by Status" do
+      #     Project.group(:status).count
       #   end
       #
       # @example Bar chart with custom colors
       #   chart :orders_by_status, type: :bar, colors: ["#10b981", "#3b82f6", "#ef4444"] do
       #     Order.group(:status).count
-      #   end
-      #
-      # @example Pie chart of users by role
-      #   chart :users_by_role, type: :pie do
-      #     User.group(:role).count
       #   end
       #
       # @return [void]
