@@ -153,21 +153,27 @@ module IronAdmin
     # Checks if a custom action (or bulk action) is allowed.
     #
     # Unlike {#allowed?}, this does not use action aliases.
-    # Custom actions must be explicitly allowed by name.
+    # Custom actions are allowed by default unless explicitly restricted
+    # via an `allow` rule with a condition. This separates custom action
+    # authorization from CRUD policy — custom actions are not gated by
+    # the CRUD allowlist.
     #
     # @param action_name [Symbol] The custom action name
     # @param user [Object] The current user object
     #
-    # @return [Boolean] True if the action is allowed, or if no policy is configured
+    # @return [Boolean] True if the action is allowed, or if no policy is configured,
+    #   or if the action has no explicit rule
     #
     # @example
     #   policy.action_allowed?(:refund, current_user)
     def action_allowed?(action_name, user)
       return true unless @configured
-      return false if denied?(action_name, user)
-      return false unless @allow_rules.key?(action_name)
 
-      condition = @allow_rules[action_name]
+      action = action_name.to_sym
+      return false if denied?(action, user)
+      return true unless @allow_rules.key?(action)
+
+      condition = @allow_rules[action]
       condition.nil? || condition.call(user)
     end
 

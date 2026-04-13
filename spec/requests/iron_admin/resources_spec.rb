@@ -1700,7 +1700,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
           allow :create, :update, :destroy, if: ->(user) { user&.role == "admin" }
           allow :revoke, if: ->(user) { user&.role == "admin" }
           allow :bulk_revoke, if: ->(user) { user&.role == "admin" }
-          # renew and bulk_export are not allowed by policy
+          # renew and bulk_export are not in the allow list but are allowed by default
         end
       end
     end
@@ -1730,9 +1730,9 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         expect(response).to have_http_status(:forbidden)
       end
 
-      it "returns forbidden for actions not in policy allow list" do
+      it "allows actions not in policy allow list by default" do
         post iron_admin.resource_action_path("policy_licenses", license, "renew"), as: :html
-        expect(response).to have_http_status(:forbidden)
+        expect(response).to redirect_to(iron_admin.resource_path("policy_licenses", license))
       end
 
       it "does not execute the action when forbidden" do
@@ -1757,9 +1757,9 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         expect(license.reload.status).to eq("revoked")
       end
 
-      it "returns forbidden for actions not in policy allow list even for admin" do
+      it "allows actions not in policy allow list for admin" do
         post iron_admin.resource_action_path("policy_licenses", license, "renew"), as: :html
-        expect(response).to have_http_status(:forbidden)
+        expect(response).to redirect_to(iron_admin.resource_path("policy_licenses", license))
       end
     end
 
@@ -1841,11 +1841,11 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         expect(response).to have_http_status(:forbidden)
       end
 
-      it "returns forbidden for bulk actions not in policy allow list" do
+      it "allows bulk actions not in policy allow list by default" do
         post iron_admin.resource_bulk_action_path("policy_licenses", "bulk_export"),
              params: { ids: licenses.map(&:id) },
              as: :html
-        expect(response).to have_http_status(:forbidden)
+        expect(response).to redirect_to(iron_admin.resources_path("policy_licenses"))
       end
 
       it "does not execute the bulk action when forbidden" do
@@ -1878,11 +1878,11 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         end
       end
 
-      it "returns forbidden for bulk actions not in policy allow list even for admin" do
+      it "allows bulk actions not in policy allow list for admin" do
         post iron_admin.resource_bulk_action_path("policy_licenses", "bulk_export"),
              params: { ids: licenses.map(&:id) },
              as: :html
-        expect(response).to have_http_status(:forbidden)
+        expect(response).to redirect_to(iron_admin.resources_path("policy_licenses"))
       end
     end
 

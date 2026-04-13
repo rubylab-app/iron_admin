@@ -112,7 +112,7 @@ end
 
 ### Custom Action Authorization
 
-Custom actions and bulk actions require explicit policy permission:
+Custom actions and bulk actions are **allowed by default**, even when a policy is defined. This separates custom action authorization from CRUD policy. To restrict a custom action, add an `allow` rule with a condition:
 
 ```ruby
 class UserResource < IronAdmin::Resource
@@ -126,8 +126,8 @@ class UserResource < IronAdmin::Resource
 
   policy do
     allow :read, :update
-    allow :lock      # Authorize the custom action
-    allow :archive   # Authorize the bulk action
+    allow :lock, if: ->(user) { user.admin? }      # Restrict the custom action
+    allow :archive, if: ->(user) { user.admin? }    # Restrict the bulk action
   end
 end
 ```
