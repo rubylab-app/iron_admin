@@ -23,6 +23,7 @@ module IronAdmin
     include Concerns::ActionExecutable
     include Concerns::Filterable
     include Concerns::NestedPermittable
+    include Concerns::Scopeable
     include Concerns::Searchable
 
     before_action :set_resource_class
@@ -45,9 +46,9 @@ module IronAdmin
     # Shows a single record.
     #
     # @return [void]
-    # @raise [ActiveRecord::RecordNotFound] if record doesn't exist
+    # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def show
-      @record = record_scope.find(params[:id])
+      @record = find_record(record_scope, params[:id])
       @fields = @resource_class.resolved_fields
     end
 
@@ -62,9 +63,9 @@ module IronAdmin
     # Renders the edit form for an existing record.
     #
     # @return [void]
-    # @raise [ActiveRecord::RecordNotFound] if record doesn't exist
+    # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def edit
-      @record = record_scope.find(params[:id])
+      @record = find_record(record_scope, params[:id])
       @fields = form_fields
     end
 
@@ -87,9 +88,9 @@ module IronAdmin
     # Updates an existing record.
     #
     # @return [void]
-    # @raise [ActiveRecord::RecordNotFound] if record doesn't exist
+    # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def update
-      @record = record_scope.find(params[:id])
+      @record = find_record(record_scope, params[:id])
       purge_attachments(@record)
 
       if adapter.update(@record, resource_params)
@@ -105,9 +106,9 @@ module IronAdmin
     # Deletes a record.
     #
     # @return [void]
-    # @raise [ActiveRecord::RecordNotFound] if record doesn't exist
+    # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def destroy
-      @record = record_scope.find(params[:id])
+      @record = find_record(record_scope, params[:id])
       adapter.destroy!(@record)
       emit_event(:destroy, @record)
       redirect_to resources_path(@resource_class.resource_name),
@@ -122,7 +123,7 @@ module IronAdmin
       return head(:not_found) unless action
       return head(:forbidden) unless action_authorized?(action[:name])
 
-      @record = record_scope.find(params[:id])
+      @record = find_record(record_scope, params[:id])
       @action = action
       @form_fields = action[:form_fields]
       @form_url = resource_action_path(@resource_class.resource_name, @record, action[:name])
@@ -149,18 +150,20 @@ module IronAdmin
       return head(:not_found) unless action
       return head(:forbidden) unless action_authorized?(action[:name])
 
-      @record = record_scope.find(params[:id])
+      @record = find_record(record_scope, params[:id])
       collected = action_form_params(action)
 
-      adapter.transaction do
-        result = call_action_block(action[:block], @record, collected)
-        emit_event(params[:action_name], @record)
-        raise ActiveRecord::Rollback if result == false
+      adapter.wrap_rollback do
+        adapter.transaction do
+          result = call_action_block(action[:block], @record, collected)
+          emit_event(params[:action_name], @record)
+          raise IronAdmin::Rollback if result == false
+        end
       end
 
       redirect_to resource_path(@resource_class.resource_name, @record),
                   notice: I18n.t("iron_admin.resources.action.success")
-    rescue ActiveRecord::RecordNotFound
+    rescue IronAdmin::RecordNotFound
       head(:not_found)
     rescue StandardError => e
       redirect_to resources_path(@resource_class.resource_name),
@@ -213,18 +216,6 @@ module IronAdmin
       @resource_class.adapter
     end
 
-    def base_scope
-      scope = adapter.all
-      scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
-      scope
-    end
-
-    def record_scope
-      scope = base_scope
-      scope = adapter.unscope_column(scope, @resource_class.soft_delete_column) if @resource_class.soft_delete?
-      scope
-    end
-
     def set_resource_class
       @resource_class = ResourceRegistry.find(params[:resource_name])
       head(:not_found) and return unless @resource_class
@@ -275,9 +266,11 @@ module IronAdmin
 
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
-      adapter.transaction do
-        result = call_action_block(action[:block], records, collected)
-        raise ActiveRecord::Rollback if result == false
+      adapter.wrap_rollback do
+        adapter.transaction do
+          result = call_action_block(action[:block], records, collected)
+          raise IronAdmin::Rollback if result == false
+        end
       end
     end
 
@@ -364,7 +357,7 @@ module IronAdmin
         action: action,
         resource: @resource_class.name,
         record_id: record.id,
-        changes: record.saved_changes,
+        changes: adapter.record_changes(record),
         ip_address: request.remote_ip
       )
 
