@@ -394,6 +394,18 @@ RSpec.describe IronAdmin::Resource do
       expect(profile_assoc[:resource]).to eq(IronAdmin::Resources::ProfileResource)
     end
 
+    it "resolves has_one associations when resource is a string" do
+      resource_class = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        has_one :profile, resource: "IronAdmin::Resources::ProfileResource"
+      end
+
+      associations = resource_class.has_one_associations
+      profile_assoc = associations.find { |a| a[:name] == :profile }
+      expect(profile_assoc).to be_present
+      expect(profile_assoc[:resource]).to eq(IronAdmin::Resources::ProfileResource)
+    end
+
     it "returns empty for has_one when no associations defined" do
       IronAdmin::ResourceRegistry.reset!
       IronAdmin::ResourceRegistry.register(TestLicenseResource)
@@ -404,6 +416,18 @@ RSpec.describe IronAdmin::Resource do
     it "stores has_and_belongs_to_many declarations" do
       assoc = IronAdmin::Resources::PostResource.defined_associations[:tags]
       expect(assoc[:kind]).to eq(:has_and_belongs_to_many)
+    end
+
+    it "resolves habtm associations when resource is a string" do
+      resource_class = Class.new(IronAdmin::Resource) do
+        self.model_class_override = Post
+        has_and_belongs_to_many :tags, resource: "IronAdmin::Resources::TagResource"
+      end
+
+      associations = resource_class.habtm_associations
+      tags_assoc = associations.find { |a| a[:name] == :tags }
+      expect(tags_assoc).to be_present
+      expect(tags_assoc[:resource]).to eq(IronAdmin::Resources::TagResource)
     end
 
     it "resolves habtm associations with reflection" do
