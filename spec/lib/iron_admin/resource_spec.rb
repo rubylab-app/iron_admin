@@ -359,6 +359,30 @@ RSpec.describe IronAdmin::Resource do
       expect(licenses_assoc[:resource]).to eq(TestLicenseResource)
     end
 
+    it "resolves has_many associations when resource is a string" do
+      resource_class = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        has_many :licenses, resource: "IronAdmin::Resources::LicenseResource"
+      end
+
+      associations = resource_class.has_many_associations
+      licenses_assoc = associations.find { |a| a[:name] == :licenses }
+      expect(licenses_assoc).to be_present
+      expect(licenses_assoc[:resource]).to eq(IronAdmin::Resources::LicenseResource)
+    end
+
+    it "resolves has_many associations when resource is a class" do
+      resource_class = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        has_many :licenses, resource: IronAdmin::Resources::LicenseResource
+      end
+
+      associations = resource_class.has_many_associations
+      licenses_assoc = associations.find { |a| a[:name] == :licenses }
+      expect(licenses_assoc).to be_present
+      expect(licenses_assoc[:resource]).to eq(IronAdmin::Resources::LicenseResource)
+    end
+
     it "resolves has_one associations with resource and reflection" do
       IronAdmin::ResourceRegistry.reset!
       IronAdmin::ResourceRegistry.register(TestUserResource)

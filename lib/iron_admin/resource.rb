@@ -604,10 +604,10 @@ module IronAdmin
           reflection = adapter.association(assoc_name)
           next unless reflection
 
-          resource = ResourceRegistry.find(reflection.klass.model_name.plural)
+          resource = resolve_association_resource(config, reflection)
           next unless resource
 
-          { name: assoc_name, reflection: reflection, resource: resource, **config.except(:kind) }
+          { name: assoc_name, reflection: reflection, resource: resource, **config.except(:kind, :resource) }
         end
       end
 
@@ -621,10 +621,10 @@ module IronAdmin
           reflection = adapter.association(assoc_name)
           next unless reflection
 
-          resource = ResourceRegistry.find(reflection.klass.model_name.plural)
+          resource = resolve_association_resource(config, reflection)
           next unless resource
 
-          { name: assoc_name, reflection: reflection, resource: resource, **config.except(:kind) }
+          { name: assoc_name, reflection: reflection, resource: resource, **config.except(:kind, :resource) }
         end
       end
 
@@ -638,9 +638,9 @@ module IronAdmin
           reflection = adapter.association(assoc_name)
           next unless reflection
 
-          resource = ResourceRegistry.find(reflection.klass.model_name.plural)
+          resource = resolve_association_resource(config, reflection)
 
-          { name: assoc_name, reflection: reflection, resource: resource, **config.except(:kind) }
+          { name: assoc_name, reflection: reflection, resource: resource, **config.except(:kind, :resource) }
         end
       end
 
@@ -718,6 +718,16 @@ module IronAdmin
       private_constant :SKIP_FILTER_COLUMNS
 
       private
+
+      # Resolves the resource class for an association configuration.
+      # Accepts Class, String, or falls back to ResourceRegistry lookup.
+      def resolve_association_resource(config, reflection)
+        resource = config[:resource]
+        return resource.constantize if resource.is_a?(String)
+        return resource if resource
+
+        ResourceRegistry.find(reflection.klass.model_name.plural)
+      end
 
       def enum_auto_filters
         adapter.enums.map do |name, values|
