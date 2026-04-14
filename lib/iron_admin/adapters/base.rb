@@ -279,10 +279,21 @@ module IronAdmin
       end
 
       # Casts a string value to a boolean.
+      # Default implementation for non-AR adapters.
+      # ActiveRecord overrides to use ActiveModel::Type::Boolean.
       # @param value [String] The value to cast
       # @return [Boolean]
-      def cast_boolean(_value)
-        raise NotImplementedError
+      TRUTHY_VALUES = %w[true 1 yes].freeze
+
+      def cast_boolean(value) # rubocop:disable Naming/PredicateMethod
+        TRUTHY_VALUES.include?(value.to_s.downcase)
+      end
+
+      # Shared column descriptor for non-AR adapters.
+      ColumnDescriptor = Struct.new(:name, :type) do
+        def to_s
+          name
+        end
       end
     end
   end

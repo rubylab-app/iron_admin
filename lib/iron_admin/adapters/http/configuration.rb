@@ -5,17 +5,15 @@ module IronAdmin
     class Http
       # Configuration for an HTTP resource's API connection.
       #
-      # Stores base URL, resource path, headers, and pagination settings.
+      # Stores base URL, resource path, and headers.
       # Each HTTP resource can override the global configuration.
       class Configuration
-        attr_accessor :base_url, :resource_path, :headers, :pagination_style, :response_format
+        attr_accessor :base_url, :resource_path, :headers
 
         def initialize
           @base_url = nil
           @resource_path = nil
           @headers = {}
-          @pagination_style = :none
-          @response_format = :json
         end
 
         def full_url

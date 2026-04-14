@@ -44,10 +44,12 @@ RSpec.describe IronAdmin::Adapters::Http do
       expect(adapter.columns).to be_an(Array)
     end
 
-    it "returns descriptors with name and type" do
-      col = adapter.columns.first
-      expect(col).to respond_to(:name)
-      expect(col).to respond_to(:type)
+    it "returns descriptors responding to name" do
+      expect(adapter.columns.first).to respond_to(:name)
+    end
+
+    it "returns descriptors responding to type" do
+      expect(adapter.columns.first).to respond_to(:type)
     end
   end
 
@@ -102,6 +104,18 @@ RSpec.describe IronAdmin::Adapters::Http do
   end
 
   # --- Naming ---
+
+  describe "#resource_name" do
+    it "returns the plural model name" do
+      expect(adapter.resource_name).to eq("products")
+    end
+  end
+
+  describe "#human_name" do
+    it "returns the humanized model name" do
+      expect(adapter.human_name).to eq("Product")
+    end
+  end
 
   describe "#table_name" do
     it "returns nil for HTTP resources" do
@@ -188,6 +202,28 @@ RSpec.describe IronAdmin::Adapters::Http do
     it "returns sorted unique values" do
       values = adapter.distinct_values(:active)
       expect(values).to eq([false, true])
+    end
+  end
+
+  describe "#pluck" do
+    it "extracts column values from a scope" do
+      ids = adapter.pluck(adapter.all, "id")
+      expect(ids).to eq([1, 2])
+    end
+  end
+
+  describe "#unscope_column" do
+    it "returns the scope unchanged" do
+      scope = adapter.all
+      expect(adapter.unscope_column(scope, :deleted_at)).to eq(scope)
+    end
+  end
+
+  describe "#find_each" do
+    it "iterates all records" do
+      names = []
+      adapter.find_each(adapter.all) { |r| names << r.name }
+      expect(names.length).to eq(2)
     end
   end
 

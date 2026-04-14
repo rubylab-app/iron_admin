@@ -11,8 +11,10 @@ module IronAdmin
         attr_reader :id
 
         def initialize(attrs = {})
+          @force_new = true if attrs.delete(:_persisted) == false
           @attributes = attrs.transform_keys(&:to_s)
           @id = @attributes["id"]
+          @persisted = @force_new ? false : !@id.nil?
           @changes = {}
           @previous_changes = {}
         end
@@ -22,7 +24,7 @@ module IronAdmin
         end
 
         def persisted?
-          !@id.nil?
+          @persisted
         end
 
         def new_record?
@@ -60,6 +62,7 @@ module IronAdmin
           @previous_changes = @changes.dup
           @changes = {}
           @id = @attributes["id"]
+          @persisted = true
         end
 
         def respond_to_missing?(method_name, include_private = false)
@@ -69,7 +72,6 @@ module IronAdmin
         def method_missing(method_name, *args)
           key = method_name.to_s
           return @attributes[key] if @attributes.key?(key)
-          return nil if args.empty? && !key.end_with?("=")
 
           super
         end

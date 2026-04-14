@@ -26,8 +26,8 @@ RSpec.describe IronAdmin::Adapters::Http::Record do
       expect(record.active).to be(true)
     end
 
-    it "returns nil for unknown attributes" do
-      expect(record.nonexistent).to be_nil
+    it "raises NoMethodError for unknown attributes" do
+      expect { record.nonexistent }.to raise_error(NoMethodError)
     end
 
     it "responds to respond_to? for known attributes" do

@@ -100,7 +100,7 @@ module IronAdmin
           result = @params.dup
           result[:offset] = @offset_value if @offset_value
           result[:limit] = @limit_value if @limit_value
-          @sort_params.each { |col, dir| result[:sort] = "#{col}:#{dir}" }
+          result[:sort] = @sort_params.map { |col, dir| "#{col}:#{dir}" }.join(",") if @sort_params.any?
           result
         end
       end

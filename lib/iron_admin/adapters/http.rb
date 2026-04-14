@@ -16,8 +16,6 @@ module IronAdmin
     #     end
     #   end
     class Http < Base
-      TRUTHY_VALUES = %w[true 1 yes].freeze
-
       # --- Schema Introspection ---
 
       def columns
@@ -114,16 +112,17 @@ module IronAdmin
       # --- CRUD ---
 
       def build(attrs = {})
-        Record.new(attrs)
+        Record.new(attrs.merge(_persisted: false))
       end
 
       def save(record)
-        data = if record.persisted?
-                 connection.patch(record.id.to_s, record.attributes.except("id"))
-               else
-                 connection.post(record.attributes.except("id"))
-               end
-        return false unless data.is_a?(Hash) && data["id"]
+        if record.persisted?
+          data = connection.patch(record.id.to_s, record.attributes.except("id"))
+          return false unless data.is_a?(Hash)
+        else
+          data = connection.post(record.attributes.except("id"))
+          return false unless data.is_a?(Hash) && data["id"]
+        end
 
         record.assign_attributes(data)
         record.mark_as_persisted
@@ -133,10 +132,10 @@ module IronAdmin
       end
 
       def update(record, attrs)
-        record.assign_attributes(attrs)
         data = connection.patch(record.id.to_s, attrs)
         return false unless data.is_a?(Hash)
 
+        record.assign_attributes(attrs)
         record.assign_attributes(data)
         record.mark_as_persisted
         true
@@ -184,10 +183,6 @@ module IronAdmin
 
       def pagy_method
         :pagy
-      end
-
-      def cast_boolean(value) # rubocop:disable Naming/PredicateMethod
-        TRUTHY_VALUES.include?(value.to_s.downcase)
       end
 
       # Allows injecting a pre-built configuration (for testing or per-resource override).

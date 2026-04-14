@@ -122,6 +122,35 @@ RSpec.describe IronAdmin::Adapters::Http::Query do
     end
   end
 
+  describe "#order" do
+    it "returns a new query with sort params" do
+      ordered = query.order(name: :asc)
+      expect(ordered).to be_a(described_class)
+    end
+
+    it "serializes sort into request params" do
+      stub_request(:get, "https://api.example.com/v1/products")
+        .with(query: { sort: "name:asc" })
+        .to_return(status: 200, body: [].to_json, headers: { "Content-Type" => "application/json" })
+
+      query.order(name: :asc).to_a
+      expect(a_request(:get, "https://api.example.com/v1/products")
+        .with(query: { sort: "name:asc" }))
+        .to have_been_made
+    end
+
+    it "serializes multi-column sort" do
+      stub_request(:get, "https://api.example.com/v1/products")
+        .with(query: { sort: "name:asc,created_at:desc" })
+        .to_return(status: 200, body: [].to_json, headers: { "Content-Type" => "application/json" })
+
+      query.order(name: :asc).order(created_at: :desc).to_a
+      expect(a_request(:get, "https://api.example.com/v1/products")
+        .with(query: { sort: "name:asc,created_at:desc" }))
+        .to have_been_made
+    end
+  end
+
   describe "#offset" do
     it "returns a new query with offset" do
       offset_query = query.offset(10)
