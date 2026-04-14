@@ -27,6 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `BaseQueryBuilder` abstract class with `ActiveRecordQueryBuilder` and `MongoidQueryBuilder` subclasses
   - `Filterable` concern routes to adapter's query builder, boolean casting, and date range filtering
 
+- **Dashboard metric icons** (#34) — `metric` DSL now accepts `icon:` keyword for Heroicon display alongside metric values.
+- **Dashboard chart labels** (#35) — `chart` DSL now accepts `label:` keyword for custom display titles, falling back to `name.to_s.humanize`.
+
+### Fixed
+
+- **Policy `deny` method** (#32) — Implemented the `deny` DSL method in `Policy`, which was documented but raised `NoMethodError`. Deny rules take precedence over allow rules and support optional `if:` conditions. Alias resolution (`:show`/`:index` ↔ `:read`) applies to deny rules.
+- **Custom actions blocked by Policy** (#38) — Custom actions (`action`/`bulk_action`) were blocked with 403 when a `policy` block was defined. Custom actions are now allowed by default unless explicitly restricted by applicable `allow` or `deny` rules. Action names are normalized to symbols for consistent lookup.
+- **`has_many` string resource crash** (#33) — `has_many`, `has_one`, and `habtm` association methods crashed with `NoMethodError` when `resource:` was passed as a string. String values are now constantized, class values used directly, and registry lookup is the fallback.
+
+### Documentation
+
+- **Tailwind CSS prerequisites** (#37) — Added prerequisites section to quick-start guide specifying `tailwindcss-rails` >= 4.0 is required.
+- **Tool namespace in docs** (#36) — Fixed tool examples in extending guide to use the correct `IronAdmin::Tools::` module nesting required by Zeitwerk autoloading.
+- **Policy docs** (#32) — Clarified `deny` documentation and corrected `deny` `if:` docs to receive the current user (consistent with `allow`).
+
 - **Nested Forms** (#23) — Inline nested form support for has_many/has_one associations:
   - `nested: true` option on `has_many` and `has_one` DSL
   - `NestedAssociation` value object, `NestedAttributesValidator` guard
