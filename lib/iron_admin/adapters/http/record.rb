@@ -8,6 +8,8 @@ module IronAdmin
       # Provides dynamic attribute access, change tracking, and
       # ActiveModel-compatible persistence state methods.
       class Record
+        include ActiveModel::Validations
+
         attr_reader :id
 
         def initialize(attrs = {})

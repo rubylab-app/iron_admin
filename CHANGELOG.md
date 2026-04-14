@@ -16,8 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full CRUD via standard REST verbs (GET/POST/PATCH/DELETE)
   - `TypeInferrer` maps JSON values to IronAdmin field types automatically
   - `HttpQueryBuilder` translates operator filters to query parameters
-  - Configurable: base_url, headers, pagination style, response format
-  - Global config with per-resource override
+  - Configurable: global `http_base_url` and `http_headers` in IronAdmin config
   - Configure per-resource: `self.adapter_class = :http`
 
 - **Mongoid Adapter** (#50) — Full MongoDB support via a new `IronAdmin::Adapters::Mongoid` adapter:

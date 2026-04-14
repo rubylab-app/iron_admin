@@ -69,8 +69,16 @@ module IronAdmin
 
         def safe_request
           yield
-        rescue Faraday::Error => e
-          raise IronAdmin::AdapterError, "HTTP request failed: #{e.message}"
+        rescue StandardError => e
+          raise IronAdmin::AdapterError, "HTTP request failed: #{e.message}" if network_error?(e)
+
+          raise
+        end
+
+        def network_error?(error)
+          return true if defined?(Faraday::Error) && error.is_a?(Faraday::Error)
+
+          [Errno::ECONNREFUSED, SocketError, Timeout::Error, IOError].any? { |klass| error.is_a?(klass) }
         end
 
         def handle_errors(response)
@@ -97,11 +105,11 @@ module IronAdmin
         end
 
         def parse_json(body)
-          return {} if body.blank?
+          return nil if body.blank?
 
           JSON.parse(body)
         rescue JSON::ParserError
-          {}
+          nil
         end
       end
     end

@@ -17,7 +17,9 @@ module IronAdmin
         end
 
         def full_url
-          "#{@base_url}#{@resource_path}"
+          base = @base_url&.chomp("/") || ""
+          path = @resource_path&.start_with?("/") ? @resource_path : "/#{@resource_path}"
+          "#{base}#{path}"
         end
       end
     end

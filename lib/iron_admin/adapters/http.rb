@@ -118,13 +118,14 @@ module IronAdmin
       def save(record)
         if record.persisted?
           data = connection.patch(record.id.to_s, record.attributes.except("id"))
-          return false unless data.is_a?(Hash)
         else
           data = connection.post(record.attributes.except("id"))
-          return false unless data.is_a?(Hash) && data["id"]
+          return add_api_errors(record, data) unless data.is_a?(Hash) && data["id"]
         end
 
-        record.assign_attributes(data)
+        return add_api_errors(record, data) if data.is_a?(Hash) && data.key?("errors")
+
+        record.assign_attributes(data) if data.is_a?(Hash)
         record.mark_as_persisted
         true
       rescue IronAdmin::AdapterError
@@ -133,10 +134,10 @@ module IronAdmin
 
       def update(record, attrs)
         data = connection.patch(record.id.to_s, attrs)
-        return false unless data.is_a?(Hash)
+        return add_api_errors(record, data) if data.is_a?(Hash) && data.key?("errors")
 
         record.assign_attributes(attrs)
-        record.assign_attributes(data)
+        record.assign_attributes(data) if data.is_a?(Hash)
         record.mark_as_persisted
         true
       rescue IronAdmin::AdapterError
@@ -190,6 +191,13 @@ module IronAdmin
 
       private
 
+      def add_api_errors(record, data) # rubocop:disable Naming/PredicateMethod
+        return false unless data.is_a?(Hash) && data["errors"].is_a?(Hash)
+
+        data["errors"].each { |field, messages| Array(messages).each { |msg| record.errors.add(field, msg) } }
+        false
+      end
+
       def connection
         @connection ||= Connection.new(http_config)
       end
@@ -201,8 +209,8 @@ module IronAdmin
       def build_config
         config = Configuration.new
         global = IronAdmin.configuration
-        config.base_url = global.respond_to?(:http_base_url) ? global.http_base_url : nil
-        config.headers = global.respond_to?(:http_headers) ? global.http_headers : {}
+        config.base_url = global.http_base_url
+        config.headers = global.http_headers || {}
         config.resource_path = "/#{resource_name}"
         config
       end

@@ -25,9 +25,11 @@ module IronAdmin
           @total = nil
         end
 
-        def each(&)
+        def each(&block)
+          return to_enum(:each) unless block
+
           fetch!
-          @records.each(&)
+          @records.each(&block)
         end
 
         def count

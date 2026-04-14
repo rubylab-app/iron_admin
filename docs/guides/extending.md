@@ -72,7 +72,7 @@ The HTTP adapter:
 - Infers resource path from name (`ProductResource` → `GET /products`)
 - Full CRUD via standard REST verbs
 - Lazy query execution (no HTTP requests until records are accessed)
-- Global config with per-resource override via `http_config`
+- Populates `record.errors` from API 422 responses for form validation
 
 ## Custom Resources with Business Logic
 
