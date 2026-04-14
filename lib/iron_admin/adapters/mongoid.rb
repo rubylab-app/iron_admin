@@ -27,8 +27,6 @@ module IronAdmin
         Symbol => :string,
       }.freeze
 
-      TRUTHY_VALUES = %w[true 1 yes].freeze
-
       # --- Schema Introspection ---
 
       def columns
@@ -197,10 +195,6 @@ module IronAdmin
 
       def pagy_method
         :pagy_mongoid
-      end
-
-      def cast_boolean(value) # rubocop:disable Naming/PredicateMethod
-        TRUTHY_VALUES.include?(value.to_s.downcase)
       end
 
       private

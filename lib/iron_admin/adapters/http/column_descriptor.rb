@@ -2,7 +2,7 @@
 
 module IronAdmin
   module Adapters
-    class Mongoid
+    class Http
       # Uses the shared ColumnDescriptor from Adapters::Base.
       ColumnDescriptor = IronAdmin::Adapters::Base::ColumnDescriptor
     end

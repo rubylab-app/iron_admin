@@ -39,6 +39,41 @@ The Mongoid adapter:
 
 You can mix adapters in the same app — some resources using ActiveRecord, others using Mongoid.
 
+## HTTP REST API Support
+
+IronAdmin can manage resources from external REST APIs. Add `faraday` to your Gemfile:
+
+```ruby
+# Gemfile
+gem "faraday"
+
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.http_base_url = "https://api.example.com/v1"
+  config.http_headers = { "Authorization" => "Bearer #{ENV['API_TOKEN']}" }
+end
+
+# app/iron_admin/resources/product_resource.rb
+module IronAdmin
+  module Resources
+    class ProductResource < IronAdmin::Resource
+      self.adapter_class = :http
+
+      # Fields auto-discovered from API response. Just customize:
+      field :status, type: :badge
+      searchable :name
+    end
+  end
+end
+```
+
+The HTTP adapter:
+- Auto-discovers fields from the first API response (convention-over-configuration)
+- Infers resource path from name (`ProductResource` → `GET /products`)
+- Full CRUD via standard REST verbs
+- Lazy query execution (no HTTP requests until records are accessed)
+- Populates `record.errors` from API 422 responses for form validation
+
 ## Custom Resources with Business Logic
 
 ```ruby
@@ -374,7 +409,7 @@ end
 
 IronAdmin uses an adapter pattern to decouple from any specific ORM. It ships with `ActiveRecord` and `Mongoid` adapters, but you can create adapters for any data source (Sequel, HTTP APIs, DynamoDB, etc.).
 
-See the [Building a Custom Adapter](custom-adapters.md) guide for the complete reference, including all 36 methods, duck type contracts, QueryBuilder integration, and testing patterns.
+See the [Building a Custom Adapter](custom-adapters.md) guide for the complete reference, including all 35 methods, duck type contracts, QueryBuilder integration, and testing patterns.
 
 ## Testing Resources
 

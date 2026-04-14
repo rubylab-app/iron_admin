@@ -11,4 +11,8 @@ module IronAdmin
   # Raised inside a transaction block to trigger a rollback.
   # Adapter-agnostic replacement for ActiveRecord::Rollback.
   class Rollback < Error; end
+
+  # Raised when an adapter encounters an operational error
+  # (network failure, invalid response, etc.).
+  class AdapterError < Error; end
 end

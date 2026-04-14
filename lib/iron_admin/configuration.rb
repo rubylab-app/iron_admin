@@ -81,6 +81,12 @@ module IronAdmin
     # @return [Boolean] Whether the actions column stays fixed on horizontal scroll (default: true)
     attr_accessor :sticky_actions_column
 
+    # @return [String, nil] Base URL for HTTP adapter (e.g., "https://api.example.com/v1")
+    attr_accessor :http_base_url
+
+    # @return [Hash] Default headers for HTTP adapter (e.g., auth tokens)
+    attr_accessor :http_headers
+
     # @return [Proc, nil] Authentication block
     # @see #authenticate
     attr_reader :authenticate_block
@@ -171,6 +177,8 @@ module IronAdmin
       @audit_enabled = false
       @audit_storage = :memory
       @sticky_actions_column = true
+      @http_base_url = nil
+      @http_headers = {}
     end
 
     # Defines the authentication check for admin access.

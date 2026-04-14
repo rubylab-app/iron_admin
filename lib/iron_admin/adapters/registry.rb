@@ -23,6 +23,10 @@ module IronAdmin
           require_path: "iron_admin/adapters/mongoid",
           class_name: "IronAdmin::Adapters::Mongoid",
         },
+        http: {
+          require_path: "iron_admin/adapters/http",
+          class_name: "IronAdmin::Adapters::Http",
+        },
       }.freeze
 
       # Resolves an adapter identifier to its class.

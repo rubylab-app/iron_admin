@@ -154,8 +154,9 @@ RSpec.describe IronAdmin::Adapters::Base do
       expect { adapter.pagy_method }.to raise_error(NotImplementedError)
     end
 
-    it "raises NotImplementedError for #cast_boolean" do
-      expect { adapter.cast_boolean("true") }.to raise_error(NotImplementedError)
+    it "implements cast_boolean with default truthy values" do
+      expect(adapter.cast_boolean("true")).to be(true)
+      expect(adapter.cast_boolean("false")).to be(false)
     end
   end
 end
