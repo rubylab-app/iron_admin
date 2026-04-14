@@ -374,7 +374,7 @@ end
 
 IronAdmin uses an adapter pattern to decouple from any specific ORM. It ships with `ActiveRecord` and `Mongoid` adapters, but you can create adapters for any data source (Sequel, HTTP APIs, DynamoDB, etc.).
 
-See the [Building a Custom Adapter](custom-adapters.md) guide for the complete reference, including all 36 methods, duck type contracts, QueryBuilder integration, and testing patterns.
+See the [Building a Custom Adapter](custom-adapters.md) guide for the complete reference, including all 35 methods, duck type contracts, QueryBuilder integration, and testing patterns.
 
 ## Testing Resources
 

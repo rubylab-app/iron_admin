@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Mongoid Adapter** (#50) — Full MongoDB support via a new `IronAdmin::Adapters::Mongoid` adapter:
-  - Implements all 36 adapter interface methods (31 original + 5 new)
+  - Implements all 35 adapter interface methods (31 original + 5 new)
   - `ColumnDescriptor` maps Mongoid field types to IronAdmin symbol types
   - `AssociationWrapper` normalizes embedded associations (`embeds_many` → `:has_many`, `embeds_one` → `:has_one`)
   - `MongoidQueryBuilder` for operator filters using `$regex` and MongoDB comparison operators
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tailwind CSS prerequisites** (#37) — Added prerequisites section to quick-start guide specifying `tailwindcss-rails` >= 4.0 is required.
 - **Tool namespace in docs** (#36) — Fixed tool examples in extending guide to use the correct `IronAdmin::Tools::` module nesting required by Zeitwerk autoloading.
 - **Policy docs** (#32) — Clarified `deny` documentation and corrected `deny` `if:` docs to receive the current user (consistent with `allow`).
-- **Custom adapter guide** — Comprehensive guide for building custom adapters: all 36 methods with signatures, return types, duck type contracts, QueryBuilder integration, testing patterns, and implementation checklist.
+- **Custom adapter guide** — Comprehensive guide for building custom adapters: all 35 methods with signatures, return types, duck type contracts, QueryBuilder integration, testing patterns, and implementation checklist.
 
 - **Nested Forms** (#23) — Inline nested form support for has_many/has_one associations:
   - `nested: true` option on `has_many` and `has_one` DSL

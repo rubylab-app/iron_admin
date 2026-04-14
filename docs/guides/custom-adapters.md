@@ -26,7 +26,7 @@ adapter.filter(scope, :status, "active") # => filtered scope
 ```ruby
 # lib/my_app/iron_admin/sequel_adapter.rb
 class MyApp::IronAdmin::SequelAdapter < IronAdmin::Adapters::Base
-  # Implement all 36 methods (see reference below)
+  # Implement all 35 methods (see reference below)
 end
 ```
 
@@ -43,17 +43,11 @@ module IronAdmin
 end
 ```
 
-You can pass a class directly (as above) or register it in the adapter registry for symbol-based configuration:
+You can pass a class directly (as above). The built-in adapters (`:active_record`, `:mongoid`, `:http`) are registered in `Adapters::Registry` and can be referenced by symbol. Custom adapters should be passed as classes:
 
 ```ruby
-# config/initializers/iron_admin.rb
-IronAdmin::Adapters::Registry::ADAPTERS[:sequel] = {
-  require_path: "my_app/iron_admin/sequel_adapter",
-  class_name: "MyApp::IronAdmin::SequelAdapter",
-}
-
-# Then in resources:
-self.adapter_class = :sequel
+# Pass the class directly — no registry needed
+self.adapter_class = MyApp::IronAdmin::SequelAdapter
 ```
 
 ### 3. Create a QueryBuilder (optional but recommended)
@@ -78,7 +72,7 @@ end
 
 ## Complete Method Reference
 
-`Adapters::Base` defines 36 methods organized into 8 categories. All methods raise `NotImplementedError` by default except `resource_name` and `human_name` (which use `ActiveModel::Naming`).
+`Adapters::Base` defines 35 methods organized into 9 sections. All methods raise `NotImplementedError` by default except `resource_name` and `human_name` (which use `ActiveModel::Naming`).
 
 ### Schema Introspection (8 methods)
 
@@ -164,15 +158,14 @@ Returns association descriptors, optionally filtered by kind. Each object **must
 | Method | Return | Notes |
 |--------|--------|-------|
 | `.name` | `Symbol` | Association name (e.g., `:user`) |
-| `.macro` | `Symbol` | `:belongs_to`, `:has_many`, `:has_one`, or `:has_and_belongs_to_many` |
 | `.klass` | `Class` | The associated model class |
 | `.foreign_key` | `String` | Foreign key column (e.g., `"user_id"`) |
 | `.polymorphic?` | `Boolean` | Whether this is a polymorphic association |
 | `.foreign_type` | `String` | Polymorphic type column (e.g., `"commentable_type"`) — only called when `polymorphic?` is `true` |
 
-`kind` is one of: `:belongs_to`, `:has_many`, `:has_one`, `:has_and_belongs_to_many`, or `nil` (return all).
+`kind` is one of: `:belongs_to`, `:has_many`, `:has_one`, `:has_and_belongs_to_many`, or `nil` (return all). When `kind` is provided, `associations(kind)` must return only descriptors of that kind. IronAdmin consumers rely on `associations(kind)` for filtering — they do not call `.macro` on individual descriptors.
 
-**Tip:** Create an `AssociationWrapper` class to normalize your ORM's metadata to this interface.
+**Tip:** Create an `AssociationWrapper` class that tracks the kind internally and use it to filter in `associations(kind)`.
 
 Return `[]` if your data source has no associations.
 
@@ -514,7 +507,7 @@ RSpec.describe MyAdapter do
     end
   end
 
-  # ... test all 36 methods
+  # ... test all 35 methods
 end
 ```
 
@@ -611,7 +604,7 @@ Use this checklist when building a new adapter:
 - [ ] `cast_boolean(value)` — string to boolean
 
 ### Testing
-- [ ] Unit specs for all 36 methods
+- [ ] Unit specs for all 35 methods
 - [ ] Edge cases: nil values, empty arrays, missing records
 - [ ] `find` raises `IronAdmin::RecordNotFound`
 - [ ] `find_by` returns `nil` (not raises)
