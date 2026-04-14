@@ -2142,7 +2142,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         get iron_admin.autocomplete_path("users"), params: { q: "Test" }, as: :json
 
         data = response.parsed_body
-        expect(data.first).to eq({ "id" => user.id, "label" => "Test User" })
+        expect(data.first).to eq({ "id" => user.id.to_s, "label" => "Test User" })
       end
 
       it "limits results to 20 records" do
@@ -2268,7 +2268,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
 
         expect do
           get iron_admin.resource_path("users", inactive_user), as: :html
-        end.to raise_error(ActiveRecord::RecordNotFound)
+        end.to raise_error(IronAdmin::RecordNotFound)
       end
 
       it "prevents cross-tenant record access on edit" do
@@ -2276,7 +2276,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
 
         expect do
           get iron_admin.edit_resource_path("users", inactive_user), as: :html
-        end.to raise_error(ActiveRecord::RecordNotFound)
+        end.to raise_error(IronAdmin::RecordNotFound)
       end
 
       it "prevents cross-tenant record access on update" do
@@ -2286,7 +2286,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
           patch iron_admin.resource_path("users", inactive_user),
                 params: { record: { name: "New Name", email: inactive_user.email, role: inactive_user.role } },
                 as: :html
-        end.to raise_error(ActiveRecord::RecordNotFound)
+        end.to raise_error(IronAdmin::RecordNotFound)
       end
 
       it "prevents cross-tenant record access on destroy" do
@@ -2294,7 +2294,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
 
         expect do
           delete iron_admin.resource_path("users", inactive_user), as: :html
-        end.to raise_error(ActiveRecord::RecordNotFound)
+        end.to raise_error(IronAdmin::RecordNotFound)
       end
 
       it "applies tenant scope to bulk actions" do

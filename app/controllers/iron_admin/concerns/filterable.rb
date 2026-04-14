@@ -13,8 +13,8 @@ module IronAdmin
 
       # Applies all configured filters to the scope.
       #
-      # @param scope [ActiveRecord::Relation] Base scope
-      # @return [ActiveRecord::Relation] Filtered scope
+      # @param scope [Object] Base query scope (ActiveRecord::Relation or Mongoid::Criteria)
+      # @return [Object] Filtered scope
       def apply_filters(scope)
         @resource_class.all_filters.each do |filter|
           scope = case filter[:type]
@@ -30,14 +30,14 @@ module IronAdmin
         sub = params.dig(:filters, filter[:name].to_s)
         return scope unless sub.is_a?(ActionController::Parameters) && sub["value"].present?
 
-        IronAdmin::Filters::QueryBuilder.call(scope, filter, sub.to_unsafe_h)
+        adapter.query_builder_class.call(scope, filter, sub.to_unsafe_h)
       end
 
       def apply_date_range_filter(scope, filter)
         from = params.dig(:filters, "#{filter[:name]}_from")
         to = params.dig(:filters, "#{filter[:name]}_to")
-        scope = scope.where(filter[:name] => parse_date(from)..) if from.present? && parse_date(from)
-        scope = scope.where(filter[:name] => ..parse_date(to)&.end_of_day) if to.present? && parse_date(to)
+        scope = adapter.filter(scope, filter[:name], parse_date(from)..) if from.present? && parse_date(from)
+        scope = adapter.filter(scope, filter[:name], ..parse_date(to)&.end_of_day) if to.present? && parse_date(to)
         scope
       end
 
@@ -46,7 +46,7 @@ module IronAdmin
         return scope if value.blank?
         return scope unless value.is_a?(String)
 
-        value = ActiveModel::Type::Boolean.new.cast(value) if filter[:type] == :boolean
+        value = adapter.cast_boolean(value) if filter[:type] == :boolean
 
         if filter[:scope]
           filter[:scope].call(value, scope)

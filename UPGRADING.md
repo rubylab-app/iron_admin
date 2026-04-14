@@ -1,3 +1,76 @@
+# Upgrading to IronAdmin 0.7.0 (Adapter-Agnostic)
+
+Version 0.7.0 makes IronAdmin adapter-agnostic and adds Mongoid (MongoDB) support. Most applications require no changes, but there are a few breaking changes if you interact with IronAdmin internals.
+
+## What changed
+
+### 1. Exception types
+
+Controllers now raise `IronAdmin::RecordNotFound` instead of `ActiveRecord::RecordNotFound`.
+
+**Action required:** If your application rescues `ActiveRecord::RecordNotFound` in middleware or custom code that wraps IronAdmin routes, update it:
+
+```ruby
+# Before
+rescue ActiveRecord::RecordNotFound
+  render_404
+
+# After
+rescue IronAdmin::RecordNotFound
+  render_404
+```
+
+### 2. adapter_class default is now a symbol
+
+`Resource.adapter_class` defaults to `:active_record` instead of `IronAdmin::Adapters::ActiveRecord`.
+
+**Action required:** If your tests assert on `adapter_class`:
+
+```ruby
+# Before
+expect(MyResource.adapter_class).to eq(IronAdmin::Adapters::ActiveRecord)
+
+# After
+expect(MyResource.adapter_class).to eq(:active_record)
+```
+
+### 3. QueryBuilder renamed
+
+`IronAdmin::Filters::QueryBuilder` is now `IronAdmin::Filters::ActiveRecordQueryBuilder`. The old name is preserved as an alias, but if you subclass `QueryBuilder`, update to inherit from `ActiveRecordQueryBuilder` (or `BaseQueryBuilder` for adapter-agnostic filters).
+
+### 4. New abstract methods on Adapters::Base
+
+If you have a custom adapter (not using the built-in `:active_record` or `:mongoid`), implement these new methods:
+
+| Method | Purpose |
+|--------|---------|
+| `record_changes(record)` | Returns changes hash after save (AR: `saved_changes`, Mongoid: `previous_changes`) |
+| `wrap_rollback(&block)` | Wraps block converting `IronAdmin::Rollback` to adapter-native rollback |
+| `query_builder_class` | Returns the QueryBuilder class for operator filters |
+| `pagy_method` | Returns Pagy backend method name (`:pagy` or `:pagy_mongoid`) |
+| `cast_boolean(value)` | Casts string to boolean |
+
+### 5. Using Mongoid
+
+To use IronAdmin with MongoDB, add `mongoid` to your Gemfile and configure resources:
+
+```ruby
+class ArticleResource < IronAdmin::Resource
+  self.adapter_class = :mongoid
+end
+```
+
+The Mongoid adapter is only loaded when `:mongoid` is configured — it adds zero overhead to ActiveRecord-only apps.
+
+## What does NOT change
+
+- **Routes, URLs, views** — No changes needed.
+- **Resource DSL** — All DSL methods work identically.
+- **Configuration** — `IronAdmin.configure` blocks unchanged.
+- **Existing ActiveRecord apps** — Zero changes required for apps not using Mongoid.
+
+---
+
 # Upgrading to IronAdmin 0.5.0
 
 ## Namespaced Resources and Dashboards

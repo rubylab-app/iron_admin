@@ -138,8 +138,8 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       expect(adapter.find(user.id)).to eq(user)
     end
 
-    it "raises RecordNotFound for missing records" do
-      expect { adapter.find(-1) }.to raise_error(ActiveRecord::RecordNotFound)
+    it "raises IronAdmin::RecordNotFound for missing records" do
+      expect { adapter.find(-1) }.to raise_error(IronAdmin::RecordNotFound)
     end
   end
 
@@ -313,6 +313,58 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       names = []
       adapter.find_each(adapter.all) { |user| names << user.name }
       expect(names.size).to eq(3)
+    end
+  end
+
+  describe "#record_changes" do
+    it "returns saved changes after update" do
+      user = create(:user, name: "Old")
+      user.update!(name: "New")
+      changes = adapter.record_changes(user)
+      expect(changes).to have_key("name")
+    end
+  end
+
+  describe "#wrap_rollback" do
+    it "converts IronAdmin::Rollback to ActiveRecord::Rollback" do
+      user = create(:user, name: "Original")
+      adapter.transaction do
+        adapter.wrap_rollback do
+          adapter.update(user, name: "Changed")
+          raise IronAdmin::Rollback
+        end
+      end
+      expect(user.reload.name).to eq("Original")
+    end
+  end
+
+  describe "#query_builder_class" do
+    it "returns the ActiveRecord query builder" do
+      expect(adapter.query_builder_class).to eq(IronAdmin::Filters::ActiveRecordQueryBuilder)
+    end
+  end
+
+  describe "#pagy_method" do
+    it "returns :pagy" do
+      expect(adapter.pagy_method).to eq(:pagy)
+    end
+  end
+
+  describe "#cast_boolean" do
+    it "casts 'true' to true" do
+      expect(adapter.cast_boolean("true")).to be(true)
+    end
+
+    it "casts '1' to true" do
+      expect(adapter.cast_boolean("1")).to be(true)
+    end
+
+    it "casts 'false' to false" do
+      expect(adapter.cast_boolean("false")).to be(false)
+    end
+
+    it "casts '0' to false" do
+      expect(adapter.cast_boolean("0")).to be(false)
     end
   end
 end

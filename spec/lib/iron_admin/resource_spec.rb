@@ -31,8 +31,8 @@ RSpec.describe IronAdmin::Resource do
   end
 
   describe ".adapter_class" do
-    it "defaults to ActiveRecord adapter" do
-      expect(TestUserResource.adapter_class).to eq(IronAdmin::Adapters::ActiveRecord)
+    it "defaults to :active_record symbol" do
+      expect(TestUserResource.adapter_class).to eq(:active_record)
     end
 
     it "can be overridden per resource" do

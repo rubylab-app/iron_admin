@@ -12,6 +12,33 @@ IronAdmin is designed to be extended at every level.
 6. **Theme system** - 40+ CSS class properties
 7. **Route mounting** - Mount at any path
 
+## MongoDB / Mongoid Support
+
+IronAdmin supports MongoDB via the built-in Mongoid adapter. Add `mongoid` to your Gemfile and configure resources:
+
+```ruby
+# Gemfile
+gem "mongoid"
+
+# app/iron_admin/resources/article_resource.rb
+module IronAdmin
+  module Resources
+    class ArticleResource < IronAdmin::Resource
+      self.adapter_class = :mongoid
+    end
+  end
+end
+```
+
+The Mongoid adapter:
+- Maps Mongoid field types to IronAdmin field types automatically
+- Supports `embeds_many`/`embeds_one` associations (mapped to `:has_many`/`:has_one`)
+- Uses `$regex` for case-insensitive search
+- Provides a `MongoidQueryBuilder` for operator-based string/number filters
+- Falls back gracefully for MongoDB standalone (transactions require replica set)
+
+You can mix adapters in the same app — some resources using ActiveRecord, others using Mongoid.
+
 ## Custom Resources with Business Logic
 
 ```ruby
@@ -345,7 +372,7 @@ end
 
 ## Custom Adapters
 
-IronAdmin uses an adapter pattern to decouple from ActiveRecord. By default, `Resource.adapter` returns an `Adapters::ActiveRecord` instance. You can create custom adapters for other ORMs by subclassing `Adapters::Base`, which defines 31 interface methods covering schema introspection, querying, CRUD, search, transactions, and batch operations.
+IronAdmin uses an adapter pattern to decouple from any specific ORM. By default, `Resource.adapter` returns an `Adapters::ActiveRecord` instance. IronAdmin also ships with an `Adapters::Mongoid` adapter for MongoDB. You can create custom adapters for other ORMs by subclassing `Adapters::Base`, which defines 36 interface methods covering schema introspection, querying, CRUD, search, transactions, batch operations, and adapter-agnostic helpers.
 
 ### Creating an Adapter
 

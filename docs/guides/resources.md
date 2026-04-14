@@ -1,6 +1,6 @@
 # Resources
 
-Resources are the core building block of IronAdmin. Each resource maps to an ActiveRecord model and defines how it appears in the admin panel.
+Resources are the core building block of IronAdmin. Each resource maps to a model (ActiveRecord or Mongoid) and defines how it appears in the admin panel.
 
 ## Generating a Resource
 
