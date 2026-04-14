@@ -153,8 +153,8 @@ module IronAdmin
       @record = find_record(record_scope, params[:id])
       collected = action_form_params(action)
 
-      adapter.wrap_rollback do
-        adapter.transaction do
+      adapter.transaction do
+        adapter.wrap_rollback do
           result = call_action_block(action[:block], @record, collected)
           emit_event(params[:action_name], @record)
           raise IronAdmin::Rollback if result == false
@@ -266,8 +266,8 @@ module IronAdmin
 
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
-      adapter.wrap_rollback do
-        adapter.transaction do
+      adapter.transaction do
+        adapter.wrap_rollback do
           result = call_action_block(action[:block], records, collected)
           raise IronAdmin::Rollback if result == false
         end
@@ -356,7 +356,7 @@ module IronAdmin
         user: iron_admin_current_user,
         action: action,
         resource: @resource_class.name,
-        record_id: record.id,
+        record_id: record.id.to_s,
         changes: adapter.record_changes(record),
         ip_address: request.remote_ip
       )

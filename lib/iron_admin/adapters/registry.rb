@@ -11,8 +11,8 @@ module IronAdmin
     #   IronAdmin::Adapters::Registry.resolve(:active_record)
     #   #=> IronAdmin::Adapters::ActiveRecord
     #
-    # @example Registering a custom adapter
-    #   IronAdmin::Adapters::Registry.register(:my_adapter, "my_gem/iron_admin_adapter", "MyGem::IronAdminAdapter")
+    # @example Using a custom adapter (pass the class directly to adapter_class)
+    #   self.adapter_class = MyGem::IronAdminAdapter
     module Registry
       ADAPTERS = {
         active_record: {

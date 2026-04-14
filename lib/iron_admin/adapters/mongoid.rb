@@ -82,13 +82,22 @@ module IronAdmin
       def find(id)
         model_class.find(id)
       rescue StandardError => e
-        raise IronAdmin::RecordNotFound, e.message
+        raise IronAdmin::RecordNotFound, e.message if not_found_error?(e)
+
+        raise
       end
 
       delegate :find_by, to: :model_class
 
       def filter(scope, column, value)
-        scope.where(column => value)
+        case value
+        when Array
+          scope.in(column => value)
+        when Range
+          build_range_filter(scope, column, value)
+        else
+          scope.where(column => value)
+        end
       end
 
       def order_by(scope, column, direction)
@@ -200,6 +209,19 @@ module IronAdmin
         return :string if field.name == "_id"
 
         MONGOID_TYPE_MAP.fetch(field.type) { boolean_or_text(field.type) }
+      end
+
+      def build_range_filter(scope, column, range)
+        conditions = {}
+        conditions["$gte"] = range.begin if range.begin
+        conditions["$lte"] = range.end if range.end
+        scope.where(column.to_s => conditions)
+      end
+
+      def not_found_error?(error)
+        error.class.name.include?("NotFound") ||
+          error.class.name.include?("DocumentNotFound") ||
+          error.message.include?("not found")
       end
 
       def boolean_or_text(type)

@@ -7,3 +7,4 @@ spec/examples.txt
 tmp/
 .yardoc/
 examples/
+.claude/scheduled_tasks.lock
