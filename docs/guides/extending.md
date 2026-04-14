@@ -372,33 +372,9 @@ end
 
 ## Custom Adapters
 
-IronAdmin uses an adapter pattern to decouple from any specific ORM. By default, `Resource.adapter` returns an `Adapters::ActiveRecord` instance. IronAdmin also ships with an `Adapters::Mongoid` adapter for MongoDB. You can create custom adapters for other ORMs by subclassing `Adapters::Base`, which defines 36 interface methods covering schema introspection, querying, CRUD, search, transactions, batch operations, and adapter-agnostic helpers.
+IronAdmin uses an adapter pattern to decouple from any specific ORM. It ships with `ActiveRecord` and `Mongoid` adapters, but you can create adapters for any data source (Sequel, HTTP APIs, DynamoDB, etc.).
 
-### Creating an Adapter
-
-```ruby
-class IronAdmin::Adapters::Mongoid < IronAdmin::Adapters::Base
-  def columns = model_class.fields.values
-  def all = model_class.all
-  def find(id) = model_class.find(id)
-  def build(attrs = {}) = model_class.new(attrs)
-  def save(record) = record.save
-  def destroy(record) = record.destroy
-  # ... implement all 31 methods from Adapters::Base
-end
-```
-
-### Using a Custom Adapter
-
-Set `adapter_class` on your resource to use a custom adapter:
-
-```ruby
-class MongoPostResource < IronAdmin::Resource
-  self.adapter_class = IronAdmin::Adapters::Mongoid
-end
-```
-
-All controllers, helpers, and components go through the adapter, so a fully implemented adapter enables IronAdmin to work with any data source.
+See the [Building a Custom Adapter](custom-adapters.md) guide for the complete reference, including all 36 methods, duck type contracts, QueryBuilder integration, and testing patterns.
 
 ## Testing Resources
 
