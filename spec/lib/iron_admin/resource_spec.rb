@@ -494,6 +494,15 @@ RSpec.describe IronAdmin::Resource do
       expect(mixed_resource.menu_options[:group]).to eq("Primary")
       expect(mixed_resource.menu_options).not_to have_key(:section)
     end
+
+    it "respects an explicit `group: nil` over `:section` (key-presence based precedence)" do
+      explicit_nil_resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        menu group: nil, section: "Legacy"
+      end
+      expect(explicit_nil_resource.menu_options).to have_key(:group)
+      expect(explicit_nil_resource.menu_options[:group]).to be_nil
+    end
   end
 
   describe ".resource_policy" do

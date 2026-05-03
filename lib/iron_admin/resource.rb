@@ -404,7 +404,11 @@ module IronAdmin
       def menu(**options)
         if options.key?(:section)
           legacy = options.delete(:section)
-          options[:group] ||= legacy
+          # Preserve `:group` precedence based on key presence so that
+          # explicitly passing `group: nil` (or `group: false`) still
+          # wins over `section:`. Using `||=` would clobber falsey
+          # explicit values.
+          options[:group] = legacy unless options.key?(:group)
         end
         self.menu_options = options
       end
