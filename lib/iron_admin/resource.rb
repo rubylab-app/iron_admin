@@ -391,13 +391,21 @@ module IronAdmin
       # @option options [String] :icon Heroicon name for the menu item
       # @option options [String] :label Custom label (defaults to pluralized model name)
       # @option options [Integer] :priority Sort order (lower = higher in menu)
-      # @option options [String] :section Group name for menu sections
+      # @option options [String] :group Group name for the sidebar section
+      #   (sibling resources sharing the same `:group` are listed together;
+      #   resources without a `:group` fall under "Resources"). `:section`
+      #   is also accepted as an alias for `:group` for backward
+      #   compatibility with earlier docs.
       #
       # @example
-      #   menu icon: "users", label: "Team Members", priority: 10
+      #   menu icon: "users", label: "Team Members", priority: 10, group: "People"
       #
       # @return [void]
       def menu(**options)
+        if options.key?(:section)
+          legacy = options.delete(:section)
+          options[:group] ||= legacy
+        end
         self.menu_options = options
       end
 

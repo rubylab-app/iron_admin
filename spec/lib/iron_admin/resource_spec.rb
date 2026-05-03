@@ -477,6 +477,23 @@ RSpec.describe IronAdmin::Resource do
     it "stores priority in menu options" do
       expect(TestUserResource.menu_options[:priority]).to eq(0)
     end
+
+    it "accepts :section as a backward-compatible alias for :group" do
+      legacy_resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        menu icon: "key", section: "Legacy"
+      end
+      expect(legacy_resource.menu_options[:group]).to eq("Legacy")
+    end
+
+    it "prefers :group when both :group and :section are passed" do
+      mixed_resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+        menu group: "Primary", section: "Legacy"
+      end
+      expect(mixed_resource.menu_options[:group]).to eq("Primary")
+      expect(mixed_resource.menu_options).not_to have_key(:section)
+    end
   end
 
   describe ".resource_policy" do
