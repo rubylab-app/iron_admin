@@ -35,12 +35,21 @@ module IronAdmin
       # @param resource_class [Class] The resource class to register
       # @return [Class] The registered resource class
       def register(resource_class)
-        resources[resource_class.resource_name] = resource_class
-        resource_class.register_soft_delete_features
-        resource_class
-      rescue StandardError
-        # Swallow eager-registration failures — `finalize!` retries with
-        # the correct adapter once the class body has fully evaluated.
+        # Stage the registry key first so the resource is discoverable
+        # even if `register_soft_delete_features` raises. We use a key
+        # derived from the class name (no adapter/model lookup) so HTTP
+        # resources without a Ruby model class — and any other case where
+        # `resource_name` would touch a not-yet-loaded adapter — still
+        # land in the registry.
+        resources[registry_key_for(resource_class)] = resource_class
+        begin
+          resource_class.register_soft_delete_features
+        rescue StandardError
+          # Swallow eager-registration failures silently — `finalize!`
+          # retries with the correct adapter once the class body has
+          # fully evaluated, and logs there.
+          nil
+        end
         resource_class
       end
 
@@ -122,6 +131,17 @@ module IronAdmin
 
       def resources
         @resources ||= {}
+      end
+
+      # Builds the registry key without touching the adapter or model.
+      # Falls back from `resource_class.resource_name` (which delegates
+      # to the adapter and may raise on HTTP/Mongoid resources before
+      # `to_prepare` finalizes the lifecycle) to a name derived purely
+      # from the class identifier.
+      def registry_key_for(resource_class)
+        resource_class.resource_name
+      rescue StandardError
+        resource_class.name.demodulize.sub(/Resource\z/, "").underscore.pluralize
       end
 
       def warn_finalize_failure(resource_class, error)

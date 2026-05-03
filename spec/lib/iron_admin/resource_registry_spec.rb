@@ -68,6 +68,22 @@ RSpec.describe IronAdmin::ResourceRegistry do
 
       expect(described_class.register(flaky_resource)).to eq(flaky_resource)
     end
+
+    it "falls back to a class-name-derived key when resource_name (adapter-driven) raises" do
+      adapter_dependent_resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "IronAdmin::Resources::AdapterDependentResource"
+        end
+      end
+      allow(adapter_dependent_resource).to receive(:resource_name)
+        .and_raise(NameError, "uninitialized constant AdapterDependent")
+
+      described_class.register(adapter_dependent_resource)
+
+      expect(described_class.find("adapter_dependents")).to eq(adapter_dependent_resource)
+    end
   end
 
   describe ".finalize!" do

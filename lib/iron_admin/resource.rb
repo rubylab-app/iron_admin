@@ -701,7 +701,10 @@ module IronAdmin
       # @return [void]
       def register_soft_delete_features
         return if @soft_delete_features_registered
-        return unless soft_delete?
+        # Cache the negative result so we don't re-run schema
+        # introspection on every register / finalize! cycle for
+        # resources whose model has no `deleted_at` column.
+        return @soft_delete_features_registered = true unless soft_delete?
 
         # Capture the column name for use in lambdas
         column = soft_delete_column

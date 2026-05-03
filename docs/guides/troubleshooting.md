@@ -108,17 +108,23 @@ closed. This is the recommended workaround until the issue is resolved upstream.
 ### Resources silently missing on Mongoid / HTTP / custom adapters
 
 **Cause:** Eager registration tried to introspect the model before
-`self.adapter_class = :mongoid` (or similar) had taken effect; the
-failure was logged and the resource was queued for retry by `finalize!`.
+`self.adapter_class = :mongoid` (or similar) had taken effect. The eager
+failure is **silent by design** (no log line) — `finalize!` retries with
+the correct adapter once the class body has fully evaluated. Logs only
+appear if the deferred retry *also* fails.
 
 **Solutions:**
-1. Check `Rails.logger` for `[IronAdmin] Could not finalize <Resource>:
-   <Error>` — this means the deferred retry also failed. Common causes:
-   model class doesn't exist (HTTP adapter — see #64), DB unreachable
-   (transient outage at boot), or schema introspection bug in the
-   adapter.
+1. Look for `[IronAdmin] Could not finalize <Resource>: <Error>` in
+   `Rails.logger`. If you see one, the deferred retry failed too —
+   common causes: model class doesn't exist (HTTP adapter), DB
+   unreachable (transient outage at boot), or schema introspection bug
+   in the adapter.
 2. Confirm the registry has the resource:
    `bin/rails runner 'puts IronAdmin::ResourceRegistry.find("things")'`
+3. If `find` returns `nil` and there's no `Could not finalize` log,
+   `finalize!` may not have run yet (e.g. the engine's `to_prepare`
+   wasn't triggered in your boot path). Run
+   `IronAdmin::ResourceRegistry.finalize!` manually and re-check.
 
 ### Custom actions not appearing
 
