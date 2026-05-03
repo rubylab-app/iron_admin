@@ -24,7 +24,15 @@ module IronAdmin
 
     initializer "iron_admin.assets" do |app|
       if app.config.respond_to?(:assets) && app.config.assets
-        app.config.assets.precompile += %w[iron_admin_manifest]
+        # `app/assets/config/iron_admin_manifest.js` is a Sprockets manifest
+        # that link_trees the engine's JavaScript bundle. Adding it to
+        # `precompile` recursively pulls in `app/javascript/iron_admin/**/*.js`,
+        # which is what the layout references via `javascript_importmap_tags`
+        # (importmap pin: `iron_admin/index.js`). Without this entry, hosts on
+        # sprockets-rails (Rails 7.1 default) get
+        # `Asset 'iron_admin/index.js' was not declared to be precompiled`
+        # on every resource page.
+        app.config.assets.precompile += %w[iron_admin_manifest.js]
         app.config.assets.paths << root.join("vendor/assets/javascripts")
         app.config.assets.paths << root.join("app/javascript")
       end
