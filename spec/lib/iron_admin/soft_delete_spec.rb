@@ -194,6 +194,22 @@ RSpec.describe "IronAdmin Soft Delete Support" do
       expect { unavailable_resource.register_soft_delete_features }.not_to raise_error
     end
 
+    it "does not raise ActiveRecord::ConnectionNotEstablished (transient outage)" do
+      allow(Article).to receive(:column_names).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+      expect { unavailable_resource.register_soft_delete_features }.not_to raise_error
+    end
+
+    it "logs a warning when soft-delete features are skipped" do
+      allow(Article).to receive(:column_names).and_raise(ActiveRecord::ConnectionNotEstablished, "boom")
+      allow(Rails.logger).to receive(:warn)
+
+      unavailable_resource.register_soft_delete_features
+
+      expect(Rails.logger).to have_received(:warn)
+        .with(/Skipping soft-delete features for UnavailableResource.*ActiveRecord::ConnectionNotEstablished.*boom/)
+    end
+
     it "does not register any scopes or actions" do
       allow(Article).to receive(:column_names).and_raise(ActiveRecord::NoDatabaseError)
 
