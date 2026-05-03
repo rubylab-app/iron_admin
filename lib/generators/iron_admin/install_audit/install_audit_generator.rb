@@ -20,22 +20,38 @@ module IronAdmin
     # @see IronAdmin::AuditLog
     # @see IronAdmin::Configuration#audit_storage
     class InstallAuditGenerator < Rails::Generators::Base
-      include Rails::Generators::Migration
-
       source_root File.expand_path("templates", __dir__)
 
-      # Creates the audit entries migration.
+      # Writes the audit entries migration into `db/migrate/`.
+      #
+      # We deliberately avoid `Rails::Generators::Migration#migration_template`
+      # here: that helper goes through `ActiveRecord::Migration.current_version`
+      # which opens a DB connection to read the schema cache. On a clean
+      # machine (DB doesn't exist yet) or during a deploy where the DB
+      # is briefly unreachable, that crashes the generator with
+      # `ActiveRecord::ConnectionNotEstablished` and the migration file
+      # never gets written. Using plain `template` plus a timestamp-based
+      # filename keeps the generator DB-free, so `bin/rails db:create
+      # db:migrate` (the natural bootstrap order) Just Works.
+      #
       # @return [void]
       def create_migration
-        migration_template "create_iron_admin_audit_entries.rb.tt",
-                           "db/migrate/create_iron_admin_audit_entries.rb"
+        timestamp = Time.now.utc.strftime("%Y%m%d%H%M%S")
+        target = "db/migrate/#{timestamp}_create_iron_admin_audit_entries.rb"
+        if existing_audit_migration?
+          say_status :skip, "create_iron_admin_audit_entries migration already exists", :yellow
+          return
+        end
+        template "create_iron_admin_audit_entries.rb.tt", target
       end
 
-      # @api private
-      # Generates the next migration number based on current timestamp.
-      # @return [String] Migration timestamp
-      def self.next_migration_number(_dirname)
-        Time.now.utc.strftime("%Y%m%d%H%M%S")
+      private
+
+      # @return [Boolean] True if a migration whose name ends with
+      #   `_create_iron_admin_audit_entries.rb` is already present in
+      #   `db/migrate/`. Avoids creating duplicate migrations on rerun.
+      def existing_audit_migration?
+        Dir.glob(File.join(destination_root, "db/migrate", "*_create_iron_admin_audit_entries.rb")).any?
       end
     end
   end
