@@ -61,9 +61,16 @@ RSpec.describe IronAdmin::Generators::InstallAuditGenerator, type: :generator do
     end
 
     it "skips when an audit migration already exists" do
+      # Stub Time.now so the second `next_migration_number`-equivalent
+      # would naturally produce a different timestamp — but the skip
+      # branch should fire before any timestamp computation matters.
+      # Using a stub keeps the spec sub-second instead of relying on
+      # `sleep` (slow + flaky on loaded CI).
+      times = [Time.utc(2026, 5, 3, 12, 0, 0), Time.utc(2026, 5, 3, 12, 0, 1)]
+      allow(Time).to receive(:now).and_return(*times)
+
       # First run creates the migration
       run_generator
-      sleep 1.1 # ensure a different timestamp would be possible
 
       expect { run_generator }
         .to output(/skip.*create_iron_admin_audit_entries.*already exists/m).to_stdout
