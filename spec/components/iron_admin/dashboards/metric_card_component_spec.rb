@@ -24,4 +24,10 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
     component = described_class.new(name: :total_users, value: 42, format: :number)
     expect(component.icon).to be_nil
   end
+
+  it "renders the heroicon when icon is provided" do
+    result = render_inline(described_class.new(name: :total_users, value: 42, format: :number, icon: "users"))
+
+    expect(result.css("svg").size).to eq(1)
+  end
 end

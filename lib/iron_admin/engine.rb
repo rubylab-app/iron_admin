@@ -38,6 +38,19 @@ module IronAdmin
       config.i18n.load_path += Dir[root.join("config", "locales", "**", "*.yml")]
     end
 
+    # Expose `heroicon` directly on every ViewComponent instance.
+    # ViewComponent does not auto-include host-app `ApplicationHelper`
+    # methods on component templates, so calling `heroicon "users"` from
+    # a HAML template would otherwise raise `NoMethodError` (depending on
+    # ViewComponent version). Including the helper module on
+    # `ViewComponent::Base` makes `heroicon` available to every component
+    # template and Ruby method without requiring `helpers.heroicon`.
+    initializer "iron_admin.view_component_heroicon" do
+      ActiveSupport.on_load(:view_component) do
+        include Heroicon::ApplicationHelper
+      end
+    end
+
     initializer "iron_admin.autoload", before: :set_autoload_paths do
       resource_path = Rails.root.join("app/iron_admin")
       Rails.autoloaders.main.push_dir(resource_path, namespace: IronAdmin) if resource_path.exist?
