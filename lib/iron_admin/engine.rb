@@ -69,6 +69,12 @@ module IronAdmin
       if resource_path.exist?
         IronAdmin::ResourceRegistry.reset!
         Rails.autoloaders.main.eager_load_dir(resource_path)
+        # Eager-loading runs each resource's `inherited` hook, which adds
+        # the class to the registry. Now that every class body has fully
+        # evaluated (and thus `self.adapter_class = :mongoid` etc. have
+        # taken effect), call `finalize!` to run the model introspection
+        # steps (soft-delete features, etc.) with the correct adapter.
+        IronAdmin::ResourceRegistry.finalize!
       end
     end
   end

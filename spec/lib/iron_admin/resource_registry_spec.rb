@@ -39,4 +39,91 @@ RSpec.describe IronAdmin::ResourceRegistry do
       expect(sorted.first).to eq(TestUserResource)
     end
   end
+
+  describe ".register robustness" do
+    let(:flaky_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "FlakyResource"
+        end
+
+        def self.resource_name
+          "flakies"
+        end
+      end
+    end
+
+    it "still adds the resource to the registry when soft-delete registration raises" do
+      allow(flaky_resource).to receive(:register_soft_delete_features).and_raise(NoMethodError, "boom")
+
+      described_class.register(flaky_resource)
+
+      expect(described_class.all).to include(flaky_resource)
+    end
+
+    it "returns the resource class even on soft-delete failure" do
+      allow(flaky_resource).to receive(:register_soft_delete_features).and_raise(NoMethodError, "boom")
+
+      expect(described_class.register(flaky_resource)).to eq(flaky_resource)
+    end
+  end
+
+  describe ".finalize!" do
+    let(:resource_a) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "ResourceA"
+        end
+
+        def self.resource_name
+          "resource_a"
+        end
+      end
+    end
+
+    let(:resource_b) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "ResourceB"
+        end
+
+        def self.resource_name
+          "resource_b"
+        end
+      end
+    end
+
+    before do
+      described_class.register(resource_a)
+      described_class.register(resource_b)
+    end
+
+    it "calls register_soft_delete_features on every registered resource" do
+      allow(resource_a).to receive(:register_soft_delete_features)
+      allow(resource_b).to receive(:register_soft_delete_features)
+
+      described_class.finalize!
+
+      expect(resource_a).to have_received(:register_soft_delete_features)
+      expect(resource_b).to have_received(:register_soft_delete_features)
+    end
+
+    it "logs a warning and continues when a resource raises" do
+      allow(resource_a).to receive(:register_soft_delete_features).and_raise(NoMethodError, "boom")
+      allow(resource_b).to receive(:register_soft_delete_features)
+      allow(Rails.logger).to receive(:warn)
+
+      expect { described_class.finalize! }.not_to raise_error
+
+      expect(Rails.logger).to have_received(:warn)
+        .with(/Could not finalize ResourceA.*NoMethodError.*boom/)
+      expect(resource_b).to have_received(:register_soft_delete_features)
+    end
+  end
 end

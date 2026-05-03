@@ -165,6 +165,14 @@ RSpec.describe "IronAdmin Soft Delete Support" do
 
       expect(deleted_article.reload.deleted_at).to be_nil
     end
+
+    it "is idempotent: calling register_soft_delete_features multiple times does not duplicate the restore action" do
+      article_resource.register_soft_delete_features
+      article_resource.register_soft_delete_features
+
+      restore_actions = article_resource.defined_actions.select { |a| a[:name] == :restore }
+      expect(restore_actions.size).to eq(1)
+    end
   end
 
   describe "when database is unavailable" do

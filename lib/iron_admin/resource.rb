@@ -700,6 +700,7 @@ module IronAdmin
       #
       # @return [void]
       def register_soft_delete_features
+        return if @soft_delete_features_registered
         return unless soft_delete?
 
         # Capture the column name for use in lambdas
@@ -716,6 +717,8 @@ module IronAdmin
         action :restore, icon: "arrow-path", condition: ->(record) { record.public_send(column).present? } do |record|
           record.update(column => nil)
         end
+
+        @soft_delete_features_registered = true
       rescue *IronAdmin.db_unreachable_exceptions => e
         Rails.logger&.warn("[IronAdmin] Skipping soft-delete features for #{name}: #{e.class} (#{e.message})") if defined?(Rails)
         nil

@@ -96,6 +96,29 @@ closed. This is the recommended workaround until the issue is resolved upstream.
 1. Ensure resource file exists in `app/iron_admin/resources/`
 2. Check resource inherits from `IronAdmin::Resource`
 3. Verify filename matches class name (`user_resource.rb` → `UserResource`)
+4. For non-AR adapters (`:mongoid`, `:http`, custom): registration runs in
+   two phases — `Resource.inherited` adds the class to the registry, and
+   the engine's `to_prepare` block calls `ResourceRegistry.finalize!`
+   after every class body has fully evaluated. If you call
+   `IronAdmin::ResourceRegistry.register` manually outside the engine's
+   boot path (e.g. in custom initializer), call
+   `IronAdmin::ResourceRegistry.finalize!` afterwards so soft-delete
+   features pick up the right adapter.
+
+### Resources silently missing on Mongoid / HTTP / custom adapters
+
+**Cause:** Eager registration tried to introspect the model before
+`self.adapter_class = :mongoid` (or similar) had taken effect; the
+failure was logged and the resource was queued for retry by `finalize!`.
+
+**Solutions:**
+1. Check `Rails.logger` for `[IronAdmin] Could not finalize <Resource>:
+   <Error>` — this means the deferred retry also failed. Common causes:
+   model class doesn't exist (HTTP adapter — see #64), DB unreachable
+   (transient outage at boot), or schema introspection bug in the
+   adapter.
+2. Confirm the registry has the resource:
+   `bin/rails runner 'puts IronAdmin::ResourceRegistry.find("things")'`
 
 ### Custom actions not appearing
 
