@@ -14,22 +14,70 @@ RSpec.describe IronAdmin::Generators::InstallAuditGenerator, type: :generator do
       expect(described_class.superclass).to eq(Rails::Generators::Base)
     end
 
-    it "includes Rails::Generators::Migration" do
-      expect(described_class.included_modules).to include(Rails::Generators::Migration)
+    it "does not include Rails::Generators::Migration" do
+      # We deliberately don't use `Rails::Generators::Migration` because
+      # `migration_template` opens an AR connection (to look up the
+      # current migration version), which would crash on a fresh
+      # machine with no DB yet.
+      expect(described_class.included_modules).not_to include(Rails::Generators::Migration)
     end
 
     it "has a source_root" do
       expect(described_class.source_root).to be_a(String)
       expect(File.directory?(described_class.source_root)).to be true
     end
+  end
 
-    it "has a next_migration_number class method" do
-      expect(described_class).to respond_to(:next_migration_number)
+  describe "running the generator" do
+    let(:destination) { File.expand_path("../../tmp_audit", __dir__) }
+
+    before do
+      FileUtils.rm_rf(destination)
+      FileUtils.mkdir_p(File.join(destination, "db/migrate"))
     end
 
-    it "generates timestamp-based migration numbers" do
-      number = described_class.next_migration_number("db/migrate")
-      expect(number).to match(/^\d{14}$/)
+    after do
+      FileUtils.rm_rf(destination)
+    end
+
+    def run_generator(args = [])
+      described_class.start(args, destination_root: destination)
+    end
+
+    it "writes a timestamped migration file with the right name suffix" do
+      run_generator
+      files = Dir.glob(File.join(destination, "db/migrate", "*_create_iron_admin_audit_entries.rb"))
+      expect(files.size).to eq(1)
+      expect(File.basename(files.first)).to match(/\A\d{14}_create_iron_admin_audit_entries\.rb\z/)
+    end
+
+    it "writes the migration without opening an AR connection" do
+      # If `migration_template` were used, this would call into
+      # ActiveRecord::Base.connection.schema_migration etc. We assert
+      # the generator runs cleanly without any AR interaction.
+      allow(ActiveRecord::Base).to receive(:connection)
+      expect { run_generator }.not_to raise_error
+      expect(ActiveRecord::Base).not_to have_received(:connection)
+    end
+
+    it "skips when an audit migration already exists" do
+      # Stub Time.now so the second `next_migration_number`-equivalent
+      # would naturally produce a different timestamp — but the skip
+      # branch should fire before any timestamp computation matters.
+      # Using a stub keeps the spec sub-second instead of relying on
+      # `sleep` (slow + flaky on loaded CI).
+      times = [Time.utc(2026, 5, 3, 12, 0, 0), Time.utc(2026, 5, 3, 12, 0, 1)]
+      allow(Time).to receive(:now).and_return(*times)
+
+      # First run creates the migration
+      run_generator
+
+      expect { run_generator }
+        .to output(/skip.*create_iron_admin_audit_entries.*already exists/m).to_stdout
+
+      # Still only one migration file
+      files = Dir.glob(File.join(destination, "db/migrate", "*_create_iron_admin_audit_entries.rb"))
+      expect(files.size).to eq(1)
     end
   end
 
