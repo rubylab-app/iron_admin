@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tool namespace in docs** (#36) — Fixed tool examples in extending guide to use the correct `IronAdmin::Tools::` module nesting required by Zeitwerk autoloading.
 - **Policy docs** (#32) — Clarified `deny` documentation and corrected `deny` `if:` docs to receive the current user (consistent with `allow`).
 - **Custom adapter guide** — Comprehensive guide for building custom adapters: all 35 methods with signatures, return types, duck type contracts, QueryBuilder integration, testing patterns, and implementation checklist.
+- **`Resource.menu` docstring `:section` vs `:group`** (#57) — The YARD docstring on `Resource.menu` documented `@option options [String] :section`, but `ResourceRegistry#grouped` (and every existing dummy resource) keys on `:group`. The docstring now accurately documents `:group`; for backward-compat, `menu` accepts `:section` as an alias and normalizes it to `:group`.
 
 - **Nested Forms** (#23) — Inline nested form support for has_many/has_one associations:
   - `nested: true` option on `has_many` and `has_one` DSL
