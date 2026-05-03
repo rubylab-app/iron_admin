@@ -16,9 +16,10 @@ module IronAdmin
       DEFAULT_OPTIONS_LIMIT = 100
 
       # Methods tried (in order) when no explicit `display_method:` is
-      # passed and the record doesn't have `:name`. Mirrors
-      # `IronAdmin::ApplicationHelper::DISPLAY_METHODS`.
-      DISPLAY_METHOD_FALLBACKS = %i[name title email label slug].freeze
+      # passed, or when the explicit method returns a blank value.
+      # Single source of truth lives on `IronAdmin::ApplicationHelper`
+      # so forms and show/index pages can never silently drift apart.
+      DISPLAY_METHOD_FALLBACKS = IronAdmin::ApplicationHelper::DISPLAY_METHODS
 
       # @return [String] Select name attribute
       attr_reader :name
@@ -93,13 +94,20 @@ module IronAdmin
       # Resolves the option label for a single record. Mirrors
       # `IronAdmin::ApplicationHelper#display_record_label` so callers
       # who construct the component directly (or test it without
-      # rendering) get the same fallback behavior — Proc / Symbol /
-      # auto-detect from `DISPLAY_METHOD_FALLBACKS`, then `Model #id`.
+      # rendering) get the same fallback behavior:
+      #
+      # 1. Try the explicit `display_method:` (`Proc` or `Symbol`/
+      #    `String`) and return it if it produces a non-blank value.
+      # 2. If the explicit method is absent or returns blank/nil, walk
+      #    `DISPLAY_METHOD_FALLBACKS` and return the first non-blank one.
+      # 3. Otherwise return `"<Model> #<id>"` so the option is at least
+      #    identifiable.
+      #
       # @param record [Object] The associated record
       # @return [String] The label
       def option_label_for(record)
-        return display_method.call(record) if display_method.is_a?(Proc)
-        return record.public_send(display_method) if display_method
+        explicit = explicit_display_value(record)
+        return explicit if explicit.present?
 
         DISPLAY_METHOD_FALLBACKS.each do |method|
           value = record.public_send(method) if record.respond_to?(method)
@@ -136,6 +144,16 @@ module IronAdmin
       end
 
       private
+
+      # Calls the explicit `display_method:` (if any) and returns its
+      # result. Returns `nil` when no explicit method is set, so callers
+      # can `present?`-check and fall through to the auto-detect chain.
+      def explicit_display_value(record)
+        case display_method
+        when Proc then display_method.call(record)
+        when Symbol, String then record.public_send(display_method)
+        end
+      end
 
       # @return [IronAdmin::Adapters::Base] Adapter for the associated model
       def association_adapter

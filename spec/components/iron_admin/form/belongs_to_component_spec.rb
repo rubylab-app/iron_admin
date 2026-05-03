@@ -109,6 +109,20 @@ RSpec.describe IronAdmin::Form::BelongsToComponent, type: :component do
       expect(component.options).to include(["Auto Detected", user.id])
     end
 
+    it "falls through to DISPLAY_METHOD_FALLBACKS when explicit display_method returns blank" do
+      # display_method = :role; role is nil → fall through to :name
+      create(:user, name: "Has Name", role: nil)
+      component = described_class.new(name: :user_id, association_class: User, display_method: :role)
+
+      label, _id = component.options.first
+      expect(label).to eq("Has Name")
+    end
+
+    it "shares the fallback list with IronAdmin::ApplicationHelper" do
+      expect(described_class::DISPLAY_METHOD_FALLBACKS)
+        .to equal(IronAdmin::ApplicationHelper::DISPLAY_METHODS)
+    end
+
     it "falls back to '<Model> #<id>' when no fallback method yields a value" do
       record = double("ModelInstance", id: 99,
                                        class: double(model_name: double(human: "Widget")))
