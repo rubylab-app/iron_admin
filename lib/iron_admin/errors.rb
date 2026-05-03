@@ -15,4 +15,15 @@ module IronAdmin
   # Raised when an adapter encounters an operational error
   # (network failure, invalid response, etc.).
   class AdapterError < Error; end
+
+  # Exception classes that mean the database is missing or unreachable
+  # at boot time. Resolved lazily so the gem stays usable on
+  # `--skip-active-record` hosts where `ActiveRecord` isn't loaded.
+  #
+  # @return [Array<Class>] Rescue classes for boot-time DB failures
+  def self.db_unreachable_exceptions
+    return [] unless defined?(ActiveRecord)
+
+    [ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid, ActiveRecord::ConnectionNotEstablished]
+  end
 end

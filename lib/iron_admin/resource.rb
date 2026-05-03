@@ -692,6 +692,12 @@ module IronAdmin
       # - :only_deleted scope - Show only soft-deleted records
       # - :restore action - Restore a soft-deleted record
       #
+      # Tolerates a missing or unreachable database at boot time so that
+      # `bin/rails db:create` (DB doesn't exist yet) and short DB outages
+      # during deploy don't crash the whole app — soft-delete features are
+      # silently skipped and the resource still loads. The skip is logged
+      # so operators can see what was bypassed.
+      #
       # @return [void]
       def register_soft_delete_features
         return unless soft_delete?
@@ -710,7 +716,8 @@ module IronAdmin
         action :restore, icon: "arrow-path", condition: ->(record) { record.public_send(column).present? } do |record|
           record.update(column => nil)
         end
-      rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid
+      rescue *IronAdmin.db_unreachable_exceptions => e
+        Rails.logger&.warn("[IronAdmin] Skipping soft-delete features for #{name}: #{e.class} (#{e.message})") if defined?(Rails)
         nil
       end
 
