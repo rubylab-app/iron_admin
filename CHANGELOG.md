@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Heroicon undefined in component templates** (#60) — `MetricCardComponent` and ~14 other ViewComponent HAML templates called `heroicon` directly, which raised `NoMethodError` on host apps that resolved newer ViewComponent versions (4.8+) where helper inheritance defaults differ. The engine now includes `Heroicon::ApplicationHelper` into `ViewComponent::Base`, so `heroicon` is available to every component template and Ruby method without `helpers.heroicon`. Added a render-with-icon spec to `MetricCardComponent` so this regression is caught in CI.
 - **Policy `deny` method** (#32) — Implemented the `deny` DSL method in `Policy`, which was documented but raised `NoMethodError`. Deny rules take precedence over allow rules and support optional `if:` conditions. Alias resolution (`:show`/`:index` ↔ `:read`) applies to deny rules.
 - **Custom actions blocked by Policy** (#38) — Custom actions (`action`/`bulk_action`) were blocked with 403 when a `policy` block was defined. Custom actions are now allowed by default unless explicitly restricted by applicable `allow` or `deny` rules. Action names are normalized to symbols for consistent lookup.
 - **`has_many` string resource crash** (#33) — `has_many`, `has_one`, and `habtm` association methods crashed with `NoMethodError` when `resource:` was passed as a string. String values are now constantized, class values used directly, and registry lookup is the fallback.
