@@ -41,6 +41,7 @@ module IronAdmin
   # @see IronAdmin::Policy For authorization options
   class Resource
     include Concerns::Nestable
+    include Concerns::SoftDeletable
 
     class_attribute :field_overrides, default: {}
     class_attribute :_searchable_columns, default: nil
@@ -97,8 +98,17 @@ module IronAdmin
       #   class LegacyUserResource < IronAdmin::Resource
       #     self.model_class_override = OldUser
       #   end
+      #
+      # @example HTTP adapter — no Ruby model required
+      #   class ProductResource < IronAdmin::Resource
+      #     self.adapter_class = :http
+      #     # `model` returns `Adapters::Http::ModelProxy.new(self)` — no
+      #     # `Product` constant required; fields come from the API
+      #     # response on first access.
+      #   end
       def model
         return model_class_override if model_class_override
+        return Adapters::Http::ModelProxy.new(self) if adapter_class == :http
 
         name.sub(/Resource\z/, "").sub(/\AIronAdmin::Resources::/, "").constantize
       end
@@ -666,65 +676,6 @@ module IronAdmin
         ApplicationHelper::DISPLAY_METHODS.find do |method|
           adapter.has_column?(method)
         end || :id
-      end
-
-      # Checks if the model supports soft delete.
-      #
-      # @return [Boolean] True if model has a deleted_at column
-      def soft_delete?
-        adapter.has_column?(soft_delete_column)
-      end
-
-      # Returns the column name used for soft delete tracking.
-      #
-      # @return [String] Column name (default: "deleted_at")
-      def soft_delete_column
-        "deleted_at"
-      end
-
-      # Registers soft delete scopes and restore action if model supports it.
-      #
-      # Automatically called during resource initialization when
-      # a deleted_at column is detected.
-      #
-      # Registers:
-      # - :with_deleted scope - Show all records including soft-deleted
-      # - :only_deleted scope - Show only soft-deleted records
-      # - :restore action - Restore a soft-deleted record
-      #
-      # Tolerates a missing or unreachable database at boot time so that
-      # `bin/rails db:create` (DB doesn't exist yet) and short DB outages
-      # during deploy don't crash the whole app — soft-delete features are
-      # silently skipped and the resource still loads. The skip is logged
-      # so operators can see what was bypassed.
-      #
-      # @return [void]
-      def register_soft_delete_features
-        return if @soft_delete_features_registered
-        # Cache the negative result so we don't re-run schema
-        # introspection on every register / finalize! cycle for
-        # resources whose model has no `deleted_at` column.
-        return @soft_delete_features_registered = true unless soft_delete?
-
-        # Capture the column name for use in lambdas
-        column = soft_delete_column
-        column_sym = column.to_sym
-
-        # Store soft delete scopes separately so they always appear after user-defined scopes
-        self._soft_delete_scopes = [
-          { name: :with_deleted, scope: -> { unscope(where: column_sym) }, default: false },
-          { name: :only_deleted, scope: -> { unscope(where: column_sym).where.not(column => nil) }, default: false },
-        ]
-
-        # Register restore action (only visible on soft-deleted records)
-        action :restore, icon: "arrow-path", condition: ->(record) { record.public_send(column).present? } do |record|
-          record.update(column => nil)
-        end
-
-        @soft_delete_features_registered = true
-      rescue *IronAdmin.db_unreachable_exceptions => e
-        Rails.logger&.warn("[IronAdmin] Skipping soft-delete features for #{name}: #{e.class} (#{e.message})") if defined?(Rails)
-        nil
       end
 
       SKIP_FILTER_COLUMNS = %w[id created_at updated_at].freeze
