@@ -21,14 +21,57 @@ module IronAdmin
     class << self
       # Registers a resource class in the registry.
       #
-      # Called automatically when a Resource subclass is defined.
-      # Also triggers soft delete feature registration if applicable.
+      # Called automatically by `Resource.inherited`. The class is added to
+      # the registry hash **before** any model introspection so that even
+      # if soft-delete registration raises, the resource is still
+      # discoverable (and will be retried by {.finalize!}).
+      #
+      # The eager soft-delete call fires with whatever `adapter_class` is
+      # set at inheritance time, which for non-AR resources is the parent
+      # default (`:active_record`) — that's wrong but expected. The error
+      # is swallowed and {.finalize!} re-runs with the correct adapter
+      # after the class body has finished evaluating.
       #
       # @param resource_class [Class] The resource class to register
       # @return [Class] The registered resource class
       def register(resource_class)
-        resource_class.register_soft_delete_features
-        resources[resource_class.resource_name] = resource_class
+        # Stage the registry key first so the resource is discoverable
+        # even if `register_soft_delete_features` raises. We use a key
+        # derived from the class name (no adapter/model lookup) so HTTP
+        # resources without a Ruby model class — and any other case where
+        # `resource_name` would touch a not-yet-loaded adapter — still
+        # land in the registry.
+        resources[registry_key_for(resource_class)] = resource_class
+        begin
+          resource_class.register_soft_delete_features
+        rescue StandardError
+          # Swallow eager-registration failures silently — `finalize!`
+          # retries with the correct adapter once the class body has
+          # fully evaluated, and logs there.
+          nil
+        end
+        resource_class
+      end
+
+      # Runs every post-load registration step on every registered resource.
+      #
+      # Called by the engine's `to_prepare` block once all resource classes
+      # have been eager-loaded and their bodies have fully evaluated. By
+      # then `adapter_class`, `model_class_override`, etc. are set
+      # correctly, so model introspection through the adapter is safe.
+      #
+      # Soft-delete registration is idempotent; resources that succeeded
+      # eagerly during {.register} are skipped here. Failures are logged
+      # and swallowed per resource so a single broken resource (missing
+      # model class, unreachable DB, etc.) doesn't take down the boot.
+      #
+      # @return [void]
+      def finalize!
+        all.each do |resource_class|
+          resource_class.register_soft_delete_features
+        rescue StandardError => e
+          warn_finalize_failure(resource_class, e)
+        end
       end
 
       # Returns all registered resource classes.
@@ -88,6 +131,25 @@ module IronAdmin
 
       def resources
         @resources ||= {}
+      end
+
+      # Builds the registry key without touching the adapter or model.
+      # Falls back from `resource_class.resource_name` (which delegates
+      # to the adapter and may raise on HTTP/Mongoid resources before
+      # `to_prepare` finalizes the lifecycle) to a name derived purely
+      # from the class identifier.
+      def registry_key_for(resource_class)
+        resource_class.resource_name
+      rescue StandardError
+        resource_class.name.demodulize.sub(/Resource\z/, "").underscore.pluralize
+      end
+
+      def warn_finalize_failure(resource_class, error)
+        return unless defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+
+        Rails.logger.warn(
+          "[IronAdmin] Could not finalize #{resource_class.name}: #{error.class} (#{error.message})"
+        )
       end
     end
   end
