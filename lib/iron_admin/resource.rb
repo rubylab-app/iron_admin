@@ -97,8 +97,16 @@ module IronAdmin
       #   class LegacyUserResource < IronAdmin::Resource
       #     self.model_class_override = OldUser
       #   end
+      #
+      # @example HTTP adapter — no Ruby model required
+      #   class ProductResource < IronAdmin::Resource
+      #     self.adapter_class = :http
+      #     # `model` returns Adapters::Http::ModelProxy(self) — there is
+      #     # no `Product` constant; fields come from the API response.
+      #   end
       def model
         return model_class_override if model_class_override
+        return Adapters::Http::ModelProxy.new(self) if adapter_class == :http
 
         name.sub(/Resource\z/, "").sub(/\AIronAdmin::Resources::/, "").constantize
       end

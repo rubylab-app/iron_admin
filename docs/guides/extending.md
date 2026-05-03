@@ -73,6 +73,7 @@ The HTTP adapter:
 - Full CRUD via standard REST verbs
 - Lazy query execution (no HTTP requests until records are accessed)
 - Populates `record.errors` from API 422 responses for form validation
+- **Does not require a Ruby model class.** When `adapter_class = :http`, `Resource.model` returns `IronAdmin::Adapters::Http::ModelProxy` — a thin wrapper that exposes `model_name.plural` / `model_name.human` for routing and labels but no schema methods. Fields come from the API at request time.
 
 ## Custom Resources with Business Logic
 
