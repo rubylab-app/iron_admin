@@ -15,6 +15,11 @@ module IronAdmin
       # @return [Integer]
       DEFAULT_OPTIONS_LIMIT = 100
 
+      # Methods tried (in order) when no explicit `display_method:` is
+      # passed and the record doesn't have `:name`. Mirrors
+      # `IronAdmin::ApplicationHelper::DISPLAY_METHODS`.
+      DISPLAY_METHOD_FALLBACKS = %i[name title email label slug].freeze
+
       # @return [String] Select name attribute
       attr_reader :name
 
@@ -45,13 +50,17 @@ module IronAdmin
       # @param name [String] Select name
       # @param association_class [Class] Associated model class
       # @param selected [Integer, nil] Selected ID
-      # @param display_method [Symbol] Display method (default: :name)
+      # @param display_method [Symbol, Proc, nil] Custom display method.
+      #   Pass `nil` (the default) to let the component auto-detect a
+      #   sensible label from `IronAdmin::ApplicationHelper::DISPLAY_METHODS`
+      #   (`:name`, `:title`, `:email`, `:label`, `:slug`), falling back
+      #   to `"<Model> #<id>"` if none of those exist.
       # @param include_blank [Boolean] Include blank option
       # @param disabled [Boolean] Disabled state
       # @param has_error [Boolean] Error state
       # @param options_limit [Integer] Max options
       # @param options_scope [Proc, nil] Custom scope
-      def initialize(name:, association_class:, selected: nil, display_method: :name,
+      def initialize(name:, association_class:, selected: nil, display_method: nil,
                      include_blank: true, disabled: false, has_error: false,
                      options_limit: DEFAULT_OPTIONS_LIMIT, options_scope: nil)
         @name = name
@@ -76,8 +85,28 @@ module IronAdmin
       def options
         scope = options_scope ? association_class.instance_exec(&options_scope) : association_adapter.all
         association_adapter.limit(scope, options_limit).map do |record|
-          [record.public_send(display_method), record.id]
+          [option_label_for(record), record.id]
         end
+      end
+
+      # @api private
+      # Resolves the option label for a single record. Mirrors
+      # `IronAdmin::ApplicationHelper#display_record_label` so callers
+      # who construct the component directly (or test it without
+      # rendering) get the same fallback behavior — Proc / Symbol /
+      # auto-detect from `DISPLAY_METHOD_FALLBACKS`, then `Model #id`.
+      # @param record [Object] The associated record
+      # @return [String] The label
+      def option_label_for(record)
+        return display_method.call(record) if display_method.is_a?(Proc)
+        return record.public_send(display_method) if display_method
+
+        DISPLAY_METHOD_FALLBACKS.each do |method|
+          value = record.public_send(method) if record.respond_to?(method)
+          return value if value.present?
+        end
+
+        "#{record.class.model_name.human} ##{record.id}"
       end
 
       # @api private

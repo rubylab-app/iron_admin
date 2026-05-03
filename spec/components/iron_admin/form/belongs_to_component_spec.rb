@@ -18,9 +18,9 @@ RSpec.describe IronAdmin::Form::BelongsToComponent, type: :component do
       expect(component.selected).to be_nil
     end
 
-    it "defaults display_method to :name" do
+    it "defaults display_method to nil so the component auto-detects a label per record" do
       component = described_class.new(name: :user_id, association_class: User)
-      expect(component.display_method).to eq(:name)
+      expect(component.display_method).to be_nil
     end
 
     it "defaults include_blank to true" do
@@ -90,6 +90,32 @@ RSpec.describe IronAdmin::Form::BelongsToComponent, type: :component do
       component = described_class.new(name: :user_id, association_class: User, display_method: :email)
       options = component.options
       expect(options.flatten).to include("test@example.com")
+    end
+
+    it "accepts a Proc for display_method and calls it with the record" do
+      user = create(:user, name: "Doe", email: "doe@example.com")
+      component = described_class.new(
+        name: :user_id,
+        association_class: User,
+        display_method: ->(record) { "#{record.name} <#{record.email}>" }
+      )
+      expect(component.options).to include(["Doe <doe@example.com>", user.id])
+    end
+
+    it "auto-detects label from DISPLAY_METHOD_FALLBACKS when no display_method is given" do
+      # User#name is the first fallback that exists on the model
+      user = create(:user, name: "Auto Detected")
+      component = described_class.new(name: :user_id, association_class: User)
+      expect(component.options).to include(["Auto Detected", user.id])
+    end
+
+    it "falls back to '<Model> #<id>' when no fallback method yields a value" do
+      record = double("ModelInstance", id: 99,
+                                       class: double(model_name: double(human: "Widget")))
+      allow(record).to receive(:respond_to?).and_return(false)
+      component = described_class.new(name: :user_id, association_class: User)
+
+      expect(component.option_label_for(record)).to eq("Widget #99")
     end
 
     it "limits options to options_limit" do
