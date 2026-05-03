@@ -44,20 +44,44 @@ module IronAdmin
         route 'mount IronAdmin::Engine => "/admin"'
       end
 
+      # Candidate Tailwind entry points, in priority order. Covers
+      # tailwindcss-rails 4.x layout (`app/assets/tailwind/application.css`)
+      # and the tailwindcss-rails 3.x / cssbundling-rails layout
+      # (`app/assets/stylesheets/application.tailwind.css`).
+      TAILWIND_CSS_CANDIDATES = %w[
+        app/assets/tailwind/application.css
+        app/assets/stylesheets/application.tailwind.css
+      ].freeze
+
       # Adds the IronAdmin CSS import to the Tailwind application stylesheet.
       #
       # This import is required so the Tailwind compiler scans the engine's
       # views and components for CSS utility classes. Without it, the admin
       # panel renders unstyled.
       #
+      # If no known Tailwind entry point is detected (e.g. the host added
+      # `gem "iron_admin"` after `rails new --skip-bundle`, before the
+      # tailwindcss installer ran), the generator emits a yellow `skip`
+      # status line with the exact `@import` directive the user needs to
+      # add manually — instead of returning silently and leaving the admin
+      # panel unstyled with no breadcrumb to the cause.
+      #
       # @return [void]
       def add_tailwind_import
-        css_path = "app/assets/tailwind/application.css"
-        return unless File.exist?(File.join(destination_root, css_path))
-
         import_line = '@import "../builds/tailwind/iron_admin";'
-        content = File.read(File.join(destination_root, css_path))
 
+        css_path = TAILWIND_CSS_CANDIDATES.find { |p| File.exist?(File.join(destination_root, p)) }
+
+        unless css_path
+          say_status :skip,
+                     "no Tailwind entry point found; add #{import_line} to your Tailwind " \
+                     "application file once it's created (typically " \
+                     "#{TAILWIND_CSS_CANDIDATES.first})",
+                     :yellow
+          return
+        end
+
+        content = File.read(File.join(destination_root, css_path))
         return if content.include?(import_line)
 
         append_to_file css_path, "#{import_line}\n"

@@ -88,11 +88,37 @@ RSpec.describe IronAdmin::Generators::InstallGenerator, type: :generator do
   context "when application.css does not exist" do
     before do
       FileUtils.rm_f(File.join(destination, "app/assets/tailwind/application.css"))
+    end
+
+    it "does not crash" do
+      expect { run_generator }.not_to raise_error
+    end
+
+    it "does not create the missing Tailwind file" do
+      run_generator
+      expect(File.exist?(File.join(destination, "app/assets/tailwind/application.css"))).to be false
+    end
+
+    it "prints a `skip` status line with the import the user needs to add manually" do
+      expect { run_generator }
+        .to output(%r{skip.*@import "../builds/tailwind/iron_admin"}m).to_stdout
+    end
+  end
+
+  context "when only the legacy tailwindcss-rails 3 / cssbundling layout exists" do
+    before do
+      FileUtils.rm_rf(File.join(destination, "app/assets/tailwind"))
+      FileUtils.mkdir_p(File.join(destination, "app/assets/stylesheets"))
+      File.write(
+        File.join(destination, "app/assets/stylesheets/application.tailwind.css"),
+        "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n"
+      )
       run_generator
     end
 
-    it "skips the Tailwind import without error" do
-      expect(File.exist?(File.join(destination, "app/assets/tailwind/application.css"))).to be false
+    it "appends the import to the legacy stylesheet" do
+      content = File.read(File.join(destination, "app/assets/stylesheets/application.tailwind.css"))
+      expect(content).to include('@import "../builds/tailwind/iron_admin";')
     end
   end
 end
