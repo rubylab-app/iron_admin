@@ -1,4 +1,4 @@
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000005) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000006) do
   create_table :users, force: :cascade do |t|
     t.string :name, null: false
     t.string :email, null: false
@@ -121,6 +121,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000005) do
     t.timestamps
 
     t.index [:record_type, :record_id, :name], name: "index_action_text_rich_texts_uniqueness", unique: true
+  end
+
+  # Composite-primary-key model — exercises Scopeable#find_record's PK handling.
+  create_table :memberships, primary_key: [:account_id, :scope_id], force: :cascade do |t|
+    t.integer :account_id, null: false
+    t.integer :scope_id, null: false
+    t.string :role
+    t.timestamps
   end
 
   create_table :iron_admin_audit_entries, force: :cascade do |t|

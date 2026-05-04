@@ -93,6 +93,14 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Primary key column name(s) for the underlying model.
+      # Returns a String for single-column keys (e.g. `"id"`, `"slug"`) and an
+      # Array<String> for composite keys (e.g. `["account_id", "scope_id"]`).
+      # @return [String, Array<String>]
+      def primary_key
+        "id"
+      end
+
       # --- Query Building ---
 
       # Returns a base scope/collection of all records.
