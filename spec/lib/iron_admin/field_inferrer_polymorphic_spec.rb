@@ -56,4 +56,32 @@ RSpec.describe IronAdmin::FieldInferrer do
       expect(notable_field.options[:types]).to eq([User, License])
     end
   end
+
+  describe "polymorphic types auto-inference" do
+    it "infers types from `has_many :as` declarations across ApplicationRecord descendants" do
+      fields = described_class.call(Note)
+      notable_field = fields.find { |f| f.name == :notable }
+
+      expect(notable_field.options[:types]).to include(User, License)
+    end
+
+    it "excludes abstract classes" do
+      fields = described_class.call(Note)
+      notable_field = fields.find { |f| f.name == :notable }
+
+      expect(notable_field.options[:types]).not_to include(ApplicationRecord)
+    end
+
+    it "returns an empty Array when no model declares the inverse `has_many :as`" do
+      stub_const("OrphanModel", Class.new(ApplicationRecord) do
+        self.table_name = "notes"
+        belongs_to :ghost, polymorphic: true, optional: true
+      end)
+
+      fields = described_class.call(OrphanModel)
+      ghost_field = fields.find { |f| f.name == :ghost }
+
+      expect(ghost_field.options[:types]).to eq([])
+    end
+  end
 end

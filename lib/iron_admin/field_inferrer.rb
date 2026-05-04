@@ -142,7 +142,12 @@ module IronAdmin
     end
 
     # @api private
-    # Builds fields for polymorphic belongs_to associations.
+    # Builds fields for polymorphic belongs_to associations. Auto-infers the
+    # valid target types by scanning all `ApplicationRecord` descendants for
+    # `has_many :<name>, as: :<polymorphic_name>` and
+    # `has_one :<name>, as: :<polymorphic_name>` declarations. Without this,
+    # the form's type `<select>` is empty and the polymorphic association is
+    # unusable in the admin (see #79).
     def polymorphic_fields
       @polymorphic_map.map do |name, assoc|
         Field.new(
@@ -150,8 +155,33 @@ module IronAdmin
           type: :polymorphic_belongs_to,
           association_name: name.to_sym,
           type_column: assoc.foreign_type.to_sym,
-          id_column: assoc.foreign_key.to_sym
+          id_column: assoc.foreign_key.to_sym,
+          types: infer_polymorphic_types(name.to_sym)
         )
+      end
+    end
+
+    # @api private
+    # Returns the model classes that declare `has_many` / `has_one` with
+    # `as: <polymorphic_name>` — i.e. the valid targets for a polymorphic
+    # `belongs_to :<polymorphic_name>`.
+    #
+    # Returns an empty Array when `ApplicationRecord` is not defined (e.g.
+    # `--skip-active-record` Mongoid hosts) — in that case the host should
+    # declare types explicitly via the `field` DSL:
+    #   field :notable, type: :polymorphic_belongs_to, types: [Article, Page]
+    #
+    # @param polymorphic_name [Symbol] e.g. `:notable`
+    # @return [Array<Class>]
+    def infer_polymorphic_types(polymorphic_name)
+      return [] unless defined?(::ApplicationRecord)
+
+      ::ApplicationRecord.descendants.select do |klass|
+        next false if klass.abstract_class?
+
+        %i[has_many has_one].any? do |macro|
+          klass.reflect_on_all_associations(macro).any? { |r| r.options[:as] == polymorphic_name }
+        end
       end
     end
 
