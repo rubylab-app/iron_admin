@@ -88,6 +88,49 @@ RSpec.describe IronAdmin::Adapters::Mongoid::AssociationWrapper do
         expect(wrapper.macro).to eq(:has_and_belongs_to_many)
       end
     end
+
+    context "when the relation does not respond to :macro (Mongoid 9+)" do
+      # In Mongoid 9, association metadata classes (e.g.
+      # `Mongoid::Association::Referenced::BelongsTo`) no longer expose
+      # `#macro`. The wrapper has to derive the macro from the class
+      # name instead.
+      let(:relation) do
+        klass = Class.new do
+          def self.name
+            "Mongoid::Association::Referenced::BelongsTo"
+          end
+
+          def name = "parent"
+          def class_name = "Parent"
+          def foreign_key = "parent_id"
+          def polymorphic? = false
+        end
+        klass.new
+      end
+
+      it "derives the macro from the relation's class name" do
+        expect(wrapper.macro).to eq(:belongs_to)
+      end
+    end
+
+    context "when an embedded relation does not respond to :macro (Mongoid 9+)" do
+      let(:relation) do
+        klass = Class.new do
+          def self.name
+            "Mongoid::Association::Embedded::EmbedsMany"
+          end
+
+          def name = "comments"
+          def class_name = "Comment"
+          def polymorphic? = false
+        end
+        klass.new
+      end
+
+      it "still normalizes derived `:embeds_many` to `:has_many`" do
+        expect(wrapper.macro).to eq(:has_many)
+      end
+    end
   end
 
   describe "#klass" do

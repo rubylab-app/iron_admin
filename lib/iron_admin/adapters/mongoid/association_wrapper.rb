@@ -25,8 +25,27 @@ module IronAdmin
         def initialize(relation)
           @relation = relation
           @name = relation.name.to_sym
-          @macro = MACRO_MAP.fetch(relation.macro, relation.macro)
+          @macro = MACRO_MAP.fetch(raw_macro_for(relation), raw_macro_for(relation))
         end
+
+        private
+
+        # Mongoid 9 dropped `Association#macro`. Derive the macro symbol
+        # from the association class name instead, e.g.
+        # `Mongoid::Association::Referenced::BelongsTo` → :belongs_to,
+        # `Mongoid::Association::Embedded::EmbedsMany` → :embeds_many.
+        # Falls back to `relation.macro` when defined (Mongoid <= 8).
+        #
+        # @param relation [Object] A Mongoid association metadata instance
+        # @return [Symbol] The macro symbol (e.g. :belongs_to, :has_many,
+        #   :embeds_many, :embedded_in)
+        def raw_macro_for(relation)
+          return relation.macro if relation.respond_to?(:macro)
+
+          relation.class.name.split("::").last.underscore.to_sym
+        end
+
+        public
 
         def klass
           @relation.class_name.constantize
