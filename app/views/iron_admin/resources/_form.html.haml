@@ -18,8 +18,9 @@
           - assoc_class = field.options[:association_class]
           - fk = field.options[:foreign_key]
           - display_method = field.options[:display]
+          - belongs_to_options = assoc_class.all.map { |r| [display_record_label(r, display_method), r.id] }
           = f.select fk,
-            options_from_collection_for_select(assoc_class.all, :id, (display_method || :name), @record.public_send(fk)),
+            options_for_select(belongs_to_options, @record.public_send(fk)),
             { include_blank: I18n.t("iron_admin.fields.select_placeholder") },
             class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
         - when :text
