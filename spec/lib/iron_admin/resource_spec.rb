@@ -28,6 +28,30 @@ RSpec.describe IronAdmin::Resource do
       adapter2 = TestUserResource.adapter
       expect(adapter1).to equal(adapter2)
     end
+
+    it "re-resolves when adapter_class changes after the first call" do
+      # Simulates the boot path where `Resource.inherited` memoizes an
+      # ActiveRecord adapter before the subclass body sets
+      # `self.adapter_class = :mongoid` (or similar). The next access
+      # must produce a fresh adapter that matches the configured class.
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "AdapterRebindResource"
+        end
+      end
+
+      first = resource.adapter
+      expect(first).to be_a(IronAdmin::Adapters::ActiveRecord)
+
+      stub_adapter = Class.new(IronAdmin::Adapters::Base)
+      resource.adapter_class = stub_adapter
+
+      second = resource.adapter
+      expect(second).to be_a(stub_adapter)
+      expect(second).not_to equal(first)
+    end
   end
 
   describe ".adapter_class" do

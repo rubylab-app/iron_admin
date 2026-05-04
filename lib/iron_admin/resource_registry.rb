@@ -65,9 +65,20 @@ module IronAdmin
       # and swallowed per resource so a single broken resource (missing
       # model class, unreachable DB, etc.) doesn't take down the boot.
       #
+      # The cached `@adapter` instance is invalidated for every resource
+      # before re-running registration. The eager `Resource.adapter` call
+      # at inheritance time memoized an `Adapters::ActiveRecord.new(model)`
+      # — built with whatever `adapter_class` defaulted to before the
+      # class body's `self.adapter_class = :mongoid` (or `:http`) had
+      # taken effect. Without this invalidation, every subsequent
+      # `Resource.adapter` would keep returning that stale AR adapter
+      # and Mongoid/HTTP resources would 500 with `undefined method
+      # 'columns' for <MongoidModel>`.
+      #
       # @return [void]
       def finalize!
         all.each do |resource_class|
+          resource_class.instance_variable_set(:@adapter, nil)
           resource_class.register_soft_delete_features
         rescue StandardError => e
           warn_finalize_failure(resource_class, e)

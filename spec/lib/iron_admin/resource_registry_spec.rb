@@ -141,5 +141,15 @@ RSpec.describe IronAdmin::ResourceRegistry do
         .with(/Could not finalize ResourceA.*NoMethodError.*boom/)
       expect(resource_b).to have_received(:register_soft_delete_features)
     end
+
+    it "invalidates each resource's memoized @adapter" do
+      # Force memoization with a stale adapter, then verify finalize!
+      # clears it so the next access re-resolves.
+      resource_a.instance_variable_set(:@adapter, :stale_adapter_marker)
+
+      described_class.finalize!
+
+      expect(resource_a.instance_variable_get(:@adapter)).not_to eq(:stale_adapter_marker)
+    end
   end
 end

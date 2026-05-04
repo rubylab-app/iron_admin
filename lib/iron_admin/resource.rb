@@ -82,9 +82,17 @@ module IronAdmin
       # query building, and CRUD operations regardless of the underlying
       # data source (ActiveRecord, Mongoid, HTTP, etc.).
       #
+      # Defensively re-resolves when the cached `@adapter` doesn't match
+      # the currently configured `adapter_class`. This catches the case
+      # where the eager `Resource.inherited` flow memoized an
+      # `Adapters::ActiveRecord` built before the subclass body's
+      # `self.adapter_class = :mongoid` (or `:http`) took effect.
+      #
       # @return [IronAdmin::Adapters::Base] The adapter instance
       def adapter
-        @adapter ||= resolve_adapter_class.new(model)
+        wanted = resolve_adapter_class
+        @adapter = nil if @adapter && !@adapter.instance_of?(wanted)
+        @adapter ||= wanted.new(model)
       end
 
       # Returns the ActiveRecord model class for this resource.
