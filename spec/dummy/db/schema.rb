@@ -1,9 +1,10 @@
-ActiveRecord::Schema[7.1].define(version: 2024_01_01_000007) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_01_000008) do
   create_table :users, force: :cascade do |t|
     t.string :name, null: false
     t.string :email, null: false
     t.string :role
     t.boolean :active, default: true
+    t.json :preferences, default: {}
     t.timestamps
 
     t.index :email, unique: true

@@ -22,6 +22,7 @@ module IronAdmin
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
     include Concerns::Filterable
+    include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
     include Concerns::Scopeable
     include Concerns::Searchable
@@ -319,7 +320,9 @@ module IronAdmin
         permitted << { "#{nested.name}_attributes": build_nested_permit_list(nested) }
       end
 
-      params.require(:record).permit(*permitted) # rubocop:disable Rails/StrongParametersExpect
+      parsed = params.require(:record).permit(*permitted) # rubocop:disable Rails/StrongParametersExpect
+      coerce_json_field_params!(parsed)
+      parsed
     end
 
     def current_scope_name
