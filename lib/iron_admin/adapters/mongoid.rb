@@ -73,6 +73,12 @@ module IronAdmin
         model_class.collection_name.to_s
       end
 
+      # Mongoid documents use `_id`. Composite keys are not supported by Mongoid,
+      # so this always returns a String, never an Array.
+      def primary_key
+        "_id"
+      end
+
       # --- Query Building ---
 
       delegate :all, to: :model_class

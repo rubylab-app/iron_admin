@@ -22,7 +22,17 @@ module IronAdmin
       end
 
       def find_record(scope, id)
-        result = adapter.filter(scope, :id, id).first
+        pk = adapter.primary_key
+
+        result = if pk.is_a?(Array)
+                   ids = id.to_s.split("_")
+                   raise IronAdmin::RecordNotFound if ids.size != pk.size
+
+                   pk.zip(ids).reduce(scope) { |s, (col, val)| adapter.filter(s, col.to_sym, val) }.first
+                 else
+                   adapter.filter(scope, pk.to_sym, id).first
+                 end
+
         raise IronAdmin::RecordNotFound unless result
 
         result

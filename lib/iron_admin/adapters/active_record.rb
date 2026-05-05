@@ -14,6 +14,8 @@ module IronAdmin
 
       delegate :column_names, to: :model_class
 
+      delegate :primary_key, to: :model_class
+
       def has_column?(name) # rubocop:disable Naming/PredicatePrefix
         model_class.column_names.include?(name.to_s)
       end
