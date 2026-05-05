@@ -55,5 +55,29 @@ RSpec.describe "IronAdmin :json field form rendering", type: :request do
       user.reload
       expect(user.preferences).to eq("theme" => "dark", "notifications" => true)
     end
+
+    it "clears the JSON column when the textarea is submitted empty" do
+      user = User.create!(name: "Dan", email: "dan@example.com", preferences: { "tier" => "free" })
+
+      patch iron_admin.resource_path("users", user.id), params: {
+        record: { name: user.name, email: user.email, preferences: "" },
+      }, as: :html
+
+      expect(response).to have_http_status(:redirect)
+      user.reload
+      expect(user.preferences).to be_nil
+    end
+
+    it "preserves the existing JSON value when the textarea contains malformed JSON" do
+      user = User.create!(name: "Eve", email: "eve@example.com", preferences: { "kept" => true })
+
+      patch iron_admin.resource_path("users", user.id), params: {
+        record: { name: user.name, email: user.email, preferences: "{not valid json" },
+      }, as: :html
+
+      expect(response).to have_http_status(:redirect)
+      user.reload
+      expect(user.preferences).to eq("kept" => true)
+    end
   end
 end

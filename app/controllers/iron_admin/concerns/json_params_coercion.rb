@@ -21,11 +21,24 @@ module IronAdmin
 
           value = parsed[field.name]
           next unless value.is_a?(String)
-          next if value.empty?
+
+          # An empty textarea means "clear this field". Storing the empty
+          # string would serialize to a JSON string scalar (`""`) instead
+          # of clearing the column.
+          if value.empty?
+            parsed[field.name] = nil
+            next
+          end
 
           parsed[field.name] = JSON.parse(value)
         rescue JSON::ParserError
-          next
+          # Drop the key so the existing column value is preserved instead
+          # of being overwritten with the raw string (which AR would then
+          # store as a JSON string scalar, silently destroying the prior
+          # Hash/Array). The user keeps the form open via model-side
+          # validation in the typical case; full inline-error UX is tracked
+          # as a follow-up.
+          parsed.delete(field.name)
         end
       end
     end
