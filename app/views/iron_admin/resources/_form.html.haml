@@ -188,6 +188,12 @@
           = f.text_area field.name, rows: field.options[:rows] || 6,
             placeholder: '{"key": "value"}',
             class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
+        - when :json
+          - raw_json_value = @record.public_send(field.name)
+          - json_str = raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value)
+          = text_area_tag "record[#{field.name}]", json_str,
+            id: "record_#{field.name}", rows: field.options[:rows] || 8, placeholder: "{}",
+            class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
         - when :boolean_group
           - choices = field.options[:choices] || []
           - current_values = @record.public_send(field.name).to_s.split(",").map(&:strip)

@@ -8,9 +8,17 @@ require "rspec/rails"
 require "factory_bot_rails"
 require "view_component/test_helpers"
 
-# Load schema before tests run
+# Load schema before tests run.
 ActiveRecord::Schema.verbose = false
 load File.expand_path("dummy/db/schema.rb", __dir__)
+
+# Refresh column caches on any model eagerly loaded by Rails BEFORE the
+# schema reload happened — otherwise newly-added columns are invisible
+# to those models. CI uses `config.eager_load = true`, which loads every
+# model during `environment.rb` (one require above). Without this, e.g.
+# `User.create!(preferences: ...)` raises UnknownAttributeError on CI
+# but works locally where eager_load is off.
+ActiveRecord::Base.descendants.each(&:reset_column_information) if defined?(ActiveRecord::Base)
 
 # Load test resources (before support files, since test_resources.rb aliases depend on these)
 require_relative "dummy/app/iron_admin/resources/user_resource"
