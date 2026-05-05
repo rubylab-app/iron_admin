@@ -79,6 +79,7 @@ module IronAdmin
       @shadowed_columns = adapter.associations(:has_many)
         .concat(adapter.associations(:has_one))
         .to_set { |a| a.name.to_s }
+      @polymorphic_types_map = build_polymorphic_types_map
     end
 
     # Infers fields from the model's columns, associations, attachments,
@@ -166,23 +167,46 @@ module IronAdmin
     # `as: <polymorphic_name>` — i.e. the valid targets for a polymorphic
     # `belongs_to :<polymorphic_name>`.
     #
-    # Returns an empty Array when `ApplicationRecord` is not defined (e.g.
-    # `--skip-active-record` Mongoid hosts) — in that case the host should
-    # declare types explicitly via the `field` DSL:
-    #   field :notable, type: :polymorphic_belongs_to, types: [Article, Page]
-    #
     # @param polymorphic_name [Symbol] e.g. `:notable`
     # @return [Array<Class>]
     def infer_polymorphic_types(polymorphic_name)
-      return [] unless defined?(::ApplicationRecord)
+      @polymorphic_types_map[polymorphic_name] || []
+    end
 
-      ::ApplicationRecord.descendants.select do |klass|
-        next false if klass.abstract_class?
+    # @api private
+    # Builds `{ polymorphic_name => [target_classes] }` once per inferrer by
+    # walking `ApplicationRecord` descendants a single time, instead of
+    # re-scanning for every polymorphic field on the model.
+    #
+    # Only the polymorphic names declared on this model are tracked, and only
+    # STI base classes are kept — Rails persists the base class name in the
+    # `*_type` column, so subclasses would never round-trip correctly through
+    # the inverse association.
+    #
+    # Returns an empty map when `ApplicationRecord` is not defined (e.g.
+    # `--skip-active-record` Mongoid hosts); host apps should declare types
+    # explicitly via the `field` DSL in that case:
+    #   field :notable, type: :polymorphic_belongs_to, types: [Article, Page]
+    def build_polymorphic_types_map
+      return {} unless defined?(::ApplicationRecord)
+      return {} if @polymorphic_map.empty?
 
-        %i[has_many has_one].any? do |macro|
-          klass.reflect_on_all_associations(macro).any? { |r| r.options[:as] == polymorphic_name }
+      needed = @polymorphic_map.keys.to_set(&:to_sym)
+      map = needed.index_with { [] }
+
+      ::ApplicationRecord.descendants.each do |klass|
+        next if klass.abstract_class?
+        next unless klass.base_class == klass
+
+        %i[has_many has_one].each do |macro|
+          klass.reflect_on_all_associations(macro).each do |reflection|
+            as_name = reflection.options[:as]
+            map[as_name] << klass if as_name && needed.include?(as_name)
+          end
         end
       end
+
+      map
     end
 
     # @api private

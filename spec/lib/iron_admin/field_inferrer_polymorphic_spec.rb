@@ -83,5 +83,32 @@ RSpec.describe IronAdmin::FieldInferrer do
 
       expect(ghost_field.options[:types]).to eq([])
     end
+
+    it "also picks up `has_one :as` declarations" do
+      stub_const("HasOneTarget", Class.new(ApplicationRecord) do
+        self.table_name = "users"
+        has_one :note, as: :notable, class_name: "::Note"
+      end)
+
+      fields = described_class.call(Note)
+      notable_field = fields.find { |f| f.name == :notable }
+
+      expect(notable_field.options[:types]).to include(HasOneTarget)
+    end
+
+    it "excludes STI subclasses (Rails stores the base class name in the *_type column)" do
+      sti_base = Class.new(ApplicationRecord) do
+        self.table_name = "users"
+        has_many :notes, as: :notable
+      end
+      stub_const("StiBase", sti_base)
+      stub_const("StiChild", Class.new(sti_base))
+
+      fields = described_class.call(Note)
+      notable_field = fields.find { |f| f.name == :notable }
+
+      expect(notable_field.options[:types]).to include(StiBase)
+      expect(notable_field.options[:types]).not_to include(StiChild)
+    end
   end
 end
