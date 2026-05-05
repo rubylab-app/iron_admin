@@ -28,7 +28,7 @@ module IronAdmin
                    ids = id.to_s.split("_")
                    raise IronAdmin::RecordNotFound if ids.size != pk.size
 
-                   scope.find_by(pk.zip(ids).to_h)
+                   pk.zip(ids).reduce(scope) { |s, (col, val)| adapter.filter(s, col.to_sym, val) }.first
                  else
                    adapter.filter(scope, pk.to_sym, id).first
                  end
