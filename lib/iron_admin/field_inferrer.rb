@@ -79,6 +79,7 @@ module IronAdmin
       @shadowed_columns = adapter.associations(:has_many)
         .concat(adapter.associations(:has_one))
         .to_set { |a| a.name.to_s }
+      @polymorphic_types_map = build_polymorphic_types_map
     end
 
     # Infers fields from the model's columns, associations, attachments,
@@ -142,7 +143,12 @@ module IronAdmin
     end
 
     # @api private
-    # Builds fields for polymorphic belongs_to associations.
+    # Builds fields for polymorphic belongs_to associations. Auto-infers the
+    # valid target types by scanning all `ApplicationRecord` descendants for
+    # `has_many :<name>, as: :<polymorphic_name>` and
+    # `has_one :<name>, as: :<polymorphic_name>` declarations. Without this,
+    # the form's type `<select>` is empty and the polymorphic association is
+    # unusable in the admin (see #79).
     def polymorphic_fields
       @polymorphic_map.map do |name, assoc|
         Field.new(
@@ -150,9 +156,57 @@ module IronAdmin
           type: :polymorphic_belongs_to,
           association_name: name.to_sym,
           type_column: assoc.foreign_type.to_sym,
-          id_column: assoc.foreign_key.to_sym
+          id_column: assoc.foreign_key.to_sym,
+          types: infer_polymorphic_types(name.to_sym)
         )
       end
+    end
+
+    # @api private
+    # Returns the model classes that declare `has_many` / `has_one` with
+    # `as: <polymorphic_name>` — i.e. the valid targets for a polymorphic
+    # `belongs_to :<polymorphic_name>`.
+    #
+    # @param polymorphic_name [Symbol] e.g. `:notable`
+    # @return [Array<Class>]
+    def infer_polymorphic_types(polymorphic_name)
+      @polymorphic_types_map[polymorphic_name] || []
+    end
+
+    # @api private
+    # Builds `{ polymorphic_name => [target_classes] }` once per inferrer by
+    # walking `ApplicationRecord` descendants a single time, instead of
+    # re-scanning for every polymorphic field on the model.
+    #
+    # Only the polymorphic names declared on this model are tracked, and only
+    # STI base classes are kept — Rails persists the base class name in the
+    # `*_type` column, so subclasses would never round-trip correctly through
+    # the inverse association.
+    #
+    # Returns an empty map when `ApplicationRecord` is not defined (e.g.
+    # `--skip-active-record` Mongoid hosts); host apps should declare types
+    # explicitly via the `field` DSL in that case:
+    #   field :notable, type: :polymorphic_belongs_to, types: [Article, Page]
+    def build_polymorphic_types_map
+      return {} unless defined?(::ApplicationRecord)
+      return {} if @polymorphic_map.empty?
+
+      needed = @polymorphic_map.keys.to_set(&:to_sym)
+      map = needed.index_with { [] }
+
+      ::ApplicationRecord.descendants.each do |klass|
+        next if klass.abstract_class?
+        next unless klass.base_class == klass
+
+        %i[has_many has_one].each do |macro|
+          klass.reflect_on_all_associations(macro).each do |reflection|
+            as_name = reflection.options[:as]
+            map[as_name] << klass if as_name && needed.include?(as_name)
+          end
+        end
+      end
+
+      map
     end
 
     # @api private
