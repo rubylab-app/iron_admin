@@ -1,0 +1,31 @@
+.p-8.max-w-5xl.mx-auto{ class: t.font_family }
+  .flex.items-center.justify-between.mb-6
+    %div
+      %h1.text-2xl{ class: cp_heading }= I18n.t("iron_admin.imports.preview.title", model: @resource_class.label)
+      %p.mt-1.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.imports.preview.summary", count: @preview.total_rows)
+    = link_to I18n.t("iron_admin.imports.preview.back_button"), resource_import_path(@resource_class.resource_name), class: cp_btn_secondary
+
+  .mb-6.border.p-4{ class: "#{t.card_border} #{t.card_bg} #{t.border_radius}" }
+    %h2.text-sm.font-semibold.mb-3{ class: cp_label_text }= I18n.t("iron_admin.imports.preview.mapping_title")
+    .flex.flex-wrap.gap-2
+      - @preview.mapping.each do |header, field_name|
+        %span.inline-flex.items-center.rounded-md.bg-gray-100.px-2.py-1.text-xs.font-medium{ class: cp_muted_text }
+          = "#{header} -> #{field_name.to_s.humanize}"
+
+  .overflow-x-auto
+    %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
+      %thead{ class: cp_table_header_bg }
+        %tr
+          - @preview.mapping.values.each do |field_name|
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }= field_name.to_s.humanize
+          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }= I18n.t("iron_admin.imports.preview.status_column")
+      %tbody{ class: "#{cp_table_border} divide-y" }
+        - @preview.rows.each do |row|
+          %tr
+            - @preview.mapping.values.each do |field_name|
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }= row.attributes[field_name].inspect
+            %td.px-6.py-4.text-sm{ class: row.errors.any? ? "text-red-600" : cp_muted_text }
+              - if row.errors.any?
+                = row.errors.map(&:message).join(", ")
+              - else
+                = I18n.t("iron_admin.imports.preview.valid_status")

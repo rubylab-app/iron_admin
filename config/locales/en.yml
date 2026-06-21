@@ -17,6 +17,7 @@ en:
         inaccessible: "Some records are not accessible"
       index:
         new_button: "New %{model}"
+        import_button: "Import"
         search_placeholder: "Search..."
         filters_label: "Filters"
         apply_button: "Apply"
@@ -36,6 +37,25 @@ en:
         view_link: "View"
         view_all: "View all"
         actions_label: "Actions"
+    imports:
+      new:
+        title: "Import %{model}"
+        subtitle: "Upload CSV or JSON data and preview mapped rows before importing."
+        file_label: "File"
+        format_label: "Format"
+        fields_label: "Importable fields"
+        preview_button: "Preview"
+      preview:
+        title: "Preview %{model} Import"
+        summary: "%{count} rows detected."
+        mapping_title: "Column mapping"
+        status_column: "Status"
+        valid_status: "Valid"
+        back_button: "Back"
+      create:
+        success: "Import finished: %{created} created, %{updated} updated, %{failed} failed."
+      errors:
+        missing_file: "Choose a file to import."
     fields:
       select_placeholder: "Select..."
       boolean_enable: "Enable %{field}"

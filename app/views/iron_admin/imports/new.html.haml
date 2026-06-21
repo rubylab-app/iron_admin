@@ -1,0 +1,27 @@
+.p-8.max-w-3xl.mx-auto{ class: t.font_family }
+  .mb-6
+    %h1.text-2xl{ class: cp_heading }= I18n.t("iron_admin.imports.new.title", model: @resource_class.label)
+    %p.mt-1.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.imports.new.subtitle")
+
+  .border.p-6{ class: "#{t.card_border} #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
+    = form_tag resource_import_preview_path(@resource_class.resource_name), multipart: true, class: "space-y-5" do
+      .space-y-2
+        %label.block.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.file_label")
+        = file_field_tag :file, required: true, class: "block w-full text-sm #{cp_body_text}"
+      .space-y-2
+        %label.block.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.format_label")
+        = select_tag :import_format,
+          options_for_select(@formats.map { |format| [format.to_s.upcase, format] }),
+          class: "block w-full border px-3 py-2 text-sm #{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}"
+      - if @fields.any?
+        .space-y-2
+          %p.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.fields_label")
+          .flex.flex-wrap.gap-2
+            - @fields.each do |field|
+              %span.inline-flex.items-center.rounded-md.bg-gray-100.px-2.py-1.text-xs.font-medium{ class: cp_muted_text }
+                = field.name.to_s.humanize
+      .flex.items-center.gap-3.pt-2
+        %button{ type: "submit", class: cp_btn_primary }
+          = heroicon "eye", variant: :mini, options: { class: "h-4 w-4" }
+          %span= I18n.t("iron_admin.imports.new.preview_button")
+        = link_to I18n.t("iron_admin.form.cancel_button"), resources_path(@resource_class.resource_name), class: cp_btn_secondary

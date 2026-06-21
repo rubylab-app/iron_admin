@@ -123,6 +123,13 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Finds a record by a configured import key.
+      # @param attrs [Hash] Attribute conditions
+      # @return [Object, nil]
+      def find_by_keys(attrs)
+        find_by(attrs)
+      end
+
       # Filters a scope by a column value.
       # @param scope [Object] The current query scope
       # @param column [Symbol] Column name
@@ -220,6 +227,23 @@ module IronAdmin
       # @return [Boolean] Success
       def update(_record, _attrs)
         raise NotImplementedError
+      end
+
+      # Builds and persists a record, returning the record with validation errors if any.
+      # @param attrs [Hash] Attributes for the new record
+      # @return [Object]
+      def create_record(attrs)
+        record = build(attrs)
+        save(record)
+        record
+      end
+
+      # Updates a record and returns true when persistence succeeds.
+      # @param record [Object] The record
+      # @param attrs [Hash] New attributes
+      # @return [Boolean]
+      def update_record(record, attrs)
+        update(record, attrs)
       end
 
       # Destroys a record.
