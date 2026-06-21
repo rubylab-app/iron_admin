@@ -71,6 +71,14 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Returns model/document classes that declare an inverse association for
+      # a polymorphic belongs_to name.
+      # @param _polymorphic_name [Symbol]
+      # @return [Array<Class>]
+      def polymorphic_inverse_classes(_polymorphic_name)
+        []
+      end
+
       # --- Naming ---
 
       # URL-friendly plural resource name (e.g., "users").
