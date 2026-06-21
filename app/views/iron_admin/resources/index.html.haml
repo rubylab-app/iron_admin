@@ -1,10 +1,16 @@
 .p-8.max-w-7xl.mx-auto{ class: t.font_family }
   .flex.items-center.justify-between.mb-6
     %h1.text-2xl{ class: cp_heading }= @resource_class.label
-    - if @resource_class.action_allowed?(:create)
-      = link_to I18n.t("iron_admin.resources.index.new_button", model: @resource_class.model.model_name.human),
-        new_resource_path(@resource_class.resource_name),
-        class: cp_btn_primary
+    .flex.items-center.gap-2
+      - if @resource_class.import_enabled? && @resource_class.action_allowed?(:create)
+        = link_to resource_import_path(@resource_class.resource_name),
+          class: cp_btn_secondary do
+          = heroicon "arrow-up-tray", variant: :mini, options: { class: "h-4 w-4" }
+          %span= I18n.t("iron_admin.resources.index.import_button")
+      - if @resource_class.action_allowed?(:create)
+        = link_to I18n.t("iron_admin.resources.index.new_button", model: @resource_class.model.model_name.human),
+          new_resource_path(@resource_class.resource_name),
+          class: cp_btn_primary
 
   - if @resource_class.all_scopes.any? || @resource_class.searchable_columns.any?
     .flex.items-center.justify-between.mb-4
@@ -172,4 +178,3 @@
 
     .mt-4
       = render "iron_admin/shared/pagination", pagy: @pagy
-
