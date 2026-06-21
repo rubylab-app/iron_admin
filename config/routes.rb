@@ -5,6 +5,9 @@ IronAdmin::Engine.routes.draw do
   get "audit", to: "audit#index", as: :audit
   get "autocomplete/:resource_name", to: "resources#autocomplete", as: :autocomplete
   get ":resource_name/export", to: "exports#show", as: :export
+  get ":resource_name/import", to: "imports#new", as: :resource_import
+  post ":resource_name/import/preview", to: "imports#preview", as: :resource_import_preview
+  post ":resource_name/import", to: "imports#create"
 
   get "tools/:tool_name", to: "tools#show", as: :tool
   get "tools/:tool_name/:action_name/form", to: "tools#action_form", as: :tool_action_form
