@@ -87,6 +87,15 @@ module IronAdmin
     # @return [Hash] Default headers for HTTP adapter (e.g., auth tokens)
     attr_accessor :http_headers
 
+    # @return [Symbol] Live update strategy (:disabled or :polling)
+    attr_accessor :live_updates
+
+    # @return [ActiveSupport::Duration] Client polling interval for live updates
+    attr_accessor :live_poll_interval
+
+    # @return [ActiveSupport::Duration] Minimum interval between live broadcasts
+    attr_accessor :live_throttle
+
     # @return [Proc, nil] Authentication block
     # @see #authenticate
     attr_reader :authenticate_block
@@ -179,6 +188,9 @@ module IronAdmin
       @sticky_actions_column = true
       @http_base_url = nil
       @http_headers = {}
+      @live_updates = :disabled
+      @live_poll_interval = 3.seconds
+      @live_throttle = 0.5.seconds
     end
 
     # Defines the authentication check for admin access.

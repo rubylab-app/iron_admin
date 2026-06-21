@@ -42,6 +42,20 @@ RSpec.describe IronAdmin::Resources::DataTableComponent, type: :component do
     end
   end
 
+  describe "#row_dom_id" do
+    it "returns stable row ids for live replacement targets" do
+      user = users.first
+      component = described_class.new(
+        records: users,
+        fields: fields,
+        resource_class: IronAdmin::Resources::UserResource,
+        base_url: "/admin/users?"
+      )
+
+      expect(component.row_dom_id(user)).to eq("iron_admin_users_row_#{user.id}")
+    end
+  end
+
   describe "#empty?" do
     it "returns true when records are empty" do
       component = described_class.new(

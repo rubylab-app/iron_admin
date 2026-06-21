@@ -5,7 +5,7 @@
     - if @dashboard.defined_metrics.any?
       .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-4.gap-6.mb-8
         - @dashboard.defined_metrics.each do |metric|
-          = render IronAdmin::Dashboards::MetricCardComponent.new(name: metric[:name], value: metric[:block].call, format: metric[:format], icon: metric[:icon])
+          = render IronAdmin::Dashboards::MetricCardComponent.new(name: metric[:name], value: metric[:block].call, format: metric[:format], icon: metric[:icon], live: metric[:live])
 
     - if @dashboard.defined_charts.any?
       = javascript_include_tag "chart.min", defer: true, onload: "document.dispatchEvent(new CustomEvent('chartjs:loaded'))"
@@ -14,7 +14,12 @@
           - chart_data = chart[:block].call
           - labels = chart_data.keys
           - data = chart_data.values
-          = render IronAdmin::Dashboards::ChartComponent.new(title: chart[:label] || chart[:name].to_s.humanize, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
+          - chart_title = chart[:label] || chart[:name].to_s.humanize
+          - if chart[:live]
+            %div{ id: "chart_#{chart[:name].to_s.parameterize(separator: "_")}" }
+              = render IronAdmin::Dashboards::ChartComponent.new(title: chart_title, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
+          - else
+            = render IronAdmin::Dashboards::ChartComponent.new(title: chart_title, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
 
     - if @dashboard.defined_recents.any?
       .space-y-6

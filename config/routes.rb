@@ -3,6 +3,7 @@ IronAdmin::Engine.routes.draw do
 
   get "search", to: "search#index", as: :search
   get "audit", to: "audit#index", as: :audit
+  get "live/:stream", to: "live#show", as: :live
   get "autocomplete/:resource_name", to: "resources#autocomplete", as: :autocomplete
   get ":resource_name/export", to: "exports#show", as: :export
   get ":resource_name/import", to: "imports#new", as: :resource_import

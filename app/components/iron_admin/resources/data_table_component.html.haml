@@ -23,7 +23,7 @@
             No records found.
     - else
       - records.each do |record|
-        %tr{ class: theme.table_row_hover }
+        %tr{ id: row_dom_id(record), class: theme.table_row_hover }
           - visible_fields.each do |field|
             %td.px-6.py-4.whitespace-nowrap.text-sm{ class: theme.body_text }
               = helpers.display_index_field_value(record, field)

@@ -163,7 +163,7 @@
                 %td.px-6.py-8.text-center.text-sm{ colspan: (@fields.count { |f| f.visible?(iron_admin_current_user) }) + (has_bulk_actions ? 2 : 1), class: cp_muted_text }
                   = I18n.t("iron_admin.resources.index.empty_state")
             - @records.each do |record|
-              %tr{ class: cp_table_row_hover }
+              %tr{ id: ("iron_admin_#{@resource_class.resource_name}_row_#{record.id}" if @resource_class.live_index_enabled?), class: cp_table_row_hover }
                 - if has_bulk_actions
                   %td.px-6.py-4.w-4
                     %input{ type: "checkbox", name: "ids[]", value: record.id, class: "rounded border-gray-300",

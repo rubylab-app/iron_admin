@@ -43,6 +43,7 @@ module IronAdmin
     include Concerns::Nestable
     include Concerns::SoftDeletable
     include Concerns::Importable
+    include Concerns::LiveUpdatable
 
     class_attribute :field_overrides, default: {}
     class_attribute :_searchable_columns, default: nil

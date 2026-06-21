@@ -51,6 +51,17 @@ RSpec.describe IronAdmin::Dashboard do
       metric = dashboard_class.defined_metrics.first
       expect(metric[:icon]).to eq("users")
     end
+
+    it "stores live option when specified" do
+      dashboard_class = Class.new(IronAdmin::Dashboard) do
+        metric :active_users, live: true do
+          10
+        end
+      end
+
+      metric = dashboard_class.defined_metrics.first
+      expect(metric[:live]).to be true
+    end
   end
 
   describe "charts" do
@@ -80,6 +91,17 @@ RSpec.describe IronAdmin::Dashboard do
 
       chart = dashboard_class.defined_charts.first
       expect(chart[:label]).to eq("Projects by Status")
+    end
+
+    it "stores live option when specified" do
+      dashboard_class = Class.new(IronAdmin::Dashboard) do
+        chart :projects_by_status, type: :bar, live: true do
+          { "Draft" => 2, "Active" => 5 }
+        end
+      end
+
+      chart = dashboard_class.defined_charts.first
+      expect(chart[:live]).to be true
     end
 
     it "resolves display title from label when present" do
