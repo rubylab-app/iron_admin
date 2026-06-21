@@ -8,3 +8,10 @@ tmp/
 .yardoc/
 examples/
 .claude/scheduled_tasks.lock
+
+# Obsidian vault local state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.obsidian/plugins/*/data.json
+.trash/
