@@ -50,6 +50,17 @@ module IronAdmin
         model_class.rich_text_association_names
       end
 
+      def polymorphic_inverse_classes(polymorphic_name)
+        eager_load_model_paths
+
+        application_record_descendants.filter_map do |klass|
+          next if klass.abstract_class?
+          next unless klass.base_class == klass
+
+          klass if polymorphic_inverse?(klass, polymorphic_name)
+        end
+      end
+
       # --- Naming ---
 
       delegate :table_name, to: :model_class
@@ -189,6 +200,31 @@ module IronAdmin
 
       def sanitize_like(value)
         value.to_s.gsub(/[%_\\]/) { |match| "\\#{match}" }
+      end
+
+      def eager_load_model_paths
+        return unless defined?(::Rails) && ::Rails.respond_to?(:autoloaders)
+
+        Array(::Rails.application.config.eager_load_paths).each do |path|
+          next unless path.to_s.end_with?("/app/models")
+          next unless File.directory?(path)
+
+          ::Rails.autoloaders.main.eager_load_dir(path)
+        end
+      end
+
+      def application_record_descendants
+        return [] unless defined?(::ApplicationRecord)
+
+        ::ApplicationRecord.descendants
+      end
+
+      def polymorphic_inverse?(klass, polymorphic_name)
+        %i[has_many has_one].any? do |macro|
+          klass.reflect_on_all_associations(macro).any? do |reflection|
+            reflection.options[:as]&.to_sym == polymorphic_name.to_sym
+          end
+        end
       end
     end
   end

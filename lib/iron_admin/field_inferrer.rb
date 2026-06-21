@@ -174,39 +174,14 @@ module IronAdmin
     end
 
     # @api private
-    # Builds `{ polymorphic_name => [target_classes] }` once per inferrer by
-    # walking `ApplicationRecord` descendants a single time, instead of
-    # re-scanning for every polymorphic field on the model.
-    #
-    # Only the polymorphic names declared on this model are tracked, and only
-    # STI base classes are kept — Rails persists the base class name in the
-    # `*_type` column, so subclasses would never round-trip correctly through
-    # the inverse association.
-    #
-    # Returns an empty map when `ApplicationRecord` is not defined (e.g.
-    # `--skip-active-record` Mongoid hosts); host apps should declare types
-    # explicitly via the `field` DSL in that case:
-    #   field :notable, type: :polymorphic_belongs_to, types: [Article, Page]
+    # Builds `{ polymorphic_name => [target_classes] }` once per inferrer.
+    # Each adapter owns model discovery because ActiveRecord and Mongoid load
+    # model classes differently.
     def build_polymorphic_types_map
-      return {} unless defined?(::ApplicationRecord)
       return {} if @polymorphic_map.empty?
 
       needed = @polymorphic_map.keys.to_set(&:to_sym)
-      map = needed.index_with { [] }
-
-      ::ApplicationRecord.descendants.each do |klass|
-        next if klass.abstract_class?
-        next unless klass.base_class == klass
-
-        %i[has_many has_one].each do |macro|
-          klass.reflect_on_all_associations(macro).each do |reflection|
-            as_name = reflection.options[:as]
-            map[as_name] << klass if as_name && needed.include?(as_name)
-          end
-        end
-      end
-
-      map
+      needed.index_with { |name| @adapter.polymorphic_inverse_classes(name) }
     end
 
     # @api private
