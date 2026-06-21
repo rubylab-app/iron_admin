@@ -55,7 +55,9 @@ module IronAdmin
           json_fields = nested.fields.select { |field| field.type == :json }
           next if json_fields.empty?
 
-          nested_params.each_value do |child_params|
+          child_params_collection = nested.kind == :has_many ? nested_params.each_value : [nested_params]
+
+          child_params_collection.each do |child_params|
             coerce_json_fields!(child_params, json_fields)
           end
         end

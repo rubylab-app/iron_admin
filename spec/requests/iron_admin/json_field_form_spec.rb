@@ -17,11 +17,43 @@ RSpec.describe "IronAdmin :json field form rendering", type: :request do
     end
   end
 
+  let(:nested_has_one_user_model) do
+    Class.new(User) do
+      self.table_name = "users"
+
+      def self.name
+        "JsonNestedHasOneUser"
+      end
+
+      has_one :primary_license, -> { order(:id) }, class_name: "License", foreign_key: :user_id
+      accepts_nested_attributes_for :primary_license
+    end
+  end
+
+  let(:nested_has_one_user_resource) do
+    model_class = nested_has_one_user_model
+
+    Class.new(IronAdmin::Resource) do
+      self.model_class_override = model_class
+
+      def self.name
+        "JsonNestedHasOneUserResource"
+      end
+
+      def self.resource_name
+        "json_nested_has_one_users"
+      end
+
+      has_one :primary_license, nested: true, fields: %i[license_key rules]
+    end
+  end
+
   before do
     IronAdmin.reset_configuration!
     IronAdmin::ResourceRegistry.reset!
     IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
     IronAdmin::ResourceRegistry.register(nested_user_resource)
+    IronAdmin::ResourceRegistry.register(nested_has_one_user_resource)
   end
 
   describe "GET /:resource_name/:id/edit" do
@@ -140,6 +172,28 @@ RSpec.describe "IronAdmin :json field form rendering", type: :request do
       expect(license.reload.rules).to eq(
         "limits" => { "seats" => 5 },
         "offline" => true
+      )
+    end
+
+    it "round-trips has_one nested JSON values through nested attributes" do
+      patch iron_admin.resource_path("json_nested_has_one_users", user.id),
+            params: {
+              record: {
+                name: user.name,
+                email: user.email,
+                primary_license_attributes: {
+                  id: license.id,
+                  license_key: license.license_key,
+                  rules: '{"limits":{"seats":8},"offline":false}',
+                },
+              },
+            },
+            as: :html
+
+      expect(response).to have_http_status(:redirect)
+      expect(license.reload.rules).to eq(
+        "limits" => { "seats" => 8 },
+        "offline" => false
       )
     end
   end
