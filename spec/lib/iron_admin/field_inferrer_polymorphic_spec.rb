@@ -58,11 +58,33 @@ RSpec.describe IronAdmin::FieldInferrer do
   end
 
   describe "polymorphic types auto-inference" do
+    it "asks the adapter for polymorphic inverse classes" do
+      adapter = IronAdmin::Adapters::ActiveRecord.new(Note)
+      allow(adapter).to receive(:polymorphic_inverse_classes).with(:notable).and_return([User])
+
+      fields = described_class.call(adapter)
+      notable_field = fields.find { |f| f.name == :notable }
+
+      expect(notable_field.options[:types]).to eq([User])
+    end
+
     it "infers types from `has_many :as` declarations across ApplicationRecord descendants" do
       fields = described_class.call(Note)
       notable_field = fields.find { |f| f.name == :notable }
 
       expect(notable_field.options[:types]).to include(User, License)
+    end
+
+    it "eager-loads model paths before scanning descendants in lazy-load environments" do
+      calls = []
+      paths = ActiveSupport::Dependencies.autoload_paths
+
+      allow(Rails.application.config).to receive(:eager_load_paths).and_return(paths)
+      allow(Rails.autoloaders.main).to receive(:eager_load_dir) { |path| calls << path }
+
+      described_class.call(Note)
+
+      expect(calls).to include(*paths.select { |path| path.end_with?("/app/models") })
     end
 
     it "excludes abstract classes" do
