@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dashboard metric icons** (#34) — `metric` DSL now accepts `icon:` keyword for Heroicon display alongside metric values.
 - **Dashboard chart labels** (#35) — `chart` DSL now accepts `label:` keyword for custom display titles, falling back to `name.to_s.humanize`.
 - **CSV/JSON imports** (#53) — Resources can opt in to uploads with `imports :csv, :json`, constrain importable fields, configure upsert keys, preview mapped rows, and create/update records through adapter-driven persistence.
+- **Polling live updates** (#54) — Added opt-in `live_updates = :polling`, a thread-safe poll cache, Turbo Stream broadcaster, live polling endpoint, dashboard `live:` options, and stable resource/metric DOM targets.
 
 ### Fixed
 
