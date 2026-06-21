@@ -206,6 +206,34 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
     end
   end
 
+  describe "#polymorphic_inverse_classes" do
+    it "returns Mongoid document classes with a matching polymorphic inverse relation" do
+      stub_const("Mongoid::Document", Module.new)
+
+      relation = double(
+        "MongoidPolymorphicInverse",
+        macro: :has_many,
+        options: { as: :notable }
+      )
+
+      matching_class = Class.new do
+        include Mongoid::Document
+
+        define_singleton_method(:relations) { { "notes" => relation } }
+      end
+      non_matching_class = Class.new do
+        include Mongoid::Document
+
+        define_singleton_method(:relations) { {} }
+      end
+      stub_const("MongoidTarget", matching_class)
+      stub_const("MongoidNonTarget", non_matching_class)
+
+      expect(adapter.polymorphic_inverse_classes(:notable)).to include(MongoidTarget)
+      expect(adapter.polymorphic_inverse_classes(:notable)).not_to include(MongoidNonTarget)
+    end
+  end
+
   describe "#attachments" do
     it "returns empty hash" do
       expect(adapter.attachments).to eq({})
