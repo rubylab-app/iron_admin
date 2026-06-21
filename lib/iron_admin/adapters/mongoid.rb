@@ -67,6 +67,19 @@ module IronAdmin
         []
       end
 
+      def polymorphic_inverse_classes(polymorphic_name)
+        return [] unless defined?(::Mongoid::Document)
+
+        classes = ObjectSpace.each_object(Class).filter_map do |klass|
+          next unless klass < ::Mongoid::Document
+          next unless mongoid_polymorphic_inverse?(klass, polymorphic_name)
+
+          klass
+        end
+
+        classes.sort_by { |klass| klass.name.to_s }
+      end
+
       # --- Naming ---
 
       def table_name
@@ -233,6 +246,20 @@ module IronAdmin
       def boolean_type?(type)
         type_name = type.respond_to?(:name) ? type.name.to_s : type.to_s
         type_name.include?("Boolean") || type == TrueClass || type == FalseClass
+      end
+
+      def mongoid_polymorphic_inverse?(klass, polymorphic_name)
+        return false unless klass.respond_to?(:relations)
+
+        klass.relations.values.any? do |relation|
+          next false unless %i[has_many has_one].include?(relation.macro)
+
+          relation_options(relation)[:as]&.to_sym == polymorphic_name.to_sym
+        end
+      end
+
+      def relation_options(relation)
+        relation.respond_to?(:options) ? relation.options : {}
       end
     end
   end
