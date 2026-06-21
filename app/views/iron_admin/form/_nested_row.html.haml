@@ -40,6 +40,11 @@
             = child_f.number_field fk, placeholder: field.name.to_s.humanize, class: input_class
         - when :textarea
           = child_f.text_area field.name, rows: 2, class: input_class
+        - when :json
+          - raw_json_value = child.public_send(field.name)
+          - json_str = raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value)
+          = child_f.text_area field.name, value: json_str, rows: field.options[:rows] || 4,
+            placeholder: "{}", class: "#{input_class} font-mono"
         - when :number
           = child_f.number_field field.name, class: input_class
         - when :boolean

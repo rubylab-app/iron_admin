@@ -16,6 +16,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000008) do
     t.integer :status, default: 0
     t.string :license_type
     t.integer :max_devices
+    t.json :rules, default: {}
     t.datetime :expires_at
     t.timestamps
 
