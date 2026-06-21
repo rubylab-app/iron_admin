@@ -16,7 +16,12 @@ module IronAdmin
       private
 
       def coerce_json_field_params!(parsed)
-        form_fields.each do |field|
+        coerce_json_fields!(parsed, form_fields)
+        coerce_nested_json_field_params!(parsed)
+      end
+
+      def coerce_json_fields!(parsed, fields)
+        fields.each do |field|
           next unless field.type == :json
 
           value = parsed[field.name]
@@ -39,6 +44,20 @@ module IronAdmin
           # validation in the typical case; full inline-error UX is tracked
           # as a follow-up.
           parsed.delete(field.name)
+        end
+      end
+
+      def coerce_nested_json_field_params!(parsed)
+        @resource_class.nested_associations.each do |nested|
+          nested_params = parsed[:"#{nested.name}_attributes"]
+          next unless nested_params.respond_to?(:each_value)
+
+          json_fields = nested.fields.select { |field| field.type == :json }
+          next if json_fields.empty?
+
+          nested_params.each_value do |child_params|
+            coerce_json_fields!(child_params, json_fields)
+          end
         end
       end
     end
