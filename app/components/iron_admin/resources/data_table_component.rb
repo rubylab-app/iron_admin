@@ -89,6 +89,12 @@ module IronAdmin
       def sort_direction
         current_direction
       end
+
+      # @api private
+      # @return [String] Stable Turbo Stream target id for a record row
+      def row_dom_id(record)
+        "iron_admin_#{resource_class.resource_name}_row_#{record.id}"
+      end
     end
   end
 end

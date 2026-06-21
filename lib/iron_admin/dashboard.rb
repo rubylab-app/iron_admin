@@ -81,8 +81,8 @@ module IronAdmin
       #   end
       #
       # @return [void]
-      def metric(name, format: :number, icon: nil, &block)
-        self.defined_metrics = defined_metrics + [{ name: name, format: format, icon: icon, block: block }]
+      def metric(name, format: :number, icon: nil, live: false, &block)
+        self.defined_metrics = defined_metrics + [{ name: name, format: format, icon: icon, live: live, block: block }]
       end
 
       # Defines a chart for the dashboard.
@@ -114,8 +114,10 @@ module IronAdmin
       #   end
       #
       # @return [void]
-      def chart(name, type: :line, colors: nil, label: nil, &block)
-        self.defined_charts = defined_charts + [{ name: name, type: type, colors: colors, label: label, block: block }]
+      def chart(name, type: :line, colors: nil, label: nil, live: false, &block)
+        self.defined_charts = defined_charts + [
+          { name: name, type: type, colors: colors, label: label, live: live, block: block },
+        ]
       end
 
       # Displays a list of recent records from a resource.

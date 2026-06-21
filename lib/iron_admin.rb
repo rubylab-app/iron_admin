@@ -3,6 +3,9 @@
 require "iron_admin/version"
 require "iron_admin/errors"
 require "iron_admin/configuration"
+require "iron_admin/live/poll_cache"
+require "iron_admin/live/broadcaster"
+require "iron_admin/live"
 require "iron_admin/adapters/base"
 require "iron_admin/adapters/registry"
 require "iron_admin/adapters/active_record"
@@ -16,6 +19,7 @@ require "iron_admin/nested_association"
 require "iron_admin/nested_attributes_validator"
 require "iron_admin/concerns/nestable"
 require "iron_admin/concerns/soft_deletable"
+require "iron_admin/concerns/live_updatable"
 require "iron_admin/filters/base_query_builder"
 require "iron_admin/filters/active_record_query_builder"
 require "iron_admin/filters/query_builder"
@@ -137,6 +141,7 @@ module IronAdmin
     def reset_configuration!
       @configuration = Configuration.new
       @dashboard_class = nil
+      Live.reset! if defined?(Live)
     end
 
     def register_field_type(type_name, &)

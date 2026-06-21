@@ -30,4 +30,10 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
 
     expect(result.css("svg").size).to eq(1)
   end
+
+  it "adds a stable target id when live rendering is enabled" do
+    result = render_inline(described_class.new(name: :total_users, value: 42, format: :number, live: true))
+
+    expect(result.css("#metric_total_users").size).to eq(1)
+  end
 end

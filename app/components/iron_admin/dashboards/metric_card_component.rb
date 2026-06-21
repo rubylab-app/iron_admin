@@ -8,11 +8,13 @@ module IronAdmin
       # @param value [Numeric] Metric value
       # @param format [Symbol] Format (:number, :currency, :percentage)
       # @param icon [String, nil] Optional Heroicon name (e.g., "users", "currency-dollar")
-      def initialize(name:, value:, format: :number, icon: nil)
+      # @param live [Boolean] Whether to render a stable Turbo Stream target id
+      def initialize(name:, value:, format: :number, icon: nil, live: false)
         @name = name
         @value = value
         @format = format
         @icon = icon
+        @live = live
       end
 
       # @api private
@@ -29,6 +31,18 @@ module IronAdmin
       # @return [String] Humanized metric label
       def label
         @name.to_s.humanize
+      end
+
+      # @api private
+      # @return [Boolean] True when the metric should expose a live target
+      def live?
+        @live
+      end
+
+      # @api private
+      # @return [String] Stable Turbo Stream target id
+      def live_target_id
+        "metric_#{@name.to_s.parameterize(separator: "_")}"
       end
 
       # @api private

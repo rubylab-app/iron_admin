@@ -63,6 +63,15 @@ RSpec.describe IronAdmin::Configuration do
     it "sets sticky_actions_column to true" do
       expect(config.sticky_actions_column).to be true
     end
+
+    it "disables live updates by default" do
+      expect(config.live_updates).to eq(:disabled)
+    end
+
+    it "sets default live polling settings" do
+      expect(config.live_poll_interval).to eq(3.seconds)
+      expect(config.live_throttle).to eq(0.5.seconds)
+    end
   end
 
   describe "#badge_colors" do
@@ -232,6 +241,16 @@ RSpec.describe IronAdmin::Configuration do
       config.sticky_actions_column = false
 
       expect(config.sticky_actions_column).to be false
+    end
+
+    it "allows setting live update options" do
+      config.live_updates = :polling
+      config.live_poll_interval = 10.seconds
+      config.live_throttle = 2.seconds
+
+      expect(config.live_updates).to eq(:polling)
+      expect(config.live_poll_interval).to eq(10.seconds)
+      expect(config.live_throttle).to eq(2.seconds)
     end
   end
 end

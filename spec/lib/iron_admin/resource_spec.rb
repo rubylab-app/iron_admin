@@ -73,6 +73,31 @@ RSpec.describe IronAdmin::Resource do
     end
   end
 
+  describe "live update DSL" do
+    it "keeps live index and show disabled by default" do
+      expect(TestUserResource.live_index_enabled?).to be false
+      expect(TestUserResource.live_show_enabled?).to be false
+    end
+
+    it "stores live index and show settings" do
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "LiveUserResource"
+        end
+
+        live_index true
+        live_show true
+      end
+
+      expect(resource.live_index_enabled?).to be true
+      expect(resource.live_show_enabled?).to be true
+      expect(resource.live_stream_name(:index)).to eq("resources:users:index")
+      expect(resource.live_stream_name(:show, 42)).to eq("resources:users:show:42")
+    end
+  end
+
   describe "field overrides" do
     it "merges overrides with inferred fields" do
       fields = TestLicenseResource.resolved_fields
