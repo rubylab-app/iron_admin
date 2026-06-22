@@ -971,6 +971,116 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       get iron_admin.edit_resource_path("users", "missing"), as: :html
       expect(response).to have_http_status(:not_found)
     end
+
+    context "with belongs_to autocomplete configured" do
+      let(:autocomplete_user_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "AutocompleteTargetUserResource"
+          end
+
+          def self.resource_name
+            "autocomplete_target_users"
+          end
+        end
+      end
+
+      let(:autocomplete_license_resource) do
+        target_resource = autocomplete_user_resource
+
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "AutocompleteLicenseResource"
+          end
+
+          def self.resource_name
+            "autocomplete_licenses"
+          end
+
+          belongs_to :user, display: :email, autocomplete: true, resource: target_resource
+          form_fields :user
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(autocomplete_user_resource)
+        IronAdmin::ResourceRegistry.register(autocomplete_license_resource)
+      end
+
+      after do
+        IronAdmin::ResourceRegistry.reset!
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::LicenseResource)
+      end
+
+      it "renders the autocomplete belongs_to input with the current selection" do
+        user = create(:user, email: "selected@example.com")
+        license = create(:license, user: user)
+
+        get iron_admin.edit_resource_path("autocomplete_licenses", license), as: :html
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('data-autocomplete-url="/admin/autocomplete/autocomplete_target_users"')
+        expect(response.body).to include(%(name="record[user_id]"))
+        expect(response.body).to include(%(type="hidden"))
+        expect(response.body).to include(%(value="#{user.id}"))
+        expect(response.body).to include(%(type="text"))
+        expect(response.body).to include(%(value="#{user.email}"))
+        expect(response.body).not_to include(%(select name="record[user_id]"))
+      end
+    end
+  end
+
+  describe "belongs_to form associations" do
+    let(:tenant_scoped_license_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "TenantScopedLicenseResource"
+        end
+
+        def self.resource_name
+          "tenant_scoped_licenses"
+        end
+
+        belongs_to :user, display: :email
+        form_fields :user
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(tenant_scoped_license_resource)
+    end
+
+    after do
+      IronAdmin::ResourceRegistry.reset!
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::LicenseResource)
+    end
+
+    it "scopes belongs_to select options through the tenant scope" do
+      create(:user, email: "in-tenant@example.com", active: true)
+      create(:user, email: "outside-tenant@example.com", active: false)
+
+      IronAdmin.configure do |config|
+        config.tenant_scope do |scope|
+          scope.where(active: true)
+        end
+      end
+
+      get iron_admin.new_resource_path("tenant_scoped_licenses"), as: :html
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(%(name="record[user_id]"))
+      expect(response.body).to include("<select")
+      expect(response.body).to include("in-tenant@example.com")
+      expect(response.body).not_to include("outside-tenant@example.com")
+    end
   end
 
   describe "POST /:resource_name" do
