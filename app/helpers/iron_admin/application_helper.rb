@@ -129,5 +129,13 @@ module IronAdmin
         option.is_a?(Array) ? option : [option.to_s.humanize, option]
       end
     end
+
+    def association_resource_for(field, association_class)
+      resource = field.options[:resource]
+      return resource.constantize if resource.is_a?(String)
+      return resource if resource
+
+      IronAdmin::ResourceRegistry.find(association_class.model_name.plural)
+    end
   end
 end

@@ -302,6 +302,7 @@ First public release.
 
 ### Fixed
 
+- Category D: belongs_to form fields now honor `autocomplete: true` and tenant-scoped select options.
 - Export error handling for missing fields and type coercion
 - Custom actions wrapped in database transactions with proper error handling
 - Date filter parsing for invalid dates

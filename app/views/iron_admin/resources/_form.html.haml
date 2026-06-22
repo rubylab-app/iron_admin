@@ -18,11 +18,21 @@
           - assoc_class = field.options[:association_class]
           - fk = field.options[:foreign_key]
           - display_method = field.options[:display]
-          - belongs_to_options = assoc_class.all.map { |r| [display_record_label(r, display_method), r.id] }
-          = f.select fk,
-            options_for_select(belongs_to_options, @record.public_send(fk)),
-            { include_blank: I18n.t("iron_admin.fields.select_placeholder") },
-            class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
+          - association_resource = association_resource_for(field, assoc_class)
+          - if field.options[:autocomplete]
+            - selected_record = @record.public_send(field.name) if @record.respond_to?(field.name)
+            - autocomplete_resource_name = association_resource&.resource_name || assoc_class.model_name.route_key
+            - autocomplete_component = IronAdmin::Form::BelongsToAutocompleteComponent.new(name: "record[#{fk}]", resource_name: autocomplete_resource_name, selected_id: @record.public_send(fk), selected_label: selected_record ? display_record_label(selected_record, display_method) : nil, has_error: has_error)
+            = render autocomplete_component
+          - else
+            - belongs_to_scope = assoc_class.all
+            - tenant_scope = IronAdmin.configuration.tenant_scope_block
+            - belongs_to_scope = tenant_scope.call(belongs_to_scope) if tenant_scope
+            - belongs_to_options = belongs_to_scope.map { |r| [display_record_label(r, display_method), r.id] }
+            = f.select fk,
+              options_for_select(belongs_to_options, @record.public_send(fk)),
+              { include_blank: I18n.t("iron_admin.fields.select_placeholder") },
+              class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
         - when :text
           = f.text_field field.name, placeholder: field.name.to_s.humanize,
             class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
