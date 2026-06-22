@@ -87,4 +87,21 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
       expect(response).to redirect_to(iron_admin.resource_path("soft_delete_posts", deleted_post))
     end
   end
+
+  describe "direct restore routes when the action condition is false" do
+    let!(:active_post) { SoftDeletePost.create!(title: "Active Post", body: "Content") }
+
+    it "forbids the restore action form" do
+      get iron_admin.resource_action_form_path("soft_delete_posts", active_post.id, "restore"), as: :html
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "forbids executing restore" do
+      post iron_admin.resource_action_path("soft_delete_posts", active_post.id, "restore"), as: :html
+
+      expect(response).to have_http_status(:forbidden)
+      expect(active_post.reload.deleted_at).to be_nil
+    end
+  end
 end

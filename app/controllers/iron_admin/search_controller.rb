@@ -20,7 +20,9 @@ module IronAdmin
         next if columns.empty?
 
         resource_adapter = resource_class.adapter
-        records = resource_adapter.search_columns(resource_adapter.all, columns, @query)
+        scope = resource_adapter.all
+        scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
+        records = resource_adapter.search_columns(scope, columns, @query)
         records = resource_adapter.limit(records, 5)
 
         next if records.empty?
