@@ -31,29 +31,29 @@ RSpec.describe "Edge Cases", type: :request do
   end
 
   describe "invalid record handling" do
-    it "raises error for non-existent record on show" do
-      expect do
-        get iron_admin.resource_path("users", 99_999)
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found for non-existent record on show" do
+      get iron_admin.resource_path("users", 99_999)
+
+      expect(response).to have_http_status(:not_found)
     end
 
-    it "raises error for non-existent record on edit" do
-      expect do
-        get iron_admin.edit_resource_path("users", 99_999)
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found for non-existent record on edit" do
+      get iron_admin.edit_resource_path("users", 99_999)
+
+      expect(response).to have_http_status(:not_found)
     end
 
-    it "raises error for non-existent record on update" do
-      expect do
-        patch iron_admin.resource_path("users", 99_999),
-              params: { record: { name: "Test" } }
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found for non-existent record on update" do
+      patch iron_admin.resource_path("users", 99_999),
+            params: { record: { name: "Test" } }
+
+      expect(response).to have_http_status(:not_found)
     end
 
-    it "raises error for non-existent record on destroy" do
-      expect do
-        delete iron_admin.resource_path("users", 99_999)
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found for non-existent record on destroy" do
+      delete iron_admin.resource_path("users", 99_999)
+
+      expect(response).to have_http_status(:not_found)
     end
   end
 

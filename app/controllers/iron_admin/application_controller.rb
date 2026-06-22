@@ -13,7 +13,10 @@ module IronAdmin
 
     before_action :authenticate_iron_admin_user!
 
-    helper_method :iron_admin_current_user
+    rescue_from IronAdmin::RecordNotFound, with: :render_not_found
+    rescue_from ActionController::ParameterMissing, with: :render_bad_request
+
+    helper_method :iron_admin_current_user, :iron_admin_filter_param, :iron_admin_active_filter?
 
     private
 
@@ -29,6 +32,34 @@ module IronAdmin
       return unless IronAdmin.configuration.current_user_block
 
       @iron_admin_current_user ||= instance_exec(self, &IronAdmin.configuration.current_user_block)
+    end
+
+    def iron_admin_filter_param(*keys)
+      iron_admin_param_dig(params[:filters], *keys)
+    end
+
+    def iron_admin_active_filter?(filter)
+      iron_admin_filter_param(filter[:name]).present? ||
+        iron_admin_filter_param("#{filter[:name]}_from").present? ||
+        iron_admin_filter_param("#{filter[:name]}_to").present? ||
+        (iron_admin_filter_param(filter[:name].to_s).is_a?(ActionController::Parameters) &&
+          iron_admin_filter_param(filter[:name].to_s, "value").present?)
+    end
+
+    def iron_admin_param_dig(value, *keys)
+      keys.reduce(value) do |current, key|
+        return nil unless current.is_a?(ActionController::Parameters) || current.is_a?(Hash)
+
+        current[key]
+      end
+    end
+
+    def render_not_found
+      head(:not_found)
+    end
+
+    def render_bad_request
+      head(:bad_request)
     end
   end
 end

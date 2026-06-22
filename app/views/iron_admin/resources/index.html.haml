@@ -27,14 +27,14 @@
           = hidden_field_tag :scope, @current_scope
           - @resource_class.defined_filters.each do |filter|
             - if filter[:type].in?(%i[string number])
-              - sub = params.dig(:filters, filter[:name].to_s)
+              - sub = iron_admin_filter_param(filter[:name].to_s)
               - if sub.is_a?(ActionController::Parameters) && sub["value"].present?
                 = hidden_field_tag "filters[#{filter[:name]}][op]", sub["op"]
                 = hidden_field_tag "filters[#{filter[:name]}][value]", sub["value"]
                 - if sub["value_2"].present?
                   = hidden_field_tag "filters[#{filter[:name]}][value_2]", sub["value_2"]
             - else
-              - value = params.dig(:filters, filter[:name])
+              - value = iron_admin_filter_param(filter[:name])
               - if value.present?
                 = hidden_field_tag "filters[#{filter[:name]}]", value
           .relative
@@ -45,7 +45,7 @@
               class: cp_search_class
 
   - if @resource_class.defined_filters.any?
-    - has_active_filters = @resource_class.defined_filters.any? { |f| params.dig(:filters, f[:name]).present? || params.dig(:filters, "#{f[:name]}_from").present? || params.dig(:filters, "#{f[:name]}_to").present? || (params.dig(:filters, f[:name].to_s).is_a?(ActionController::Parameters) && params.dig(:filters, f[:name].to_s, "value").present?) }
+    - has_active_filters = @resource_class.defined_filters.any? { |f| iron_admin_active_filter?(f) }
     - select_chevron_style = "background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;"
     .flex.justify-end.mb-4
       %details.relative.group{ open: has_active_filters || nil }
@@ -53,7 +53,7 @@
           = heroicon "funnel", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }
           %span= I18n.t("iron_admin.resources.index.filters_label")
           - if has_active_filters
-            - active_count = @resource_class.defined_filters.count { |f| params.dig(:filters, f[:name]).present? || params.dig(:filters, "#{f[:name]}_from").present? || params.dig(:filters, "#{f[:name]}_to").present? || (params.dig(:filters, f[:name].to_s).is_a?(ActionController::Parameters) && params.dig(:filters, f[:name].to_s, "value").present?) }
+            - active_count = @resource_class.defined_filters.count { |f| iron_admin_active_filter?(f) }
             %span{ class: cp_badge_count }
               = active_count
           = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4 text-gray-400 transition-transform group-open:rotate-180" }
@@ -71,24 +71,24 @@
                     %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                       %option{ value: "" }= I18n.t("iron_admin.resources.index.all_option")
                       - filter_options_for(@resource_class, filter).each do |label, value|
-                        %option{ value: value, selected: params.dig(:filters, filter[:name]) == value.to_s }= label
+                        %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
                   - when :boolean
                     %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                       %option{ value: "" }= I18n.t("iron_admin.resources.index.all_option")
                       - filter_options_for(@resource_class, filter).each do |label, value|
-                        %option{ value: value, selected: params.dig(:filters, filter[:name]) == value.to_s }= label
+                        %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
                   - when :date_range
                     .space-y-2
-                      = date_field_tag "filters[#{filter[:name]}_from]", params.dig(:filters, "#{filter[:name]}_from"),
+                      = date_field_tag "filters[#{filter[:name]}_from]", iron_admin_filter_param("#{filter[:name]}_from"),
                         class: cp_filter_input_class,
                         placeholder: I18n.t("iron_admin.filters.from")
-                      = date_field_tag "filters[#{filter[:name]}_to]", params.dig(:filters, "#{filter[:name]}_to"),
+                      = date_field_tag "filters[#{filter[:name]}_to]", iron_admin_filter_param("#{filter[:name]}_to"),
                         class: cp_filter_input_class,
                         placeholder: I18n.t("iron_admin.filters.to")
                   - when :string
                     - string_ops = %w[contains equals starts_with ends_with]
-                    - current_op = params.dig(:filters, filter[:name].to_s, "op") || "contains"
-                    - current_val = params.dig(:filters, filter[:name].to_s, "value") || ""
+                    - current_op = iron_admin_filter_param(filter[:name].to_s, "op") || "contains"
+                    - current_val = iron_admin_filter_param(filter[:name].to_s, "value") || ""
                     .space-y-2
                       %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                         - string_ops.each do |op|
@@ -98,9 +98,9 @@
                         placeholder: filter[:label] || filter[:name].to_s.humanize
                   - when :number
                     - number_ops = %w[equals greater_than less_than between]
-                    - current_op = params.dig(:filters, filter[:name].to_s, "op") || "equals"
-                    - current_val = params.dig(:filters, filter[:name].to_s, "value") || ""
-                    - current_val_upper = params.dig(:filters, filter[:name].to_s, "value_2") || ""
+                    - current_op = iron_admin_filter_param(filter[:name].to_s, "op") || "equals"
+                    - current_val = iron_admin_filter_param(filter[:name].to_s, "value") || ""
+                    - current_val_upper = iron_admin_filter_param(filter[:name].to_s, "value_2") || ""
                     .space-y-2{ data: { controller: "filter-operator" } }
                       %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style, data: { action: "change->filter-operator#toggle", filter_operator_target: "opSelect" } }
                         - number_ops.each do |op|
