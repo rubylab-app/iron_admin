@@ -88,7 +88,7 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
-  describe "direct restore routes when the action condition is false" do
+  context "when the action condition is false on direct restore routes" do
     let!(:active_post) { SoftDeletePost.create!(title: "Active Post", body: "Content") }
 
     it "forbids the restore action form" do

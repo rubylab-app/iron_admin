@@ -294,7 +294,7 @@ module IronAdmin
       condition = action[:condition]
       return true unless condition
 
-      condition.arity.zero? ? record.instance_exec(&condition) : condition.call(record)
+      condition.call(record)
     end
 
     def prepare_action_record?(action)

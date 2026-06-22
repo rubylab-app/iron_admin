@@ -179,6 +179,7 @@ module IronAdmin
         lookup = attributes.slice(*keys)
         return nil unless lookup.size == keys.size && lookup.values.all?(&:present?)
 
+        # find_by_keys is an IronAdmin adapter hook, not an ActiveRecord dynamic finder.
         return adapter.find_by_keys(lookup) unless IronAdmin.configuration.tenant_scope_block # rubocop:disable Rails/DynamicFindBy
 
         scoped_existing_record(lookup)
