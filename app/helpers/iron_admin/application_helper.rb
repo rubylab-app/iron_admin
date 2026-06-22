@@ -113,7 +113,7 @@ module IronAdmin
         if enums.key?(column_name)
           enums[column_name].keys.map { |k| [k.humanize, k] }
         elsif filter[:options]
-          filter[:options]
+          normalize_filter_options(filter[:options])
         else
           resource_adapter.distinct_values(column_name).map { |v| [v.to_s.humanize, v] }
         end
@@ -121,6 +121,12 @@ module IronAdmin
         [[I18n.t("iron_admin.filters.true"), "true"], [I18n.t("iron_admin.filters.false"), "false"]]
       else
         []
+      end
+    end
+
+    def normalize_filter_options(options)
+      options.map do |option|
+        option.is_a?(Array) ? option : [option.to_s.humanize, option]
       end
     end
   end

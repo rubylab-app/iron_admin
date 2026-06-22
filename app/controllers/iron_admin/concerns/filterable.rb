@@ -9,6 +9,10 @@ module IronAdmin
     module Filterable
       extend ActiveSupport::Concern
 
+      included do
+        helper_method :iron_admin_visible_filters if respond_to?(:helper_method)
+      end
+
       private
 
       # Applies all configured filters to the scope.
@@ -16,7 +20,7 @@ module IronAdmin
       # @param scope [Object] Base query scope (ActiveRecord::Relation or Mongoid::Criteria)
       # @return [Object] Filtered scope
       def apply_filters(scope)
-        @resource_class.all_filters.each do |filter|
+        iron_admin_visible_filters.each do |filter|
           scope = case filter[:type]
                   when :string, :number then apply_operator_filter(scope, filter)
                   when :date_range then apply_date_range_filter(scope, filter)
@@ -24,6 +28,19 @@ module IronAdmin
                   end
         end
         scope
+      end
+
+      def iron_admin_visible_filters
+        @iron_admin_visible_filters ||= begin
+          resolved_fields = @resource_class.resolved_fields
+          resolved_names = resolved_fields.map(&:name)
+          visible_names = resolved_fields.select { |field| field.visible?(iron_admin_current_user) }.map(&:name)
+
+          @resource_class.all_filters.select do |filter|
+            filter_name = filter[:name].to_sym
+            resolved_names.exclude?(filter_name) || visible_names.include?(filter_name)
+          end
+        end
       end
 
       def apply_operator_filter(scope, filter)

@@ -111,12 +111,14 @@ module IronAdmin
       def search_column(scope, column, query)
         table = quoted_table_name
         col = connection.quote_column_name(column)
-        scope.where("#{table}.#{col} #{like_operator} ?", "%#{sanitize_like(query)}%")
+        scope.where("#{table}.#{col} #{like_operator} ? #{like_escape_clause}", "%#{sanitize_like(query)}%")
       end
 
       def search_columns(scope, columns, query)
         table = quoted_table_name
-        conditions = columns.map { |col| "#{table}.#{connection.quote_column_name(col)} #{like_operator} :q" }
+        conditions = columns.map do |col|
+          "#{table}.#{connection.quote_column_name(col)} #{like_operator} :q #{like_escape_clause}"
+        end
         scope.where(conditions.join(" OR "), q: "%#{sanitize_like(query)}%")
       end
 
@@ -196,6 +198,10 @@ module IronAdmin
 
       def like_operator
         postgresql? ? "ILIKE" : "LIKE"
+      end
+
+      def like_escape_clause
+        "ESCAPE '\\'"
       end
 
       def sanitize_like(value)

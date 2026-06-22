@@ -427,6 +427,16 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       end
     end
 
+    context "with select filter with scalar string options" do
+      let(:filter) { { name: :role, type: :select, options: %w[enterprise standard] } }
+
+      it "normalizes options into label-value pairs" do
+        options = helper.filter_options_for(IronAdmin::Resources::UserResource, filter)
+
+        expect(options).to eq([%w[Enterprise enterprise], %w[Standard standard]])
+      end
+    end
+
     context "with select filter on regular column" do
       before do
         create(:user, role: "admin")

@@ -64,6 +64,17 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         get iron_admin.resources_path("users"), params: { q: "name:Test User" }, as: :html
         expect(response).to have_http_status(:ok)
       end
+
+      it "does not treat non-date string values containing range syntax as an unfiltered scope" do
+        create(:user, name: "Visible Alpha", email: "alpha@example.com")
+        create(:user, name: "Visible Beta", email: "beta@example.com")
+
+        get iron_admin.resources_path("users"), params: { q: "name:definitelynomatch..alsonope" }, as: :html
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("Visible Alpha")
+        expect(response.body).not_to include("Visible Beta")
+      end
     end
 
     context "with date range search (field:from..to syntax)" do
@@ -147,6 +158,28 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         get iron_admin.resources_path("users"), params: { q: "   " }, as: :html
         expect(response).to have_http_status(:ok)
       end
+
+      it "finds literal percent characters" do
+        create(:user, name: "Percent 100% Match", email: "percent@example.com")
+        create(:user, name: "Percent 100X Match", email: "percent-wildcard@example.com")
+
+        get iron_admin.resources_path("users"), params: { q: "100%" }, as: :html
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Percent 100% Match")
+        expect(response.body).not_to include("Percent 100X Match")
+      end
+
+      it "finds literal underscore characters" do
+        create(:user, name: "Underscore A_B Match", email: "underscore@example.com")
+        create(:user, name: "Underscore AXB Match", email: "underscore-wildcard@example.com")
+
+        get iron_admin.resources_path("users"), params: { q: "A_B" }, as: :html
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Underscore A_B Match")
+        expect(response.body).not_to include("Underscore AXB Match")
+      end
     end
 
     context "with sorting" do
@@ -169,6 +202,35 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         create(:user, role: "member")
         get iron_admin.resources_path("users"), params: { filters: { role: "admin" } }, as: :html
         expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "with auto-inferred filters" do
+      let(:auto_filter_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "AutoFilterUserResource"
+          end
+
+          def self.resource_name
+            "auto_filter_users"
+          end
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(auto_filter_resource)
+        create(:user, name: "Auto Filtered", email: "auto-filtered@example.com")
+      end
+
+      it "renders controls for filters inferred from searchable string columns" do
+        get iron_admin.resources_path("auto_filter_users"), as: :html
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('name="filters[name][value]"')
+        expect(response.body).to include('name="filters[email][value]"')
       end
     end
 
@@ -1477,6 +1539,19 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         # (not just the one with matching email - that would leak data)
         expect(response.body).to include("Secret Email User")
         expect(response.body).to include("Normal Email User")
+      end
+
+      it "does not apply invisible field filters from crafted params" do
+        create(:user, name: "Secret Filter User", email: "secret-filter@example.com")
+        create(:user, name: "Normal Filter User", email: "normal-filter@example.com")
+
+        get iron_admin.resources_path("visibility_users"),
+            params: { filters: { email: { op: "contains", value: "secret-filter" } } },
+            as: :html
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Secret Filter User")
+        expect(response.body).to include("Normal Filter User")
       end
 
       it "searches visible fields with field:value syntax" do

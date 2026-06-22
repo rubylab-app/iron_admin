@@ -1,3 +1,5 @@
+- filters = iron_admin_visible_filters
+
 .p-8.max-w-7xl.mx-auto{ class: t.font_family }
   .flex.items-center.justify-between.mb-6
     %h1.text-2xl{ class: cp_heading }= @resource_class.label
@@ -25,7 +27,7 @@
       - if @resource_class.searchable_columns.any?
         = form_tag resources_path(@resource_class.resource_name), method: :get, class: "flex ml-auto" do
           = hidden_field_tag :scope, @current_scope
-          - @resource_class.defined_filters.each do |filter|
+          - filters.each do |filter|
             - if filter[:type].in?(%i[string number])
               - sub = iron_admin_filter_param(filter[:name].to_s)
               - if sub.is_a?(ActionController::Parameters) && sub["value"].present?
@@ -44,8 +46,8 @@
               placeholder: I18n.t("iron_admin.resources.index.search_placeholder"),
               class: cp_search_class
 
-  - if @resource_class.defined_filters.any?
-    - has_active_filters = @resource_class.defined_filters.any? { |f| iron_admin_active_filter?(f) }
+  - if filters.any?
+    - has_active_filters = filters.any? { |f| iron_admin_active_filter?(f) }
     - select_chevron_style = "background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;"
     .flex.justify-end.mb-4
       %details.relative.group{ open: has_active_filters || nil }
@@ -53,7 +55,7 @@
           = heroicon "funnel", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }
           %span= I18n.t("iron_admin.resources.index.filters_label")
           - if has_active_filters
-            - active_count = @resource_class.defined_filters.count { |f| iron_admin_active_filter?(f) }
+            - active_count = filters.count { |f| iron_admin_active_filter?(f) }
             %span{ class: cp_badge_count }
               = active_count
           = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4 text-gray-400 transition-transform group-open:rotate-180" }
@@ -62,7 +64,7 @@
             = hidden_field_tag :scope, @current_scope
             = hidden_field_tag :q, params[:q]
             .space-y-3
-              - @resource_class.defined_filters.each do |filter|
+              - filters.each do |filter|
                 .space-y-1
                   %label.block.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_muted_text }
                     = filter[:name].to_s.humanize
