@@ -115,14 +115,13 @@ module IronAdmin
     #
     # @return [void]
     def action_form
-      action = @resource_class.defined_actions.find { |a| a[:name].to_s == params[:action_name] }
-      return head(:not_found) unless action
-      return head(:forbidden) unless action_authorized?(action[:name])
+      @action = find_single_record_action
+      return unless @action
 
-      @record = find_record(record_scope, params[:id])
-      @action = action
-      @form_fields = action[:form_fields]
-      @form_url = resource_action_path(@resource_class.resource_name, @record, action[:name])
+      return unless prepare_action_record?(@action)
+
+      @form_fields = @action[:form_fields]
+      @form_url = resource_action_path(@resource_class.resource_name, @record, @action[:name])
     end
 
     # Renders the action form for a bulk action with form_fields.
@@ -142,11 +141,11 @@ module IronAdmin
     #
     # @return [void]
     def execute_action
-      action = @resource_class.defined_actions.find { |a| a[:name].to_s == params[:action_name] }
-      return head(:not_found) unless action
-      return head(:forbidden) unless action_authorized?(action[:name])
+      action = find_single_record_action
+      return unless action
 
-      @record = find_record(record_scope, params[:id])
+      return unless prepare_action_record?(action)
+
       collected = action_form_params(action)
 
       adapter.transaction do
@@ -251,6 +250,20 @@ module IronAdmin
       Array(params[:ids]).compact_blank
     end
 
+    def find_single_record_action
+      action = @resource_class.defined_actions.find { |defined| defined[:name].to_s == params[:action_name] }
+      unless action
+        head(:not_found)
+        return nil
+      end
+      unless action_authorized?(action[:name])
+        head(:forbidden)
+        return nil
+      end
+
+      action
+    end
+
     def find_bulk_action
       @resource_class.defined_bulk_actions.find { |a| a[:name].to_s == params[:action_name] }
     end
@@ -275,6 +288,21 @@ module IronAdmin
 
     def searchable_display_attribute
       @resource_class.searchable_columns.find { |column| adapter.has_column?(column) }
+    end
+
+    def action_condition_met?(action, record)
+      condition = action[:condition]
+      return true unless condition
+
+      condition.arity.zero? ? record.instance_exec(&condition) : condition.call(record)
+    end
+
+    def prepare_action_record?(action)
+      @record = find_record(record_scope, params[:id])
+      return true if action_condition_met?(action, @record)
+
+      head(:forbidden)
+      false
     end
 
     def index_fields

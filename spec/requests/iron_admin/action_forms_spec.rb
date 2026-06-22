@@ -60,6 +60,20 @@ RSpec.describe "Action Forms", type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("Reason")
       end
+
+      it "returns not found for an unknown action before finding the record" do
+        get iron_admin.resource_action_form_path("form_exec_licenses", 999_999, "missing_action"),
+            as: :html
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "returns not found for a valid action with a missing record" do
+        get iron_admin.resource_action_form_path("form_exec_licenses", 999_999, "revoke_with_reason"),
+            as: :html
+
+        expect(response).to have_http_status(:not_found)
+      end
     end
 
     describe "POST execute_action with form params" do
@@ -98,6 +112,49 @@ RSpec.describe "Action Forms", type: :request do
           expect(license.reload.status).to eq("revoked")
         end
       end
+    end
+  end
+
+  context "with a policy-restricted action form" do
+    let(:policy_form_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "PolicyFormResource"
+        end
+
+        def self.resource_name
+          "policy_form_licenses"
+        end
+
+        belongs_to :user, display: :email
+
+        action :restricted_form_action,
+               form_fields: [
+                 action_field(:reason, type: :textarea),
+               ] do |lic, params|
+          lic.update!(license_type: params[:reason])
+        end
+
+        policy do
+          allow :restricted_form_action, if: ->(user) { user&.role == "admin" }
+        end
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(policy_form_resource)
+      IronAdmin.configure do |config|
+        config.current_user { OpenStruct.new(role: "member") }
+      end
+    end
+
+    it "returns forbidden before trying to find the record" do
+      get iron_admin.resource_action_form_path("policy_form_licenses", 999_999, "restricted_form_action"),
+          as: :html
+
+      expect(response).to have_http_status(:forbidden)
     end
   end
 
