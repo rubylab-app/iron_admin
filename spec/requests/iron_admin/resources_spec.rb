@@ -370,6 +370,15 @@ RSpec.describe "IronAdmin::Resources", type: :request do
           expect(response.body).to include("KEY-FIVE")
         end
       end
+
+      context "with array-shaped filter params" do
+        it "returns success without rendering an exception" do
+          get "#{iron_admin.resources_path("number_filter_licenses")}?filters[max_devices][]=1&filters[max_devices][]=2",
+              as: :html
+
+          expect(response).to have_http_status(:ok)
+        end
+      end
     end
 
     context "with scopes" do
@@ -744,6 +753,11 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "returns not found for a missing record" do
+      get iron_admin.resource_path("users", "missing"), as: :html
+      expect(response).to have_http_status(:not_found)
+    end
+
     context "with has_one association" do
       before do
         IronAdmin::ResourceRegistry.register(IronAdmin::Resources::ProfileResource)
@@ -890,6 +904,11 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       get iron_admin.edit_resource_path("users", user), as: :html
       expect(response).to have_http_status(:ok)
     end
+
+    it "returns not found for a missing record" do
+      get iron_admin.edit_resource_path("users", "missing"), as: :html
+      expect(response).to have_http_status(:not_found)
+    end
   end
 
   describe "POST /:resource_name" do
@@ -961,6 +980,22 @@ RSpec.describe "IronAdmin::Resources", type: :request do
               as: :html
         expect(response).to have_http_status(:unprocessable_content)
       end
+
+      it "returns bad request for array-shaped record params" do
+        patch iron_admin.resource_path("users", user),
+              params: { record: ["bad"] },
+              as: :html
+        expect(response).to have_http_status(:bad_request)
+      end
+    end
+
+    context "with a missing record" do
+      it "returns not found" do
+        patch iron_admin.resource_path("users", "missing"),
+              params: { record: { name: "New Name", email: user.email, role: user.role } },
+              as: :html
+        expect(response).to have_http_status(:not_found)
+      end
     end
 
     context "with on_action callback" do
@@ -991,6 +1026,11 @@ RSpec.describe "IronAdmin::Resources", type: :request do
     it "redirects to index" do
       delete iron_admin.resource_path("users", user), as: :html
       expect(response).to redirect_to(iron_admin.resources_path("users"))
+    end
+
+    it "returns not found for a missing record" do
+      delete iron_admin.resource_path("users", "missing"), as: :html
+      expect(response).to have_http_status(:not_found)
     end
 
     context "with on_action callback" do
@@ -2266,35 +2306,35 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       it "prevents cross-tenant record access on show" do
         inactive_user = create(:user, name: "Inactive User", active: false)
 
-        expect do
-          get iron_admin.resource_path("users", inactive_user), as: :html
-        end.to raise_error(IronAdmin::RecordNotFound)
+        get iron_admin.resource_path("users", inactive_user), as: :html
+
+        expect(response).to have_http_status(:not_found)
       end
 
       it "prevents cross-tenant record access on edit" do
         inactive_user = create(:user, name: "Inactive User", active: false)
 
-        expect do
-          get iron_admin.edit_resource_path("users", inactive_user), as: :html
-        end.to raise_error(IronAdmin::RecordNotFound)
+        get iron_admin.edit_resource_path("users", inactive_user), as: :html
+
+        expect(response).to have_http_status(:not_found)
       end
 
       it "prevents cross-tenant record access on update" do
         inactive_user = create(:user, name: "Inactive User", active: false)
 
-        expect do
-          patch iron_admin.resource_path("users", inactive_user),
-                params: { record: { name: "New Name", email: inactive_user.email, role: inactive_user.role } },
-                as: :html
-        end.to raise_error(IronAdmin::RecordNotFound)
+        patch iron_admin.resource_path("users", inactive_user),
+              params: { record: { name: "New Name", email: inactive_user.email, role: inactive_user.role } },
+              as: :html
+
+        expect(response).to have_http_status(:not_found)
       end
 
       it "prevents cross-tenant record access on destroy" do
         inactive_user = create(:user, name: "Inactive User", active: false)
 
-        expect do
-          delete iron_admin.resource_path("users", inactive_user), as: :html
-        end.to raise_error(IronAdmin::RecordNotFound)
+        delete iron_admin.resource_path("users", inactive_user), as: :html
+
+        expect(response).to have_http_status(:not_found)
       end
 
       it "applies tenant scope to bulk actions" do

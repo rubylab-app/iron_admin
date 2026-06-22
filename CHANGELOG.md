@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Controller hardening for malformed params and missing records** (#98) — Resource show/edit/update/destroy now return 404 for missing or inaccessible records instead of surfacing `IronAdmin::RecordNotFound`; malformed array-shaped `record` params now return 400; array-shaped numeric filter params no longer crash the index view; composite-primary-key autocomplete now searches a real text column fallback and returns `to_param` ids.
 - **Nested association JSON fields** (#86) — Nested forms now render `:json` child fields as pretty-printed textareas and coerce both `has_many`-style and `has_one`-style nested `*_attributes` JSON strings back into structured values.
 - **Polymorphic type inference in lazy-loaded ActiveRecord apps** (#84) — Polymorphic inverse discovery moved behind adapter hooks and ActiveRecord eager-loads model paths before scanning descendants.
 - **Mongoid polymorphic type inference** (#85) — Mongoid resources now discover loaded document classes that declare matching polymorphic inverse relations through the adapter hook.

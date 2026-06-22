@@ -27,22 +27,22 @@ module IronAdmin
       end
 
       def apply_operator_filter(scope, filter)
-        sub = params.dig(:filters, filter[:name].to_s)
+        sub = iron_admin_filter_param(filter[:name].to_s)
         return scope unless sub.is_a?(ActionController::Parameters) && sub["value"].present?
 
         adapter.query_builder_class.call(scope, filter, sub.to_unsafe_h)
       end
 
       def apply_date_range_filter(scope, filter)
-        from = params.dig(:filters, "#{filter[:name]}_from")
-        to = params.dig(:filters, "#{filter[:name]}_to")
+        from = iron_admin_filter_param("#{filter[:name]}_from")
+        to = iron_admin_filter_param("#{filter[:name]}_to")
         scope = adapter.filter(scope, filter[:name], parse_date(from)..) if from.present? && parse_date(from)
         scope = adapter.filter(scope, filter[:name], ..parse_date(to)&.end_of_day) if to.present? && parse_date(to)
         scope
       end
 
       def apply_flat_filter(scope, filter)
-        value = params.dig(:filters, filter[:name])
+        value = iron_admin_filter_param(filter[:name])
         return scope if value.blank?
         return scope unless value.is_a?(String)
 

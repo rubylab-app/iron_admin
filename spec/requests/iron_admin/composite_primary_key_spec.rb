@@ -23,16 +23,14 @@ RSpec.describe "IronAdmin composite primary key support", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "raises IronAdmin::RecordNotFound when the composite key has the wrong number of segments" do
-      expect do
-        get iron_admin.resource_path("memberships", "7"), as: :html
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found when the composite key has the wrong number of segments" do
+      get iron_admin.resource_path("memberships", "7"), as: :html
+      expect(response).to have_http_status(:not_found)
     end
 
-    it "raises IronAdmin::RecordNotFound when no record matches" do
-      expect do
-        get iron_admin.resource_path("memberships", "99_99"), as: :html
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found when no record matches" do
+      get iron_admin.resource_path("memberships", "99_99"), as: :html
+      expect(response).to have_http_status(:not_found)
     end
   end
 
@@ -40,6 +38,17 @@ RSpec.describe "IronAdmin composite primary key support", type: :request do
     it "renders the edit form for a composite-PK record" do
       get iron_admin.edit_resource_path("memberships", record.to_param), as: :html
       expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "GET /autocomplete/:resource_name" do
+    it "searches a real text column and returns the composite key param" do
+      record
+
+      get iron_admin.autocomplete_path("memberships"), params: { q: "adm" }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("id" => record.to_param, "label" => "admin")
     end
   end
 end
@@ -59,10 +68,9 @@ RSpec.describe "IronAdmin custom (single-column) primary key support", type: :re
       expect(response).to have_http_status(:ok)
     end
 
-    it "raises IronAdmin::RecordNotFound when no record matches" do
-      expect do
-        get iron_admin.resource_path("slugged_resources", "missing-slug"), as: :html
-      end.to raise_error(IronAdmin::RecordNotFound)
+    it "returns not found when no record matches" do
+      get iron_admin.resource_path("slugged_resources", "missing-slug"), as: :html
+      expect(response).to have_http_status(:not_found)
     end
   end
 end

@@ -157,6 +157,16 @@ RSpec.describe "New Field Types", type: :request do
 
       expect(existing.reload.cover_image).not_to be_attached
     end
+
+    it "returns bad request for array-shaped record params before purging attachments" do
+      existing = create(:document)
+
+      patch iron_admin.resource_path("documents", existing),
+            params: { record: ["bad"] },
+            as: :html
+
+      expect(response).to have_http_status(:bad_request)
+    end
   end
 
   describe "DELETE /:resource_name/:id (destroy)" do

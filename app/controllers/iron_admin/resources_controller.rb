@@ -204,9 +204,12 @@ module IronAdmin
       return render json: [] if query.blank?
 
       display = @resource_class.display_attribute
+      display = searchable_display_attribute unless adapter.has_column?(display)
+      return render json: [] unless display
+
       scope = adapter.search_column(base_scope, display, query)
       records = adapter.limit(scope, 20)
-        .map { |r| { id: r.id.to_s, label: r.public_send(display) } }
+        .map { |record| { id: record.to_param.to_s, label: record.public_send(display).to_s } }
 
       render json: records
     end
@@ -275,6 +278,10 @@ module IronAdmin
       end
     end
 
+    def searchable_display_attribute
+      @resource_class.searchable_columns.find { |column| adapter.has_column?(column) }
+    end
+
     def index_fields
       base_fields = if @resource_class.index_field_names
                       fields_by_name = @resource_class.resolved_fields.index_by(&:name)
@@ -298,7 +305,7 @@ module IronAdmin
 
     def purge_attachments(record)
       form_fields.select { |f| f.type == :file }.each do |field|
-        next unless params.dig(:record, :"#{field.name}_purge") == "1" && record.respond_to?(field.name)
+        next unless iron_admin_param_dig(params[:record], :"#{field.name}_purge") == "1" && record.respond_to?(field.name)
 
         record.public_send(field.name).then { |a| a.purge if a.attached? }
       end
@@ -320,7 +327,10 @@ module IronAdmin
         permitted << { "#{nested.name}_attributes": build_nested_permit_list(nested) }
       end
 
-      parsed = params.require(:record).permit(*permitted) # rubocop:disable Rails/StrongParametersExpect
+      record_params = params.require(:record)
+      raise ActionController::ParameterMissing, :record unless record_params.respond_to?(:permit)
+
+      parsed = record_params.permit(*permitted)
       coerce_json_field_params!(parsed)
       parsed
     end
