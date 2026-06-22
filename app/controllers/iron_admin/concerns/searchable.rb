@@ -32,7 +32,7 @@ module IronAdmin
         return scope unless adapter.has_column?(field)
         return scope unless field_visible?(field.to_sym)
 
-        if value.include?("..")
+        if value.include?("..") && range_search_column?(field)
           from_str, to_str = value.split("..", 2)
           from_date = parse_date(from_str)
           to_date = parse_date(to_str)
@@ -45,6 +45,12 @@ module IronAdmin
         end
 
         adapter.search_column(scope, field, value)
+      end
+
+      def range_search_column?(field)
+        adapter.columns.any? do |column|
+          column.name.to_s == field.to_s && column.type.in?(%i[date datetime])
+        end
       end
 
       def apply_general_search(scope, query)

@@ -34,12 +34,7 @@ module IronAdmin
     #
     # @return [void]
     def index
-      scope = apply_scopes(apply_filters(base_scope))
-      scope = apply_search(scope)
-      scope = apply_sorting(scope)
-      scope = apply_preloading(scope)
-
-      @pagy, @records = pagy(scope, limit: IronAdmin.configuration.per_page)
+      @pagy, @records = pagy(collection_scope, limit: IronAdmin.configuration.per_page)
       @fields = index_fields
       @current_scope = current_scope_name
     end
@@ -333,35 +328,6 @@ module IronAdmin
       parsed = record_params.permit(*permitted)
       coerce_json_field_params!(parsed)
       parsed
-    end
-
-    def current_scope_name
-      scope_name = params[:scope]
-      defined_scope = @resource_class.all_scopes.find { |s| s[:name].to_s == scope_name }
-      defined_scope ||= @resource_class.all_scopes.find { |s| s[:default] }
-      defined_scope&.dig(:name)&.to_s
-    end
-
-    def apply_scopes(scope)
-      defined_scope = @resource_class.all_scopes.find { |s| s[:name].to_s == params[:scope] }
-      defined_scope ||= @resource_class.all_scopes.find { |s| s[:default] }
-
-      return scope unless defined_scope
-
-      scope.merge(defined_scope[:scope])
-    end
-
-    def apply_sorting(scope)
-      sort_col = params[:sort].to_s
-      sort_col = IronAdmin.configuration.default_sort.to_s unless adapter.has_column?(sort_col)
-      valid_dir = %w[asc desc].include?(params[:direction].to_s.downcase)
-      sort_dir = valid_dir ? params[:direction] : IronAdmin.configuration.default_sort_direction
-      adapter.order_by(scope, sort_col, sort_dir)
-    end
-
-    def apply_preloading(scope)
-      preloads = @resource_class.preload_associations
-      preloads.any? ? adapter.preload(scope, preloads) : scope
     end
 
     def emit_event(action, record)

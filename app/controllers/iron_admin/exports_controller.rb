@@ -9,13 +9,17 @@ module IronAdmin
   # @see IronAdmin::Resource#exports
   # @see IronAdmin::Resource#export_fields
   class ExportsController < ApplicationController
+    include Concerns::Filterable
+    include Concerns::Scopeable
+    include Concerns::Searchable
+
     before_action :set_resource_class
 
     # Exports resource data in the requested format.
     #
     # @return [void] Sends CSV file or renders JSON
     def show
-      records = base_scope
+      records = collection_scope
       fields = export_fields
 
       respond_to do |format|
@@ -42,12 +46,6 @@ module IronAdmin
 
     def adapter
       @resource_class.adapter
-    end
-
-    def base_scope
-      scope = adapter.all
-      scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
-      scope
     end
 
     def export_fields
