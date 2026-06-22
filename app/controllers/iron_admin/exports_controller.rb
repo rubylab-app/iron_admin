@@ -31,7 +31,7 @@ module IronAdmin
         end
 
         format.json do
-          data = records.map { |r| fields.each_with_object({}) { |f, h| h[f.name] = safe_field_value(r, f) } }
+          data = records.map { |r| fields.each_with_object({}) { |f, h| h[f.name] = safe_field_value(r, f, :json) } }
           render json: data
         end
       end
@@ -64,22 +64,24 @@ module IronAdmin
       CSV.generate do |csv|
         csv << fields.map { |f| f.name.to_s.humanize }
         adapter.find_each(records) do |record|
-          csv << fields.map { |f| safe_field_value(record, f) }
+          csv << fields.map { |f| safe_field_value(record, f, :csv) }
         end
       end
     end
 
-    def safe_field_value(record, field)
+    def safe_field_value(record, field, format)
       return "[Error: field not found]" unless record.respond_to?(field.name)
 
       value = record.public_send(field.name)
-      format_for_export(value, field)
+      format_for_export(value, field, format)
     rescue StandardError => e
       "[Error: #{e.message}]"
     end
 
-    def format_for_export(value, field)
+    def format_for_export(value, field, format)
       return "" if value.nil?
+      return value if format == :json && value.is_a?(Hash)
+      return value if format == :json && value.is_a?(Array)
 
       case field.type
       when :datetime, :date then value.iso8601
