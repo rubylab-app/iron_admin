@@ -157,7 +157,7 @@ module IronAdmin
       # --- CRUD ---
 
       def build(attrs = {})
-        model_class.new(attrs)
+        model_class.new(cast_array_attributes(attrs))
       end
 
       def save(record)
@@ -165,7 +165,7 @@ module IronAdmin
       end
 
       def update(record, attrs)
-        record.update(attrs)
+        record.update(cast_array_attributes(attrs))
       end
 
       def destroy!(record)
@@ -222,6 +222,20 @@ module IronAdmin
         return :string if field.name == "_id"
 
         MONGOID_TYPE_MAP.fetch(field.type) { boolean_or_text(field.type) }
+      end
+
+      def cast_array_attributes(attrs)
+        return attrs unless attrs.respond_to?(:each_pair)
+
+        attrs.each_pair.with_object(attrs.dup) do |(key, value), casted|
+          next unless array_field?(key) && value.is_a?(String)
+
+          casted[key] = value.split(",").map(&:strip).compact_blank
+        end
+      end
+
+      def array_field?(key)
+        model_class.fields[key.to_s]&.type == Array
       end
 
       def build_range_filter(scope, column, range)

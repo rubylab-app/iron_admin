@@ -96,6 +96,35 @@ RSpec.describe IronAdmin::Filters::MongoidQueryBuilder do
         result = described_class.call(scope, filter, "op" => "equals", "value" => "25.5")
         expect(result).to eq(filtered)
       end
+
+      it "ignores integer values that BSON cannot encode" do
+        allow(scope).to receive(:where)
+
+        result = described_class.call(
+          scope,
+          filter,
+          "op" => "less_than",
+          "value" => "999999999999999999999999"
+        )
+
+        expect(result).to eq(scope)
+        expect(scope).not_to have_received(:where)
+      end
+
+      it "ignores between filters when the upper value is outside BSON int64 range" do
+        allow(scope).to receive(:where)
+
+        result = described_class.call(
+          scope,
+          filter,
+          "op" => "between",
+          "value" => "1",
+          "value_2" => "999999999999999999999999"
+        )
+
+        expect(result).to eq(scope)
+        expect(scope).not_to have_received(:where)
+      end
     end
 
     context "with unknown filter type" do

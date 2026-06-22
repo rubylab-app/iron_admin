@@ -5,6 +5,9 @@ module IronAdmin
     # Mongoid-specific query builder for operator-based filters.
     # Uses MongoDB $regex for string ops and comparison operators for number ops.
     class MongoidQueryBuilder < BaseQueryBuilder
+      BSON_INT64_RANGE = (-9_223_372_036_854_775_808..9_223_372_036_854_775_807)
+      private_constant :BSON_INT64_RANGE
+
       private
 
       def apply_string_filter
@@ -40,6 +43,15 @@ module IronAdmin
         return @scope unless upper_num
 
         @scope.where(field => { "$gte" => num, "$lte" => upper_num })
+      end
+
+      def cast_number(val)
+        number = super
+        return unless number
+        return number unless number.is_a?(Integer)
+        return number if BSON_INT64_RANGE.cover?(number)
+
+        nil
       end
     end
   end
