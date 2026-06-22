@@ -158,6 +158,58 @@ RSpec.describe "Action Forms", type: :request do
     end
   end
 
+  context "with an action condition that depends on its closure" do
+    let(:condition_owner) do
+      Object.new.tap do |owner|
+        owner.define_singleton_method(:allowed?) { false }
+      end
+    end
+    let(:closure_condition) { condition_owner.instance_eval { proc { allowed? } } }
+    let(:closure_condition_resource) do
+      condition = closure_condition
+
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "ClosureConditionResource"
+        end
+
+        def self.resource_name
+          "closure_condition_licenses"
+        end
+
+        belongs_to :user, display: :email
+
+        action :closure_guarded_action,
+               condition: condition,
+               form_fields: [
+                 action_field(:reason, type: :textarea),
+               ] do |lic, params|
+          lic.update!(license_type: params[:reason])
+        end
+      end
+    end
+
+    before { IronAdmin::ResourceRegistry.register(closure_condition_resource) }
+
+    it "uses the same condition call semantics as the show view on action forms" do
+      get iron_admin.resource_action_form_path("closure_condition_licenses", license, "closure_guarded_action"),
+          as: :html
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "uses the same condition call semantics as the show view before executing" do
+      post iron_admin.resource_action_path("closure_condition_licenses", license, "closure_guarded_action"),
+           params: { action_form: { reason: "Changed" } },
+           as: :html
+
+      expect(response).to have_http_status(:forbidden)
+      expect(license.reload.license_type).to eq("standard")
+    end
+  end
+
   context "with 2-arg bulk_action block and form_fields" do
     let(:bulk_form_resource) do
       Class.new(IronAdmin::Resource) do
