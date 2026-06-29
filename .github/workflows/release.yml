@@ -49,6 +49,20 @@ jobs:
           ruby-version: '3.2'
           bundler-cache: true
 
+      # Fail fast if the release tag and the gem version disagree. Without this,
+      # a mismatch (e.g. tag v0.6.0 while version.rb still says 0.5.0) builds the
+      # wrong gem and fails late at `gem push` with a confusing "repushing not
+      # allowed" — exactly the failure that broke the first 0.6.0 publish.
+      - name: Verify tag matches gem version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          GEM_VERSION="$(ruby -r ./lib/iron_admin/version -e 'print IronAdmin::VERSION')"
+          if [ "$TAG_VERSION" != "$GEM_VERSION" ]; then
+            echo "::error::Release tag v${TAG_VERSION} does not match gem version ${GEM_VERSION} in lib/iron_admin/version.rb. Bump version.rb (and Gemfile.lock) to match before publishing the Release."
+            exit 1
+          fi
+          echo "Tag v${TAG_VERSION} matches gem version ${GEM_VERSION}"
+
       - name: Build gem
         run: gem build iron_admin.gemspec
 

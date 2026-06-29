@@ -29,7 +29,9 @@ Open the PR, let CI and the Copilot review pass, then merge to `main`.
 > The gem version comes from `version.rb`, **not** from the tag name. Make sure
 > they match before publishing the Release. (A mismatch is exactly what broke the
 > first 0.6.0 attempt: the tag said `v0.6.0` but `version.rb` still said `0.5.0`,
-> so CI rebuilt `0.5.0` and RubyGems rejected the duplicate.)
+> so CI rebuilt `0.5.0` and RubyGems rejected the duplicate.) The workflow now
+> guards against this: a **Verify tag matches gem version** step fails the release
+> fast with a clear error if the tag and `version.rb` diverge.
 
 ### 2. Publish the GitHub Release — this is the deliberate "go"
 
