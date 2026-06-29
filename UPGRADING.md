@@ -1,6 +1,6 @@
-# Upgrading to IronAdmin 0.7.0 (Adapter-Agnostic)
+# Upgrading to IronAdmin 0.6.0 (Adapter-Agnostic)
 
-Version 0.7.0 makes IronAdmin adapter-agnostic and adds Mongoid (MongoDB) support. Most applications require no changes, but there are a few breaking changes if you interact with IronAdmin internals.
+Version 0.6.0 makes IronAdmin adapter-agnostic and adds Mongoid (MongoDB) and HTTP REST API support. Most applications require no changes, but there are a few breaking changes if you interact with IronAdmin internals.
 
 ## What changed
 

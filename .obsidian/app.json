@@ -1,9 +1,0 @@
-{
-  "alwaysUpdateLinks": true,
-  "attachmentFolderPath": "docs/assets",
-  "newFileFolderPath": "docs",
-  "newFileLocation": "folder",
-  "readableLineLength": false,
-  "showLineNumber": true,
-  "spellcheck": false
-}

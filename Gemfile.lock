@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    iron_admin (0.5.0)
+    iron_admin (0.6.0)
       haml-rails (>= 2.0)
       heroicon (>= 1.0)
       pagy (>= 6.0)
