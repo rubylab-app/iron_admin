@@ -123,7 +123,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
-- **Obsidian vault** — Added repo-level Obsidian vault configuration for browsing and editing project documentation.
 - **Tailwind CSS prerequisites** (#37) — Added prerequisites section to quick-start guide specifying `tailwindcss-rails` >= 4.0 is required.
 - **Tool namespace in docs** (#36) — Fixed tool examples in extending guide to use the correct `IronAdmin::Tools::` module nesting required by Zeitwerk autoloading.
 - **Policy docs** (#32) — Clarified `deny` documentation and corrected `deny` `if:` docs to receive the current user (consistent with `allow`).
