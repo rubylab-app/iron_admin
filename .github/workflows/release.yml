@@ -1,15 +1,18 @@
 name: Release Gem
 
+# Publishing is gated on a GitHub Release. Pushing a bare tag does NOT publish
+# anything — only *publishing a GitHub Release* fires this workflow, which then
+# tests, builds, and pushes the gem to RubyGems via trusted publishing (OIDC).
+# See RELEASING.md for the full runbook.
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types: [published]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -29,15 +32,36 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    # Declaring an environment records a deployment that turns GREEN on success
+    # and shows in the repo's Deployments sidebar. The OIDC token now carries an
+    # `environment: release` claim, but the RubyGems trusted publisher has no
+    # environment configured, so that claim is ignored and publishing still works.
+    environment:
+      name: release
+      url: https://rubygems.org/gems/iron_admin
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
           bundler-cache: true
+
+      # Fail fast if the release tag and the gem version disagree. Without this,
+      # a mismatch (e.g. tag v0.6.0 while version.rb still says 0.5.0) builds the
+      # wrong gem and fails late at `gem push` with a confusing "repushing not
+      # allowed" — exactly the failure that broke the first 0.6.0 publish.
+      - name: Verify tag matches gem version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          GEM_VERSION="$(ruby -r ./lib/iron_admin/version -e 'print IronAdmin::VERSION')"
+          if [ "$TAG_VERSION" != "$GEM_VERSION" ]; then
+            echo "::error::Release tag v${TAG_VERSION} does not match gem version ${GEM_VERSION} in lib/iron_admin/version.rb. Bump version.rb (and Gemfile.lock) to match before publishing the Release."
+            exit 1
+          fi
+          echo "Tag v${TAG_VERSION} matches gem version ${GEM_VERSION}"
 
       - name: Build gem
         run: gem build iron_admin.gemspec
