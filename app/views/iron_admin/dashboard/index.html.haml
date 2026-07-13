@@ -21,6 +21,12 @@
           - else
             = render IronAdmin::Dashboards::ChartComponent.new(title: chart_title, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
 
+    - if @dashboard.defined_progress_bars.any?
+      .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6.mb-8
+        - @dashboard.defined_progress_bars.each do |bar|
+          - bar_title = bar[:label] || bar[:name].to_s.humanize
+          = render IronAdmin::Dashboards::ProgressComponent.new(title: bar_title, value: bar[:block].call, max: bar[:max], format: bar[:format], color: bar[:color])
+
     - if @dashboard.defined_recents.any?
       .space-y-6
         - @dashboard.defined_recents.each do |recent|

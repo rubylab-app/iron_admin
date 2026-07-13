@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Expanded dashboard chart types** — The `chart` DSL now supports four new types in addition to `:line`, `:bar`, `:pie`, and `:doughnut`:
+  - `:area` — explicit, intention-revealing name for a filled line chart (`:line` remains filled for backward compatibility)
+  - `:horizontal_bar` — bar chart with the category axis on the y-axis (great for long labels)
+  - `:radar` — radar/spider chart for multivariate comparisons
+  - `:polar_area` — polar area chart for proportions with magnitude
+  - IronAdmin types map to the correct Chart.js primitives internally (`:area`/`:horizontal_bar`/`:polar_area` → `line`/`bar` with `indexAxis: y`/`polarArea`).
+- **Progress (gauge) dashboard widget** — New `progress` DSL primitive renders a value as a proportion of a target, with the value, target, and percentage displayed as a horizontal bar. Supports `max:`, `format:` (`:number`/`:currency`/`:percentage`), `label:`, and a per-widget `color:` (defaults to the theme chart border color). Rendered by the new `IronAdmin::Dashboards::ProgressComponent`.
+
 ## [0.6.0] - 2026-06-28
 
 > ⚠️ **Upgrading from 0.5.0?** Plain ActiveRecord applications need no code changes, but this release carries **breaking changes** for code that touches IronAdmin internals or maintains a custom adapter. Read the [Breaking changes](#breaking-changes) section below and the [0.6.0 upgrade guide](UPGRADING.md) before upgrading.

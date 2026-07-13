@@ -123,4 +123,52 @@ RSpec.describe IronAdmin::Dashboard do
       expect(TestDashboard.defined_recents.first[:limit]).to eq(5)
     end
   end
+
+  describe "progress bars" do
+    subject(:dashboard_class) do
+      Class.new(IronAdmin::Dashboard) do
+        progress :signups_goal, max: 500, label: "Signups Goal", color: "#10b981" do
+          120
+        end
+      end
+    end
+
+    it "stores progress definitions" do
+      expect(dashboard_class.defined_progress_bars.length).to eq(1)
+    end
+
+    it "evaluates the value block" do
+      expect(dashboard_class.defined_progress_bars.first[:block].call).to eq(120)
+    end
+
+    it "stores the max target" do
+      expect(dashboard_class.defined_progress_bars.first[:max]).to eq(500)
+    end
+
+    it "stores the label" do
+      expect(dashboard_class.defined_progress_bars.first[:label]).to eq("Signups Goal")
+    end
+
+    it "stores the color" do
+      expect(dashboard_class.defined_progress_bars.first[:color]).to eq("#10b981")
+    end
+
+    context "with defaults" do
+      subject(:dashboard_class) do
+        Class.new(IronAdmin::Dashboard) do
+          progress :capacity do
+            10
+          end
+        end
+      end
+
+      it "defaults max to 100" do
+        expect(dashboard_class.defined_progress_bars.first[:max]).to eq(100)
+      end
+
+      it "defaults format to number" do
+        expect(dashboard_class.defined_progress_bars.first[:format]).to eq(:number)
+      end
+    end
+  end
 end
