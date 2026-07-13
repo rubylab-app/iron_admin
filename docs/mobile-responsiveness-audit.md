@@ -54,5 +54,5 @@ responsive/layout utilities were added around them, not baked into theme values.
 
 ## Test / lint results
 
-- `bundle exec rspec` — **1969 examples, 0 failures**.
-- `bundle exec rubocop` — **291 files, no offenses**.
+- `bundle exec rspec` — full suite passing, 0 failures.
+- `bundle exec rubocop` — 0 offenses.
