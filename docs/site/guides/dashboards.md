@@ -16,8 +16,12 @@ permalink: /guides/dashboards/
 Configure metrics, charts, and recent-record widgets for the `/admin` dashboard.
 
 ```ruby
-class AdminDashboard < IronAdmin::Dashboard
-  metric(:total_users, format: :number) { User.count }
-  recent :users, limit: 5
+module IronAdmin
+  module Dashboards
+    class AdminDashboard < IronAdmin::Dashboard
+      metric(:total_users, format: :number) { User.count }
+      recent :users, limit: 5
+    end
+  end
 end
 ```
