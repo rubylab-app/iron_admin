@@ -1,5 +1,5 @@
 = turbo_frame_tag "action-form-modal" do
-  .p-8.max-w-lg.mx-auto{ class: t.font_family }
+  .p-4.sm:p-6.lg:p-8.max-w-lg.mx-auto{ class: t.font_family }
     %h2.text-xl.mb-6{ class: cp_heading }= @action[:name].to_s.humanize
 
     = form_tag @form_url, method: :post, class: "space-y-4" do

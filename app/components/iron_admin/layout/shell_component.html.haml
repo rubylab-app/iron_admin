@@ -1,5 +1,7 @@
-.flex.h-screen.overflow-hidden
+.flex.h-screen.overflow-hidden{ data: { controller: "cp-sidebar", action: "keydown@window->cp-sidebar#closeOnEscape" } }
   = sidebar
+  -# Backdrop shown behind the off-canvas sidebar on small screens.
+  .fixed.inset-0.z-30.bg-gray-900.hidden{ class: "bg-opacity-50 lg:hidden", data: { cp_sidebar_target: "backdrop", action: "click->cp-sidebar#close" } }
   .flex-1.flex.flex-col.overflow-hidden
     = navbar
     .flex-1.overflow-auto{ class: IronAdmin.configuration.theme.main_bg }

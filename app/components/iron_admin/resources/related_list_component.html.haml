@@ -4,9 +4,10 @@
       = title
     = link_to "View all", view_all_url, class: "text-sm #{theme.link}"
 
-  %table.min-w-full{ class: "#{theme.card_border} divide-y" }
-    %tbody{ class: "#{theme.card_border} divide-y" }
-      - records.each do |record|
-        %tr{ class: theme.table_row_hover }
-          %td.px-6.py-3.text-sm{ class: theme.body_text }
-            = link_to helpers.display_record_label(record, display_method), record_url(record), class: theme.link
+  .overflow-x-auto
+    %table.min-w-full{ class: "#{theme.card_border} divide-y" }
+      %tbody{ class: "#{theme.card_border} divide-y" }
+        - records.each do |record|
+          %tr{ class: theme.table_row_hover }
+            %td.px-6.py-3.text-sm{ class: theme.body_text }
+              = link_to helpers.display_record_label(record, display_method), record_url(record), class: theme.link

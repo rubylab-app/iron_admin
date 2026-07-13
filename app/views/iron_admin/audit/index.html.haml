@@ -1,4 +1,4 @@
-.p-8.max-w-7xl.mx-auto{ class: t.font_family }
+.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
   .flex.items-center.justify-between.mb-6
     %h1.text-2xl{ class: cp_heading } Audit Log
 
@@ -14,7 +14,7 @@
 
   - if @entries.any?
     .mb-4
-      = form_tag audit_path, method: :get, class: "flex gap-4 items-end" do
+      = form_tag audit_path, method: :get, class: "flex flex-col gap-4 sm:flex-row sm:items-end" do
         .flex-1
           %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ class: cp_muted_text } Resource
           %select{ name: "resource", class: cp_select_class }
@@ -37,60 +37,61 @@
           %button{ type: "submit", class: cp_btn_primary } Filter
           = link_to "Clear", audit_path, class: cp_btn_ghost
 
-    %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
-      %thead{ class: cp_table_header_bg }
-        %tr
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Timestamp
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } User
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Action
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Resource
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Record ID
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } IP Address
-          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Changes
-      %tbody{ class: "#{cp_table_border} divide-y" }
-        - @entries.each do |entry|
-          %tr{ class: cp_table_row_hover }
-            %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-              = entry.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-            %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-              - if entry.user.respond_to?(:email)
-                = entry.user.email
-              - elsif entry.user.respond_to?(:name)
-                = entry.user.name
-              - elsif entry.user
-                = entry.user.to_s
-              - else
-                %span{ class: cp_muted_text } Unknown
-            %td.px-6.py-4.whitespace-nowrap.text-sm
-              - action_colors = { create: "green", update: "blue", destroy: "red" }
-              - color = action_colors[entry.action.to_sym] || "gray"
-              %span{ class: "inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-#{color}-100 text-#{color}-800" }
-                = entry.action.to_s.capitalize
-            %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-              = entry.resource
-            %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-              = entry.record_id
-            %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_muted_text }
-              = entry.ip_address || "-"
-            %td.px-6.py-4.text-sm{ class: cp_body_text }
-              - if entry.changes.present? && entry.changes.any?
-                %details
-                  %summary.cursor-pointer{ class: cp_link }
-                    = pluralize(entry.changes.keys.count, "field")
-                    changed
-                  .mt-2.text-xs.font-mono.bg-gray-50.p-2.rounded.max-w-md.overflow-auto
-                    - entry.changes.each do |field, values|
-                      .mb-1
-                        %strong= field
-                        \:
-                        - if values.is_a?(Array) && values.length == 2
-                          %span{ class: "text-red-600 line-through" }= values[0].to_s.truncate(30)
-                          = heroicon "arrow-right", variant: :mini, options: { class: "h-3 w-3 inline mx-1" }
-                          %span{ class: "text-green-600" }= values[1].to_s.truncate(30)
-                        - else
-                          = values.to_s.truncate(50)
-              - else
-                %span{ class: cp_muted_text } -
+    .overflow-x-auto
+      %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
+        %thead{ class: cp_table_header_bg }
+          %tr
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Timestamp
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } User
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Action
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Resource
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Record ID
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } IP Address
+            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Changes
+        %tbody{ class: "#{cp_table_border} divide-y" }
+          - @entries.each do |entry|
+            %tr{ class: cp_table_row_hover }
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                = entry.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                - if entry.user.respond_to?(:email)
+                  = entry.user.email
+                - elsif entry.user.respond_to?(:name)
+                  = entry.user.name
+                - elsif entry.user
+                  = entry.user.to_s
+                - else
+                  %span{ class: cp_muted_text } Unknown
+              %td.px-6.py-4.whitespace-nowrap.text-sm
+                - action_colors = { create: "green", update: "blue", destroy: "red" }
+                - color = action_colors[entry.action.to_sym] || "gray"
+                %span{ class: "inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-#{color}-100 text-#{color}-800" }
+                  = entry.action.to_s.capitalize
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                = entry.resource
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                = entry.record_id
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_muted_text }
+                = entry.ip_address || "-"
+              %td.px-6.py-4.text-sm{ class: cp_body_text }
+                - if entry.changes.present? && entry.changes.any?
+                  %details
+                    %summary.cursor-pointer{ class: cp_link }
+                      = pluralize(entry.changes.keys.count, "field")
+                      changed
+                    .mt-2.text-xs.font-mono.bg-gray-50.p-2.rounded.max-w-md.overflow-auto
+                      - entry.changes.each do |field, values|
+                        .mb-1
+                          %strong= field
+                          \:
+                          - if values.is_a?(Array) && values.length == 2
+                            %span{ class: "text-red-600 line-through" }= values[0].to_s.truncate(30)
+                            = heroicon "arrow-right", variant: :mini, options: { class: "h-3 w-3 inline mx-1" }
+                            %span{ class: "text-green-600" }= values[1].to_s.truncate(30)
+                          - else
+                            = values.to_s.truncate(50)
+                - else
+                  %span{ class: cp_muted_text } -
 
   - else
     .text-center.py-12{ class: cp_muted_text }

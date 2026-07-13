@@ -1,6 +1,6 @@
 - form_url = resource_path(@resource_class.resource_name, @record)
 
-.p-8.max-w-7xl.mx-auto{ class: t.font_family }
+.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
   %h1.text-2xl.mb-6{ class: cp_heading }
     = I18n.t("iron_admin.resources.edit.title", model: @resource_class.model.model_name.human)
     %span.text-gray-400= "##{@record.id}"
