@@ -51,7 +51,10 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: .ruby-version
+          # Matches the repo's .ruby-version (3.2.2). Pinned here rather than
+          # reading .ruby-version because this step's working-directory is
+          # docs/site, where that file does not live.
+          ruby-version: "3.2.2"
           bundler-cache: true
           working-directory: docs/site
 
