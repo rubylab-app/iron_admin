@@ -1,10 +1,10 @@
 ---
-title: Imports &amp; Exports
+title: Imports & Exports
 nav_order: 6
 permalink: /imports-exports/
 ---
 
-# Imports &amp; Exports
+# Imports & Exports
 {: .no_toc }
 
 {: .warning }

@@ -4,7 +4,7 @@ nav_order: 5
 permalink: /authorization/
 ---
 
-# Authentication &amp; Authorization
+# Authentication & Authorization
 {: .no_toc }
 
 {: .warning }
