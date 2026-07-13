@@ -99,8 +99,8 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
     context "with a line chart" do
       subject(:config) { JSON.parse(described_class.new(title: "Trend", type: :line, data: [1], labels: ["A"]).chart_config) }
 
-      it "does not fill the dataset" do
-        expect(config["data"]["datasets"].first["fill"]).to be(false)
+      it "fills the dataset (backward compatible with pre-:area behavior)" do
+        expect(config["data"]["datasets"].first["fill"]).to be(true)
       end
     end
 

@@ -35,9 +35,11 @@ module IronAdmin
       # @return [Array<Symbol>]
       SINGLE_SERIES_TYPES = %i[line area radar].freeze
 
-      # Types whose area is filled by default.
+      # Types whose area is filled by default. `:line` stays filled for
+      # backward compatibility (it was filled before `:area` was introduced);
+      # `:area` is the explicit, intention-revealing name for a filled line.
       # @return [Array<Symbol>]
-      FILLED_TYPES = %i[area radar].freeze
+      FILLED_TYPES = %i[line area radar].freeze
 
       # Types that display a legend (multi-slice proportion charts).
       # @return [Array<Symbol>]
