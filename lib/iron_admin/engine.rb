@@ -76,6 +76,10 @@ module IronAdmin
         # steps (soft-delete features, etc.) with the correct adapter.
         IronAdmin::ResourceRegistry.finalize!
       end
+      # Re-activate registered plugins so their component overrides and menu
+      # items survive the per-reload configuration lifecycle. Activation is
+      # idempotent, so this is safe to run on every `to_prepare`.
+      IronAdmin::PluginRegistry.activate_all!
     end
   end
 end

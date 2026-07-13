@@ -40,6 +40,10 @@ require "iron_admin/import/import_preview"
 require "iron_admin/import/import_result"
 require "iron_admin/import/importer"
 require "iron_admin/audit_log"
+require "iron_admin/menu_item"
+require "iron_admin/menu_registry"
+require "iron_admin/plugin"
+require "iron_admin/plugin_registry"
 require "iron_admin/engine"
 
 # IronAdmin is a convention-over-configuration admin panel engine for Ruby on Rails.
@@ -154,6 +158,25 @@ module IronAdmin
 
     def register_field_type(type_name, &)
       FieldTypeRegistry.register(type_name, &)
+    end
+
+    # Registers and activates an IronAdmin plugin.
+    #
+    # Call this from a host initializer (config/initializers/iron_admin.rb)
+    # after +require+-ing the plugin gem. The plugin's setup block runs
+    # immediately, wiring its extensions (menu items, component overrides,
+    # field types, ...) into the current install.
+    #
+    # @param plugin_class [Class] A subclass of {IronAdmin::Plugin}
+    # @return [Class] The registered plugin class
+    #
+    # @example
+    #   IronAdmin.register_plugin(IronAdminReports::Plugin)
+    #
+    # @see IronAdmin::Plugin
+    # @see IronAdmin::PluginRegistry
+    def register_plugin(plugin_class)
+      PluginRegistry.register(plugin_class)
     end
   end
 end

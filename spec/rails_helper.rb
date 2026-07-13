@@ -47,6 +47,8 @@ RSpec.configure do |config|
     IronAdmin::AuditLog.clear!
     IronAdmin::FieldTypeRegistry.reset!
     IronAdmin::ToolRegistry.reset!
+    IronAdmin::MenuRegistry.reset!
+    IronAdmin::PluginRegistry.reset!
   end
 
   config.before(:each, type: :request) do

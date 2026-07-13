@@ -16,6 +16,14 @@ module IronAdmin
   # (network failure, invalid response, etc.).
   class AdapterError < Error; end
 
+  # Raised for plugin registration/activation problems
+  # (e.g. registering something that isn't a Plugin subclass).
+  class PluginError < Error; end
+
+  # Raised when a plugin declares an IronAdmin version requirement that the
+  # running version does not satisfy.
+  class IncompatiblePluginError < PluginError; end
+
   # Exception classes that mean the database is missing or unreachable
   # at boot time. Resolved lazily so the gem stays usable on
   # `--skip-active-record` hosts where `ActiveRecord` isn't loaded.
