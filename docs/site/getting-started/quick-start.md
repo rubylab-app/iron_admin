@@ -62,24 +62,28 @@ needed for basic CRUD.
 
 ```ruby
 # app/iron_admin/resources/user_resource.rb
-class UserResource < IronAdmin::Resource
-  field :role, type: :badge, colors: { admin: :purple, user: :blue }
-  field :email, type: :text
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :role, type: :badge, colors: { admin: :purple, user: :blue }
+      field :email, type: :text
 
-  searchable :name, :email
-  filter :role, type: :select, choices: User.roles.keys
-  filter :created_at, type: :date_range
+      searchable :name, :email
+      filter :role, type: :select, options: User.roles.keys
+      filter :created_at, type: :date_range
 
-  scope :admins, -> { where(role: :admin) }
-  scope :recent, -> { where("created_at > ?", 7.days.ago) }
+      scope :admins, -> { where(role: :admin) }
+      scope :recent, -> { where("created_at > ?", 7.days.ago) }
 
-  index_fields :id, :name, :email, :role, :created_at
-  form_fields :name, :email, :role
+      index_fields :id, :name, :email, :role, :created_at
+      form_fields :name, :email, :role
 
-  menu priority: 1, icon: "users", group: "People"
+      menu priority: 1, icon: "users", group: "People"
 
-  action :lock, icon: "lock-closed", confirm: true do |record|
-    record.update!(locked_at: Time.current)
+      action :lock, icon: "lock-closed", confirm: true do |record|
+        record.update!(locked_at: Time.current)
+      end
+    end
   end
 end
 ```

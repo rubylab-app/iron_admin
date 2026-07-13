@@ -28,9 +28,18 @@ rails generate iron_admin:resource User
 Creates `app/iron_admin/resources/user_resource.rb`:
 
 ```ruby
-class UserResource < IronAdmin::Resource
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+    end
+  end
 end
 ```
+
+Resources live under the `IronAdmin::Resources` namespace — that is what the
+generator creates and what the engine's autoloader expects. **The examples
+below show only the class body for brevity; wrap each one in the same
+`module IronAdmin; module Resources; … end; end` nesting shown above.**
 
 By convention, `UserResource` maps to the `User` model. To override:
 
@@ -112,7 +121,7 @@ to see.
 
 ```ruby
 class UserResource < IronAdmin::Resource
-  filter :role, type: :select, choices: User.roles.keys
+  filter :role, type: :select, options: User.roles.keys
   filter :created_at, type: :date_range
   filter :email_verified, type: :boolean
 end
@@ -251,7 +260,7 @@ ActionField options:
 | `type` | Symbol | Input type (see list above) |
 | `required` | Boolean | Whether the field must be filled |
 | `default` | Object | Default value for the input |
-| `choices` | Array | Options for `:select` type |
+| `options` | Array | Options for `:select` type |
 
 Action forms work with both record actions and bulk actions.
 
@@ -276,7 +285,7 @@ Bulk actions validate that all selected records are accessible to the current us
 
 ```ruby
 class AuditLogResource < IronAdmin::Resource
-  deny_actions :create, :update, :delete
+  deny_actions :create, :update, :destroy
 end
 ```
 
@@ -335,15 +344,15 @@ end
 
 ### Large Association Handling
 
-For `belongs_to` fields with many options (>100 records), IronAdmin automatically uses an
-autocomplete component instead of a dropdown:
+For `belongs_to` fields with many options, opt in to an autocomplete component
+(instead of loading every record into a dropdown) with `autocomplete: true`:
 
 ```ruby
 class OrderResource < IronAdmin::Resource
   field :customer_id, type: :belongs_to,
         association: :customer,
-        display: :name
-  # Autocomplete is used automatically if Customer has >100 records
+        display: :name,
+        autocomplete: true
 end
 ```
 
