@@ -4,16 +4,18 @@ import { Controller } from "@hotwired/stimulus"
 // On large screens the sidebar is statically positioned and these
 // actions are effectively no-ops (Tailwind `lg:` variants keep it visible).
 export default class extends Controller {
-  static targets = ["panel", "backdrop"]
+  static targets = ["panel", "backdrop", "toggle"]
 
   open() {
     this.panelTarget.classList.remove("-translate-x-full")
     if (this.hasBackdropTarget) this.backdropTarget.classList.remove("hidden")
+    if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "true")
   }
 
   close() {
     this.panelTarget.classList.add("-translate-x-full")
     if (this.hasBackdropTarget) this.backdropTarget.classList.add("hidden")
+    if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "false")
   }
 
   toggle() {
