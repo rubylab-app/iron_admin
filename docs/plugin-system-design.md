@@ -5,6 +5,13 @@
 > remaining extension points are specified here but not yet built. This
 > document is the contract a maintainer should approve before the feature is
 > completed.
+>
+> ⚠️ **Stability: EXPERIMENTAL / unstable until 1.0.** The public surface
+> described here (`IronAdmin.register_plugin`, `IronAdmin::Plugin`,
+> `Plugin::Registration`, `MenuItem`/`MenuRegistry`) is **not** covered by the
+> project's zero-breaking-changes invariant and may change or be removed
+> before general availability. It becomes semver-governed only when the plugin
+> system reaches GA (targeted for 1.0).
 
 ## 1. Philosophy — what a plugin is (and is not)
 

@@ -16,10 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `:polar_area` — polar area chart for proportions with magnitude
   - IronAdmin types map to the correct Chart.js primitives internally (`:area`/`:horizontal_bar`/`:polar_area` → `line`/`bar` with `indexAxis: y`/`polarArea`).
 - **Progress (gauge) dashboard widget** — New `progress` DSL primitive renders a value as a proportion of a target, with the value, target, and percentage displayed as a horizontal bar. Supports `max:`, `format:` (`:number`/`:currency`/`:percentage`), `label:`, and a per-widget `color:` (defaults to the theme chart border color). Rendered by the new `IronAdmin::Dashboards::ProgressComponent`.
-- **Plugin / community extension system (proof of concept)** — foundation for packaging IronAdmin extensions as redistributable gems:
+- **Plugin / community extension system (experimental, proof of concept)** — foundation for packaging IronAdmin extensions as redistributable gems. ⚠️ **This API is experimental and unstable until 1.0** — it is not covered by the zero-breaking-changes invariant and may change or be removed before general availability.
   - `IronAdmin::Plugin` base class with a declarative DSL (`plugin_name`, `plugin_version`, `requires_iron_admin`) and a `setup` block.
   - `IronAdmin.register_plugin` / `IronAdmin::PluginRegistry` — explicit, idempotent registration and activation (re-activated on engine reload).
-  - `IronAdmin::Plugin::Registration` facade — the stable plugin API surface — with three working extension points: custom sidebar `menu_item`s, global `component` overrides, and `field_type` registration.
+  - `IronAdmin::Plugin::Registration` facade — the (experimental) plugin API surface — with three working extension points: custom sidebar `menu_item`s, global `component` overrides, and `field_type` registration.
   - `IronAdmin::MenuItem` + `IronAdmin::MenuRegistry` — new sidebar extension point for custom navigation links that are not resource/tool-derived.
   - Version-compatibility enforcement via `IronAdmin::IncompatiblePluginError` (and `IronAdmin::PluginError`).
 

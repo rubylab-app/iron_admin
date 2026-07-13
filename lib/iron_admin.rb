@@ -167,6 +167,9 @@ module IronAdmin
     # immediately, wiring its extensions (menu items, component overrides,
     # field types, ...) into the current install.
     #
+    # @note EXPERIMENTAL — unstable until 1.0. The plugin API is not covered by
+    #   the zero-breaking-changes invariant and may change before GA.
+    #
     # @param plugin_class [Class] A subclass of {IronAdmin::Plugin}
     # @return [Class] The registered plugin class
     #

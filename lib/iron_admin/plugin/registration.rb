@@ -65,10 +65,17 @@ module IronAdmin
       # Delegates to {IronAdmin::FieldTypeRegistry}. Accepts the same block
       # DSL as {IronAdmin.register_field_type}.
       #
+      # Idempotent under re-activation: unlike component overrides (which are
+      # re-applied on every +to_prepare+), field types live in a process-wide
+      # registry that is not reset on reload, so re-registering an existing
+      # type name is a no-op instead of raising.
+      #
       # @param type_name [Symbol] The field type identifier
       # @yield Field type configuration block
       # @return [void]
       def field_type(type_name, &)
+        return if FieldTypeRegistry.registered?(type_name)
+
         FieldTypeRegistry.register(type_name, &)
       end
     end

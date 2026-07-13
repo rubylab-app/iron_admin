@@ -5,6 +5,12 @@ require "iron_admin/plugin/registration"
 module IronAdmin
   # Base class for IronAdmin community/extension plugins.
   #
+  # @note EXPERIMENTAL — unstable until 1.0. This class and the whole plugin
+  #   API (`IronAdmin.register_plugin`, {Plugin::Registration}, {MenuItem},
+  #   {MenuRegistry}) are not covered by the project's zero-breaking-changes
+  #   invariant and may change or be removed before general availability (GA
+  #   targeted for 1.0).
+  #
   # A plugin is a small declarative wrapper — usually shipped inside an
   # external Rails gem — that hooks its extensions into a host application's
   # IronAdmin install. Subclass this, declare metadata, and describe what to

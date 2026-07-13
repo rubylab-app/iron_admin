@@ -60,6 +60,18 @@ RSpec.describe IronAdmin::PluginRegistry do
       described_class.activate_all!
       expect(call_count).to eq(2)
     end
+
+    context "when a plugin registers a field type (re-activated on to_prepare reloads)" do
+      it "does not raise on the second activation" do
+        plugin = build_plugin(name: "swatch") do
+          setup { |admin| admin.field_type(:plugin_swatch) { display { |v| v } } }
+        end
+        described_class.register(plugin) # first activation registers the type
+
+        expect { described_class.activate_all! }.not_to raise_error
+        expect(IronAdmin::FieldTypeRegistry.registered?(:plugin_swatch)).to be true
+      end
+    end
   end
 
   describe ".reset!" do
