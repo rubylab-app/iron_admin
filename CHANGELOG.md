@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 - Added `docs/plugin-system-design.md` — full design proposal for the plugin/community extension system: philosophy, extension points, packaging model, registration API, versioning/security considerations, an end-to-end example, and the deferred work + decisions requiring maintainer sign-off.
+- **Documentation site scaffold** — Added a navigable, searchable documentation site under `docs/site/`, built with [Jekyll](https://jekyllrb.com/) and the [`just-the-docs`](https://just-the-docs.com/) theme and intended for GitHub Pages:
+  - Tooling proposal and justification (Jekyll + just-the-docs vs. MkDocs Material / Docusaurus) in `docs/site/README.md`
+  - Full section structure: Getting Started, Guides (Resource DSL, Dashboards, Fields, Theming, Components), Adapters, Authorization, Imports & Exports, Tools, Reference, Upgrade Guide, FAQ
+  - Three pages fully migrated from existing docs to validate the pipeline (Installation, Quick Start, Resource DSL); remaining sections are stubs with TODOs pointing at their source `docs/` files
+  - Client-side search, sidebar navigation, and "edit on GitHub" links configured
+  - **Proposed** (manual-trigger only, non-auto-deploying) GitHub Actions deploy workflow at `.github/workflows/docs.yml` — requires maintainer review and GitHub Pages setup before it can publish
 
 ## [0.6.0] - 2026-06-28
 

@@ -1,0 +1,92 @@
+# ============================================================================
+# PROPOSED workflow — DO NOT MERGE without maintainer review.
+#
+# Builds and (optionally) deploys the IronAdmin documentation site from
+# `docs/site/` to GitHub Pages.
+#
+# SAFETY: this workflow is intentionally conservative and will NOT deploy on a
+# normal push:
+#   * On pull requests touching `docs/`, it only BUILDS the site (no deploy) so
+#     reviewers can catch broken pages.
+#   * Deployment runs ONLY via manual `workflow_dispatch` (the "Run workflow"
+#     button). A maintainer must trigger it deliberately.
+#
+# BEFORE THIS CAN DEPLOY, a maintainer must:
+#   1. Enable GitHub Pages for the repo:  Settings → Pages → Source = "GitHub Actions".
+#   2. Review these triggers and (optionally) add `push` to `main` for
+#      continuous deploys once the site is trusted.
+#   3. Confirm `url` / `baseurl` in docs/site/_config.yml match the final URL.
+#
+# See docs/site/README.md for the full proposal and open decisions.
+# ============================================================================
+
+name: Docs Site
+
+on:
+  # Build-only check on PRs that touch the docs (no deploy).
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  # Manual deploy — the ONLY trigger that publishes to GitHub Pages.
+  workflow_dispatch:
+
+# Least-privilege by default; the deploy job requests what Pages needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/site
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          # Matches the repo's .ruby-version (3.2.2). Pinned here rather than
+          # reading .ruby-version because this step's working-directory is
+          # docs/site, where that file does not live.
+          ruby-version: "3.2.2"
+          bundler-cache: true
+          working-directory: docs/site
+
+      - name: Configure Pages
+        id: pages
+        # Only needed when we intend to deploy (manual runs).
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/configure-pages@v5
+
+      - name: Build site with Jekyll
+        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path || '/iron_admin' }}"
+        env:
+          JEKYLL_ENV: production
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site/_site
+
+  deploy:
+    # Deploy ONLY on a deliberate manual run. Never on push/PR.
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
