@@ -38,7 +38,8 @@ module IronAdmin
     # @param path [String] URL or path to link to
     # @param icon [String, nil] Optional heroicon name
     # @param group [String] Sidebar group heading
-    # @param priority [Integer] Sort weight within the group
+    # @param priority [Integer] Sort weight within the group. Coerced to an
+    #   Integer; non-numeric values fall back to 999 so sorting never raises.
     # @raise [ArgumentError] If label or path is blank
     def initialize(label:, path:, icon: nil, group: "Plugins", priority: 999)
       raise ArgumentError, "MenuItem label can't be blank" if label.nil? || label.to_s.strip.empty?
@@ -47,8 +48,8 @@ module IronAdmin
       @label = label.to_s
       @path = path.to_s
       @icon = icon
-      @group = (group || "Plugins").to_s
-      @priority = priority || 999
+      @group = group.nil? || group.to_s.strip.empty? ? "Plugins" : group.to_s
+      @priority = Integer(priority, exception: false) || 999
     end
 
     # A stable identity key used to de-duplicate menu items across repeated

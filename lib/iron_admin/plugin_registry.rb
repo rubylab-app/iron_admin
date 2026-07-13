@@ -20,7 +20,8 @@ module IronAdmin
       # than adding a duplicate.
       #
       # @param plugin_class [Class] A subclass of {IronAdmin::Plugin}
-      # @raise [IronAdmin::PluginError] If +plugin_class+ is not a Plugin subclass
+      # @raise [IronAdmin::PluginError] If +plugin_class+ is not a Plugin
+      #   subclass or declares a blank +plugin_name+
       # @raise [IronAdmin::IncompatiblePluginError] If the plugin is incompatible
       # @return [Class] The registered plugin class
       def register(plugin_class)
@@ -28,8 +29,14 @@ module IronAdmin
           raise PluginError, "#{plugin_class.inspect} is not an IronAdmin::Plugin subclass"
         end
 
-        plugins[plugin_class.plugin_name] = plugin_class
+        name = plugin_class.plugin_name
+        raise PluginError, "#{plugin_class.inspect} must declare a non-blank plugin_name" if name.nil? || name.to_s.strip.empty?
+
+        # Activate before storing so a plugin that fails activation (incompatible
+        # version, or an exception in its setup block) is not left registered to
+        # re-fail on every subsequent activate_all! pass.
         plugin_class.activate!
+        plugins[name] = plugin_class
         plugin_class
       end
 

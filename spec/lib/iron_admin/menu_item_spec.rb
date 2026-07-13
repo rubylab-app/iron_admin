@@ -33,6 +33,25 @@ RSpec.describe IronAdmin::MenuItem do
           .to raise_error(ArgumentError, /path can't be blank/)
       end
     end
+
+    context "with a non-integer priority" do
+      it "coerces a numeric string to an Integer" do
+        item = described_class.new(label: "Reports", path: "/x", priority: "50")
+        expect(item.priority).to eq(50)
+      end
+
+      it "falls back to 999 for a non-numeric value" do
+        item = described_class.new(label: "Reports", path: "/x", priority: "high")
+        expect(item.priority).to eq(999)
+      end
+    end
+
+    context "with a blank group" do
+      it "normalizes it to 'Plugins'" do
+        item = described_class.new(label: "Reports", path: "/x", group: "  ")
+        expect(item.group).to eq("Plugins")
+      end
+    end
   end
 
   describe "#key" do

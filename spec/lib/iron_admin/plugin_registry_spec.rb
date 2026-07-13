@@ -42,11 +42,29 @@ RSpec.describe IronAdmin::PluginRegistry do
       end
     end
 
+    context "with a blank plugin_name" do
+      it "raises a PluginError" do
+        plugin = Class.new(IronAdmin::Plugin) { plugin_name "  " }
+        expect { described_class.register(plugin) }
+          .to raise_error(IronAdmin::PluginError, /non-blank plugin_name/)
+      end
+    end
+
     context "with an incompatible plugin" do
       it "raises IncompatiblePluginError" do
         plugin = build_plugin { requires_iron_admin ">= 99.0" }
         expect { described_class.register(plugin) }
           .to raise_error(IronAdmin::IncompatiblePluginError)
+      end
+
+      it "does not leave the plugin registered when activation fails" do
+        plugin = build_plugin(name: "broken") { requires_iron_admin ">= 99.0" }
+        begin
+          described_class.register(plugin)
+        rescue IronAdmin::IncompatiblePluginError
+          # expected — we only care that the failed plugin was not stored
+        end
+        expect(described_class.find("broken")).to be_nil
       end
     end
   end
