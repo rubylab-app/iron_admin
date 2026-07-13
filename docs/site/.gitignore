@@ -1,0 +1,9 @@
+# Jekyll build artifacts
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+
+# Local bundle
+/.bundle/
+/vendor/bundle/

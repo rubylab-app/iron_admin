@@ -1,0 +1,69 @@
+# Jekyll configuration for the IronAdmin documentation site.
+# Theme: just-the-docs (https://just-the-docs.com/)
+#
+# NOTE: `url`/`baseurl` assume a GitHub Pages *project* site at
+#   https://rubylab-app.github.io/iron_admin/
+# If a custom domain is configured, set `baseurl: ""` and `url` to the domain.
+
+title: IronAdmin
+description: >-
+  Convention-over-configuration admin panel engine for Ruby on Rails.
+  Build beautiful admin interfaces with minimal code.
+
+url: "https://rubylab-app.github.io"
+baseurl: "/iron_admin"
+
+theme: just-the-docs
+
+# --- just-the-docs options ---------------------------------------------------
+
+# Client-side search index (no external service required).
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 3
+  tokenizer_separator: /[\s/]+/
+
+# Sidebar / navigation
+nav_external_links:
+  - title: IronAdmin on GitHub
+    url: https://github.com/rubylab-app/iron_admin
+  - title: IronAdmin on RubyGems
+    url: https://rubygems.org/gems/iron_admin
+
+# "Edit this page on GitHub" links point back at the raw docs source.
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: "https://github.com/rubylab-app/iron_admin"
+gh_edit_branch: "main"
+gh_edit_source: "docs/site"
+gh_edit_view_mode: "tree"
+
+# Footer
+footer_content: >-
+  IronAdmin is open source under the
+  <a href="https://github.com/rubylab-app/iron_admin/blob/main/MIT-LICENSE">MIT License</a>.
+
+color_scheme: dark
+
+# Code copy button
+enable_copy_code_button: true
+
+# --- Jekyll options ----------------------------------------------------------
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+markdown: kramdown
+kramdown:
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - vendor
+  - .bundle
