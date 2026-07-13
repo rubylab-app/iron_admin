@@ -1,13 +1,14 @@
 .bg-white.rounded-lg.shadow
   .px-6.py-4.border-b.border-gray-200
     %h3.text-lg.font-semibold= "Recent #{label}"
-  %table.min-w-full.divide-y.divide-gray-200
-    %thead.bg-gray-50
-      %tr
-        - fields.each do |field|
-          %th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase= field.name.to_s.humanize
-    %tbody.divide-y.divide-gray-200
-      - @records.each do |record|
-        %tr.hover:bg-gray-50
+  .overflow-x-auto
+    %table.min-w-full.divide-y.divide-gray-200
+      %thead.bg-gray-50
+        %tr
           - fields.each do |field|
-            %td.px-6.py-4.text-sm.text-gray-900= display_value(record, field)
+            %th.px-6.py-3.text-left.text-xs.font-medium.text-gray-500.uppercase= field.name.to_s.humanize
+      %tbody.divide-y.divide-gray-200
+        - @records.each do |record|
+          %tr.hover:bg-gray-50
+            - fields.each do |field|
+              %td.px-6.py-4.text-sm.text-gray-900= display_value(record, field)

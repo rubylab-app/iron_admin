@@ -1,32 +1,33 @@
-%table{ class: "#{table_classes} #{theme.card_border} divide-y" }
-  %thead{ class: header_classes }
-    %tr
-      - visible_fields.each do |field|
-        %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: theme.muted_text }
-          = link_to sort_url(field.name), class: "inline-flex items-center gap-1 hover:text-gray-700" do
-            = field.name.to_s.humanize
-            - if sorted?(field.name)
-              - if sort_direction == "asc"
-                = heroicon "chevron-up", variant: :mini, options: { class: "h-4 w-4" }
-              - else
-                = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4" }
-      %th.px-6.py-3
-        %span.sr-only Actions
-
-  %tbody{ class: "#{theme.card_border} divide-y" }
-    - if empty?
+.overflow-x-auto
+  %table{ class: "#{table_classes} #{theme.card_border} divide-y" }
+    %thead{ class: header_classes }
       %tr
-        %td.px-6.py-8.text-center.text-sm{ colspan: visible_fields.size + 1, class: theme.muted_text }
-          - if empty_state?
-            = empty_state
-          - else
-            No records found.
-    - else
-      - records.each do |record|
-        %tr{ id: row_dom_id(record), class: theme.table_row_hover }
-          - visible_fields.each do |field|
-            %td.px-6.py-4.whitespace-nowrap.text-sm{ class: theme.body_text }
-              = helpers.display_index_field_value(record, field)
-          %td.px-6.py-4.whitespace-nowrap.text-right.text-sm
-            = link_to "View", helpers.iron_admin.resource_path(resource_class.resource_name, record),
-              class: theme.link, data: { turbo_frame: "_top" }
+        - visible_fields.each do |field|
+          %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: theme.muted_text }
+            = link_to sort_url(field.name), class: "inline-flex items-center gap-1 hover:text-gray-700" do
+              = field.name.to_s.humanize
+              - if sorted?(field.name)
+                - if sort_direction == "asc"
+                  = heroicon "chevron-up", variant: :mini, options: { class: "h-4 w-4" }
+                - else
+                  = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4" }
+        %th.px-6.py-3
+          %span.sr-only Actions
+
+    %tbody{ class: "#{theme.card_border} divide-y" }
+      - if empty?
+        %tr
+          %td.px-6.py-8.text-center.text-sm{ colspan: visible_fields.size + 1, class: theme.muted_text }
+            - if empty_state?
+              = empty_state
+            - else
+              No records found.
+      - else
+        - records.each do |record|
+          %tr{ id: row_dom_id(record), class: theme.table_row_hover }
+            - visible_fields.each do |field|
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: theme.body_text }
+                = helpers.display_index_field_value(record, field)
+            %td.px-6.py-4.whitespace-nowrap.text-right.text-sm
+              = link_to "View", helpers.iron_admin.resource_path(resource_class.resource_name, record),
+                class: theme.link, data: { turbo_frame: "_top" }

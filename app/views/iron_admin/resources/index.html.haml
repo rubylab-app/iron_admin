@@ -1,7 +1,7 @@
 - filters = iron_admin_visible_filters
 
-.p-8.max-w-7xl.mx-auto{ class: t.font_family }
-  .flex.items-center.justify-between.mb-6
+.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
+  .flex.items-center.justify-between.gap-3.flex-wrap.mb-6
     %h1.text-2xl{ class: cp_heading }= @resource_class.label
     .flex.items-center.gap-2
       - if @resource_class.import_enabled? && @resource_class.action_allowed?(:create)
@@ -15,14 +15,14 @@
           class: cp_btn_primary
 
   - if @resource_class.all_scopes.any? || @resource_class.searchable_columns.any?
-    .flex.items-center.justify-between.mb-4
+    .flex.items-center.justify-between.gap-3.flex-wrap.mb-4
       - if @resource_class.all_scopes.any?
-        .flex.gap-1.border-b{ class: t.card_border }
+        .flex.gap-1.border-b.overflow-x-auto{ class: t.card_border }
           - @resource_class.all_scopes.each do |scope|
             - active = @current_scope == scope[:name].to_s
             = link_to scope[:name].to_s.humanize,
               resources_path(@resource_class.resource_name, scope: scope[:name], q: params[:q]),
-              class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px #{active ? cp_scope_active : cp_scope_inactive}"
+              class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap #{active ? cp_scope_active : cp_scope_inactive}"
 
       - if @resource_class.searchable_columns.any?
         = form_tag resources_path(@resource_class.resource_name), method: :get, class: "flex ml-auto" do

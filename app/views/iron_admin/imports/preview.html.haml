@@ -1,5 +1,5 @@
-.p-8.max-w-5xl.mx-auto{ class: t.font_family }
-  .flex.items-center.justify-between.mb-6
+.p-4.sm:p-6.lg:p-8.max-w-5xl.mx-auto{ class: t.font_family }
+  .flex.items-center.justify-between.gap-3.flex-wrap.mb-6
     %div
       %h1.text-2xl{ class: cp_heading }= I18n.t("iron_admin.imports.preview.title", model: @resource_class.label)
       %p.mt-1.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.imports.preview.summary", count: @preview.total_rows)

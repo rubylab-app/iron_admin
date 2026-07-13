@@ -1,4 +1,7 @@
-%nav.w-64.flex.flex-col.h-full.overflow-y-auto{ class: "#{cp_sidebar_bg} #{cp_sidebar_title}" }
+%nav#cp-sidebar-panel.w-64.flex.flex-col.h-full.overflow-y-auto.fixed.inset-y-0.left-0.z-40.transition-transform.duration-200{ class: "-translate-x-full lg:static lg:translate-x-0 lg:z-auto #{cp_sidebar_bg} #{cp_sidebar_title}", data: { cp_sidebar_target: "panel" } }
+  .flex.items-center.justify-end.px-4.pt-4.lg:hidden
+    %button.p-1{ type: "button", "aria-label": "Close menu", data: { action: "cp-sidebar#close" } }
+      = helpers.heroicon "x-mark", variant: :outline, options: { class: "h-6 w-6" }
   .p-6
     - if logo
       = image_tag logo, class: "h-8"

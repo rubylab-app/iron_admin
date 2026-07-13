@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Client-side search, sidebar navigation, and "edit on GitHub" links configured
   - **Proposed** (manual-trigger only, non-auto-deploying) GitHub Actions deploy workflow at `.github/workflows/docs.yml` — requires maintainer review and GitHub Pages setup before it can publish
 
+### Changed
+
+- **Mobile responsiveness** — Audited and improved the admin UI on small viewports:
+  - Sidebar is now an off-canvas drawer below the `lg` breakpoint, toggled by a hamburger button in the navbar, with a tap-to-dismiss backdrop, a close button, and Escape-to-close (via a new `cp-sidebar` Stimulus controller). It remains statically positioned on desktop, so the desktop layout is unchanged.
+  - Page containers use responsive padding (`p-4 sm:p-6 lg:p-8`) instead of a fixed `p-8` across index, show, new, edit, imports, audit, search, tools, and action-form views.
+  - Wide tables that lacked a scroll container are now wrapped in `overflow-x-auto` (dashboard recent tables, related lists, the audit log table, and `DataTableComponent`).
+  - Show-page detail rows stack label above value on mobile and switch to the side-by-side layout at `sm`.
+  - Index/show/imports header rows and action button groups now wrap instead of overflowing; scope tabs scroll horizontally when numerous; the audit filter row stacks vertically on mobile.
+
 ## [0.6.0] - 2026-06-28
 
 > ⚠️ **Upgrading from 0.5.0?** Plain ActiveRecord applications need no code changes, but this release carries **breaking changes** for code that touches IronAdmin internals or maintains a custom adapter. Read the [Breaking changes](#breaking-changes) section below and the [0.6.0 upgrade guide](UPGRADING.md) before upgrading.
