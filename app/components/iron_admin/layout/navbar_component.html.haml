@@ -1,4 +1,4 @@
-%header.py-3.flex.items-center.gap-3.border-b{ class: "px-4 sm:px-6 #{helpers.t.navbar_bg} #{helpers.t.navbar_border}" }
+%header.py-3.flex.items-center.justify-between.gap-3.border-b{ class: "px-4 sm:px-6 #{helpers.t.navbar_bg} #{helpers.t.navbar_border}" }
   %button.p-2.-ml-2.shrink-0{ type: "button", class: "lg:hidden #{helpers.t.body_text}", "aria-label": "Open menu", "aria-controls": "cp-sidebar-panel", "aria-expanded": "false", data: { action: "cp-sidebar#toggle", cp_sidebar_target: "toggle" } }
     = helpers.heroicon "bars-3", variant: :outline, options: { class: "h-6 w-6" }
   = form_with url: helpers.iron_admin.search_path, method: :get, class: "flex-1 max-w-lg" do

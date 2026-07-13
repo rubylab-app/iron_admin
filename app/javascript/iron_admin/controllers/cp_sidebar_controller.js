@@ -7,18 +7,21 @@ export default class extends Controller {
   static targets = ["panel", "backdrop", "toggle"]
 
   open() {
+    if (!this.hasPanelTarget) return
     this.panelTarget.classList.remove("-translate-x-full")
     if (this.hasBackdropTarget) this.backdropTarget.classList.remove("hidden")
     if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "true")
   }
 
   close() {
+    if (!this.hasPanelTarget) return
     this.panelTarget.classList.add("-translate-x-full")
     if (this.hasBackdropTarget) this.backdropTarget.classList.add("hidden")
     if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "false")
   }
 
   toggle() {
+    if (!this.hasPanelTarget) return
     if (this.panelTarget.classList.contains("-translate-x-full")) {
       this.open()
     } else {
