@@ -8,7 +8,8 @@ module IronAdmin
       # @return [String] Chart title
       attr_reader :title
 
-      # @return [Symbol] Chart type (:line, :bar, :pie, :doughnut)
+      # @return [Symbol] Chart type
+      #   (:line, :area, :bar, :horizontal_bar, :pie, :doughnut, :radar, :polar_area)
       attr_reader :type
 
       # @return [Array] Chart data
@@ -22,7 +23,25 @@ module IronAdmin
 
       # Supported chart types.
       # @return [Array<Symbol>]
-      TYPES = %i[line bar pie doughnut].freeze
+      TYPES = %i[line area bar horizontal_bar pie doughnut radar polar_area].freeze
+
+      # Maps IronAdmin chart types to their underlying Chart.js type strings.
+      # Types not listed here map to themselves.
+      # @return [Hash{Symbol=>Symbol}]
+      CHART_JS_TYPES = { area: :line, horizontal_bar: :bar, polar_area: :polarArea }.freeze
+
+      # Single-series types that render one line/shape with a border color and a
+      # semi-transparent fill, rather than a per-slice color palette.
+      # @return [Array<Symbol>]
+      SINGLE_SERIES_TYPES = %i[line area radar].freeze
+
+      # Types whose area is filled by default.
+      # @return [Array<Symbol>]
+      FILLED_TYPES = %i[area radar].freeze
+
+      # Types that display a legend (multi-slice proportion charts).
+      # @return [Array<Symbol>]
+      LEGEND_TYPES = %i[pie doughnut polar_area].freeze
 
       # @param title [String] Chart title
       # @param type [Symbol] Chart type (default: :line)
@@ -54,28 +73,52 @@ module IronAdmin
       # @api private
       # @return [String] Chart.js configuration JSON
       def chart_config
-        colors = resolved_colors
         border = resolved_border_color
         {
-          type: type,
+          type: chart_js_type,
           data: {
             labels: labels,
             datasets: [{
               data: data,
               borderColor: border,
-              backgroundColor: type == :line ? line_fill_color(border) : colors,
-              fill: type == :line,
+              backgroundColor: dataset_background(border),
+              fill: filled?,
               tension: 0.3,
             }],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            indexAxis: index_axis,
             plugins: {
-              legend: { display: %i[pie doughnut].include?(type) },
+              legend: { display: legend? },
             },
           },
         }.to_json
+      end
+
+      # @api private
+      # @return [Symbol] Underlying Chart.js type string for this chart type
+      def chart_js_type
+        CHART_JS_TYPES.fetch(type, type)
+      end
+
+      # @api private
+      # @return [Boolean] Whether the dataset area is filled
+      def filled?
+        FILLED_TYPES.include?(type)
+      end
+
+      # @api private
+      # @return [Boolean] Whether a legend is displayed for this chart type
+      def legend?
+        LEGEND_TYPES.include?(type)
+      end
+
+      # @api private
+      # @return [String] Primary axis ("y" for horizontal bars, otherwise "x")
+      def index_axis
+        type == :horizontal_bar ? "y" : "x"
       end
 
       # Resolves chart colors with priority: per-chart > theme > default.
@@ -86,6 +129,14 @@ module IronAdmin
       end
 
       private
+
+      # Resolves the dataset background: a single semi-transparent fill for
+      # single-series charts, or the full color palette for multi-slice charts.
+      # @param border [String] Resolved border color
+      # @return [String, Array<String>] Background color(s) for the dataset
+      def dataset_background(border)
+        SINGLE_SERIES_TYPES.include?(type) ? line_fill_color(border) : resolved_colors
+      end
 
       # @return [Array<String>] Color palette resolved from per-chart, theme, or default
       def resolved_colors

@@ -84,6 +84,66 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       end
     end
 
+    context "with an area chart" do
+      subject(:config) { JSON.parse(described_class.new(title: "Volume", type: :area, data: [1], labels: ["A"]).chart_config) }
+
+      it "renders as a line chart in Chart.js" do
+        expect(config["type"]).to eq("line")
+      end
+
+      it "fills the dataset" do
+        expect(config["data"]["datasets"].first["fill"]).to be(true)
+      end
+    end
+
+    context "with a line chart" do
+      subject(:config) { JSON.parse(described_class.new(title: "Trend", type: :line, data: [1], labels: ["A"]).chart_config) }
+
+      it "does not fill the dataset" do
+        expect(config["data"]["datasets"].first["fill"]).to be(false)
+      end
+    end
+
+    context "with a horizontal bar chart" do
+      subject(:config) { JSON.parse(described_class.new(title: "Ranking", type: :horizontal_bar, data: [1], labels: ["A"]).chart_config) }
+
+      it "renders as a bar chart in Chart.js" do
+        expect(config["type"]).to eq("bar")
+      end
+
+      it "sets the primary axis to y" do
+        expect(config["options"]["indexAxis"]).to eq("y")
+      end
+    end
+
+    context "with a radar chart" do
+      subject(:config) { JSON.parse(described_class.new(title: "Skills", type: :radar, data: [1], labels: ["A"]).chart_config) }
+
+      it "keeps the radar type" do
+        expect(config["type"]).to eq("radar")
+      end
+
+      it "fills the dataset" do
+        expect(config["data"]["datasets"].first["fill"]).to be(true)
+      end
+    end
+
+    context "with a polar area chart" do
+      subject(:config) { JSON.parse(described_class.new(title: "Split", type: :polar_area, data: [1, 2], labels: %w[A B], colors: ["#111", "#222"]).chart_config) }
+
+      it "maps to the polarArea Chart.js type" do
+        expect(config["type"]).to eq("polarArea")
+      end
+
+      it "displays a legend" do
+        expect(config["options"]["plugins"]["legend"]["display"]).to be(true)
+      end
+
+      it "uses the color palette as backgroundColor" do
+        expect(config["data"]["datasets"].first["backgroundColor"]).to eq(["#111", "#222"])
+      end
+    end
+
     context "with theme border color" do
       before do
         IronAdmin.configuration.theme.chart_border_color = "rgb(34, 197, 94)"

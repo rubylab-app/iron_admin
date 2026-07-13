@@ -46,6 +46,7 @@ module IronAdmin
     class_attribute :defined_metrics, default: []
     class_attribute :defined_charts, default: []
     class_attribute :defined_recents, default: []
+    class_attribute :defined_progress_bars, default: []
     class_attribute :_layout_block, default: nil
 
     class << self
@@ -93,9 +94,13 @@ module IronAdmin
       # @param name [Symbol] The chart identifier
       # @param type [Symbol] The chart type
       #   - :line - Line chart for trends over time
-      #   - :bar - Bar chart for comparisons
+      #   - :area - Filled line chart, emphasizes volume over time
+      #   - :bar - Vertical bar chart for comparisons
+      #   - :horizontal_bar - Horizontal bar chart, good for long category labels
       #   - :pie - Pie chart for proportions
       #   - :doughnut - Doughnut chart for proportions
+      #   - :radar - Radar chart for multivariate comparisons
+      #   - :polar_area - Polar area chart for proportions with magnitude
       # @param colors [Array<String>, nil] Optional per-chart color palette (CSS color values).
       #   Overrides the global theme chart_colors for this chart.
       # @param label [String, nil] Custom display title for the chart.
@@ -117,6 +122,41 @@ module IronAdmin
       def chart(name, type: :line, colors: nil, label: nil, live: false, &block)
         self.defined_charts = defined_charts + [
           { name: name, type: type, colors: colors, label: label, live: live, block: block },
+        ]
+      end
+
+      # Defines a progress (gauge) widget for the dashboard.
+      #
+      # Progress widgets show a single value as a proportion of a target,
+      # rendered as a horizontal bar with the value, target, and percentage.
+      # They're useful for goals, quotas, capacity, and completion rates.
+      #
+      # @param name [Symbol] The widget identifier (used as the label)
+      # @param max [Numeric] The target/maximum value the bar fills toward (default: 100)
+      # @param format [Symbol] How to format the value and target
+      #   - :number - Plain number with thousands separators
+      #   - :currency - Currency format (uses Rails number_to_currency)
+      #   - :percentage - Percentage format
+      # @param label [String, nil] Custom display title. Defaults to `name.to_s.humanize`.
+      # @param color [String, nil] Optional CSS color for the filled bar.
+      #   Defaults to the theme chart border color.
+      # @yield Block that computes and returns the current value
+      # @yieldreturn [Numeric] The current value
+      #
+      # @example Monthly signups toward a goal
+      #   progress :monthly_signups, max: 500 do
+      #     User.where(created_at: Time.current.all_month).count
+      #   end
+      #
+      # @example Revenue goal with currency formatting
+      #   progress :revenue_goal, max: 100_000, format: :currency, label: "Revenue Goal" do
+      #     Order.this_month.sum(:total)
+      #   end
+      #
+      # @return [void]
+      def progress(name, max: 100, format: :number, label: nil, color: nil, &block)
+        self.defined_progress_bars = defined_progress_bars + [
+          { name: name, max: max, format: format, label: label, color: color, block: block },
         ]
       end
 

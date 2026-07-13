@@ -1,0 +1,7 @@
+%div{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow} p-6" }
+  .flex.items-center.justify-between.mb-2
+    %h3.text-sm.font-medium{ class: theme.muted_text }= title
+    %span.text-sm.font-semibold{ class: theme.body_text }= "#{formatted_value} / #{formatted_max}"
+  .w-full.bg-gray-200.rounded-full.h-2.5
+    %div{ class: "h-2.5 rounded-full", style: "width: #{percentage}%; background-color: #{bar_color};" }
+  %p.mt-2.text-xs.text-right{ class: theme.muted_text }= "#{percentage}%"
