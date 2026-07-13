@@ -94,17 +94,21 @@ See the [Resource DSL guide](../guides/resource-dsl/) for the full set of option
 
 ```ruby
 # app/iron_admin/dashboards/admin_dashboard.rb
-class AdminDashboard < IronAdmin::Dashboard
-  metric :total_users, format: :number do
-    User.count
-  end
+module IronAdmin
+  module Dashboards
+    class AdminDashboard < IronAdmin::Dashboard
+      metric :total_users, format: :number do
+        User.count
+      end
 
-  metric :monthly_revenue, format: :currency do
-    Payment.where("created_at > ?", 30.days.ago).sum(:amount)
-  end
+      metric :monthly_revenue, format: :currency do
+        Payment.where("created_at > ?", 30.days.ago).sum(:amount)
+      end
 
-  recent :users, limit: 5, scope: -> { order(created_at: :desc) }
-  recent :payments, limit: 5
+      recent :users, limit: 5, scope: -> { order(created_at: :desc) }
+      recent :payments, limit: 5
+    end
+  end
 end
 ```
 
