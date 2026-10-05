@@ -486,15 +486,41 @@ module IronAdmin
       #
       # @return [void]
       def deny_actions(*actions)
-        self.denied_crud_actions = actions.map(&:to_sym)
+        self.denied_crud_actions = actions.map { |action| Policy.canonical_action(action) }.uniq
       end
 
       # Checks if a CRUD action is allowed (not denied via deny_actions).
       #
+      # Controller names such as :delete, :index, and :new are compared
+      # against their canonical CRUD action.
+      #
       # @param action_name [Symbol] The action to check
       # @return [Boolean] True if the action is allowed
       def action_allowed?(action_name)
-        denied_crud_actions.exclude?(action_name.to_sym)
+        denied_crud_actions.exclude?(Policy.canonical_action(action_name))
+      end
+
+      # Checks deny_actions and the resource policy together.
+      #
+      # @param action [Symbol] CRUD or controller action name
+      # @param user [Object, nil] Current user passed to policy conditions
+      # @return [Boolean]
+      def crud_allowed?(action, user)
+        return false unless action_allowed?(action)
+
+        policy = resource_policy
+        return true unless policy
+
+        policy.allowed?(action, user)
+      end
+
+      # Searchable columns the user is allowed to see.
+      #
+      # @param user [Object, nil]
+      # @return [Array<Symbol>]
+      def visible_searchable_columns(user)
+        visible_names = resolved_fields.select { |field| field.visible?(user) }.map(&:name)
+        searchable_columns.select { |column| visible_names.include?(column.to_sym) }
       end
 
       # Configures which export formats are available.

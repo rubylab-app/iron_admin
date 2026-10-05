@@ -107,7 +107,7 @@ module IronAdmin
       content = record.public_send(field.name)
       return if content.blank?
 
-      content_tag(:div, content.to_s.html_safe, class: "prose prose-sm max-w-none") # rubocop:disable Rails/OutputSafety
+      content_tag(:div, sanitize(content.to_s), class: "prose prose-sm max-w-none")
     end
 
     def display_markdown(record, field)
@@ -205,17 +205,27 @@ module IronAdmin
       value.strftime(fmt).squish
     end
 
+    def allowed_polymorphic_type?(field, type_value)
+      Array(field.options[:types]).any? do |type|
+        name = type.is_a?(Class) ? type.name : type.to_s
+        name == type_value.to_s
+      end
+    end
+
     def display_polymorphic_belongs_to(record, field)
       type_value = record.public_send(field.options[:type_column])
       id_value = record.public_send(field.options[:id_column])
       return if type_value.blank? || id_value.blank?
 
       begin
-        associated_resource = IronAdmin::ResourceRegistry.find(type_value.constantize.model_name.plural)
+        return "#{type_value}##{id_value}" unless allowed_polymorphic_type?(field, type_value)
+
+        type_class = type_value.constantize
+        associated_resource = IronAdmin::ResourceRegistry.find(type_class.model_name.plural)
         associated = if associated_resource
                        associated_resource.adapter.find_by(id: id_value)
                      else
-                       type_value.constantize.find_by(id: id_value)
+                       type_class.find_by(id: id_value)
                      end
         return "#{type_value}##{id_value}" unless associated
 

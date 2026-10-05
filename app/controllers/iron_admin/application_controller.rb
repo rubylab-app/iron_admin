@@ -61,5 +61,9 @@ module IronAdmin
     def render_bad_request
       head(:bad_request)
     end
+
+    def log_iron_admin_error(error)
+      Rails.logger.error("[IronAdmin] #{error.class}: #{error.message}")
+    end
   end
 end

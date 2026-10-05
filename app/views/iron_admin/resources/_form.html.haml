@@ -1,6 +1,8 @@
 - error_input_class = "!border-red-400 !focus:border-red-500 !focus:ring-red-500/20"
 
 = form_with model: @record, url: form_url, scope: :record, html: { multipart: true } do |f|
+  - if @record.errors[:base].any?
+    .mb-4.text-sm.text-red-600= @record.errors[:base].to_sentence
   .grid.grid-cols-1.md:grid-cols-2.2xl:grid-cols-3.gap-x-6.gap-y-5
     - @fields.each do |field|
       - if field.type == :hidden
@@ -200,7 +202,8 @@
             class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
         - when :json
           - raw_json_value = @record.public_send(field.name)
-          - json_str = raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value)
+          - submitted_json = @invalid_json_values&.[](field.name)
+          - json_str = submitted_json || (raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value))
           = text_area_tag "record[#{field.name}]", json_str,
             id: "record_#{field.name}", rows: field.options[:rows] || 8, placeholder: "{}",
             class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")

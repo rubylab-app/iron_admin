@@ -1289,7 +1289,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
 
       it "shows error message in flash when action raises" do
         post iron_admin.resource_action_path("transaction_licenses", license, "failing_action"), as: :html
-        expect(flash[:alert]).to eq("Action failed: Something went wrong")
+        expect(flash[:alert]).to eq("Something went wrong. Please try again.")
       end
 
       it "redirects to index page when action raises" do
@@ -1398,7 +1398,7 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         post iron_admin.resource_bulk_action_path("bulk_transaction_licenses", "failing_bulk_action"),
              params: { ids: licenses.map(&:id) },
              as: :html
-        expect(flash[:alert]).to eq("Action failed: Bulk operation failed")
+        expect(flash[:alert]).to eq("Something went wrong. Please try again.")
       end
 
       it "redirects to index page when bulk action raises" do

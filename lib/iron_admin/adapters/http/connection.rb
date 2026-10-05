@@ -20,7 +20,7 @@ module IronAdmin
         end
 
         def get_one(id)
-          response = safe_request { faraday.get("#{@base_url}/#{id}") }
+          response = safe_request { faraday.get(resource_url(id)) }
           handle_errors(response)
           parse_json(response.body)
         end
@@ -38,7 +38,7 @@ module IronAdmin
 
         def patch(id, attrs)
           response = safe_request do
-            faraday.patch("#{@base_url}/#{id}") do |req|
+            faraday.patch(resource_url(id)) do |req|
               req.headers["Content-Type"] = "application/json"
               req.body = attrs.to_json
             end
@@ -48,11 +48,24 @@ module IronAdmin
         end
 
         def delete(id)
-          response = safe_request { faraday.delete("#{@base_url}/#{id}") }
+          response = safe_request { faraday.delete(resource_url(id)) }
           handle_errors(response)
         end
 
         private
+
+        def resource_url(id)
+          "#{@base_url}/#{encoded_id(id)}"
+        end
+
+        def encoded_id(id)
+          raw = id.to_s
+          if raw.empty? || raw.include?("/") || raw.include?("\\") || raw.include?("..")
+            raise IronAdmin::RecordNotFound, "Invalid record id"
+          end
+
+          CGI.escape(raw)
+        end
 
         def faraday
           @faraday ||= begin

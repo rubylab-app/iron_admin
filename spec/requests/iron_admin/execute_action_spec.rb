@@ -172,7 +172,7 @@ RSpec.describe "IronAdmin::Resources#execute_action error handling", type: :requ
 
       it "shows error message in flash" do
         post iron_admin.resource_action_path("error_action_licenses", license, "failing_action"), as: :html
-        expect(flash[:alert]).to eq("Action failed: Something went wrong")
+        expect(flash[:alert]).to eq("Something went wrong. Please try again.")
       end
     end
   end

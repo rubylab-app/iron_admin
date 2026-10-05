@@ -20,7 +20,7 @@ module IronAdmin
       if declared
         return head(:forbidden) unless declared.allowed?(iron_admin_current_user)
         return unless run_tool_action(declared)
-      elsif @tool_class.method_defined?(action_name)
+      elsif own_tool_method?(action_name)
         run_legacy_action(action_name)
       else
         return head(:not_found)
@@ -44,6 +44,10 @@ module IronAdmin
     def set_tool
       @tool_class = ToolRegistry.find(params[:tool_name])
       head(:not_found) and return unless @tool_class
+    end
+
+    def own_tool_method?(action_name)
+      @tool_class.method_defined?(action_name.to_sym, false)
     end
 
     def run_tool_action(declared)
