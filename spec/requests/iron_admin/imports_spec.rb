@@ -75,6 +75,28 @@ RSpec.describe "IronAdmin::Imports", type: :request do
     end
   end
 
+  describe "POST /:resource_name/import/preview errors" do
+    it "redirects when the file is missing" do
+      post iron_admin.resource_import_preview_path("request_import_users")
+
+      expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+    end
+
+    it "reports an unsupported format" do
+      post iron_admin.resource_import_preview_path("request_import_users"),
+           params: { format: "xml", file: upload("<row/>", "users.xml", "application/xml") }
+
+      expect(flash[:alert]).to include("Unsupported import format")
+    end
+
+    it "reports an unexpected parse failure" do
+      post iron_admin.resource_import_preview_path("request_import_users"),
+           params: { file: upload("\"unterminated", "users.csv", "text/csv") }
+
+      expect(flash[:alert]).to eq("Something went wrong. Please try again.")
+    end
+  end
+
   describe "POST /:resource_name/import" do
     it "creates records from uploaded CSV data" do
       expect do
@@ -95,6 +117,26 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       end.not_to change(User, :count)
 
       expect(User.find_by(email: "jane@example.com").name).to eq("Jane")
+    end
+
+    it "redirects when the file is missing" do
+      post iron_admin.resource_import_path("request_import_users")
+
+      expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+    end
+
+    it "reports an unsupported format" do
+      post iron_admin.resource_import_path("request_import_users"),
+           params: { format: "xml", file: upload("<row/>", "users.xml", "application/xml") }
+
+      expect(flash[:alert]).to include("Unsupported import format")
+    end
+
+    it "reports an unexpected parse failure" do
+      post iron_admin.resource_import_path("request_import_users"),
+           params: { file: upload("\"unterminated", "users.csv", "text/csv") }
+
+      expect(flash[:alert]).to eq("Something went wrong. Please try again.")
     end
   end
 

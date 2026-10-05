@@ -124,7 +124,9 @@ RSpec.describe "IronAdmin :json field form rendering", type: :request do
         record: { name: user.name, email: user.email, preferences: "{not valid json" },
       }, as: :html
 
-      expect(response).to have_http_status(:redirect)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Invalid JSON")
+      expect(response.body).to include("{not valid json")
       user.reload
       expect(user.preferences).to eq("kept" => true)
     end

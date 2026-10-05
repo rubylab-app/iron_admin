@@ -19,8 +19,11 @@ module IronAdmin
       @preview = importer.preview
       @resource_name = @resource_class.resource_name
       render :preview, formats: :html
-    rescue StandardError => e
+    rescue ArgumentError => e
       redirect_to resource_import_path(@resource_class.resource_name), alert: e.message
+    rescue StandardError => e
+      log_iron_admin_error(e)
+      redirect_to resource_import_path(@resource_class.resource_name), alert: I18n.t("iron_admin.errors.unexpected")
     end
 
     def create
@@ -34,8 +37,11 @@ module IronAdmin
                     updated: result.updated_count,
                     failed: result.failed_count
                   )
-    rescue StandardError => e
+    rescue ArgumentError => e
       redirect_to resource_import_path(@resource_class.resource_name), alert: e.message
+    rescue StandardError => e
+      log_iron_admin_error(e)
+      redirect_to resource_import_path(@resource_class.resource_name), alert: I18n.t("iron_admin.errors.unexpected")
     end
 
     private
@@ -50,7 +56,9 @@ module IronAdmin
     end
 
     def ensure_create_allowed
-      head(:forbidden) and return unless @resource_class.action_allowed?(:create)
+      return if performed? || @resource_class.nil?
+
+      head(:forbidden) unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
     end
 
     def uploaded_file

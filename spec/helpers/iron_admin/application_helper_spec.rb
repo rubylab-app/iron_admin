@@ -290,6 +290,14 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
 
         expect(result).to include("prose")
       end
+
+      it "strips unsafe markup" do
+        document.update!(content: "<script>alert(1)</script><strong>ok</strong>")
+
+        result = helper.display_field_value(document, field)
+
+        expect(result).not_to include("<script>")
+      end
     end
   end
 

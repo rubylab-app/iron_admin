@@ -71,6 +71,32 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
+  describe "show and update of a deleted record" do
+    let!(:deleted_post) do
+      SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current)
+    end
+
+    it "shows the deleted record" do
+      get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns not found when updating the deleted record" do
+      patch iron_admin.resource_path("soft_delete_posts", deleted_post),
+            params: { record: { title: "Changed", body: "Content" } },
+            as: :html
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "destroys a deleted record" do
+      delete iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
+
+      expect(SoftDeletePost.unscoped.exists?(deleted_post.id)).to be(false)
+    end
+  end
+
   describe "POST /:resource_name/:id/actions/restore" do
     let!(:deleted_post) { SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current) }
 

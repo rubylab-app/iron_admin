@@ -15,8 +15,12 @@ module IronAdmin
     private
 
     def search_all_resources
+      user = iron_admin_current_user
+
       ResourceRegistry.all.filter_map do |resource_class|
-        columns = resource_class.searchable_columns
+        next unless resource_class.crud_allowed?(:read, user)
+
+        columns = resource_class.visible_searchable_columns(user)
         next if columns.empty?
 
         resource_adapter = resource_class.adapter

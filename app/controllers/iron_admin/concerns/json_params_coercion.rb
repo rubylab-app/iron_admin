@@ -15,12 +15,26 @@ module IronAdmin
 
       private
 
+      def invalid_json_submission?
+        @invalid_json_submission == true
+      end
+
       def coerce_json_field_params!(parsed)
-        coerce_json_fields!(parsed, form_fields)
+        @invalid_json_values = {}
+        @invalid_json_submission = false
+        coerce_json_fields!(parsed, form_fields, @invalid_json_values)
         coerce_nested_json_field_params!(parsed)
       end
 
-      def coerce_json_fields!(parsed, fields)
+      def apply_invalid_json_errors(record)
+        return unless invalid_json_submission?
+
+        message = I18n.t("iron_admin.resources.errors.invalid_json")
+        Array(@invalid_json_fields).each { |name| record.errors.add(name, message) }
+        record.errors.add(:base, message)
+      end
+
+      def coerce_json_fields!(parsed, fields, invalid_store = nil)
         fields.each do |field|
           next unless field.type == :json
 
@@ -37,12 +51,9 @@ module IronAdmin
 
           parsed[field.name] = JSON.parse(value)
         rescue JSON::ParserError
-          # Drop the key so the existing column value is preserved instead
-          # of being overwritten with the raw string (which AR would then
-          # store as a JSON string scalar, silently destroying the prior
-          # Hash/Array). The user keeps the form open via model-side
-          # validation in the typical case; full inline-error UX is tracked
-          # as a follow-up.
+          @invalid_json_submission = true
+          invalid_store[field.name] = value if invalid_store
+          @invalid_json_fields = Array(@invalid_json_fields) << field.name if invalid_store
           parsed.delete(field.name)
         end
       end

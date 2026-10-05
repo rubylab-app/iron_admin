@@ -207,6 +207,51 @@ RSpec.describe IronAdmin::Policy do
     end
   end
 
+  describe "action aliases" do
+    subject(:policy) do
+      described_class.new do
+        allow :delete, if: ->(user) { user == :admin }
+        allow :new, if: ->(user) { user == :admin }
+        allow :edit, if: ->(user) { user == :admin }
+      end
+    end
+
+    it "treats :delete as :destroy" do
+      expect(policy.allowed?(:destroy, :admin)).to be(true)
+    end
+
+    it "treats :new as :create" do
+      expect(policy.allowed?(:create, :admin)).to be(true)
+    end
+
+    it "treats :edit as :update" do
+      expect(policy.allowed?(:update, :admin)).to be(true)
+    end
+  end
+
+  describe "alias conditions that do not match" do
+    subject(:policy) do
+      described_class.new do
+        allow :read
+        deny :show, if: ->(user) { user == :guest }
+        deny :index
+      end
+    end
+
+    it "still applies a later deny alias" do
+      expect(policy.allowed?(:read, :admin)).to be(false)
+    end
+
+    it "continues to a later allow alias" do
+      allow_policy = described_class.new do
+        allow :show, if: ->(user) { user == :admin }
+        allow :index
+      end
+
+      expect(allow_policy.allowed?(:read, :member)).to be(true)
+    end
+  end
+
   describe "without policy" do
     let(:policy) { described_class.new }
 

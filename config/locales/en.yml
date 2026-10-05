@@ -1,6 +1,10 @@
 en:
   iron_admin:
+    errors:
+      unexpected: "Something went wrong. Please try again."
     resources:
+      errors:
+        invalid_json: "Invalid JSON. The record was not saved."
       create:
         success: "%{model} created."
       update:

@@ -22,10 +22,20 @@ module IronAdmin
         apply_preloading(scope)
       end
 
-      def record_scope
+      def record_scope(include_deleted: false)
         scope = base_scope
-        scope = adapter.unscope_column(scope, @resource_class.soft_delete_column) if @resource_class.soft_delete?
-        scope
+        return scope unless include_deleted && @resource_class.soft_delete?
+
+        adapter.unscope_column(scope, @resource_class.soft_delete_column)
+      end
+
+      # Resolves bulk ids through the real primary key, including composite keys.
+      #
+      # @param ids [Array]
+      # @return [Array(Array<String>, Object)] requested ids and the matching relation
+      def find_bulk_records(ids)
+        requested = Array(ids).map(&:to_s).uniq
+        [requested, relation_for_bulk_ids(requested)]
       end
 
       def find_record(scope, id)
@@ -78,6 +88,23 @@ module IronAdmin
       def apply_preloading(scope)
         preloads = @resource_class.preload_associations
         preloads.any? ? adapter.preload(scope, preloads) : scope
+      end
+
+      def relation_for_bulk_ids(ids)
+        primary_key = adapter.primary_key
+        return adapter.filter(base_scope, primary_key.to_sym, ids) unless primary_key.is_a?(Array)
+
+        relations = ids.filter_map { |id| composite_bulk_relation(primary_key, id) }
+        return base_scope.none if relations.empty?
+
+        relations.reduce { |combined, relation| combined.or(relation) }
+      end
+
+      def composite_bulk_relation(primary_key, id)
+        parts = id.to_s.split("_")
+        return if parts.size != primary_key.size
+
+        base_scope.where(primary_key.zip(parts).to_h)
       end
     end
   end

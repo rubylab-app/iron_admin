@@ -35,11 +35,11 @@ module IronAdmin
         if value.include?("..") && range_search_column?(field)
           from_str, to_str = value.split("..", 2)
           from_date = parse_date(from_str)
-          to_date = parse_date(to_str)
+          to_bound = upper_bound_for(field, parse_date(to_str))
 
-          return adapter.filter(scope, field, from_date..to_date) if from_date && to_date
+          return adapter.filter(scope, field, from_date..to_bound) if from_date && to_bound
           return adapter.filter(scope, field, from_date..) if from_date
-          return adapter.filter(scope, field, ..to_date) if to_date
+          return adapter.filter(scope, field, ..to_bound) if to_bound
 
           return scope
         end
@@ -48,9 +48,19 @@ module IronAdmin
       end
 
       def range_search_column?(field)
-        adapter.columns.any? do |column|
-          column.name.to_s == field.to_s && column.type.in?(%i[date datetime])
-        end
+        column_type(field).in?(%i[date datetime])
+      end
+
+      def upper_bound_for(field, to_date)
+        return if to_date.nil?
+        return to_date.end_of_day if column_type(field) == :datetime
+
+        to_date
+      end
+
+      def column_type(field)
+        match = adapter.columns.find { |column| column.name.to_s == field.to_s }
+        match&.type
       end
 
       def apply_general_search(scope, query)
@@ -61,8 +71,7 @@ module IronAdmin
       end
 
       def visible_searchable_columns
-        visible_names = visible_field_names
-        @resource_class.searchable_columns.select { |col| visible_names.include?(col) }
+        @resource_class.visible_searchable_columns(iron_admin_current_user)
       end
 
       def field_visible?(field_name)

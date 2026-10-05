@@ -17,7 +17,7 @@ module IronAdmin
       # Sets up default sidebar and navbar if not provided.
       # @return [void]
       def before_render
-        with_sidebar unless sidebar?
+        with_sidebar(current_user: @current_user) unless sidebar?
         with_navbar(current_user: @current_user) unless navbar?
       end
     end

@@ -39,6 +39,9 @@ module IronAdmin
     ACTION_ALIASES = {
       show: :read,
       index: :read,
+      new: :create,
+      edit: :update,
+      delete: :destroy,
     }.freeze
 
     # Reverse mapping from CRUD operations to controller actions.
@@ -46,6 +49,15 @@ module IronAdmin
     REVERSE_ALIASES = ACTION_ALIASES.each_with_object({}) do |(action, crud), hash|
       (hash[crud] ||= []) << action
     end.freeze
+
+    # Maps a controller or CRUD name to the stored CRUD action.
+    #
+    # @param action [Symbol, String]
+    # @return [Symbol]
+    def self.canonical_action(action)
+      name = action.to_sym
+      ACTION_ALIASES[name] || name
+    end
 
     # Creates a new Policy instance.
     #
@@ -121,33 +133,9 @@ module IronAdmin
     #   policy.allowed?(:show, current_user)  #=> true (alias for :read)
     def allowed?(action, user)
       return true unless @configured
-
-      # Deny rules take precedence over allow rules
       return false if denied?(action, user)
 
-      # Check the action directly first
-      if @allow_rules.key?(action)
-        condition = @allow_rules[action]
-        return condition.nil? || condition.call(user)
-      end
-
-      # Check forward alias (e.g., :show -> :read)
-      aliased_action = ACTION_ALIASES[action]
-      if aliased_action && @allow_rules.key?(aliased_action)
-        condition = @allow_rules[aliased_action]
-        return condition.nil? || condition.call(user)
-      end
-
-      # Check reverse aliases (e.g., :read -> [:show, :index])
-      reverse_actions = REVERSE_ALIASES[action]
-      reverse_actions&.each do |reverse_action|
-        next unless @allow_rules.key?(reverse_action)
-
-        condition = @allow_rules[reverse_action]
-        return condition.nil? || condition.call(user)
-      end
-
-      false
+      permitted?(action, user)
     end
 
     # Checks if a custom action (or bulk action) is allowed.
@@ -187,19 +175,35 @@ module IronAdmin
     # @param user [Object] The current user object
     # @return [Boolean] True if the action is explicitly denied
     def denied?(action, user)
-      # Check the action directly
-      return deny_rule_matches?(action, user) if @deny_rules.key?(action)
+      return true if deny_rule_applies?(action, user)
 
-      # Check forward alias (e.g., :show -> :read)
       aliased_action = ACTION_ALIASES[action]
-      return deny_rule_matches?(aliased_action, user) if aliased_action && @deny_rules.key?(aliased_action)
+      return true if aliased_action && deny_rule_applies?(aliased_action, user)
 
-      # Check reverse aliases (e.g., :read -> [:show, :index])
-      REVERSE_ALIASES[action]&.each do |reverse_action|
-        return deny_rule_matches?(reverse_action, user) if @deny_rules.key?(reverse_action)
-      end
+      Array(REVERSE_ALIASES[action]).any? { |reverse_action| deny_rule_applies?(reverse_action, user) }
+    end
 
-      false
+    # A failing condition does not hide later alias rules.
+    def permitted?(action, user)
+      return true if allow_rule_matches?(action, user)
+
+      aliased_action = ACTION_ALIASES[action]
+      return true if aliased_action && allow_rule_matches?(aliased_action, user)
+
+      Array(REVERSE_ALIASES[action]).any? { |reverse_action| allow_rule_matches?(reverse_action, user) }
+    end
+
+    def allow_rule_matches?(action, user)
+      return false unless @allow_rules.key?(action)
+
+      condition = @allow_rules[action]
+      condition.nil? || condition.call(user)
+    end
+
+    def deny_rule_applies?(action, user)
+      return false unless @deny_rules.key?(action)
+
+      deny_rule_matches?(action, user)
     end
 
     def deny_rule_matches?(action, user)

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Authorization gaps** — `deny :read` and `deny_actions :read` now apply to the index, CSV/JSON export, autocomplete, global search, and sidebar. Imports honor the create policy, not only `deny_actions`.
+- **CRUD aliases** — `:delete` maps to `:destroy`, `:new` to `:create`, and `:edit` to `:update` in policies and `deny_actions`. A failing alias condition no longer hides a later alias rule.
+- **Readonly fields** — values marked `readonly` are omitted from mass-assignment, including direct `PATCH` requests.
+- **Invalid JSON** — a malformed JSON field re-renders the form and does not save the record.
+- **Bulk actions** — selected ids are resolved with the resource primary key, including slug and composite keys.
+- **Datetime search ranges** — `field:from..to` includes the whole end date for datetime columns.
+- **Soft delete** — editing or updating a soft-deleted row returns 404 until it is restored. Show, restore, and destroy can still see it.
+- **Tool actions** — undeclared tool URLs can only call methods defined on that tool class.
+- **Export and display safety** — CSV cells that start with a formula character are neutralized, HTTP adapter ids cannot change the request path, polymorphic types must be in the field allowlist, and rich text is sanitized. Unexpected action and import errors no longer return the exception message.
+
 ### Added
 
 - **Expanded dashboard chart types** — The `chart` DSL now supports four new types in addition to `:line`, `:bar`, `:pie`, and `:doughnut`:

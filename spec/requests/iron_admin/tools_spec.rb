@@ -45,6 +45,11 @@ RSpec.describe "Custom tools", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "does not call inherited methods" do
+      post tool_action_path("sample", "exit")
+      expect(response).to have_http_status(:not_found)
+    end
+
     it "returns 404 for unknown tool" do
       post tool_action_path("nonexistent", "ping")
       expect(response).to have_http_status(:not_found)

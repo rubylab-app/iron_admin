@@ -60,6 +60,10 @@ RSpec.describe IronAdmin::Adapters::Http::Connection do
       expect(data["name"]).to eq("Widget")
     end
 
+    it "rejects ids that escape the resource path" do
+      expect { connection.get_one("../admin") }.to raise_error(IronAdmin::RecordNotFound)
+    end
+
     it "raises RecordNotFound for 404" do
       stub_request(:get, "https://api.example.com/v1/products/999")
         .to_return(status: 404, body: { error: "Not found" }.to_json)

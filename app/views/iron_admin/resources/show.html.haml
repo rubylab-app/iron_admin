@@ -4,10 +4,10 @@
       = @resource_class.model.model_name.human
       %span.text-gray-400= "##{@record.id}"
     .flex.gap-2.flex-wrap
-      - if @resource_class.action_allowed?(:update)
+      - if @resource_class.crud_allowed?(:update, iron_admin_current_user)
         = link_to I18n.t("iron_admin.resources.show.edit_button"), edit_resource_path(@resource_class.resource_name, @record),
           class: cp_btn_primary
-      - if @resource_class.action_allowed?(:destroy)
+      - if @resource_class.crud_allowed?(:destroy, iron_admin_current_user)
         = button_to I18n.t("iron_admin.resources.show.delete_button"), resource_path(@resource_class.resource_name, @record),
           method: :delete, data: { turbo_confirm: I18n.t("iron_admin.resources.show.delete_confirm") },
           class: cp_btn_danger

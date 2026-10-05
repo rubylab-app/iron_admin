@@ -25,6 +25,24 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     expect(link_texts).to include("Dashboard")
   end
 
+  it "hides resources the user cannot read" do
+    hidden = Class.new(IronAdmin::Resource) do
+      self.model_class_override = User
+
+      def self.name = "HiddenSidebarResource"
+      def self.resource_name = "hidden_sidebar_users"
+
+      deny_actions :read
+      menu group: "Secret"
+    end
+    IronAdmin::ResourceRegistry.register(hidden)
+
+    result = render_inline(described_class.new(current_user: nil))
+    hrefs = result.css("a").pluck("href")
+
+    expect(hrefs).not_to include(a_string_including("hidden_sidebar_users"))
+  end
+
   it "groups resources by menu group" do
     result = render_inline(described_class.new)
 

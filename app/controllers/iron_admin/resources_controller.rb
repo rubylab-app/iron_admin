@@ -21,6 +21,7 @@ module IronAdmin
   # @see IronAdmin::Resource
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
+    include Concerns::Authorizable
     include Concerns::Filterable
     include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
@@ -28,7 +29,7 @@ module IronAdmin
     include Concerns::Searchable
 
     before_action :set_resource_class
-    before_action :check_action_allowed, only: %i[show new create edit update destroy]
+    before_action :check_action_allowed, only: %i[index show new create edit update destroy autocomplete]
 
     # Lists all records for the resource with filtering, sorting, and pagination.
     #
@@ -44,7 +45,7 @@ module IronAdmin
     # @return [void]
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def show
-      @record = find_record(record_scope, params[:id])
+      @record = find_record(record_scope(include_deleted: true), params[:id])
       @fields = @resource_class.resolved_fields
     end
 
@@ -70,6 +71,7 @@ module IronAdmin
     # @return [void]
     def create
       @record = adapter.build(resource_params)
+      return render_invalid_json(:new) if invalid_json_submission?
 
       if adapter.save(@record)
         emit_event(:create, @record)
@@ -87,9 +89,12 @@ module IronAdmin
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def update
       @record = find_record(record_scope, params[:id])
+      attrs = resource_params
+      return render_invalid_json(:edit) if invalid_json_submission?
+
       purge_attachments(@record)
 
-      if adapter.update(@record, resource_params)
+      if adapter.update(@record, attrs)
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)
@@ -104,7 +109,7 @@ module IronAdmin
     # @return [void]
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def destroy
-      @record = find_record(record_scope, params[:id])
+      @record = find_record(record_scope(include_deleted: true), params[:id])
       adapter.destroy!(@record)
       emit_event(:destroy, @record)
       redirect_to resources_path(@resource_class.resource_name),
@@ -161,8 +166,9 @@ module IronAdmin
     rescue IronAdmin::RecordNotFound
       head(:not_found)
     rescue StandardError => e
+      log_iron_admin_error(e)
       redirect_to resources_path(@resource_class.resource_name),
-                  alert: I18n.t("iron_admin.resources.action.failure", error: e.message)
+                  alert: I18n.t("iron_admin.errors.unexpected")
     end
 
     # Executes a bulk action on multiple selected records.
@@ -175,19 +181,18 @@ module IronAdmin
       ids = bulk_action_ids
       return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.no_records")) if ids.empty?
 
-      records = adapter.filter(base_scope, :id, ids)
+      requested, records = find_bulk_records(ids)
       action = find_bulk_action
 
       return head(:not_found) unless action
       return head(:forbidden) unless action_authorized?(action[:name])
-      unless all_records_accessible?(records, ids)
-        return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.inaccessible"))
-      end
+      return redirect_bulk(:alert, inaccessible_bulk_message) unless records.count == requested.size
 
       run_bulk_action_in_transaction(action, records)
       redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"))
     rescue StandardError => e
-      redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.failure", error: e.message))
+      log_iron_admin_error(e)
+      redirect_bulk(:alert, I18n.t("iron_admin.errors.unexpected"))
     end
 
     # Returns autocomplete results for belongs_to fields.
@@ -223,23 +228,6 @@ module IronAdmin
       @resource_class.resource_policy
     end
 
-    def check_action_allowed
-      crud_action = case action_name.to_sym
-                    when :show then :read
-                    when :new, :create then :create
-                    when :edit, :update then :update
-                    when :destroy then :destroy
-                    end
-
-      # Check global action permissions (deny_actions DSL)
-      head(:forbidden) and return unless @resource_class.action_allowed?(crud_action)
-
-      # Check policy-based authorization if a policy is defined
-      return unless resource_policy
-
-      head(:forbidden) and return unless resource_policy.allowed?(crud_action, iron_admin_current_user)
-    end
-
     def action_authorized?(action_name)
       return true unless resource_policy
 
@@ -268,8 +256,8 @@ module IronAdmin
       @resource_class.defined_bulk_actions.find { |a| a[:name].to_s == params[:action_name] }
     end
 
-    def all_records_accessible?(records, ids)
-      records.count == ids.size
+    def inaccessible_bulk_message
+      I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
     def redirect_bulk(type, message)
@@ -298,7 +286,8 @@ module IronAdmin
     end
 
     def prepare_action_record?(action)
-      @record = find_record(record_scope, params[:id])
+      include_deleted = action[:name].to_sym == :restore
+      @record = find_record(record_scope(include_deleted: include_deleted), params[:id])
       return true if action_condition_met?(action, @record)
 
       head(:forbidden)
@@ -314,6 +303,10 @@ module IronAdmin
                     end
 
       base_fields.select { |f| f.visible?(iron_admin_current_user) }
+    end
+
+    def writable_form_fields
+      form_fields.reject { |field| field.readonly?(iron_admin_current_user) }
     end
 
     def form_fields
@@ -334,8 +327,14 @@ module IronAdmin
       end
     end
 
+    def render_invalid_json(template)
+      apply_invalid_json_errors(@record)
+      @fields = form_fields
+      render template, status: :unprocessable_content
+    end
+
     def resource_params
-      permitted = form_fields.flat_map do |field|
+      permitted = writable_form_fields.flat_map do |field|
         case field.type
         when :belongs_to then field.options[:foreign_key]
         when :polymorphic_belongs_to then [field.options[:type_column], field.options[:id_column]]
