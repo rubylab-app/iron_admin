@@ -14,6 +14,21 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
 
         expect(response.body).to be_present
       end
+
+      context "with the page container" do
+        subject(:container_classes) do
+          get iron_admin.root_path, headers: { "Accept" => "text/html" }
+          response.parsed_body.at_css("h1").parent[:class].split
+        end
+
+        it "pads the page like the other admin pages" do
+          expect(container_classes).to include("p-4", "sm:p-6", "lg:p-8")
+        end
+
+        it "does not use the fixed desktop padding on small screens" do
+          expect(container_classes).not_to include("p-8")
+        end
+      end
     end
 
     context "with dashboard class configured" do
