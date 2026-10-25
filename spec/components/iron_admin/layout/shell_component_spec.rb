@@ -23,6 +23,22 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
     end
   end
 
+  describe "mobile drawer backdrop" do
+    subject(:backdrop) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new).at_css("[data-cp-sidebar-target='backdrop']")
+      end
+    end
+
+    it "uses a translucent background that Tailwind v4 still generates" do
+      expect(backdrop[:class].split).to include("bg-gray-900/50")
+    end
+
+    it "does not use the bg-opacity utility that Tailwind v4 removed" do
+      expect(backdrop[:class]).not_to include("bg-opacity")
+    end
+  end
+
   describe "slots" do
     it "declares sidebar slot" do
       expect(described_class.registered_slots).to have_key(:sidebar)

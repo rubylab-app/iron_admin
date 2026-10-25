@@ -1,7 +1,7 @@
 %li.px-6.py-4{ class: href ? "hover:bg-gray-50 transition-colors" : "" }
   - wrapper = href ? link_to(href, class: "flex items-center gap-4") : tag.div(class: "flex items-center gap-4")
   = wrapper do
-    .flex-shrink-0.p-2.rounded-full{ class: icon_classes }
+    .shrink-0.p-2.rounded-full{ class: icon_classes }
       = heroicon icon, variant: :mini, options: { class: "h-4 w-4" }
     .flex-1.min-w-0
       %p.text-sm{ class: theme.body_text }

@@ -1,4 +1,4 @@
-- error_input_class = "!border-red-400 !focus:border-red-500 !focus:ring-red-500/20"
+- error_input_class = "!border-red-400 focus:!border-red-500 focus:!ring-red-500/20"
 
 = form_with model: @record, url: form_url, scope: :record, html: { multipart: true } do |f|
   - if @record.errors[:base].any?
