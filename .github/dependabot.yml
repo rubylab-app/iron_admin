@@ -1,0 +1,43 @@
+# gemfiles/ is left out on purpose: its CI-only Gemfiles resolve fresh on every
+# run and have no committed lockfile. The 7-day cooldown keeps brand-new releases
+# out of the publishing pipeline (it does not apply to security updates).
+version: 2
+updates:
+  # Root Gemfile.lock: development tooling (RuboCop, RSpec, ...) and the locked
+  # runtime dependencies used for local development and the lint job.
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    groups:
+      gems-minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # Jekyll documentation site (separate Gemfile.lock).
+  - package-ecosystem: bundler
+    directory: "/docs/site"
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    groups:
+      docs-site:
+        patterns: ["*"]
+
+  # Workflow actions, all pinned to commit SHAs: Dependabot bumps the SHA and its
+  # `# vX.Y.Z` comment together, in one grouped weekly PR.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
