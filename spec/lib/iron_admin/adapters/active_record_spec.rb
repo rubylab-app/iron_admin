@@ -281,6 +281,15 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       expect(result.count).to eq(1)
       expect(result.first.name).to eq("Alice Smith")
     end
+
+    context "when building the LIKE condition" do
+      before { allow(User).to receive(:connection).and_call_original }
+
+      it "borrows a connection instead of calling the soft-deprecated .connection" do
+        adapter.search_column(adapter.all, :name, "alice")
+        expect(User).not_to have_received(:connection)
+      end
+    end
   end
 
   describe "#search_columns" do
@@ -289,6 +298,15 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       create(:user, name: "Carol", email: "alice@test.com")
       result = adapter.search_columns(adapter.all, %i[name email], "alice")
       expect(result.count).to eq(2)
+    end
+
+    context "when building the LIKE conditions" do
+      before { allow(User).to receive(:connection).and_call_original }
+
+      it "borrows a connection instead of calling the soft-deprecated .connection" do
+        adapter.search_columns(adapter.all, %i[name email], "alice")
+        expect(User).not_to have_received(:connection)
+      end
     end
   end
 

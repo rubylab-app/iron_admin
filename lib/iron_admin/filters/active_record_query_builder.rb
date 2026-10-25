@@ -10,8 +10,9 @@ module IronAdmin
       def apply_string_filter
         return @scope unless STRING_OPS.include?(@op)
 
-        col = quoted_column
-        like_op = postgres? ? "ILIKE" : "LIKE"
+        col, like_op = @scope.with_connection do |conn|
+          [quote_column(conn), conn.adapter_name.match?(/PostgreSQL/i) ? "ILIKE" : "LIKE"]
+        end
         escape = "ESCAPE '\\'"
 
         case @op
@@ -45,18 +46,19 @@ module IronAdmin
         @scope.where(@filter[:name] => num..upper_num)
       end
 
+      # Borrows a connection with `with_connection` instead of calling the
+      # soft-deprecated `Relation#connection`, which raises when a host sets
+      # `config.active_record.permanent_connection_checkout = :disallowed`.
       def quoted_column
-        conn = @scope.connection
-        table = conn.quote_table_name(@scope.model.table_name)
-        "#{table}.#{conn.quote_column_name(@filter[:name])}"
+        @scope.with_connection { |conn| quote_column(conn) }
+      end
+
+      def quote_column(conn)
+        "#{conn.quote_table_name(@scope.model.table_name)}.#{conn.quote_column_name(@filter[:name])}"
       end
 
       def sanitize_like(value)
         value.gsub(/[%_\\]/) { |m| "\\#{m}" }
-      end
-
-      def postgres?
-        @scope.connection.adapter_name.match?(/PostgreSQL/i)
       end
     end
   end
