@@ -4,6 +4,7 @@ require "pagy"
 require "view_component"
 require "heroicon"
 require "haml-rails"
+require "importmap-rails"
 require "turbo-rails"
 require "stimulus-rails"
 
