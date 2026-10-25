@@ -25,16 +25,15 @@ module IronAdmin
 
     initializer "iron_admin.assets" do |app|
       if app.config.respond_to?(:assets) && app.config.assets
-        # `app/assets/config/iron_admin_manifest.js` is a Sprockets manifest
-        # that link_trees the engine's JavaScript bundle. Adding it to
-        # `precompile` recursively pulls in `app/javascript/iron_admin/**/*.js`,
-        # which is what the layout references via `javascript_importmap_tags`
-        # (importmap pin: `iron_admin/index.js`). Without this entry, hosts on
-        # sprockets-rails (Rails 7.1 default) get
-        # `Asset 'iron_admin/index.js' was not declared to be precompiled`
-        # on every resource page.
+        # Sprockets hosts need this manifest (it link_trees app/javascript/iron_admin)
+        # or every resource page raises `Asset 'iron_admin/index.js' was not
+        # declared to be precompiled`. Under Propshaft, the Rails 8 default,
+        # `precompile` is an unused shim, so this line is a no-op there.
         app.config.assets.precompile += %w[iron_admin_manifest.js]
         app.config.assets.paths << root.join("vendor/assets/javascripts")
+        # Required under both pipelines: they only add an engine's app/assets,
+        # lib/assets and vendor/assets subdirectories, and importmap-rails only
+        # adds the host's app/javascript, not the engine's importmap pins.
         app.config.assets.paths << root.join("app/javascript")
       end
     end

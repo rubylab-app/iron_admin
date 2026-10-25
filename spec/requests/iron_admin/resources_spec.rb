@@ -1023,14 +1023,13 @@ RSpec.describe "IronAdmin::Resources", type: :request do
 
         get iron_admin.edit_resource_path("autocomplete_licenses", license), as: :html
 
+        html = response.parsed_body
+        widget = html.at_css("[data-autocomplete-url='/admin/autocomplete/autocomplete_target_users']")
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include('data-autocomplete-url="/admin/autocomplete/autocomplete_target_users"')
-        expect(response.body).to include(%(name="record[user_id]"))
-        expect(response.body).to include(%(type="hidden"))
-        expect(response.body).to include(%(value="#{user.id}"))
-        expect(response.body).to include(%(type="text"))
-        expect(response.body).to include(%(value="#{user.email}"))
-        expect(response.body).not_to include(%(select name="record[user_id]"))
+        expect(widget).not_to be_nil
+        expect(widget.at_css("input[type=hidden][name='record[user_id]'][value='#{user.id}']")).not_to be_nil
+        expect(widget.at_css("input[type=text][value='#{user.email}']")).not_to be_nil
+        expect(html.at_css("select[name='record[user_id]']")).to be_nil
       end
     end
   end

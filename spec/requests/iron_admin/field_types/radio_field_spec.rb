@@ -29,7 +29,7 @@ RSpec.describe "Radio field type", type: :request do
       get iron_admin.new_resource_path("widgets"), as: :html
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('type="radio"')
+      expect(response.parsed_body.css("input[type=radio]")).not_to be_empty
       expect(response.body).to include("Active")
       expect(response.body).to include("Inactive")
       expect(response.body).to include("Draft")
@@ -42,7 +42,7 @@ RSpec.describe "Radio field type", type: :request do
       get iron_admin.edit_resource_path("widgets", widget), as: :html
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('type="radio"')
+      expect(response.parsed_body.css("input[type=radio]")).not_to be_empty
       expect(response.body).to include("checked")
     end
   end

@@ -15,10 +15,9 @@ RSpec.describe IronAdmin::Generators::InstallAuditGenerator, type: :generator do
     end
 
     it "does not include Rails::Generators::Migration" do
-      # We deliberately don't use `Rails::Generators::Migration` because
-      # `migration_template` opens an AR connection (to look up the
-      # current migration version), which would crash on a fresh
-      # machine with no DB yet.
+      # The generator writes the migration with plain `template` and its own
+      # timestamp; this guards that design so generation stays DB-free and
+      # works on a fresh machine with no database yet (#58).
       expect(described_class.included_modules).not_to include(Rails::Generators::Migration)
     end
 
@@ -52,12 +51,18 @@ RSpec.describe IronAdmin::Generators::InstallAuditGenerator, type: :generator do
     end
 
     it "writes the migration without opening an AR connection" do
-      # If `migration_template` were used, this would call into
-      # ActiveRecord::Base.connection.schema_migration etc. We assert
-      # the generator runs cleanly without any AR interaction.
+      # Guards that generation stays DB-free, including the version stamp
+      # (`ActiveRecord::Migration.current_version` only reads
+      # `ActiveRecord::VERSION`).
       allow(ActiveRecord::Base).to receive(:connection)
       expect { run_generator }.not_to raise_error
       expect(ActiveRecord::Base).not_to have_received(:connection)
+    end
+
+    it "stamps the migration with the running Active Record version" do
+      run_generator
+      file = Dir.glob(File.join(destination, "db/migrate", "*_create_iron_admin_audit_entries.rb")).first
+      expect(File.read(file)).to include("< ActiveRecord::Migration[#{ActiveRecord::Migration.current_version}]")
     end
 
     it "skips when an audit migration already exists" do

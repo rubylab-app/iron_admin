@@ -24,15 +24,10 @@ module IronAdmin
 
       # Writes the audit entries migration into `db/migrate/`.
       #
-      # We deliberately avoid `Rails::Generators::Migration#migration_template`
-      # here: that helper goes through `ActiveRecord::Migration.current_version`
-      # which opens a DB connection to read the schema cache. On a clean
-      # machine (DB doesn't exist yet) or during a deploy where the DB
-      # is briefly unreachable, that crashes the generator with
-      # `ActiveRecord::ConnectionNotEstablished` and the migration file
-      # never gets written. Using plain `template` plus a timestamp-based
-      # filename keeps the generator DB-free, so `bin/rails db:create
-      # db:migrate` (the natural bootstrap order) Just Works.
+      # Uses plain `template` with its own timestamp and skip-if-present
+      # check. The version stamp (`ActiveRecord::Migration.current_version`)
+      # only reads `ActiveRecord::VERSION`, so generation never needs a
+      # database and works before `db:create` (#58).
       #
       # @return [void]
       def create_migration

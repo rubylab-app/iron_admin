@@ -109,15 +109,13 @@ module IronAdmin
       # --- Search ---
 
       def search_column(scope, column, query)
-        table = quoted_table_name
-        col = connection.quote_column_name(column)
-        scope.where("#{table}.#{col} #{like_operator} ? #{like_escape_clause}", "%#{sanitize_like(query)}%")
+        condition = model_class.with_connection { |conn| like_condition(conn, column, "?") }
+        scope.where(condition, "%#{sanitize_like(query)}%")
       end
 
       def search_columns(scope, columns, query)
-        table = quoted_table_name
-        conditions = columns.map do |col|
-          "#{table}.#{connection.quote_column_name(col)} #{like_operator} :q #{like_escape_clause}"
+        conditions = model_class.with_connection do |conn|
+          columns.map { |col| like_condition(conn, col, ":q") }
         end
         scope.where(conditions.join(" OR "), q: "%#{sanitize_like(query)}%")
       end
@@ -174,6 +172,7 @@ module IronAdmin
         IronAdmin::Filters::ActiveRecordQueryBuilder
       end
 
+      # (see Base#pagy_method)
       def pagy_method
         :pagy
       end
@@ -184,20 +183,15 @@ module IronAdmin
 
       private
 
-      def connection
-        model_class.connection
-      end
-
-      def quoted_table_name
-        connection.quote_table_name(model_class.table_name)
-      end
-
-      def postgresql?
-        connection.adapter_name.downcase.include?("postgresql")
-      end
-
-      def like_operator
-        postgresql? ? "ILIKE" : "LIKE"
+      # Builds `"table"."column" LIKE|ILIKE <placeholder> ESCAPE '\'` with a
+      # connection borrowed through `with_connection`, so search never calls
+      # the soft-deprecated `ActiveRecord::Base.connection` (which raises when
+      # a host sets `config.active_record.permanent_connection_checkout =
+      # :disallowed`).
+      def like_condition(conn, column, placeholder)
+        table = conn.quote_table_name(model_class.table_name)
+        operator = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
+        "#{table}.#{conn.quote_column_name(column)} #{operator} #{placeholder} #{like_escape_clause}"
       end
 
       def like_escape_clause
@@ -209,8 +203,6 @@ module IronAdmin
       end
 
       def eager_load_model_paths
-        return unless defined?(::Rails) && ::Rails.respond_to?(:autoloaders)
-
         Array(::Rails.application.config.eager_load_paths).each do |path|
           next unless path.to_s.end_with?("/app/models")
           next unless File.directory?(path)

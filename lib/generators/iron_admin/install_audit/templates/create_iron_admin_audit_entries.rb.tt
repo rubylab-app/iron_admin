@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class CreateIronAdminAuditEntries < ActiveRecord::Migration[7.1]
+class CreateIronAdminAuditEntries < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
   def change
     create_table :iron_admin_audit_entries do |t|
       t.string :user_identifier

@@ -4,6 +4,20 @@ require "rails_helper"
 
 RSpec.describe IronAdmin::Filters::ActiveRecordQueryBuilder do
   describe ".call" do
+    context "when quoting the column" do
+      before { allow(User).to receive(:connection).and_call_original }
+
+      it "borrows a connection for string operators" do
+        described_class.call(User.all, { name: :name, type: :string }, "op" => "contains", "value" => "a")
+        expect(User).not_to have_received(:connection)
+      end
+
+      it "borrows a connection for number operators" do
+        described_class.call(User.all, { name: :id, type: :number }, "op" => "greater_than", "value" => "1")
+        expect(User).not_to have_received(:connection)
+      end
+    end
+
     context "with string filter" do
       let(:filter) { { name: :name, type: :string } }
 
