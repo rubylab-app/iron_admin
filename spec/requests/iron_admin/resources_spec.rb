@@ -16,6 +16,37 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    context "when live index updates are off" do
+      it "renders no empty id attributes" do
+        create(:user)
+        get iron_admin.resources_path("users"), as: :html
+
+        expect(response.parsed_body.css("[id='']").map(&:name)).to be_empty
+      end
+    end
+
+    context "when live index updates are on" do
+      let(:live_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name = "LiveIndexUserResource"
+          def self.resource_name = "live_index_users"
+
+          live_index
+        end
+      end
+
+      before { IronAdmin::ResourceRegistry.register(live_resource) }
+
+      it "gives each row a stable Turbo Stream target id" do
+        user = create(:user)
+        get iron_admin.resources_path("live_index_users"), as: :html
+
+        expect(response.parsed_body.at_css("tr#iron_admin_live_index_users_row_#{user.id}")).not_to be_nil
+      end
+    end
+
     context "with search query" do
       it "filters records by search term" do
         create(:user, name: "John Doe", email: "john@example.com")
