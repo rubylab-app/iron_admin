@@ -16,6 +16,8 @@
         = f.label field.name, field.name.to_s.humanize,
           class: "block text-sm font-medium #{cp_label_text} mb-1.5"
         - case field.type
+        - when *iron_admin_field_component_types
+          = render iron_admin_field_component(f, field)
         - when :belongs_to
           - assoc_class = field.options[:association_class]
           - fk = field.options[:foreign_key]
