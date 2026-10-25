@@ -98,6 +98,16 @@ module IronAdmin
       "#{record.class.model_name.human} ##{record.id}"
     end
 
+    # Whether a record is soft-deleted. Edit and update only load records
+    # that are not deleted, so views hide their links for these.
+    #
+    # @param resource_class [Class<IronAdmin::Resource>] The record's resource
+    # @param record [Object] The record
+    # @return [Boolean]
+    def soft_deleted_record?(resource_class, record)
+      resource_class.soft_delete? && record.public_send(resource_class.soft_delete_column).present?
+    end
+
     # Returns options for a filter select dropdown.
     #
     # @param resource_class [Class] The resource class

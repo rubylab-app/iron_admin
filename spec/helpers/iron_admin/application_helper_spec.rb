@@ -413,6 +413,35 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#soft_deleted_record?" do
+    let(:record) { Struct.new(:deleted_at).new(deleted_at) }
+    let(:deleted_at) { Time.current }
+
+    context "when the resource does not support soft delete" do
+      let(:resource_class) { class_double(IronAdmin::Resource, soft_delete?: false) }
+
+      it "returns false" do
+        expect(helper.soft_deleted_record?(resource_class, record)).to be(false)
+      end
+    end
+
+    context "when the resource supports soft delete" do
+      let(:resource_class) { class_double(IronAdmin::Resource, soft_delete?: true, soft_delete_column: "deleted_at") }
+
+      it "returns true for a deleted record" do
+        expect(helper.soft_deleted_record?(resource_class, record)).to be(true)
+      end
+
+      context "with a record that is not deleted" do
+        let(:deleted_at) { nil }
+
+        it "returns false" do
+          expect(helper.soft_deleted_record?(resource_class, record)).to be(false)
+        end
+      end
+    end
+  end
+
   describe "#filter_options_for" do
     context "with select filter on enum column" do
       let(:filter) { { name: :status, type: :select } }

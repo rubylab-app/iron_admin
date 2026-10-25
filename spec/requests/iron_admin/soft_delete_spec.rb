@@ -71,6 +71,17 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
+  describe "show of an active record" do
+    let!(:active_post) { SoftDeletePost.create!(title: "Active Post", body: "Content") }
+
+    it "links to the edit page" do
+      get iron_admin.resource_path("soft_delete_posts", active_post), as: :html
+
+      edit_path = iron_admin.edit_resource_path("soft_delete_posts", active_post)
+      expect(response.parsed_body.css("a[href='#{edit_path}']")).not_to be_empty
+    end
+  end
+
   describe "show and update of a deleted record" do
     let!(:deleted_post) do
       SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current)
@@ -80,6 +91,19 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
       get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
 
       expect(response).to have_http_status(:ok)
+    end
+
+    it "does not link to the edit page, which cannot load the deleted record" do
+      get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
+
+      edit_path = iron_admin.edit_resource_path("soft_delete_posts", deleted_post)
+      expect(response.parsed_body.css("a[href='#{edit_path}']")).to be_empty
+    end
+
+    it "keeps the delete button" do
+      get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
+
+      expect(response.parsed_body.css("form[action='#{iron_admin.resource_path("soft_delete_posts", deleted_post)}']")).not_to be_empty
     end
 
     it "returns not found when updating the deleted record" do
