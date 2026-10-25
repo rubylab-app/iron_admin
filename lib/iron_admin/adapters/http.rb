@@ -182,6 +182,7 @@ module IronAdmin
         IronAdmin::Filters::HttpQueryBuilder
       end
 
+      # (see Base#pagy_method)
       def pagy_method
         :pagy
       end

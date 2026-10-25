@@ -212,6 +212,7 @@ module IronAdmin
         IronAdmin::Filters::MongoidQueryBuilder
       end
 
+      # (see Base#pagy_method)
       def pagy_method
         :pagy_mongoid
       end

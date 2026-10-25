@@ -172,6 +172,7 @@ module IronAdmin
         IronAdmin::Filters::ActiveRecordQueryBuilder
       end
 
+      # (see Base#pagy_method)
       def pagy_method
         :pagy
       end

@@ -313,7 +313,10 @@ module IronAdmin
       end
 
       # Returns the Pagy backend method name for this adapter.
-      # @return [Symbol] :pagy or :pagy_mongoid
+      # @deprecated Unused: pagination always calls Pagy's default :offset
+      #   paginator, which needs a scope that responds to count/offset/limit.
+      #   Will be removed in 0.8.0.
+      # @return [Symbol]
       def pagy_method
         raise NotImplementedError
       end
