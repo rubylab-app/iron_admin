@@ -9,24 +9,24 @@
     results
 
   .isolate.inline-flex.-space-x-px.rounded-md.shadow-sm
-    - if pagy_obj.prev
-      = link_to pagy_url_for(pagy_obj, pagy_obj.prev), class: "#{nav_link_classes} rounded-l-md" do
+    - if pagy_obj.previous
+      = link_to page_url(pagy_obj.previous), class: "#{nav_link_classes} rounded-l-md", "aria-label": "Previous" do
         = heroicon "chevron-left", variant: :mini, options: { class: "h-5 w-5" }
     - else
       %span{ class: "#{nav_link_classes(disabled: true)} rounded-l-md" }
         = heroicon "chevron-left", variant: :mini, options: { class: "h-5 w-5" }
 
-    - pagy_obj.series.each do |item|
+    - series.each do |item|
       - case item
       - when Integer
-        = link_to item, pagy_url_for(pagy_obj, item), class: page_link_classes(active: item == pagy_obj.page)
+        = link_to item, page_url(item), class: page_link_classes
       - when String
-        %span{ class: page_link_classes(active: true) }= item
+        %span{ class: page_link_classes(active: true), "aria-current": "page" }= item
       - when :gap
         %span{ class: "#{page_link_classes} cursor-default" } ...
 
     - if pagy_obj.next
-      = link_to pagy_url_for(pagy_obj, pagy_obj.next), class: "#{nav_link_classes} rounded-r-md" do
+      = link_to page_url(pagy_obj.next), class: "#{nav_link_classes} rounded-r-md", "aria-label": "Next" do
         = heroicon "chevron-right", variant: :mini, options: { class: "h-5 w-5" }
     - else
       %span{ class: "#{nav_link_classes(disabled: true)} rounded-r-md" }
