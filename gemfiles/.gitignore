@@ -1,0 +1,3 @@
+# setup-ruby runs `bundle config --local` with BUNDLE_GEMFILE pointing here.
+# The *.gemfile.lock files are ignored by the root .gitignore.
+/.bundle/

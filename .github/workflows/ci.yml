@@ -5,49 +5,146 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # release.yml calls this workflow, so a gem is only published after the same
+  # jobs that guard main have passed on the exact release commit.
+  workflow_call:
+
+# Least privilege: nothing in CI writes to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  # A new push to a PR cancels its outdated run. Pushes to main and release
+  # calls get one group per commit, so they are never cancelled.
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
+    name: Ruby ${{ matrix.ruby }} / ${{ matrix.gemfile }}
     runs-on: ubuntu-latest
-
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
-        ruby-version: ['3.2', '3.3']
-        rails-version: ['7.1', '7.2']
-
+        ruby: ['3.3', '3.4', '4.0']
+        gemfile: [rails_8_0, rails_8_1]
+        include:
+          # The single leg that uploads the HTML coverage report.
+          - ruby: '3.4'
+            gemfile: rails_8_1
+            coverage: true
     env:
+      # Set at the job level so setup-ruby's `bundle install` and every later
+      # step resolve the same Gemfile (see the ruby/setup-ruby README).
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.gemfile }}.gemfile
       RAILS_ENV: test
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Ruby ${{ matrix.ruby-version }}
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ruby-version: ${{ matrix.ruby-version }}
+          persist-credentials: false
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
       - name: Run tests
         run: bundle exec rspec
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        if: matrix.ruby-version == '3.3' && matrix.rails-version == '7.2'
+        if: ${{ !cancelled() && matrix.coverage }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-report
           path: coverage/
+          retention-days: 14
+
+  minimum:
+    name: Minimum deps (Ruby 3.3, gemspec floors)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Pins every runtime dependency to the floor declared in iron_admin.gemspec.
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/minimum.gemfile
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Ruby 3.3
+        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          ruby-version: '3.3' # required_ruby_version floor
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rspec
 
   lint:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.4'
+          # Root Gemfile.lock: the RuboCop version is pinned, so new cops
+          # (NewCops: enable) only arrive through a reviewed lockfile bump.
           bundler-cache: true
 
-      - name: Run Rubocop
-        run: bundle exec rubocop
+      # RuboCop skips hidden directories, so .github/scripts is passed explicitly.
+      - name: Run RuboCop
+        run: bundle exec rubocop . .github/scripts
+
+  package:
+    name: Gem package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No bundler-cache: it installs gems into vendor/bundle, which the
+      # gemspec's vendor/ glob would pack (the 0.6.0 leak).
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          ruby-version: '3.4'
+
+      - name: Build gem
+        run: gem build iron_admin.gemspec
+
+      - name: Verify gem contents
+        run: |
+          GEM_VERSION="$(ruby -r ./lib/iron_admin/version -e 'print IronAdmin::VERSION')"
+          ruby .github/scripts/verify_gem.rb "iron_admin-${GEM_VERSION}.gem" "${GEM_VERSION}"
+
+  # The only check the "Protect main" ruleset needs to require. Its name stays
+  # stable when the matrix changes, unlike the per-leg check names.
+  ci-result:
+    name: CI result
+    # always(), not !cancelled(): GitHub treats a skipped required check as passing.
+    if: ${{ always() }}
+    needs: [test, minimum, lint, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to have succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: ${RESULTS}"
+          for result in ${RESULTS}; do
+            if [ "${result}" != "success" ]; then
+              echo "::error::At least one CI job did not succeed (${RESULTS})."
+              exit 1
+            fi
+          done
