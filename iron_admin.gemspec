@@ -12,14 +12,25 @@ Gem::Specification.new do |spec|
   spec.license     = "MIT"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/rubylab-app/iron_admin"
-  spec.metadata["changelog_uri"] = "https://github.com/rubylab-app/iron_admin/blob/main/CHANGELOG.md"
-  spec.metadata["github_repo"] = "ssh://github.com/rubylab-app/iron_admin"
+  spec.metadata["source_code_uri"] = "https://github.com/rubylab-app/iron_admin/tree/v#{spec.version}"
+  spec.metadata["changelog_uri"] = "https://github.com/rubylab-app/iron_admin/blob/v#{spec.version}/CHANGELOG.md"
+  spec.metadata["documentation_uri"] = "https://rubylab-app.github.io/iron_admin/"
+  spec.metadata["bug_tracker_uri"] = "https://github.com/rubylab-app/iron_admin/issues"
+  spec.metadata["rubygems_mfa_required"] = "true"
 
   spec.required_ruby_version = ">= 3.3"
 
+  # docs/site is the Jekyll source of documentation_uri (with its own Gemfile.lock);
+  # the mobile audit is internal. Neither belongs in an installed gem.
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
-    Dir["{app,config,docs,lib,vendor}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
+    Dir[
+      "{app,config,lib,vendor}/**/*",
+      "docs/**/*.md",
+      "CHANGELOG.md",
+      "MIT-LICENSE",
+      "README.md",
+      "UPGRADING.md"
+    ].reject { |path| path.start_with?("docs/site/") || path == "docs/mobile-responsiveness-audit.md" }
   end
 
   spec.add_dependency "csv", ">= 3.2.8"
@@ -46,5 +57,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sqlite3", "~> 2.0"
   spec.add_development_dependency "webmock", "~> 3.0"
   spec.add_development_dependency "yard", "~> 0.9"
-  spec.metadata["rubygems_mfa_required"] = "true"
 end
