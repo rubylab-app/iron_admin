@@ -6,4 +6,7 @@
     %span.text-gray-400= "##{@record.id}"
 
   .p-6{ class: cp_card }
-    = render "form", form_url: form_url
+    - if (form_component = iron_admin_form_component(@resource_class, record: @record, fields: @fields, url: form_url))
+      = render form_component
+    - else
+      = render "form", form_url: form_url

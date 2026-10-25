@@ -6,6 +6,7 @@ module IronAdmin
     include Heroicon::ApplicationHelper
     include IronAdmin::ThemeHelper
     include IronAdmin::FieldDisplayHelper
+    include IronAdmin::ComponentOverridesHelper
 
     # Methods checked when displaying a record's label.
     # @return [Array<Symbol>]

@@ -24,7 +24,9 @@
               resources_path(@resource_class.resource_name, scope: scope[:name], q: params[:q]),
               class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap #{active ? cp_scope_active : cp_scope_inactive}"
 
-      - if @resource_class.searchable_columns.any?
+      - if @resource_class.searchable_columns.any? && (search_component = iron_admin_search_component(@resource_class, filters: filters, scope: @current_scope))
+        = render search_component
+      - elsif @resource_class.searchable_columns.any?
         = form_tag resources_path(@resource_class.resource_name), method: :get, class: "flex ml-auto" do
           = hidden_field_tag :scope, @current_scope
           - filters.each do |filter|
@@ -46,7 +48,9 @@
               placeholder: I18n.t("iron_admin.resources.index.search_placeholder"),
               class: cp_search_class
 
-  - if filters.any?
+  - if filters.any? && (filter_bar_component = iron_admin_filter_bar_component(@resource_class, filters: filters, scope: @current_scope))
+    = render filter_bar_component
+  - elsif filters.any?
     - has_active_filters = filters.any? { |f| iron_admin_active_filter?(f) }
     - select_chevron_style = "background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;"
     .flex.justify-end.mb-4
@@ -134,49 +138,52 @@
                 - if action[:icon]
                   = heroicon action[:icon], variant: :mini, options: { class: "h-4 w-4" }
                 = action[:name].to_s.humanize
-      - sticky = IronAdmin.configuration.sticky_actions_column
-      - sticky_th = sticky ? "sticky right-0 z-10 #{t.table_header_bg}" : ""
-      - sticky_td = sticky ? "sticky right-0 z-10 #{t.card_bg}" : ""
-      - sticky_shadow = sticky ? "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]" : ""
-      .overflow-x-auto
-        %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
-          %thead{ class: cp_table_header_bg }
-            %tr
-              - if has_bulk_actions
-                %th.px-6.py-3.w-4
-                  %input{ type: "checkbox", class: "rounded border-gray-300",
-                    data: { cp_bulk_select_target: "selectAll", action: "change->cp-bulk-select#toggleAll" } }
-              - @fields.each do |field|
-                - next unless field.visible?(iron_admin_current_user)
-                - sorted = params[:sort] == field.name.to_s
-                - next_dir = sorted && params[:direction] == "asc" ? "desc" : "asc"
-                %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }
-                  = link_to resources_path(@resource_class.resource_name, sort: field.name, direction: next_dir, scope: @current_scope, q: params[:q]),
-                    class: "inline-flex items-center gap-1 group" do
-                    = field.name.to_s.humanize
-                    - if sorted
-                      = heroicon(params[:direction] == "asc" ? "chevron-up" : "chevron-down", variant: :mini, options: { class: "h-3.5 w-3.5" })
-                    - else
-                      = heroicon "chevron-up-down", variant: :mini, options: { class: "h-3.5 w-3.5 opacity-0 group-hover:opacity-50 transition-opacity" }
-              %th{ class: "px-6 py-3 #{sticky_th} #{sticky_shadow}" }
-          %tbody{ class: "#{cp_table_border} divide-y" }
-            - if @records.empty?
+      - if (table_component = iron_admin_table_component(@resource_class, records: @records, fields: @fields, scope: @current_scope))
+        = render table_component
+      - else
+        - sticky = IronAdmin.configuration.sticky_actions_column
+        - sticky_th = sticky ? "sticky right-0 z-10 #{t.table_header_bg}" : ""
+        - sticky_td = sticky ? "sticky right-0 z-10 #{t.card_bg}" : ""
+        - sticky_shadow = sticky ? "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]" : ""
+        .overflow-x-auto
+          %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
+            %thead{ class: cp_table_header_bg }
               %tr
-                %td.px-6.py-8.text-center.text-sm{ colspan: (@fields.count { |f| f.visible?(iron_admin_current_user) }) + (has_bulk_actions ? 2 : 1), class: cp_muted_text }
-                  = I18n.t("iron_admin.resources.index.empty_state")
-            - @records.each do |record|
-              %tr{ class: cp_table_row_hover, **(@resource_class.live_index_enabled? ? { id: "iron_admin_#{@resource_class.resource_name}_row_#{record.id}" } : {}) }
                 - if has_bulk_actions
-                  %td.px-6.py-4.w-4
-                    %input{ type: "checkbox", name: "ids[]", value: record.id, class: "rounded border-gray-300",
-                      data: { cp_bulk_select_target: "checkbox", action: "change->cp-bulk-select#toggle" } }
+                  %th.px-6.py-3.w-4
+                    %input{ type: "checkbox", class: "rounded border-gray-300",
+                      data: { cp_bulk_select_target: "selectAll", action: "change->cp-bulk-select#toggleAll" } }
                 - @fields.each do |field|
                   - next unless field.visible?(iron_admin_current_user)
-                  %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-                    = display_index_field_value(record, field)
-                %td.whitespace-nowrap.text-right.text-sm{ class: "px-6 py-4 #{sticky_td} #{sticky_shadow}" }
-                  = link_to I18n.t("iron_admin.resources.index.view_link"), resource_path(@resource_class.resource_name, record),
-                    class: cp_link, data: { turbo_frame: "_top" }
+                  - sorted = params[:sort] == field.name.to_s
+                  - next_dir = sorted && params[:direction] == "asc" ? "desc" : "asc"
+                  %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }
+                    = link_to resources_path(@resource_class.resource_name, sort: field.name, direction: next_dir, scope: @current_scope, q: params[:q]),
+                      class: "inline-flex items-center gap-1 group" do
+                      = field.name.to_s.humanize
+                      - if sorted
+                        = heroicon(params[:direction] == "asc" ? "chevron-up" : "chevron-down", variant: :mini, options: { class: "h-3.5 w-3.5" })
+                      - else
+                        = heroicon "chevron-up-down", variant: :mini, options: { class: "h-3.5 w-3.5 opacity-0 group-hover:opacity-50 transition-opacity" }
+                %th{ class: "px-6 py-3 #{sticky_th} #{sticky_shadow}" }
+            %tbody{ class: "#{cp_table_border} divide-y" }
+              - if @records.empty?
+                %tr
+                  %td.px-6.py-8.text-center.text-sm{ colspan: (@fields.count { |f| f.visible?(iron_admin_current_user) }) + (has_bulk_actions ? 2 : 1), class: cp_muted_text }
+                    = I18n.t("iron_admin.resources.index.empty_state")
+              - @records.each do |record|
+                %tr{ class: cp_table_row_hover, **(@resource_class.live_index_enabled? ? { id: "iron_admin_#{@resource_class.resource_name}_row_#{record.id}" } : {}) }
+                  - if has_bulk_actions
+                    %td.px-6.py-4.w-4
+                      %input{ type: "checkbox", name: "ids[]", value: record.id, class: "rounded border-gray-300",
+                        data: { cp_bulk_select_target: "checkbox", action: "change->cp-bulk-select#toggle" } }
+                  - @fields.each do |field|
+                    - next unless field.visible?(iron_admin_current_user)
+                    %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                      = display_index_field_value(record, field)
+                  %td.whitespace-nowrap.text-right.text-sm{ class: "px-6 py-4 #{sticky_td} #{sticky_shadow}" }
+                    = link_to I18n.t("iron_admin.resources.index.view_link"), resource_path(@resource_class.resource_name, record),
+                      class: cp_link, data: { turbo_frame: "_top" }
 
     .mt-4
       = render "iron_admin/shared/pagination", pagy: @pagy
