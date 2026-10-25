@@ -41,22 +41,17 @@ module IronAdmin
         MenuRegistry.register(item)
       end
 
-      # Overrides one of IronAdmin's global UI components.
+      # Same as +config.components.<name> = component_class+.
       #
-      # Delegates to {IronAdmin::Configuration::Components}. Valid names match
-      # its accessors (e.g. +:table+, +:form+, +:navbar+, +:sidebar+,
-      # +:shell+, +:search+, +:filter_bar+).
-      #
-      # @param name [Symbol] The component slot to override
-      # @param component_class [Class] The replacement ViewComponent class
-      # @raise [ArgumentError] If +name+ is not a known component slot
-      # @return [Class] The registered component class
+      # @param name [Symbol] A key of {IronAdmin::Configuration::Components::SLOTS}
+      # @param component_class [Class, String] A ViewComponent::Base subclass, or its class name
+      # @raise [ArgumentError] Unknown slot or invalid component
+      # @return [Class, String] The registered component
       def component(name, component_class)
-        components = IronAdmin.configuration.components
-        writer = "#{name}="
-        raise ArgumentError, "Unknown component slot: #{name.inspect}" unless components.respond_to?(writer)
+        slot = name.to_s.to_sym
+        raise ArgumentError, "Unknown component slot: #{name.inspect}" unless Configuration::Components::SLOTS.key?(slot)
 
-        components.public_send(writer, component_class)
+        IronAdmin.configuration.components.public_send(:"#{slot}=", component_class)
         component_class
       end
 

@@ -85,12 +85,17 @@ RSpec.describe IronAdmin::Plugin::Registration do
   end
 
   describe "#component" do
-    let(:custom_component) { Class.new }
+    let(:custom_component) { Class.new(ViewComponent::Base) }
 
     context "with a known component slot" do
       it "overrides the component on the global configuration" do
         registration.component(:navbar, custom_component)
         expect(IronAdmin.configuration.components.navbar).to eq(custom_component)
+      end
+
+      it "makes the override the component IronAdmin renders" do
+        registration.component(:navbar, custom_component)
+        expect(IronAdmin.configuration.components.resolve(:navbar)).to eq(custom_component)
       end
     end
 
@@ -98,6 +103,20 @@ RSpec.describe IronAdmin::Plugin::Registration do
       it "raises an ArgumentError" do
         expect { registration.component(:nope, custom_component) }
           .to raise_error(ArgumentError, /Unknown component slot/)
+      end
+    end
+
+    context "with the fields map" do
+      it "raises an ArgumentError" do
+        expect { registration.component(:fields, custom_component) }
+          .to raise_error(ArgumentError, /Unknown component slot/)
+      end
+    end
+
+    context "with a class that is not a ViewComponent" do
+      it "raises an ArgumentError" do
+        expect { registration.component(:navbar, Class.new) }
+          .to raise_error(ArgumentError, /must be a ViewComponent::Base subclass/)
       end
     end
   end

@@ -44,6 +44,7 @@ module IronAdmin
     include Concerns::SoftDeletable
     include Concerns::Importable
     include Concerns::LiveUpdatable
+    include Concerns::ComponentOverridable
 
     class_attribute :field_overrides, default: {}
     class_attribute :_searchable_columns, default: nil
@@ -55,7 +56,6 @@ module IronAdmin
     class_attribute :index_field_names, default: nil
     class_attribute :form_field_names, default: nil
     class_attribute :menu_options, default: {}
-    class_attribute :component_overrides, default: {}
     class_attribute :_policy_block, default: nil
     class_attribute :export_formats, default: %i[csv json]
     class_attribute :export_field_names, default: nil
@@ -421,20 +421,6 @@ module IronAdmin
           options[:group] = legacy unless options.key?(:group)
         end
         self.menu_options = options
-      end
-
-      # Registers a custom component class to override default rendering.
-      #
-      # @param name [Symbol] The component type to override
-      #   (:index, :show, :form, :row, etc.)
-      # @param klass [Class] The component class to use
-      #
-      # @example Override the index table component
-      #   component :index, CustomUserIndexComponent
-      #
-      # @return [void]
-      def component(name, klass)
-        self.component_overrides = component_overrides.merge(name => klass)
       end
 
       # Defines the authorization policy for this resource.
