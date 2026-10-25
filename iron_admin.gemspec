@@ -16,19 +16,22 @@ Gem::Specification.new do |spec|
   spec.metadata["changelog_uri"] = "https://github.com/rubylab-app/iron_admin/blob/main/CHANGELOG.md"
   spec.metadata["github_repo"] = "ssh://github.com/rubylab-app/iron_admin"
 
-  spec.required_ruby_version = ">= 3.2"
+  spec.required_ruby_version = ">= 3.3"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     Dir["{app,config,docs,lib,vendor}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
   end
 
+  spec.add_dependency "csv", ">= 3.2.8"
   spec.add_dependency "haml-rails", ">= 2.0"
   spec.add_dependency "heroicon", ">= 1.0"
-  spec.add_dependency "pagy", ">= 6.0"
-  spec.add_dependency "rails", ">= 7.1"
+  spec.add_dependency "importmap-rails", ">= 2.0"
+  spec.add_dependency "ostruct", ">= 0.6"
+  spec.add_dependency "pagy", ">= 43.7.1", "< 44"
+  spec.add_dependency "rails", ">= 8.0.4"
   spec.add_dependency "stimulus-rails", ">= 1.3"
-  spec.add_dependency "turbo-rails", ">= 2.0"
-  spec.add_dependency "view_component", ">= 3.0"
+  spec.add_dependency "turbo-rails", ">= 2.0.6"
+  spec.add_dependency "view_component", ">= 4.0", "< 5"
 
   spec.add_development_dependency "factory_bot_rails", "~> 6.4"
   spec.add_development_dependency "faraday", "~> 2.0"
