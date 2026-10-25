@@ -27,6 +27,15 @@ module IronAdmin
         IronAdmin::ToolRegistry.grouped
       end
 
+      # Returns custom menu items (e.g. from plugins) grouped by menu group.
+      # Items are ordered by priority; ties keep their registration order.
+      # @return [Hash{String => Array<IronAdmin::MenuItem>}]
+      def grouped_menu_items
+        IronAdmin::MenuRegistry.all
+          .sort_by.with_index { |item, index| [item.priority, index] }
+          .group_by(&:group)
+      end
+
       # @api private
       # @return [String] Configured admin panel title
       def title

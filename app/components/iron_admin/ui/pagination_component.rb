@@ -4,13 +4,13 @@ module IronAdmin
   module Ui
     # Renders pagination controls for record lists.
     #
-    # Uses Pagy for pagination logic.
+    # Uses Pagy (>= 43) for pagination logic. The pagy object must come from
+    # the +pagy+ controller method (Pagy::Method), so that it carries the
+    # request needed to build page URLs.
     #
     # @example Basic pagination
     #   render IronAdmin::Ui::PaginationComponent.new(pagy: @pagy)
     class PaginationComponent < ViewComponent::Base
-      include Pagy::Linkable
-
       # @return [Pagy] The Pagy pagination object
       attr_reader :pagy_obj
 
@@ -30,6 +30,21 @@ module IronAdmin
       def render?
         pagy_obj.pages > 1
       end
+
+      # @api private
+      # Page numbers, the current page as a String, and :gap markers,
+      # e.g. [1, :gap, 7, "8", 9, :gap, 36]. Pagy keeps #series protected; its
+      # custom-nav demo (apps/demo.ru) calls it via #send too.
+      # @return [Array<Integer, String, Symbol>]
+      def series
+        pagy_obj.send(:series)
+      end
+
+      # @!method page_url(page)
+      #   @api private
+      #   @param page [Integer] Page number
+      #   @return [String] URL for the page, preserving the current query params
+      delegate :page_url, to: :pagy_obj
 
       # @api private
       # @param active [Boolean] Whether this is the current page

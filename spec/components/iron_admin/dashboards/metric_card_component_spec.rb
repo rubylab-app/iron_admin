@@ -36,4 +36,10 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
 
     expect(result.css("#metric_total_users").size).to eq(1)
   end
+
+  it "omits the id attribute when live rendering is disabled" do
+    result = render_inline(described_class.new(name: :total_users, value: 42, format: :number))
+
+    expect(result.css("[id]").map(&:name)).to be_empty
+  end
 end

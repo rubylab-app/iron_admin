@@ -78,6 +78,24 @@ RSpec.describe IronAdmin::Ui::ModalComponent, type: :component do
     end
   end
 
+  describe "backdrop" do
+    subject(:backdrop) { render_inline(described_class.new.with_content("Body")).at_css("div.fixed.inset-0.transition-opacity") }
+
+    before do
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    it "uses a translucent background that Tailwind v4 still generates" do
+      expect(backdrop[:class].split).to include("bg-gray-500/75")
+    end
+
+    it "does not use the bg-opacity utility that Tailwind v4 removed" do
+      expect(backdrop[:class]).not_to include("bg-opacity")
+    end
+  end
+
   describe "slots" do
     it "has title slot" do
       expect(described_class.registered_slots).to have_key(:title)
