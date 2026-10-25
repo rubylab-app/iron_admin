@@ -202,8 +202,6 @@ module IronAdmin
       end
 
       def eager_load_model_paths
-        return unless defined?(::Rails) && ::Rails.respond_to?(:autoloaders)
-
         Array(::Rails.application.config.eager_load_paths).each do |path|
           next unless path.to_s.end_with?("/app/models")
           next unless File.directory?(path)
