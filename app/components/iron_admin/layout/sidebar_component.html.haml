@@ -35,3 +35,14 @@
               - if tool.menu_options[:icon]
                 = helpers.heroicon tool.menu_options[:icon], variant: :outline, options: { class: "h-5 w-5" }
               = tool.label
+
+    - grouped_menu_items.each do |group, items|
+      .mt-6
+        %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
+        .mt-2.space-y-1
+          - items.each do |item|
+            = link_to item.path,
+              class: "flex items-center gap-3 px-3 py-2 rounded-lg #{cp_sidebar_link}" do
+              - if item.icon
+                = helpers.heroicon item.icon, variant: :outline, options: { class: "h-5 w-5" }
+              = item.label

@@ -49,6 +49,69 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     expect(result.text).to include("Licensing")
   end
 
+  context "with custom menu items" do
+    subject(:result) { render_inline(described_class.new) }
+
+    before do
+      IronAdmin::MenuRegistry.register(
+        IronAdmin::MenuItem.new(label: "Reports", path: "/plugins/reports", icon: "chart-bar", group: "Analytics", priority: 20)
+      )
+      IronAdmin::MenuRegistry.register(
+        IronAdmin::MenuItem.new(label: "Billing", path: "/plugins/billing", group: "Analytics", priority: 10)
+      )
+    end
+
+    it "links to the item's path" do
+      expect(result.at_css("a[href='/plugins/reports']")&.text&.strip).to eq("Reports")
+    end
+
+    it "renders the item's group heading" do
+      expect(result.css("p").map { |heading| heading.text.strip }).to include("Analytics")
+    end
+
+    it "orders the items in a group by priority" do
+      expect(result.css("a[href^='/plugins/']").map { |a| a.text.strip }).to eq(%w[Billing Reports])
+    end
+
+    it "renders the item's icon" do
+      expect(result.css("a[href='/plugins/reports'] svg.heroicon-chart-bar")).not_to be_empty
+    end
+
+    it "renders no icon for an item without one" do
+      expect(result.css("a[href='/plugins/billing'] svg")).to be_empty
+    end
+
+    context "when items share a priority" do
+      before do
+        IronAdmin::MenuRegistry.reset!
+        %w[Zeta Alpha Mid].each do |label|
+          IronAdmin::MenuRegistry.register(IronAdmin::MenuItem.new(label: label, path: "/plugins/#{label.downcase}"))
+        end
+      end
+
+      it "keeps their registration order" do
+        expect(result.css("a[href^='/plugins/']").map { |a| a.text.strip }).to eq(%w[Zeta Alpha Mid])
+      end
+    end
+  end
+
+  context "with a plugin that adds a menu item" do
+    before do
+      plugin = Class.new(IronAdmin::Plugin) do
+        plugin_name "sidebar_reports"
+        setup { |admin| admin.menu_item(label: "Plugin Reports", path: "/plugins/plugin-reports") }
+      end
+      IronAdmin.register_plugin(plugin)
+    end
+
+    it "renders the plugin's link under the default Plugins group" do
+      result = render_inline(described_class.new)
+      section = result.css("div.mt-6").find { |div| div.at_css("p").text.strip == "Plugins" }
+
+      expect(section.css("a").map { |a| [a.text.strip, a[:href]] }).to eq([["Plugin Reports", "/plugins/plugin-reports"]])
+    end
+  end
+
   context "with registered tools" do
     before do
       tool_class = Class.new(IronAdmin::Tool) do
