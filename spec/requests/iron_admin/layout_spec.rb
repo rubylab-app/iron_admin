@@ -46,6 +46,39 @@ RSpec.describe "Engine layout", type: :request do
     end
   end
 
+  describe "favicon" do
+    subject(:icon_links) do
+      get iron_admin.resources_path("users"), as: :html
+      response.parsed_body.css("head link[rel~='icon']")
+    end
+
+    context "without config.favicon" do
+      it "links no icon, as before" do
+        expect(icon_links).to be_empty
+      end
+    end
+
+    context "with config.favicon set to a path" do
+      before { IronAdmin.configuration.favicon = "/brand/icon.svg" }
+
+      it "links that icon" do
+        expect(icon_links.pluck(:href)).to eq(["/brand/icon.svg"])
+      end
+
+      it "does not claim an image/x-icon type for it" do
+        expect(icon_links.first[:type]).to be_nil
+      end
+    end
+
+    context "with config.favicon set to a URL" do
+      before { IronAdmin.configuration.favicon = "https://cdn.example.com/favicon.ico" }
+
+      it "links that URL" do
+        expect(icon_links.pluck(:href)).to eq(["https://cdn.example.com/favicon.ico"])
+      end
+    end
+  end
+
   # The sidebar brand is not a heading, so each page needs its own h1.
   describe "action form pages" do
     subject(:document) do

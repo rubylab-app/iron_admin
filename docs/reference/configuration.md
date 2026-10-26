@@ -7,6 +7,7 @@ IronAdmin.configure do |config|
   # --- General ---
   config.title = "Admin"
   config.logo = nil
+  config.favicon = nil # e.g. "/icon.svg"
   config.per_page = 25
   config.default_sort = :created_at
   config.default_sort_direction = :desc
@@ -68,6 +69,7 @@ end
 |--------|------|---------|-------------|
 | `title` | String | `"Admin"` | Title shown in navbar |
 | `logo` | String | `nil` | Path to logo image |
+| `favicon` | String | `nil` | Icon linked from every admin page with `<link rel="icon">`: a path (`"/icon.svg"`), a URL or an asset name, resolved like `logo`. With `nil`, the admin layout links no icon and browsers request `/favicon.ico` |
 | `per_page` | Integer | `25` | Records per page |
 | `default_sort` | Symbol | `:created_at` | Default sort column |
 | `default_sort_direction` | Symbol | `:desc` | Default sort direction (`:asc` or `:desc`) |

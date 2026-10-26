@@ -56,6 +56,12 @@ module IronAdmin
     # @return [String, nil] Path to a custom logo image
     attr_accessor :logo
 
+    # @return [String, nil] Icon the admin layout links with +<link rel="icon">+: a path, a URL or
+    #   an asset name, resolved like {#logo} (default: nil, no icon link, so browsers request /favicon.ico)
+    # @example
+    #   config.favicon = "/icon.svg"
+    attr_accessor :favicon
+
     # @return [Integer] Number of records per page (default: 25)
     attr_accessor :per_page
 
@@ -176,6 +182,7 @@ module IronAdmin
     # Creates a new Configuration with default values.
     def initialize
       @title = "Admin"
+      @favicon = nil
       @per_page = 25
       @default_sort = :created_at
       @default_sort_direction = :desc

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Current page in the sidebar** — The sidebar link for the current page now has `aria-current="page"` and the new `sidebar_link_active` theme classes (default `bg-gray-800 text-white`, the default hover colors) instead of `sidebar_link` and `sidebar_link_hover`. A resource's link is current on every page of that resource (index, show, new, edit, imports and action forms), a tool's link on the tool's pages, the Dashboard link on the dashboard only, and a custom menu item's link when the request path is the item's path. Before, no link showed where you were.
 - **`flash` component slot** — `config.components.flash` (or a plugin's `admin.component :flash`) replaces `IronAdmin::Layout::FlashComponent`, which the built-in shell renders above the page content. The component receives `flash:` (the request's flash) and `current_user:`, and is validated like the other slots. It is global only: `component :flash` in a resource raises `ArgumentError`. A custom shell can render the slot with `iron_admin_component(:flash, flash: helpers.flash, current_user: ...)`.
+- **`config.favicon`** — Set it to a path, URL or asset name (for example `config.favicon = "/icon.svg"`) and every admin page links it with `<link rel="icon">`. The default, `nil`, keeps today's markup, which links no icon, so browsers keep requesting `/favicon.ico`.
 
 ## [0.7.0] - 2026-10-26
 
