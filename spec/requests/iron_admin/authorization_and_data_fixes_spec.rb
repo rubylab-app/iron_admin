@@ -51,7 +51,8 @@ RSpec.describe "Authorization and data-handling fixes", type: :request do
 
       get iron_admin.search_path, params: { q: "SearchDeniedPerson" }, as: :html
 
-      expect(response.body).not_to include("SearchDeniedPerson")
+      # The heading repeats the query, so look at the result links only.
+      expect(response.parsed_body.css("a").map { |link| link.text.strip }).not_to include("SearchDeniedPerson")
     end
   end
 

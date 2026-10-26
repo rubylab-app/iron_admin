@@ -36,5 +36,20 @@ RSpec.describe "Engine layout", type: :request do
     it "renders the shell sidebar" do
       expect(body).to match(/id=["']cp-sidebar-panel["']/)
     end
+
+    it "renders the page content in the main landmark" do
+      expect(Nokogiri::HTML(body).at_css("main#main-content h1")).to be_present
+    end
+  end
+
+  describe "GET /search" do
+    subject(:search_input) do
+      get iron_admin.search_path(q: "Rails"), as: :html
+      response.parsed_body.at_css("header input[name='q']")
+    end
+
+    it "keeps the query in the navbar search box" do
+      expect(search_input[:value]).to eq("Rails")
+    end
   end
 end

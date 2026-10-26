@@ -5,7 +5,7 @@
     .relative
       .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center{ class: "pl-3.5" }
         = helpers.heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 text-gray-400" }
-      %input.block.w-full.appearance-none.pl-10.pr-4.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ type: "search", name: "q", placeholder: "Search across all resources...", class: "#{helpers.t.border_radius} border #{helpers.t.input_border} #{helpers.t.navbar_search_bg} #{helpers.t.body_text} placeholder:text-gray-400 #{helpers.t.input_focus} #{helpers.t.navbar_search_focus_bg}" }
+      %input.block.w-full.appearance-none.pl-10.pr-4.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search across all resources...", class: "#{helpers.t.border_radius} border #{helpers.t.input_border} #{helpers.t.navbar_search_bg} #{helpers.t.body_text} placeholder:text-gray-400 #{helpers.t.input_focus} #{helpers.t.navbar_search_focus_bg}" }
   .flex.items-center.gap-4
     - if @current_user
       %span.text-sm.text-gray-600= @current_user.try(:name) || @current_user.try(:email)

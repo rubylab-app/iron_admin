@@ -1,5 +1,5 @@
 .p-4.sm:p-6.lg:p-8
-  %h1.text-2xl.font-bold.mb-6 Search results
+  %h1.text-2xl.font-bold.mb-6= @query.present? ? "Search results for \"#{@query}\"" : "Search results"
   - if @results&.any?
     - @results.each do |group|
       .mb-6

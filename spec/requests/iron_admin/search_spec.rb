@@ -20,6 +20,25 @@ RSpec.describe "IronAdmin::Search", type: :request do
       expect(response.body).not_to include("Jane Smith")
     end
 
+    context "with a query" do
+      let(:document) do
+        get iron_admin.search_path(q: "John")
+        response.parsed_body
+      end
+
+      it "shows the query in the heading" do
+        expect(document.at_css("h1").text.strip).to eq('Search results for "John"')
+      end
+    end
+
+    context "without a query" do
+      it "shows the plain heading" do
+        get iron_admin.search_path
+
+        expect(response.parsed_body.at_css("h1").text.strip).to eq("Search results")
+      end
+    end
+
     it "returns empty when no query" do
       get iron_admin.search_path
       expect(response).to have_http_status(:ok)

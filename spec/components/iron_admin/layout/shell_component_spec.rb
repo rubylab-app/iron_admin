@@ -106,6 +106,22 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
       it "renders the page content" do
         expect(rendered.text).to include("Page body")
       end
+
+      it "renders the page content in the main landmark" do
+        expect(rendered.at_css("main#main-content").text).to include("Page body")
+      end
+
+      it "keeps the content area classes on the main landmark" do
+        expect(rendered.at_css("main#main-content")[:class].split).to include("flex-1", "overflow-auto")
+      end
+
+      it "renders a skip link to the main landmark first" do
+        expect(rendered.at_css("a")[:href]).to eq("#main-content")
+      end
+
+      it "hides the skip link until it is focused" do
+        expect(rendered.at_css("a[href='#main-content']")[:class].split).to include("sr-only", "focus:not-sr-only")
+      end
     end
 
     context "with a flash message" do
