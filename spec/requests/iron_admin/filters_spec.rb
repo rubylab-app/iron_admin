@@ -138,6 +138,66 @@ RSpec.describe "IronAdmin index filters", type: :request do
     end
   end
 
+  # The filter form always submits the operator of string and number filters, even with no value.
+  describe "the Filters badge" do
+    subject(:filters_panel) do
+      get iron_admin.resources_path("badge_filter_licenses"), params: { filters: filter_params }, as: :html
+      response.parsed_body.at_css("details:has(input[name='filters[license_key][value]'])")
+    end
+
+    let(:resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "BadgeFilterLicenseResource"
+        end
+
+        def self.resource_name
+          "badge_filter_licenses"
+        end
+
+        filter :license_key, type: :string
+        filter :max_devices, type: :number
+        filter :status, type: :select
+        index_fields :license_key, :status
+      end
+    end
+
+    let(:empty_operators) { { license_key: { op: "contains", value: "" }, max_devices: { op: "equals", value: "" } } }
+    let(:badge_text) { filters_panel.css("summary span").map { |span| span.text.strip } }
+
+    before { IronAdmin::ResourceRegistry.register(resource) }
+
+    context "with a select filter and operator filters left empty" do
+      let(:filter_params) { empty_operators.merge(status: "expired") }
+
+      it "counts only the filter with a value" do
+        expect(badge_text).to eq(%w[Filters 1])
+      end
+    end
+
+    context "with an operator filter that has a value" do
+      let(:filter_params) { empty_operators.merge(license_key: { op: "contains", value: "KEY" }) }
+
+      it "counts it" do
+        expect(badge_text).to eq(%w[Filters 1])
+      end
+    end
+
+    context "with only empty operator filters" do
+      let(:filter_params) { empty_operators }
+
+      it "shows no count" do
+        expect(badge_text).to eq(%w[Filters])
+      end
+
+      it "keeps the panel closed" do
+        expect(filters_panel["open"]).to be_nil
+      end
+    end
+  end
+
   # Filters follow field visibility, and a visible: false field is hidden from every user.
   describe "a declared filter on a visible: false field" do
     let(:resource) do
