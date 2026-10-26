@@ -47,6 +47,7 @@ module IronAdmin
     def show
       @record = find_record(record_scope(include_deleted: true), params[:id])
       @fields = @resource_class.resolved_fields
+      @edit_reachable = edit_reachable?(@record)
     end
 
     # Renders the new record form.

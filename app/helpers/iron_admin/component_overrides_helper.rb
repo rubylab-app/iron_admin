@@ -82,6 +82,11 @@ module IronAdmin
           next unless value.is_a?(ActionController::Parameters) && value["value"].present?
 
           %w[op value value_2].each { |key| hidden["filters[#{name}][#{key}]"] = value[key] if value[key].present? }
+        elsif filter[:type] == :date_range
+          %w[from to].each do |suffix|
+            range_value = iron_admin_filter_param("#{name}_#{suffix}")
+            hidden["filters[#{name}_#{suffix}]"] = range_value if range_value.present?
+          end
         elsif value.present?
           hidden["filters[#{name}]"] = value
         end

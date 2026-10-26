@@ -37,6 +37,11 @@
                 = hidden_field_tag "filters[#{filter[:name]}][value]", sub["value"]
                 - if sub["value_2"].present?
                   = hidden_field_tag "filters[#{filter[:name]}][value_2]", sub["value_2"]
+            - elsif filter[:type] == :date_range
+              - %w[from to].each do |suffix|
+                - range_value = iron_admin_filter_param("#{filter[:name]}_#{suffix}")
+                - if range_value.present?
+                  = hidden_field_tag "filters[#{filter[:name]}_#{suffix}]", range_value
             - else
               - value = iron_admin_filter_param(filter[:name])
               - if value.present?

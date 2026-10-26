@@ -121,6 +121,52 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
+  # discard (with discard_column = :deleted_at) and hand-rolled soft delete
+  # leave deleted rows visible, so edit and update can still load them.
+  describe "show of a deleted record on a model without a default scope" do
+    before(:all) do
+      ActiveRecord::Base.connection.create_table :plain_soft_delete_posts, force: true do |t|
+        t.string :title
+        t.datetime :deleted_at
+        t.timestamps
+      end
+
+      Object.const_set(:PlainSoftDeletePost, Class.new(ApplicationRecord) do
+        self.table_name = "plain_soft_delete_posts"
+      end)
+    end
+
+    after(:all) do
+      ActiveRecord::Base.connection.drop_table :plain_soft_delete_posts, if_exists: true
+      Object.send(:remove_const, :PlainSoftDeletePost) if defined?(PlainSoftDeletePost)
+    end
+
+    let(:plain_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = PlainSoftDeletePost
+
+        def self.name
+          "PlainSoftDeletePostResource"
+        end
+
+        def self.resource_name
+          "plain_soft_delete_posts"
+        end
+      end
+    end
+
+    let!(:deleted_post) { PlainSoftDeletePost.create!(title: "Deleted Post", deleted_at: Time.current) }
+
+    before { IronAdmin::ResourceRegistry.register(plain_resource) }
+
+    it "links to the edit page, which can still load the deleted record" do
+      get iron_admin.resource_path("plain_soft_delete_posts", deleted_post), as: :html
+
+      edit_path = iron_admin.edit_resource_path("plain_soft_delete_posts", deleted_post)
+      expect(response.parsed_body.css("a[href='#{edit_path}']")).not_to be_empty
+    end
+  end
+
   describe "POST /:resource_name/:id/actions/restore" do
     let!(:deleted_post) { SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current) }
 

@@ -23,12 +23,12 @@ module IronAdmin
   #     class Plugin < IronAdmin::Plugin
   #       plugin_name "iron_admin_reports"
   #       plugin_version "1.2.0"
-  #       requires_iron_admin ">= 0.6", "< 2.0"
+  #       requires_iron_admin ">= 0.7", "< 2.0"
   #
   #       setup do |admin|
   #         admin.menu_item label: "Reports", path: "/admin/reports",
   #                         icon: "chart-bar", group: "Analytics", priority: 20
-  #         admin.component :navbar, IronAdminReports::NavbarComponent
+  #         admin.component :navbar, "IronAdminReports::NavbarComponent"
   #       end
   #     end
   #   end

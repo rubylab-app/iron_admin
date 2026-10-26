@@ -45,7 +45,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
@@ -75,7 +75,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby 3.3
-        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
           ruby-version: '3.3' # required_ruby_version floor
           bundler-cache: true
@@ -92,7 +92,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
           ruby-version: '3.4'
           # Root Gemfile.lock: the RuboCop version is pinned, so new cops
@@ -115,7 +115,7 @@ jobs:
       # No bundler-cache: it installs gems into vendor/bundle, which the
       # gemspec's vendor/ glob would pack (the 0.6.0 leak).
       - name: Set up Ruby
-        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
           ruby-version: '3.4'
 

@@ -29,6 +29,20 @@ module IronAdmin
         adapter.unscope_column(scope, @resource_class.soft_delete_column)
       end
 
+      # Whether edit and update can load a record. They use record_scope, so a
+      # default scope that hides soft-deleted rows makes them 404 for those rows.
+      #
+      # @param record [Object] a record loaded with deleted rows included
+      # @return [Boolean]
+      def edit_reachable?(record)
+        return true unless @resource_class.soft_delete? && record.public_send(@resource_class.soft_delete_column).present?
+
+        find_record(record_scope, params[:id])
+        true
+      rescue IronAdmin::RecordNotFound
+        false
+      end
+
       # Resolves bulk ids through the real primary key, including composite keys.
       #
       # @param ids [Array]

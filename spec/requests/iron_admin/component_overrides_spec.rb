@@ -13,12 +13,14 @@ RSpec.describe "Component overrides", type: :request do
     original_overrides = user_resource.component_overrides
     original_field_overrides = user_resource.field_overrides.dup
     original_form_field_names = user_resource.form_field_names&.dup
+    original_filters = user_resource.defined_filters
     example.run
   ensure
     IronAdmin::Resources::LicenseResource.component_overrides = license_overrides
     user_resource.component_overrides = original_overrides
     user_resource.field_overrides = original_field_overrides
     user_resource.form_field_names = original_form_field_names
+    user_resource.defined_filters = original_filters
   end
 
   # ViewComponent only renders named classes.
@@ -151,6 +153,20 @@ RSpec.describe "Component overrides", type: :request do
       end
     end
 
+    context "with a search override and an active number filter" do
+      before do
+        user_resource.filter :id, type: :number
+        IronAdmin.configuration.components.search = probe_component("custom-search", :hidden_params)
+        get iron_admin.resources_path("users", filters: { id: { op: "between", value: "1", "value_2" => "9" } })
+      end
+
+      it "passes the operator and both values as hidden params" do
+        expect(probe_payload("custom-search")["hidden_params"]).to include(
+          "filters[id][op]" => "between", "filters[id][value]" => "1", "filters[id][value_2]" => "9"
+        )
+      end
+    end
+
     context "with a filter bar override" do
       before do
         IronAdmin.configuration.components.filter_bar =
@@ -174,6 +190,49 @@ RSpec.describe "Component overrides", type: :request do
         get iron_admin.resources_path("users")
 
         expect(response.body).not_to include('id="custom-filter-bar"')
+      end
+    end
+  end
+
+  # LicenseResource declares `filter :created_at, type: :date_range`, which
+  # submits as filters[created_at_from] and filters[created_at_to].
+  describe "GET /:resource_name with an active date range filter" do
+    let(:date_range) { { created_at_from: "2024-01-01", created_at_to: "2024-12-31" } }
+
+    context "without a search override" do
+      before { get iron_admin.resources_path("licenses", q: "KEY", filters: date_range) }
+
+      it "keeps both ends of the range as hidden fields in the search form" do
+        search_form = Nokogiri::HTML(response.body).at_css("input[type=text][name=q]").ancestors("form").first
+        hidden = search_form.css("input[type=hidden]").to_h { |input| [input[:name], input[:value]] }
+
+        expect(hidden).to include("filters[created_at_from]" => "2024-01-01", "filters[created_at_to]" => "2024-12-31")
+      end
+    end
+
+    context "with a search override" do
+      before do
+        IronAdmin.configuration.components.search = probe_component("custom-search", :hidden_params)
+        get iron_admin.resources_path("licenses", q: "KEY", filters: date_range)
+      end
+
+      it "passes both ends of the range as hidden params" do
+        expect(probe_payload("custom-search")["hidden_params"]).to include(
+          "filters[created_at_from]" => "2024-01-01", "filters[created_at_to]" => "2024-12-31"
+        )
+      end
+    end
+
+    context "with a search override and only the start of the range" do
+      let(:date_range) { { created_at_from: "2024-01-01" } }
+
+      before do
+        IronAdmin.configuration.components.search = probe_component("custom-search", :hidden_params)
+        get iron_admin.resources_path("licenses", q: "KEY", filters: date_range)
+      end
+
+      it "leaves out the empty end of the range" do
+        expect(probe_payload("custom-search")["hidden_params"]).not_to have_key("filters[created_at_to]")
       end
     end
   end

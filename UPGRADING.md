@@ -118,7 +118,7 @@ Fields declared with `readonly: true`, or with a `readonly:` proc that returns t
 
 For models whose default scope hides soft-deleted rows (for example `default_scope { where(deleted_at: nil) }`, as paranoia sets up), a soft-deleted record now returns `404` from edit, update, and every custom member action and its action form, except `restore`. Show, destroy, and `restore` still find it. IronAdmin does not filter `deleted_at` itself, so models with a `deleted_at` column but no such default scope are unaffected.
 
-The show page no longer renders an Edit button for a soft-deleted record.
+For those models, the show page no longer renders an Edit button for a soft-deleted record.
 
 **Action required:** Restore a record before editing it. If a custom action has to work on soft-deleted rows, run it after `restore`.
 
@@ -183,7 +183,7 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 
 ### 15. Component overrides now take effect
 
-In 0.6.0, `config.components` and `Resource.component` stored overrides that nothing rendered. In 0.7.0 they are used: `config.components.shell`, `navbar`, `sidebar`, `table`, `form`, `filter_bar`, `search` and `fields[type]` change what renders, and a resource's `component :table`, `:form`, `:filter_bar` or `:search` wins over the global one for that resource. Overrides are also checked when they are set:
+In 0.6.0, `config.components` and `Resource.component` stored overrides that nothing rendered. In 0.7.0 they are used: `config.components.shell`, `navbar`, `sidebar`, `table`, `form`, `filter_bar`, `search` and `fields[type]` change what renders, and a resource's `component :table`, `:form`, `:filter_bar` or `:search` wins over the global one for that resource. Slot overrides are checked when they are set (a `fields[type]` entry, and any class name String, is checked when it is first rendered):
 
 - An override that is not a `ViewComponent::Base` subclass (or its class name), takes a positional argument, or requires a keyword its slot never passes raises `ArgumentError`.
 - `Resource.component` raises `ArgumentError` for any slot other than `:table`, `:form`, `:filter_bar` and `:search`. That includes `:index`, `:show` and `:row`, which only an old code comment mentioned and which never did anything, and the global-only `:navbar`, `:sidebar` and `:shell`.
