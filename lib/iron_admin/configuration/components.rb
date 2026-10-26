@@ -12,13 +12,17 @@ module IronAdmin
       # Keyword arguments IronAdmin passes to each slot's component. A component
       # gets the ones its +initialize+ declares (all of them with +**options+)
       # and must not require others. +fields+ and +filters+ are the visible ones.
+      # The +filter_bar+ slot's +scope+, +query+, +current_sort+ and
+      # +current_direction+ are what its form keeps as the +scope+, +q+, +sort+
+      # and +direction+ hidden fields (nil when not set).
       SLOTS = {
         shell: %i[current_user],
         navbar: %i[current_user title],
         sidebar: %i[current_user],
         table: %i[records fields resource_class current_user current_sort current_direction scope query base_url],
         form: %i[record fields resource_class url current_user],
-        filter_bar: %i[filters resource_class form_url scope query active_count current_user],
+        filter_bar: %i[filters resource_class form_url scope query active_count current_user
+                       current_sort current_direction],
         search: %i[resource_class form_url value placeholder hidden_params current_user],
       }.freeze
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Sort for filter bar overrides** — The `filter_bar` component slot also passes `current_sort:` and `current_direction:` (nil when the index is not sorted), so a custom filter bar can keep the sort as `sort` and `direction` hidden fields. Overrides whose `initialize` does not declare them keep working. `Filters::BarComponent` takes the same two keywords: it keeps them as hidden fields, and its Clear link now keeps the scope, search and sort instead of going back to the bare index URL.
+
 ### Fixed
 
 - **Scope tabs keep the index state** — Clicking a scope tab on an index page keeps the search, the active filters and the sort, and starts back at the first page. Before, it kept only the search. `Ui::ScopesComponent` drops the `scope` and `page` of its `params:`, so passing it `iron_admin_index_state` does the same; before, a String `"scope"` key in `params:` could win over the tab's own scope.

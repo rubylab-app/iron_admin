@@ -183,6 +183,41 @@ RSpec.describe "Component overrides", type: :request do
       end
     end
 
+    context "with a filter bar override and a sorted index" do
+      before do
+        IronAdmin.configuration.components.filter_bar =
+          probe_component("custom-filter-bar", :current_sort, :current_direction, :scope, :query)
+        get iron_admin.resources_path("users", sort: "name", direction: "desc", q: "Ada")
+      end
+
+      it "passes the sort and direction, so the filter form can keep them" do
+        expect(probe_payload("custom-filter-bar")).to include("current_sort" => "name", "current_direction" => "desc")
+      end
+
+      it "passes the search query" do
+        expect(probe_payload("custom-filter-bar")).to include("query" => "Ada")
+      end
+    end
+
+    context "with a filter bar override whose initialize does not take the sort" do
+      before do
+        legacy_bar = Class.new(ViewComponent::Base) do
+          def initialize(form_url:, scope: nil, query: nil)
+            super()
+            @state = { form_url: form_url, scope: scope, query: query }
+          end
+
+          def call = tag.div(@state.to_json, id: "legacy-filter-bar")
+        end
+        IronAdmin.configuration.components.filter_bar = named_component("LegacyFilterBar", legacy_bar)
+        get iron_admin.resources_path("users", sort: "name", direction: "desc", q: "Ada")
+      end
+
+      it "still renders it with the keywords it declares" do
+        expect(probe_payload("legacy-filter-bar")).to eq("form_url" => "/admin/users", "scope" => nil, "query" => "Ada")
+      end
+    end
+
     context "with a filter bar override on a resource without filters" do
       it "renders nothing in its place" do
         allow(user_resource).to receive(:all_filters).and_return([])

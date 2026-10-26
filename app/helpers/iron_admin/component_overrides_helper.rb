@@ -33,7 +33,8 @@ module IronAdmin
     def iron_admin_filter_bar_component(resource_class, filters:, scope:)
       iron_admin_resource_component(:filter_bar, resource_class) do
         { filters: filters, form_url: resources_path(resource_class.resource_name), scope: scope,
-          query: params[:q], active_count: filters.count { |filter| iron_admin_active_filter?(filter) }, }
+          query: params[:q], active_count: filters.count { |filter| iron_admin_active_filter?(filter) },
+          current_sort: iron_admin_index_state["sort"], current_direction: iron_admin_index_state["direction"], }
       end
     end
 

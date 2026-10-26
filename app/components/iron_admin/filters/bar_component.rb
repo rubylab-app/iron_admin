@@ -3,7 +3,8 @@
 module IronAdmin
   # Filter components for search and filtering records.
   module Filters
-    # Renders the filter bar containing search and filter controls.
+    # Renders the filter bar containing search and filter controls. Applying
+    # or clearing the filters keeps the scope, search query and sort.
     class BarComponent < ViewComponent::Base
       renders_many :filters
 
@@ -19,21 +20,46 @@ module IronAdmin
       # @return [Integer] Number of active filters
       attr_reader :active_count
 
+      # @return [String, nil] Column the index is sorted by
+      attr_reader :current_sort
+
+      # @return [String, nil] Sort direction ("asc" or "desc")
+      attr_reader :current_direction
+
       # @param form_url [String] Form submission URL
       # @param scope [String, nil] Current scope
       # @param query [String, nil] Current query
       # @param active_count [Integer] Active filter count
-      def initialize(form_url:, scope: nil, query: nil, active_count: 0)
+      # @param current_sort [String, nil] Current sort column, kept when filtering
+      # @param current_direction [String, nil] Current sort direction, kept when filtering
+      def initialize(form_url:, scope: nil, query: nil, active_count: 0, current_sort: nil, current_direction: nil)
         @form_url = form_url
         @scope = scope
         @query = query
         @active_count = active_count
+        @current_sort = current_sort
+        @current_direction = current_direction
       end
 
       # @api private
       # @return [IronAdmin::Configuration::Theme] Theme configuration
       def theme
         IronAdmin.configuration.theme
+      end
+
+      # @api private
+      # @return [Hash{String => String}] The sort and direction the form keeps, when set
+      def sort_params
+        { "sort" => current_sort, "direction" => current_direction }.compact_blank
+      end
+
+      # @api private
+      # @return [String] Index URL without filters, keeping the scope, search query and sort
+      def clear_url
+        state = { "scope" => scope, "q" => query }.compact_blank.merge(sort_params)
+        return form_url if state.empty?
+
+        "#{form_url}#{form_url.include?("?") ? "&" : "?"}#{state.to_query}"
       end
 
       # @api private
