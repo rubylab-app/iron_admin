@@ -39,6 +39,31 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
     end
   end
 
+  describe "content behind the mobile drawer" do
+    # The cp-sidebar controller makes these inert while the drawer is open below lg.
+    subject(:content) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new) { "Page body" }.css("[data-cp-sidebar-target='content']")
+      end
+    end
+
+    it "includes the skip link" do
+      expect(content.pluck(:href)).to include("#main-content")
+    end
+
+    it "includes the column with the navbar and the main landmark" do
+      expect(content.count { |element| element.at_css("header") && element.at_css("main#main-content") }).to eq(1)
+    end
+
+    it "leaves out the sidebar" do
+      expect(content.select { |element| element.at_css("#cp-sidebar-panel") }).to be_empty
+    end
+
+    it "leaves out the backdrop, which closes the drawer when clicked" do
+      expect(content.select { |element| element.at_css("[data-cp-sidebar-target='backdrop']") }).to be_empty
+    end
+  end
+
   describe "slots" do
     it "declares sidebar slot" do
       expect(described_class.registered_slots).to have_key(:sidebar)
@@ -121,6 +146,18 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
 
       it "hides the skip link until it is focused" do
         expect(rendered.at_css("a[href='#main-content']")[:class].split).to include("sr-only", "focus:not-sr-only")
+      end
+    end
+
+    context "with a page title" do
+      subject(:rendered) do
+        with_controller_class(IronAdmin::ApplicationController) do
+          render_inline(described_class.new) { "<h1>Users</h1>".html_safe }
+        end
+      end
+
+      it "renders it as the page's only h1" do
+        expect(rendered.css("h1").map { |heading| heading.text.strip }).to eq(["Users"])
       end
     end
 

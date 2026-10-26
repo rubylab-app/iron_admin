@@ -49,6 +49,44 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     expect(result.text).to include("Licensing")
   end
 
+  describe "brand" do
+    subject(:result) { render_inline(described_class.new) }
+
+    before { IronAdmin.configuration.title = "Meridian Admin" }
+
+    it "is not a heading, so the page title stays the page's only h1" do
+      expect(result.css("h1, h2, h3, h4, h5, h6")).to be_empty
+    end
+
+    it "shows the configured title with the brand classes" do
+      expect(result.at_css(".text-xl.font-bold")&.text&.strip).to eq("Meridian Admin")
+    end
+
+    context "with a logo" do
+      before { IronAdmin.configuration.logo = "/images/logo.png" }
+
+      it "renders the logo instead of the title" do
+        expect(result.at_css("img.h-8")&.[](:src)).to eq("/images/logo.png")
+      end
+
+      it "renders no heading" do
+        expect(result.css("h1, h2, h3, h4, h5, h6")).to be_empty
+      end
+    end
+  end
+
+  describe "drawer close button" do
+    subject(:close_button) { render_inline(described_class.new).at_css("button[aria-label='Close menu']") }
+
+    it "closes the drawer" do
+      expect(close_button["data-action"]).to eq("cp-sidebar#close")
+    end
+
+    it "is the cp-sidebar target that takes focus when the drawer opens" do
+      expect(close_button["data-cp-sidebar-target"]).to eq("closeButton")
+    end
+  end
+
   context "with custom menu items" do
     subject(:result) { render_inline(described_class.new) }
 

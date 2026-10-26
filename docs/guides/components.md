@@ -155,7 +155,13 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
 - `navbar` / `sidebar`: the built-in shell keeps its mobile drawer (the `cp-sidebar`
   Stimulus controller). To keep the drawer working, give your sidebar
   `data-cp-sidebar-target="panel"` and your navbar a button with
-  `data-action="cp-sidebar#toggle"`, as the built-in components do.
+  `data-action="cp-sidebar#toggle"` and `data-cp-sidebar-target="toggle"`, as the built-in
+  components do. The controller opens and closes the panel by toggling its
+  `-translate-x-full` class, so give the panel that class and `lg:translate-x-0`. Below the
+  `lg` breakpoint, the controller makes the panel `inert` while the drawer is closed, and
+  the rest of the shell `inert` while it is open. Opening the drawer moves focus to the
+  sidebar element with `data-cp-sidebar-target="closeButton"` (or else to the panel's first
+  link or button), and closing it moves focus back to the toggle.
 - `table`: IronAdmin still renders the scope tabs, search, filters, bulk-action bar and
   pagination around it. Only the bulk-action bar, the table and the pagination are inside
   the `records` Turbo frame; the scope tabs, search and filters sit outside it. The frame
@@ -293,7 +299,7 @@ end
 -# app/components/admin_navbar_component.html.haml
 %nav{ class: "#{theme.navbar_bg} p-4" }
   .flex.items-center.justify-between
-    %h1{ class: theme.body_text }= @title
+    %span{ class: theme.body_text }= @title
     %span{ class: theme.muted_text }= @current_user&.name
 ```
 
