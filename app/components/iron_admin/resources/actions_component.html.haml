@@ -4,7 +4,7 @@
   .flex.flex-wrap.gap-2
     - actions.each do |action|
       = button_to action_url(action), method: :post,
-        data: action[:confirm] ? { turbo_confirm: "Are you sure?" } : {},
+        data: action[:confirm] ? { turbo_confirm: confirm_message(action) } : {},
         class: "#{theme.btn_ghost} inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg" do
         - if action[:icon]
           = heroicon action[:icon], variant: :outline, options: { class: "h-5 w-5" }

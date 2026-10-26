@@ -79,8 +79,9 @@
       %h2.text-lg.font-semibold.mb-4= I18n.t("iron_admin.resources.show.actions_label")
       .flex.gap-2.flex-wrap
         - @member_actions.each do |action|
+          - confirm = action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
           = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
-            data: action[:confirm] ? { turbo_confirm: I18n.t("iron_admin.resources.show.delete_confirm") } : {},
+            data: action[:confirm] ? { turbo_confirm: confirm } : {},
             class: cp_btn_ghost do
             - if action[:icon]
               = heroicon action[:icon], variant: :outline, options: { class: "h-5 w-5" }

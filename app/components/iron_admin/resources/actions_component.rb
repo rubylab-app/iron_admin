@@ -37,6 +37,13 @@ module IronAdmin
       end
 
       # @api private
+      # @param action [Hash] Action configuration
+      # @return [String] Text of the action's confirmation dialog
+      def confirm_message(action)
+        action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
+      end
+
+      # @api private
       # @return [Boolean] Whether to render the component
       def render?
         actions.any?

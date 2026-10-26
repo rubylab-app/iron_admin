@@ -19,6 +19,14 @@ RSpec.describe "Resource show page", type: :request do
           "show_actions_licenses"
         end
 
+        action :suspend, confirm: true, confirm_message: "Suspend this license?" do |license|
+          license.update!(status: :revoked)
+        end
+
+        action :expire, confirm: true do |license|
+          license.update!(status: :expired)
+        end
+
         action :renew do |license|
           license.update!(status: :active)
         end
@@ -42,6 +50,18 @@ RSpec.describe "Resource show page", type: :request do
     before do
       IronAdmin::ResourceRegistry.register(show_actions_resource)
       get iron_admin.resource_path("show_actions_licenses", license), as: :html
+    end
+
+    it "asks for confirmation with the action's confirm_message" do
+      expect(action_button(:suspend)["data-turbo-confirm"]).to eq("Suspend this license?")
+    end
+
+    it "asks for the default confirmation when the action has no confirm_message" do
+      expect(action_button(:expire)["data-turbo-confirm"]).to eq("Are you sure?")
+    end
+
+    it "does not ask for confirmation when the action does not request one" do
+      expect(action_button(:renew)["data-turbo-confirm"]).to be_nil
     end
 
     it "offers an action the policy allows" do

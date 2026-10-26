@@ -14,6 +14,7 @@ en:
       action:
         success: "Action completed"
         failure: "Action failed: %{error}"
+        confirm: "Are you sure?"
       bulk_action:
         no_records: "No records selected"
         success: "Bulk action completed"
