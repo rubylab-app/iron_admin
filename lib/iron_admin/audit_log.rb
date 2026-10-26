@@ -74,6 +74,13 @@ module IronAdmin
         @timestamp ||= Time.current
       end
 
+      # The attribute changes, matching {AuditEntry#record_changes}.
+      #
+      # @return [Hash]
+      def record_changes
+        changes
+      end
+
       # Converts the entry to a hash.
       #
       # @return [Hash] Entry attributes as a hash

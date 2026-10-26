@@ -45,5 +45,17 @@ module IronAdmin
     rescue ActiveRecord::NoDatabaseError, ActiveRecord::StatementInvalid
       false
     end
+
+    # When the action occurred, matching {AuditLog::Entry#timestamp}.
+    # @return [ActiveSupport::TimeWithZone]
+    def timestamp
+      created_at
+    end
+
+    # The stored user identifier, matching {AuditLog::Entry#user}.
+    # @return [String, nil]
+    def user
+      user_identifier
+    end
   end
 end

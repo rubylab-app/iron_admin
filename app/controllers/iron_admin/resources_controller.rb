@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "ostruct"
-
 module IronAdmin
   # Main controller handling CRUD operations for all admin resources.
   #
@@ -22,6 +20,7 @@ module IronAdmin
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
     include Concerns::Authorizable
+    include Concerns::EventEmittable
     include Concerns::Filterable
     include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
@@ -90,7 +89,7 @@ module IronAdmin
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def update
       @record = find_record(record_scope, params[:id])
-      attrs = resource_params
+      attrs = without_blank_passwords(resource_params)
       return render_invalid_json(:edit) if invalid_json_submission?
 
       purge_attachments(@record)
@@ -358,21 +357,10 @@ module IronAdmin
       parsed
     end
 
-    def emit_event(action, record)
-      event = OpenStruct.new(
-        user: iron_admin_current_user,
-        action: action,
-        resource: @resource_class.name,
-        record_id: record.id.to_s,
-        changes: adapter.record_changes(record),
-        ip_address: request.remote_ip
-      )
-
-      # Log to audit log if enabled
-      IronAdmin::AuditLog.log(event)
-
-      # Call on_action callback if configured
-      IronAdmin.configuration.on_action_block&.call(event)
+    # Password inputs never render the stored value, so a blank one means "unchanged".
+    def without_blank_passwords(attrs)
+      names = password_field_names
+      attrs.reject { |name, value| name.in?(names) && value.blank? }
     end
   end
 end

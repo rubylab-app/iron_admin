@@ -196,6 +196,12 @@ In 0.6.0, `config.components` and `Resource.component` stored overrides that not
 
 **Action required:** None. Custom adapters can keep returning `:pagy` until 0.8.0.
 
+### 17. Audit entries and `on_action` events mask secrets
+
+The changes IronAdmin records for a create, update or destroy replace the values of `:password` fields, and of every attribute matched by your app's `config.filter_parameters`, with `"[FILTERED]"`. This applies to new audit log entries and to the `changes` of the event passed to `config.on_action`. Entries recorded before the upgrade are not rewritten.
+
+**Action required:** If an `on_action` callback needs a filtered value, read it from the record instead of `event.changes`. To keep a column visible in the audit log, remove it from `filter_parameters`. Review existing `iron_admin_audit_entries` rows for secrets stored by earlier versions.
+
 ## What does NOT change
 
 - **Resource, dashboard, tool, and policy DSL** — No DSL method was removed or renamed. `Resource.component` now validates its slot (section 15).
