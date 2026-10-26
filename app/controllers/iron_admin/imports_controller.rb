@@ -61,8 +61,11 @@ module IronAdmin
       head(:forbidden) unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
     end
 
+    # Only a real multipart upload counts. A plain string would otherwise reach
+    # the parsers, which read it as a path on the server.
     def uploaded_file
-      params[:file]
+      file = params[:file]
+      file if file.respond_to?(:read) && file.respond_to?(:original_filename)
     end
 
     def importer

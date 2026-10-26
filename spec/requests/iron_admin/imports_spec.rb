@@ -172,6 +172,25 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
       expect(flash[:alert]).to eq("Something went wrong. Please try again.")
     end
+
+    context "when the file param is a plain string instead of an upload" do
+      let(:server_file) { Rails.root.join("tmp/imports_spec_server_file.csv") }
+
+      before do
+        FileUtils.mkdir_p(server_file.dirname)
+        File.write(server_file, "Name,Email\nServer,server-secret@example.com\n")
+      end
+
+      after { FileUtils.rm_f(server_file) }
+
+      it "does not read the named file from the server" do
+        post iron_admin.resource_import_preview_path("request_import_users"),
+             params: { import_format: "csv", file: server_file.to_s }
+
+        expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+        expect(response.body).not_to include("server-secret@example.com")
+      end
+    end
   end
 
   describe "POST /:resource_name/import" do
@@ -214,6 +233,24 @@ RSpec.describe "IronAdmin::Imports", type: :request do
            params: { file: upload("\"unterminated", "users.csv", "text/csv") }
 
       expect(flash[:alert]).to eq("Something went wrong. Please try again.")
+    end
+
+    context "when the file param is a plain string instead of an upload" do
+      let(:server_file) { Rails.root.join("tmp/imports_spec_server_file.csv") }
+
+      before do
+        FileUtils.mkdir_p(server_file.dirname)
+        File.write(server_file, "Name,Email\nServer,server-secret@example.com\n")
+      end
+
+      after { FileUtils.rm_f(server_file) }
+
+      it "does not import the named file from the server" do
+        expect do
+          post iron_admin.resource_import_path("request_import_users"),
+               params: { import_format: "csv", file: server_file.to_s }
+        end.not_to change(User, :count)
+      end
     end
   end
 
