@@ -152,8 +152,17 @@ module IronAdmin
 
       # --- Batch ---
 
-      def find_each(scope, &)
-        scope.find_each(&)
+      # ActiveRecord's find_each drops ORDER BY and walks the primary key, so an
+      # ordered scope is paged with LIMIT/OFFSET instead, keeping the index order.
+      def find_each(scope, batch_size: 1000, &)
+        return scope.find_each(batch_size: batch_size, &) if scope.order_values.empty?
+
+        ordered = order_with_primary_key_tiebreak(scope)
+        0.step(by: batch_size) do |offset|
+          batch = ordered.limit(batch_size).offset(offset).to_a
+          batch.each(&)
+          break if batch.size < batch_size
+        end
       end
 
       # --- Adapter-Agnostic Interface ---
@@ -192,6 +201,12 @@ module IronAdmin
         table = conn.quote_table_name(model_class.table_name)
         operator = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
         "#{table}.#{conn.quote_column_name(column)} #{operator} #{placeholder} #{like_escape_clause}"
+      end
+
+      # OFFSET pages are only stable when the order is total.
+      def order_with_primary_key_tiebreak(scope)
+        keys = Array(primary_key).map(&:to_sym)
+        keys.empty? ? scope : scope.order(*keys)
       end
 
       def like_escape_clause

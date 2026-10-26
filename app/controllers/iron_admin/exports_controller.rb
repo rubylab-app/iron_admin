@@ -3,7 +3,8 @@
 module IronAdmin
   # Controller for exporting resource data to CSV and JSON formats.
   #
-  # Exports respect field visibility settings and tenant scoping.
+  # Exports respect field visibility settings and tenant scoping. Password
+  # fields are left out unless export_fields lists them, and then masked.
   # Access via /admin/:resource_name/export.csv or .json
   #
   # @see IronAdmin::Resource#exports
@@ -13,8 +14,12 @@ module IronAdmin
     include Concerns::Scopeable
     include Concerns::Searchable
 
+    # What a listed :password field exports instead of its value.
+    FILTERED_VALUE = "[FILTERED]"
+
     before_action :set_resource_class
     before_action :ensure_read_allowed
+    before_action :ensure_format_enabled
 
     # Exports resource data in the requested format.
     #
@@ -51,15 +56,23 @@ module IronAdmin
       render_forbidden unless @resource_class.crud_allowed?(:read, iron_admin_current_user)
     end
 
+    # Formats left out of the resource's `exports` call are not served.
+    def ensure_format_enabled
+      return if performed?
+
+      head(:not_found) unless @resource_class.export_formats.map(&:to_sym).include?(request.format.symbol)
+    end
+
     def adapter
       @resource_class.adapter
     end
 
     def export_fields
       fields = if @resource_class.export_field_names
-                 @resource_class.resolved_fields.select { |f| f.name.in?(@resource_class.export_field_names) }
+                 fields_by_name = @resource_class.resolved_fields.index_by(&:name)
+                 @resource_class.export_field_names.filter_map { |name| fields_by_name[name.to_sym] }
                else
-                 @resource_class.resolved_fields
+                 @resource_class.resolved_fields.reject { |f| f.type == :password }
                end
 
       # Security: Filter out fields not visible to the current user
@@ -78,6 +91,7 @@ module IronAdmin
 
     def safe_field_value(record, field, format)
       return "[Error: field not found]" unless record.respond_to?(field.name)
+      return FILTERED_VALUE if field.type == :password
 
       value = record.public_send(field.name)
       formatted = format_for_export(value, field, format)
@@ -95,6 +109,7 @@ module IronAdmin
 
     def format_for_export(value, field, format)
       return "" if value.nil?
+      return format_attachment(value, format) if value.respond_to?(:attached?)
       return value if format == :json && value.is_a?(Hash)
       return value if format == :json && value.is_a?(Array)
 
@@ -104,6 +119,21 @@ module IronAdmin
       when :belongs_to then format_belongs_to(value, field)
       else value.to_s
       end
+    end
+
+    # ActiveStorage proxies are never nil and would otherwise export their inspect string.
+    def format_attachment(value, format)
+      filenames = attachment_filenames(value)
+      return filenames.first.to_s unless value.is_a?(ActiveStorage::Attached::Many)
+
+      format == :json ? filenames : filenames.join(", ")
+    end
+
+    def attachment_filenames(value)
+      return [] unless value.attached?
+
+      attachments = value.is_a?(ActiveStorage::Attached::Many) ? value.attachments : [value]
+      attachments.map { |attachment| attachment.filename.to_s }
     end
 
     def format_belongs_to(associated_record, field)

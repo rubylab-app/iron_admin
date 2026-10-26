@@ -332,6 +332,55 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       adapter.find_each(adapter.all) { |user| names << user.name }
       expect(names.size).to eq(3)
     end
+
+    context "when the scope is ordered" do
+      subject(:names) do
+        collected = []
+        adapter.find_each(User.order(name: :desc), batch_size: 2) { |user| collected << user.name }
+        collected
+      end
+
+      before do
+        %w[Bravo Delta Alpha Echo Charlie].each { |name| create(:user, name: name) }
+      end
+
+      it "keeps the scope order across batches" do
+        expect(names).to eq(%w[Echo Delta Charlie Bravo Alpha])
+      end
+    end
+
+    context "when the order has ties" do
+      subject(:emails) do
+        collected = []
+        adapter.find_each(User.order(role: :asc), batch_size: 2) { |user| collected << user.email }
+        collected
+      end
+
+      before do
+        5.times { |i| create(:user, role: "member", email: "tie#{i}@example.com") }
+      end
+
+      it "yields every record exactly once" do
+        expect(emails).to match_array(User.pluck(:email))
+      end
+    end
+
+    context "when the model has no primary key" do
+      subject(:names) do
+        collected = []
+        adapter.find_each(User.order(name: :asc), batch_size: 2) { |user| collected << user.name }
+        collected
+      end
+
+      before do
+        %w[Charlie Alpha Bravo].each { |name| create(:user, name: name) }
+        allow(User).to receive(:primary_key).and_return(nil)
+      end
+
+      it "keeps the scope order" do
+        expect(names).to eq(%w[Alpha Bravo Charlie])
+      end
+    end
   end
 
   describe "#record_changes" do
