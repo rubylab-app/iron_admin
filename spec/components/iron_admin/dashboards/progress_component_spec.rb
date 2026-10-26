@@ -82,4 +82,16 @@ RSpec.describe IronAdmin::Dashboards::ProgressComponent, type: :component do
       expect(result.to_html).to include("width: 25.0%")
     end
   end
+
+  # The dashboard page title is the h1, so a widget title is an h2.
+  describe "widget title" do
+    subject(:headings) do
+      render_inline(described_class.new(title: "Signups", value: 50, max: 100))
+        .css("h1, h2, h3, h4, h5, h6")
+    end
+
+    it "is an h2, one level below the page title" do
+      expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([%w[h2 Signups]])
+    end
+  end
 end

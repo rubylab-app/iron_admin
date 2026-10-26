@@ -28,6 +28,10 @@ RSpec.describe IronAdmin::Configuration do
       expect(config.logo).to be_nil
     end
 
+    it "sets favicon to nil, so the layout links no icon" do
+      expect(config.favicon).to be_nil
+    end
+
     it "sets badge_colors to match DEFAULT_BADGE_COLORS" do
       expect(config.badge_colors).to eq(described_class::DEFAULT_BADGE_COLORS)
     end
@@ -229,6 +233,12 @@ RSpec.describe IronAdmin::Configuration do
       config.logo = "/images/logo.png"
 
       expect(config.logo).to eq("/images/logo.png")
+    end
+
+    it "allows setting favicon" do
+      config.favicon = "/favicon.svg"
+
+      expect(config.favicon).to eq("/favicon.svg")
     end
 
     it "allows setting audit_enabled" do

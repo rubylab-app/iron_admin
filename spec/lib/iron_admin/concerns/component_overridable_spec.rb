@@ -38,6 +38,13 @@ RSpec.describe IronAdmin::Concerns::ComponentOverridable do
       end
     end
 
+    context "with the flash slot" do
+      it "raises an ArgumentError pointing at config.components" do
+        expect { resource_class.component :flash, table_component }
+          .to raise_error(ArgumentError, /config\.components\.flash/)
+      end
+    end
+
     context "with an unknown slot" do
       it "raises an ArgumentError listing the resource slots" do
         expect { resource_class.component :index, table_component }

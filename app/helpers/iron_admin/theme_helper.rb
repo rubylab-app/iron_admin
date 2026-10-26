@@ -135,6 +135,11 @@ module IronAdmin
       "#{t.sidebar_link} #{t.sidebar_link_hover}"
     end
 
+    # @return [String] Classes of the sidebar link for the current page
+    def cp_sidebar_link_active
+      t.sidebar_link_active
+    end
+
     # @return [String] Sidebar group label classes
     def cp_sidebar_group_label
       t.sidebar_group_label

@@ -1,6 +1,6 @@
 %div{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow} p-6",
      data: { controller: "cp-chart", cp_chart_config_value: chart_config } }
-  %h3.text-lg.font-semibold.mb-4{ class: theme.body_text }
+  %h2.text-lg.font-semibold.mb-4{ class: theme.body_text }
     = title
   %div{ style: "height: #{height}px; position: relative;" }
     %canvas{ data: { cp_chart_target: "canvas" } }

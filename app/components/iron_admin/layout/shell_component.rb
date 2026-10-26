@@ -5,9 +5,10 @@ module IronAdmin
   module Layout
     # Renders the main admin panel shell with sidebar and navbar.
     #
-    # The sidebar and navbar are the ones set in +config.components+ (or a
-    # plugin), falling back to {SidebarComponent} and {NavbarComponent}.
-    # Flash messages ({FlashComponent}) render above the page content.
+    # The sidebar, navbar and flash messages are the ones set in
+    # +config.components+ (or a plugin), falling back to {SidebarComponent},
+    # {NavbarComponent} and {FlashComponent}. Flash messages render above the
+    # page content.
     class ShellComponent < ViewComponent::Base
       renders_one :sidebar, ->(**arguments) { IronAdmin.configuration.components.build(:sidebar, **arguments) }
       renders_one :navbar, ->(**arguments) { IronAdmin.configuration.components.build(:navbar, **arguments) }
@@ -15,6 +16,12 @@ module IronAdmin
       # @param current_user [Object, nil] Current user
       def initialize(current_user: nil)
         @current_user = current_user
+      end
+
+      # @api private
+      # @return [ViewComponent::Base] The +flash+ slot's component, given the request's flash
+      def flash_messages
+        IronAdmin.configuration.components.build(:flash, flash: helpers.flash, current_user: @current_user)
       end
 
       # @api private

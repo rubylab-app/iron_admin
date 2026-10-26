@@ -495,5 +495,67 @@ RSpec.describe "Component overrides", type: :request do
         expect(response.body).to include('id="custom-navbar"')
       end
     end
+
+    context "with a flash override from a plugin" do
+      let(:custom_flash) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(flash:)
+            super()
+            @flash = flash
+          end
+
+          def call
+            tag.div(@flash[:notice], id: "custom-flash")
+          end
+        end
+        named_component("Flash", component)
+      end
+
+      before do
+        flash_component = custom_flash
+        plugin = Class.new(IronAdmin::Plugin) do
+          plugin_name "component_overrides_flash_spec"
+          setup { |admin| admin.component :flash, flash_component }
+        end
+        IronAdmin.register_plugin(plugin)
+        patch iron_admin.resource_path("users", create(:user)), params: { record: { name: "Renamed" } }
+        follow_redirect!
+      end
+
+      it "shows the redirect's flash message with the plugin's component" do
+        expect(response.parsed_body.at_css("main#main-content #custom-flash")&.text).to eq("User updated.")
+      end
+
+      it "drops the built-in flash alert" do
+        expect(response.parsed_body.css("main#main-content [role='alert']")).to be_empty
+      end
+    end
+
+    context "with a shell override that renders the flash slot" do
+      let(:flash_shell) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(current_user: nil)
+            super()
+            @current_user = current_user
+          end
+
+          def call
+            flash_messages = helpers.iron_admin_component(:flash, flash: helpers.flash, current_user: @current_user)
+            tag.main(safe_join([render(flash_messages), content]), id: "main-content")
+          end
+        end
+        named_component("FlashShell", component)
+      end
+
+      before do
+        IronAdmin.configuration.components.shell = flash_shell
+        patch iron_admin.resource_path("users", create(:user)), params: { record: { name: "Renamed" } }
+        follow_redirect!
+      end
+
+      it "shows the redirect's flash message as an alert" do
+        expect(response.parsed_body.at_css("main#main-content [role='alert']")&.text&.squish).to eq("User updated.")
+      end
+    end
   end
 end

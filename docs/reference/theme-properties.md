@@ -19,6 +19,7 @@
 | | `sidebar_title` | `text-white` |
 | | `sidebar_link` | `text-gray-300` |
 | | `sidebar_link_hover` | `hover:bg-gray-800 hover:text-white` |
+| | `sidebar_link_active` | `bg-gray-800 text-white` |
 | | `sidebar_group_label` | `text-gray-400` |
 | Navbar | `navbar_bg` | `bg-white` |
 | | `navbar_border` | `border-gray-200` |

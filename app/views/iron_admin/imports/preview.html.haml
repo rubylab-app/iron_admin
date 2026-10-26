@@ -18,7 +18,7 @@
     %h2.text-sm.font-semibold.mb-3{ class: cp_label_text }= I18n.t("iron_admin.imports.preview.mapping_title")
     .flex.flex-wrap.gap-2
       - @preview.mapping.each do |header, field_name|
-        %span.inline-flex.items-center.rounded-md.bg-gray-100.px-2.py-1.text-xs.font-medium{ class: cp_muted_text }
+        %span.inline-flex.items-center.rounded-md.bg-gray-100.px-2.py-1.text-xs.font-medium{ class: cp_label_text }
           = "#{header} -> #{field_name.to_s.humanize}"
 
   .overflow-x-auto

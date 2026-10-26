@@ -214,6 +214,50 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
       end
     end
 
+    context "with a global flash override" do
+      subject(:rendered) do
+        with_controller_class(IronAdmin::ApplicationController) do
+          vc_test_controller.flash[:notice] = "User created."
+          render_inline(described_class.new(current_user: "admin@example.com")) { "Page body" }
+        end
+      end
+
+      let(:custom_flash) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(flash:, current_user:)
+            super()
+            @flash = flash
+            @current_user = current_user
+          end
+
+          def call
+            tag.div("#{@flash[:notice]} for #{@current_user}", id: "custom-flash")
+          end
+        end
+        stub_const("ShellSpecFlashComponent", component)
+      end
+
+      let(:html) { rendered.to_html }
+
+      before { IronAdmin.configuration.components.flash = custom_flash }
+
+      it "renders the override with the request's flash and the current user" do
+        expect(rendered.at_css("#custom-flash").text).to eq("User created. for admin@example.com")
+      end
+
+      it "drops the built-in flash messages" do
+        expect(rendered.css("[role='alert']")).to be_empty
+      end
+
+      it "renders the override in the main landmark" do
+        expect(rendered.at_css("main#main-content #custom-flash")).to be_present
+      end
+
+      it "renders the override before the page content" do
+        expect(html.index("custom-flash")).to be < html.index("Page body")
+      end
+    end
+
     context "with the sidebar slot set explicitly" do
       it "renders the configured override" do
         IronAdmin.configuration.components.sidebar = custom_sidebar

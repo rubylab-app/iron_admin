@@ -39,6 +39,7 @@ config.theme do |t|
   t.sidebar_title = "text-white"
   t.sidebar_link = "text-slate-400"
   t.sidebar_link_hover = "hover:bg-slate-800 hover:text-white"
+  t.sidebar_link_active = "bg-slate-800 text-white"
   t.sidebar_group_label = "text-slate-500"
 
   t.navbar_bg = "bg-white"
@@ -69,12 +70,29 @@ See [Theme Properties Reference](../reference/theme-properties.md) for the compl
 - **Focus & Inputs**: `focus_ring`, `input_border`, `input_focus`, `checkbox_checked`
 - **Scopes/Tabs**: `scope_active`, `scope_inactive`
 - **Badge**: `badge_count`
-- **Sidebar**: `sidebar_bg`, `sidebar_title`, `sidebar_link`, `sidebar_link_hover`, `sidebar_group_label`
+- **Sidebar**: `sidebar_bg`, `sidebar_title`, `sidebar_link`, `sidebar_link_hover`, `sidebar_link_active`, `sidebar_group_label`
 - **Navbar**: `navbar_bg`, `navbar_border`, `navbar_search_bg`, `navbar_search_focus_bg`
 - **Table**: `table_header_bg`, `table_row_hover`, `table_border`
 - **Cards**: `card_bg`, `card_border`, `card_shadow`
 - **Typography**: `font_family`, `heading_weight`, `body_text`, `muted_text`, `label_text`
 - **Layout**: `border_radius`
+
+### Current page in the sidebar
+
+The sidebar link for the current page gets `aria-current="page"` and the `sidebar_link_active`
+classes **instead of** `sidebar_link` and `sidebar_link_hover`, so give it a text color as well as
+a background. The default, `bg-gray-800 text-white`, matches the default hover colors.
+
+- The **Dashboard** link is current on the dashboard only.
+- A **resource** link is current on every page of that resource: index, show, new and edit
+  (including the form shown again after a failed save), imports and action forms.
+- A **tool** link is current on the tool's page and its action forms.
+- A custom **menu item** (for example from a plugin) is current when the request path is the
+  item's path. The query string, the fragment and a trailing slash are ignored. For an item
+  with an absolute URL, the scheme and host must match too.
+
+`sidebar_link_hover` must use `hover:` variants (for example `hover:bg-gray-800`). Without
+them, every link looks like the current one.
 
 ## Theme Helpers in Views
 

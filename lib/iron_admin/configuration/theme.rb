@@ -87,6 +87,10 @@ module IronAdmin
       # @return [String] Sidebar link hover classes
       attr_accessor :sidebar_link_hover
 
+      # @return [String] Classes of the sidebar link for the current page, used instead of
+      #   {#sidebar_link} and {#sidebar_link_hover} (default: "bg-gray-800 text-white")
+      attr_accessor :sidebar_link_active
+
       # @return [String] Sidebar group label classes
       attr_accessor :sidebar_group_label
 
@@ -241,6 +245,7 @@ module IronAdmin
         @sidebar_title = "text-white"
         @sidebar_link = "text-gray-300"
         @sidebar_link_hover = "hover:bg-gray-800 hover:text-white"
+        @sidebar_link_active = "bg-gray-800 text-white"
         @sidebar_group_label = "text-gray-400"
       end
 

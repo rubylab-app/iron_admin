@@ -16,12 +16,13 @@
         = link_to url_for(request.query_parameters.merge(page: pagy.previous)), class: "relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0" do
           Previous
       - else
-        %span.relative.inline-flex.items-center.rounded-md.bg-white.px-3.py-2.text-sm.font-semibold.text-gray-300.ring-1.ring-inset.ring-gray-300.cursor-not-allowed
+        -# A link with no href, marked disabled: its faded text is exempt from WCAG contrast.
+        %span.relative.inline-flex.items-center.rounded-md.bg-white.px-3.py-2.text-sm.font-semibold.text-gray-300.ring-1.ring-inset.ring-gray-300.cursor-not-allowed{ role: "link", "aria-disabled": "true" }
           Previous
 
       - if pagy.next
         = link_to url_for(request.query_parameters.merge(page: pagy.next)), class: "relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0" do
           Next
       - else
-        %span.relative.ml-3.inline-flex.items-center.rounded-md.bg-white.px-3.py-2.text-sm.font-semibold.text-gray-300.ring-1.ring-inset.ring-gray-300.cursor-not-allowed
+        %span.relative.ml-3.inline-flex.items-center.rounded-md.bg-white.px-3.py-2.text-sm.font-semibold.text-gray-300.ring-1.ring-inset.ring-gray-300.cursor-not-allowed{ role: "link", "aria-disabled": "true" }
           Next
