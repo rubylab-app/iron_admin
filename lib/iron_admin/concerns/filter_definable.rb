@@ -11,6 +11,9 @@ module IronAdmin
       # Columns that never get an inferred filter.
       SKIP_FILTER_COLUMNS = %w[id created_at updated_at].freeze
 
+      # Field types the UI never shows; a filter on one would let readers probe the value.
+      SENSITIVE_FIELD_TYPES = %i[password hidden].freeze
+
       module FilterDsl
         # Defines an index filter. It replaces the auto-inferred filter of the same name.
         #
@@ -36,11 +39,12 @@ module IronAdmin
 
         # @api private
         # Filters inferred from enums (:select), string/text columns (:string)
-        # and numeric columns (:number). Removed filters get none.
+        # and numeric columns (:number). Removed filters and :password, :hidden
+        # or never-visible fields get none.
         #
         # @return [Array<Hash>] Auto-generated filter configurations
         def auto_inferred_filters
-          excluded = removed_filter_names
+          excluded = removed_filter_names + sensitive_field_names
           enum_filters = enum_auto_filters(excluded)
           enum_filters + infer_column_filters(excluded + enum_filters.pluck(:name))
         end
@@ -56,6 +60,12 @@ module IronAdmin
         end
 
         private
+
+        def sensitive_field_names
+          field_overrides.filter_map do |name, options|
+            name.to_sym if SENSITIVE_FIELD_TYPES.include?(options[:type]) || options[:visible] == false
+          end
+        end
 
         # A declared :select on an enum with no options of its own offers the enum values.
         def with_enum_options(filter)

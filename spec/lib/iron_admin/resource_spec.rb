@@ -781,6 +781,92 @@ RSpec.describe IronAdmin::Resource do
         expect(resource_with_non_enum_model.auto_inferred_filters).to eq([])
       end
     end
+
+    context "when a field is declared as :password" do
+      subject(:filter_names) { resource.auto_inferred_filters.pluck(:name) }
+
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "PasswordFilterDocumentResource"
+          end
+
+          field :password_hash, type: :password
+        end
+      end
+
+      it "does not infer a filter for it" do
+        expect(filter_names).not_to include(:password_hash)
+      end
+
+      it "still infers filters for the other columns" do
+        expect(filter_names).to include(:title)
+      end
+
+      context "when the resource declares a filter for it" do
+        before { resource.filter :password_hash, type: :string }
+
+        it "keeps the declared filter" do
+          expect(resource.all_filters.pluck(:name)).to include(:password_hash)
+        end
+      end
+    end
+
+    context "when a field is declared as :hidden" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Widget
+
+          def self.name
+            "HiddenFilterWidgetResource"
+          end
+
+          field :secret_token, type: :hidden
+        end
+      end
+
+      it "does not infer a filter for it" do
+        expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:secret_token)
+      end
+    end
+
+    context "when a field is never visible" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "InvisibleFilterUserResource"
+          end
+
+          field :email, visible: false
+        end
+      end
+
+      it "does not infer a filter for it" do
+        expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:email)
+      end
+    end
+
+    context "when a field is an enum declared as :password" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "PasswordEnumLicenseResource"
+          end
+
+          field :status, type: :password
+        end
+      end
+
+      it "does not infer the enum filter" do
+        expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:status)
+      end
+    end
   end
 
   describe ".remove_filter" do

@@ -60,4 +60,43 @@ RSpec.describe "IronAdmin index filters", type: :request do
       expect(response.body).not_to include("KEY-ACTIVE")
     end
   end
+
+  describe "a :password field" do
+    let(:resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = Document
+
+        def self.name
+          "PasswordFilterDocumentResource"
+        end
+
+        def self.resource_name
+          "password_filter_documents"
+        end
+
+        field :password_hash, type: :password
+        index_fields :id, :title
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(resource)
+      create(:document, title: "Matching Doc", password_hash: "tok_abc123")
+      create(:document, title: "Other Doc", password_hash: "zzz_999")
+    end
+
+    it "renders no filter control for it" do
+      get iron_admin.resources_path("password_filter_documents"), as: :html
+
+      expect(response.body).not_to include("filters[password_hash]")
+    end
+
+    it "ignores a crafted filter on it" do
+      get iron_admin.resources_path("password_filter_documents"),
+          params: { filters: { password_hash: { op: "starts_with", value: "tok_" } } },
+          as: :html
+
+      expect(response.body).to include("Matching Doc", "Other Doc")
+    end
+  end
 end
