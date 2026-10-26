@@ -52,7 +52,7 @@ end
 Visibility and readonly rules are enforced across:
 - Index table columns
 - Show page fields
-- Form fields (readonly fields are disabled)
+- Form fields (readonly fields are not rendered, and values submitted for them are not assigned on create or update; the `<name>_purge` remove-file parameter of a readonly `:file` field is still honored)
 - CSV/JSON exports
 - Search queries
 

@@ -1,8 +1,9 @@
 # Plugin / Community Extension System — Design Proposal
 
 > Status: **Design proposal + proof-of-concept skeleton.** The registration
-> core and two-and-a-half extension points are implemented and tested; the
-> remaining extension points are specified here but not yet built. This
+> core and three extension points (menu items, component overrides and field
+> types) are implemented and tested; the remaining extension points are
+> specified here but not yet built. This
 > document is the contract a maintainer should approve before the feature is
 > completed.
 >
@@ -105,13 +106,21 @@ anywhere" model the PoC uses for the config-level extension points. See §5.
 
 ### 2b. Component overrides — **implemented**
 
-Delegates to `IronAdmin::Configuration::Components`. Any existing slot
-(`:table`, `:form`, `:navbar`, `:sidebar`, `:shell`, `:search`, `:filter_bar`)
-can be swapped:
+Same as setting `config.components.<slot>`. Any global slot (`:shell`,
+`:navbar`, `:sidebar`, `:table`, `:form`, `:filter_bar`, `:search`) can be
+swapped, and the override is used when IronAdmin renders that slot. A
+resource's own `component` override still wins for `:table`, `:form`,
+`:filter_bar` and `:search`:
 
 ```ruby
-setup { |admin| admin.component :navbar, MyPlugin::NavbarComponent }
+setup { |admin| admin.component :navbar, "MyPlugin::NavbarComponent" }
 ```
+
+The component is a `ViewComponent::Base` subclass or its class name. A class is
+checked when the plugin activates: one that takes positional arguments or
+requires a keyword the slot never passes raises `ArgumentError`. Each slot's
+keyword arguments are listed in `IronAdmin::Configuration::Components::SLOTS`
+and in the [components guide](guides/components.md#overriding-components).
 
 ### 2c. Field types — **implemented**
 
@@ -143,8 +152,12 @@ end
 
 Items de-duplicate by `group + label + path`, so the idempotent re-activation
 on every `to_prepare` (development reloads) never produces duplicate entries.
-Wiring `MenuRegistry.grouped`/`.sorted` into `SidebarComponent` is a small,
-deliberately-deferred follow-up (see §7).
+
+The sidebar renders these items after resources and tools, grouped by `group`
+(default "Plugins") and ordered by `priority` within each group (ties keep
+registration order). Menu items are not filtered by any resource policy: every
+user who can open the admin panel sees them, so the page they link to must do
+its own authorization.
 
 ### 2e. Adapters (design only)
 
@@ -177,7 +190,7 @@ A plugin is an ordinary gem. Recommended layout:
 
 ```
 iron_admin_reports/
-├── iron_admin_reports.gemspec        # depends on "iron_admin", ">= 0.6"
+├── iron_admin_reports.gemspec        # depends on "iron_admin", ">= 0.7"
 ├── lib/
 │   ├── iron_admin_reports.rb         # requires the plugin + engine
 │   └── iron_admin_reports/
@@ -190,7 +203,7 @@ iron_admin_reports/
         └── dashboards/…
 ```
 
-- The gemspec declares `spec.add_dependency "iron_admin", ">= 0.6", "< 2.0"` —
+- The gemspec declares `spec.add_dependency "iron_admin", ">= 0.7", "< 2.0"` —
   this is the coarse gate; the `requires_iron_admin` declaration (§5) is the
   runtime-checked fine gate.
 - If the plugin ships its own routes/assets/mount points it includes a nested
@@ -216,12 +229,12 @@ module IronAdminReports
   class Plugin < IronAdmin::Plugin
     plugin_name       "iron_admin_reports"
     plugin_version    "1.2.0"
-    requires_iron_admin ">= 0.6", "< 2.0"
+    requires_iron_admin ">= 0.7", "< 2.0"
 
     setup do |admin|                       # `admin` is a Plugin::Registration
       admin.menu_item label: "Reports", path: "/admin/reports",
                       icon: "chart-bar", group: "Analytics", priority: 20
-      admin.component :navbar, IronAdminReports::NavbarComponent
+      admin.component :navbar, "IronAdminReports::NavbarComponent"
       admin.field_type(:currency) do
         display { |record, field| record.public_send(field.name) }
       end
@@ -300,7 +313,7 @@ module IronAdminStripe
   class Plugin < IronAdmin::Plugin
     plugin_name       "iron_admin_stripe"
     plugin_version    "0.3.0"
-    requires_iron_admin ">= 0.6", "< 2.0"
+    requires_iron_admin ">= 0.7", "< 2.0"
 
     setup do |admin|
       # A read-only "Payments" report page the plugin's own engine mounts.
@@ -313,7 +326,7 @@ module IronAdminStripe
       end
 
       # A branded navbar for the billing section.
-      admin.component :navbar, IronAdminStripe::NavbarComponent
+      admin.component :navbar, "IronAdminStripe::NavbarComponent"
 
       # (planned) ship CRUD resources for cached Stripe objects:
       # admin.load_path File.expand_path("../../app/iron_admin", __dir__)
@@ -333,7 +346,7 @@ end
 IronAdmin.register_plugin(IronAdminStripe::Plugin)
 ```
 
-On boot: compatibility is checked against `0.6.0` → passes; the `:money` field
+On boot: compatibility is checked against `0.7.0` → passes; the `:money` field
 type is registered; the navbar is overridden; and a "Payments" entry appears
 under a "Billing" group in the sidebar. If Acme later upgrades to IronAdmin
 `2.1`, the plugin refuses to activate with a clear
@@ -350,7 +363,9 @@ under a "Billing" group in the sidebar. If Acme later upgrades to IronAdmin
 - `IronAdmin::PluginRegistry` (idempotent register/activate, `activate_all!`).
 - `IronAdmin.register_plugin` host entry point.
 - `IronAdmin::MenuItem` + `IronAdmin::MenuRegistry` (new sidebar extension
-  point).
+  point), rendered by `SidebarComponent` after resources and tools.
+- Component overrides from `admin.component` / `config.components`, used when
+  the layout, index, form and field inputs render.
 - `PluginError` / `IncompatiblePluginError`.
 - Engine re-activates plugins on `to_prepare`.
 - Full BetterSpecs coverage for the above.
@@ -361,7 +376,6 @@ under a "Billing" group in the sidebar. If Acme later upgrades to IronAdmin
   the activation-ordering contract (§2a, §5).
 - `#adapter` — de-freeze `Adapters::Registry` into a mutable registry (§2e).
 - `#on_action` — multi-subscriber lifecycle hooks (§2f).
-- Rendering `MenuRegistry` entries in `SidebarComponent` (§2d).
 - Fail-safe (isolated) activation policy (§6).
 - Generators (`rails g iron_admin:plugin`) and published authoring guide.
 

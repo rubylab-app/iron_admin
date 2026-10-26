@@ -8,9 +8,12 @@ IronAdmin is a convention-over-configuration admin panel engine for Ruby on Rail
 
 ### What are the requirements?
 
-- Ruby >= 3.2
-- Rails >= 7.1
-- Tailwind CSS (for default styling)
+- Ruby >= 3.3
+- Rails >= 8.0.4
+- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.3 (Tailwind CSS v4, for default styling)
+- The default `rails new` JavaScript setup (importmap with Stimulus). IronAdmin installs `importmap-rails` itself and registers its Stimulus controllers on `window.Stimulus`, which `bin/rails stimulus:install` sets up.
+
+See [UPGRADING.md](../UPGRADING.md) when moving from an older release.
 
 ### Is IronAdmin production-ready?
 
@@ -27,18 +30,14 @@ rails generate iron_admin:install
 
 ### Why aren't my Tailwind styles working?
 
-IronAdmin uses Tailwind CSS classes. Ensure your `tailwind.config.js` includes the engine's paths:
+IronAdmin ships no compiled CSS. Your app's Tailwind v4 build has to scan the engine's views and components, through the bridge file that `tailwindcss-rails` (>= 4.3) generates. Make sure `app/assets/tailwind/application.css` contains:
 
-```javascript
-module.exports = {
-  content: [
-    // Your app paths...
-    "./path/to/iron_admin/app/**/*.{rb,haml}",
-  ],
-}
+```css
+@import "tailwindcss";
+@import "../builds/tailwind/iron_admin";
 ```
 
-Use `bundle show iron_admin` to find the gem path.
+Then run `bin/rails tailwindcss:build` and check that `app/assets/builds/tailwind/iron_admin.css` exists. Run the build again after every `bundle update iron_admin`, because the bridge file points at the installed gem's path. See [Tailwind CSS Setup](getting-started/installation.md#tailwind-css-setup) for details.
 
 ### How do I change the admin path from /admin?
 
@@ -74,6 +73,8 @@ class UserResource < IronAdmin::Resource
   field :role, readonly: ->(user) { !user.admin? }
 end
 ```
+
+Readonly fields are left out of the form and are never mass-assigned on create or update, even when a request submits a value for them.
 
 ### How do I customize field display in the index table?
 
@@ -123,6 +124,8 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
+Once a resource has a `policy` block, every CRUD action must be allowed explicitly. A policy that does not allow `:read` returns `403` on the index and show pages and hides the resource from the sidebar and global search. `:new`, `:edit`, and `:delete` are aliases for `:create`, `:update`, and `:destroy`, so `deny :delete` blocks destroy.
+
 Or use `deny_actions` for simple cases:
 
 ```ruby
@@ -130,6 +133,8 @@ class AuditLogResource < IronAdmin::Resource
   deny_actions :create, :update, :delete
 end
 ```
+
+`deny_actions` uses the same aliases: `:delete` blocks destroy, and `:index` or `:show` blocks every read of the resource.
 
 ### How do I hide fields from certain users?
 

@@ -24,6 +24,8 @@ Convention-over-configuration admin panel engine for Ruby on Rails.
 ### Help
 
 - [FAQ](FAQ.md) - Frequently asked questions
+- [Upgrade Guide](../UPGRADING.md) - Version-by-version upgrade notes and breaking changes
+- [Documentation site](https://rubylab-app.github.io/iron_admin/) - These docs as a searchable site
 
 ### Components Library
 

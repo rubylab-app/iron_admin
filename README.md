@@ -18,9 +18,13 @@ Convention-over-configuration admin panel engine for Ruby on Rails. Build beauti
 
 ## Requirements
 
-- Ruby >= 3.2
-- Rails >= 7.1
-- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.0
+- Ruby >= 3.3 (tested on 3.3, 3.4, and 4.0)
+- Rails >= 8.0.4 (tested on 8.0 and 8.1)
+- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.3
+- The default `rails new` JavaScript setup: importmap with Stimulus. IronAdmin installs
+  `importmap-rails` itself; its layout loads the admin JavaScript with
+  `javascript_importmap_tags` and registers its Stimulus controllers on `window.Stimulus`,
+  which `bin/rails stimulus:install` sets up.
 
 ## Installation
 
@@ -67,8 +71,8 @@ rails tailwindcss:build
 ```
 
 Then verify that `app/assets/builds/tailwind/iron_admin.css` was created. If not,
-check that `tailwindcss-rails` >= 4.0 is installed and that the engine gem is properly
-loaded.
+check that `tailwindcss-rails` >= 4.3 is installed (4.3 added the `tailwindcss:engines`
+task that writes this file) and that the engine gem is properly loaded.
 
 For development, use `bin/dev` or `rails tailwindcss:watch` to recompile CSS on changes.
 
@@ -157,7 +161,7 @@ Visit `/admin` and your admin panel is ready!
 
 ## Documentation
 
-Full documentation is available in the [docs](docs/) directory:
+Full documentation is available at https://rubylab-app.github.io/iron_admin/ and in the [docs](docs/) directory:
 
 - [Installation](docs/getting-started/installation.md)
 - [Quick Start](docs/getting-started/quick-start.md)
@@ -165,15 +169,16 @@ Full documentation is available in the [docs](docs/) directory:
 - [Dashboard Guide](docs/guides/dashboard.md)
 - [Theming Guide](docs/guides/theming.md)
 - [Configuration Reference](docs/reference/configuration.md)
+- [Upgrade Guide](UPGRADING.md)
 
 ## Development
 
-After checking out the repo:
+After checking out the repo (use the Ruby in `.ruby-version`; IronAdmin needs Ruby >= 3.3):
 
 ```bash
 bundle install
 bundle exec rspec
-bundle exec rubocop
+bundle exec rubocop . .github/scripts
 ```
 
 ## Contributing

@@ -66,6 +66,17 @@ Publishing the Release creates the tag and fires `release.yml`. Once the tag
 check and the full CI run pass (a few minutes), the gem is published and the
 `release` deployment turns green.
 
+### 3. Redeploy the documentation site
+
+The docs site at https://rubylab-app.github.io/iron_admin/ deploys only on a
+manual run of [`docs.yml`](.github/workflows/docs.yml). After the GitHub Release
+is published and the gem is live on RubyGems, publish the updated docs
+(supported versions, upgrade notes):
+
+```bash
+gh workflow run docs.yml --ref main
+```
+
 ## What CI runs
 
 `ci.yml` runs on every PR to `main`, on every push to `main`, and from

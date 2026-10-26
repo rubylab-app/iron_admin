@@ -2,13 +2,12 @@
 
 This directory contains the source for the **public IronAdmin documentation site**, a
 navigable, searchable web experience built from the Markdown docs that already live in
-[`docs/`](../). It is intended to be published to **GitHub Pages** at
-`https://rubylab-app.github.io/iron_admin/` (or a custom domain).
+[`docs/`](../). It is published to **GitHub Pages** at
+<https://rubylab-app.github.io/iron_admin/>.
 
-> **Status: proposal + scaffold.** This is a working skeleton with a few real pages
-> migrated to prove the pipeline. Most sections are stubs with clear TODOs. The tooling
-> choice and the GitHub Pages setup need maintainer approval before this ships. See
-> [Maintainer decisions required](#maintainer-decisions-required).
+> **Status: live.** Installation, Quick Start, and the Resource DSL guide are fully
+> migrated; the other pages are stubs that link to their source Markdown in the repo
+> (mostly under [`docs/`](../)). See [Open work](#open-work).
 
 ---
 
@@ -56,7 +55,8 @@ bundle exec jekyll serve --livereload
 # open http://127.0.0.1:4000/iron_admin/
 ```
 
-Requires Ruby >= 3.2 (matches the gem's `.ruby-version`).
+Requires Ruby >= 3.3. CI builds the site on the Ruby 3.4 series, the same series as the
+repo's `.ruby-version` (3.4.9), using this directory's own `Gemfile.lock`.
 
 ## Structure
 
@@ -107,25 +107,27 @@ Two viable approaches, to decide before the first `1.0`:
 
 ## Deploy
 
-Deployment is a **proposed** GitHub Actions workflow at
-[`.github/workflows/docs.yml`](../../.github/workflows/docs.yml). It is intentionally
-**not wired to auto-deploy** — it runs on `workflow_dispatch` (manual) only, plus builds
-(without deploying) on PRs that touch `docs/`. See that file's header comment.
+[`.github/workflows/docs.yml`](../../.github/workflows/docs.yml) builds the site (without
+deploying) on pull requests that touch `docs/` or the workflow itself, and deploys it to
+GitHub Pages only when a maintainer runs it manually (`workflow_dispatch`) on `main`.
+GitHub Pages is enabled with **Source: GitHub Actions**.
 
-**Before it can deploy, a maintainer must:**
-1. Enable GitHub Pages for the repo with **Source: GitHub Actions**.
-2. Review and, if desired, add `push` to `main` as a deploy trigger.
-3. Optionally configure a custom domain (`CNAME`).
+To publish documentation changes after they merge to `main`:
+
+```bash
+gh workflow run docs.yml --ref main
+```
+
+Adding a `push` trigger on `main` would make deploys automatic; that is still a maintainer
+decision (see below).
 
 ---
 
-## Maintainer decisions required
+## Open work
 
-- [ ] **Approve the tooling choice** (Jekyll + just-the-docs) vs. an alternative.
-- [ ] **Enable GitHub Pages** with Source = GitHub Actions.
-- [ ] **Approve/adjust the deploy workflow** triggers in `.github/workflows/docs.yml`
-      (currently manual-only to avoid surprise deploys).
-- [ ] **Decide the versioning strategy** (latest-only vs. multi-version).
-- [ ] **Decide the URL** (project page `rubylab-app.github.io/iron_admin` vs. custom domain);
-      update `url` / `baseurl` in `_config.yml` accordingly.
-- [ ] **Migrate the remaining stub pages** from `docs/` (tracked as TODOs in each stub).
+- [x] Tooling choice: Jekyll + just-the-docs (merged in #112).
+- [x] GitHub Pages enabled (Source = GitHub Actions); live at https://rubylab-app.github.io/iron_admin/.
+- [x] URL: project page `rubylab-app.github.io/iron_admin` (`url` / `baseurl` in `_config.yml`).
+- [ ] Decide whether `docs.yml` should also deploy on `push` to `main` (currently manual-only).
+- [ ] Decide the versioning strategy (latest-only vs. multi-version).
+- [ ] Migrate the remaining stub pages from `docs/` (tracked as TODOs in each stub).

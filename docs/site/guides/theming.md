@@ -12,6 +12,6 @@ permalink: /guides/theming/
 > **This page is a stub.** Migrate the content from
 > [`docs/guides/theming.md`](https://github.com/rubylab-app/iron_admin/blob/main/docs/guides/theming.md).
 > **TODO:** copy the body, add front matter, fix links. Also cross-link the
-> [Theme Properties reference](../reference/#theme-properties).
+> [Theme Properties reference]({% link reference.md %}).
 
 Every UI element is a configurable Tailwind CSS class via `config.theme`.

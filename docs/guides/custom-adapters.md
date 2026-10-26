@@ -380,15 +380,9 @@ class NoOpQueryBuilder < IronAdmin::Filters::BaseQueryBuilder
 end
 ```
 
-#### `pagy_method` → `Symbol`
+#### `pagy_method` → `Symbol` (deprecated, unused)
 
-Returns the Pagy backend method name used for pagination.
-
-| ORM | Value |
-|-----|-------|
-| ActiveRecord | `:pagy` |
-| Mongoid | `:pagy_mongoid` |
-| Custom | `:pagy` (default) or implement a custom Pagy backend |
+Not called by IronAdmin. `ResourcesController#index` always calls `pagy(collection_scope, limit: IronAdmin.configuration.per_page)`, which uses Pagy 43's default `:offset` paginator. That paginator works with any scope that responds to `count`, `offset(n)` and `limit(n)`; ActiveRecord relations, Mongoid criteria and `IronAdmin::Adapters::Http::Query` all do. The return value (`:pagy` / `:pagy_mongoid`) has no effect, and it is not a valid Pagy 43 paginator name. It is scheduled for removal in 0.8.0. To make a custom adapter paginate, have its scope respond to `count`, `offset` and `limit`.
 
 #### `cast_boolean(value)` → `Boolean`
 
@@ -600,7 +594,7 @@ Use this checklist when building a new adapter:
 - [ ] `record_changes(record)` — returns changes hash
 - [ ] `wrap_rollback(&block)` — catches `IronAdmin::Rollback`
 - [ ] `query_builder_class` — returns your QueryBuilder subclass
-- [ ] `pagy_method` — returns `:pagy` or custom
+- [ ] `pagy_method` — deprecated and unused; return `:pagy` (removed in 0.8.0)
 - [ ] `cast_boolean(value)` — string to boolean
 
 ### Testing

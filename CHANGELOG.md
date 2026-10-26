@@ -7,17 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.7.0] - 2026-10-25
 
-- **Authorization gaps** — `deny :read` and `deny_actions :read` now apply to the index, CSV/JSON export, autocomplete, global search, and sidebar. Imports honor the create policy, not only `deny_actions`.
-- **CRUD aliases** — `:delete` maps to `:destroy`, `:new` to `:create`, and `:edit` to `:update` in policies and `deny_actions`. A failing alias condition no longer hides a later alias rule.
-- **Readonly fields** — values marked `readonly` are omitted from mass-assignment, including direct `PATCH` requests.
-- **Invalid JSON** — a malformed JSON field re-renders the form and does not save the record.
-- **Bulk actions** — selected ids are resolved with the resource primary key, including slug and composite keys.
-- **Datetime search ranges** — `field:from..to` includes the whole end date for datetime columns.
-- **Soft delete** — editing or updating a soft-deleted row returns 404 until it is restored. Show, restore, and destroy can still see it.
-- **Tool actions** — undeclared tool URLs can only call methods defined on that tool class.
-- **Export and display safety** — CSV cells that start with a formula character are neutralized, HTTP adapter ids cannot change the request path, polymorphic types must be in the field allowlist, and rich text is sanitized. Unexpected action and import errors no longer return the exception message.
+> **Upgrading from 0.6.0?** IronAdmin 0.7.0 requires **Ruby >= 3.3** and **Rails >= 8.0.4**, raises several dependency floors, and tightens authorization, so some requests that used to succeed now return `403` or `404`. Entries marked **Breaking** need attention. Read the [0.7.0 upgrade guide](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md) before upgrading.
 
 ### Added
 
@@ -31,28 +23,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Plugin / community extension system (experimental, proof of concept)** — foundation for packaging IronAdmin extensions as redistributable gems. ⚠️ **This API is experimental and unstable until 1.0** — it is not covered by the zero-breaking-changes invariant and may change or be removed before general availability.
   - `IronAdmin::Plugin` base class with a declarative DSL (`plugin_name`, `plugin_version`, `requires_iron_admin`) and a `setup` block.
   - `IronAdmin.register_plugin` / `IronAdmin::PluginRegistry` — explicit, idempotent registration and activation (re-activated on engine reload).
-  - `IronAdmin::Plugin::Registration` facade — the (experimental) plugin API surface — with three working extension points: custom sidebar `menu_item`s, global `component` overrides, and `field_type` registration.
-  - `IronAdmin::MenuItem` + `IronAdmin::MenuRegistry` — new sidebar extension point for custom navigation links that are not resource/tool-derived.
+  - `IronAdmin::Plugin::Registration` facade — the (experimental) plugin API surface — with three working extension points: custom sidebar `menu_item`s, global `component` overrides (the same as `config.components`), and `field_type` registration.
+  - `IronAdmin::MenuItem` + `IronAdmin::MenuRegistry` — custom sidebar links that are not resource- or tool-derived. The sidebar shows them after resources and tools, grouped by `group` (default "Plugins") and ordered by `priority`. They are not filtered by any resource policy.
   - Version-compatibility enforcement via `IronAdmin::IncompatiblePluginError` (and `IronAdmin::PluginError`).
-
-### Documentation
-
-- Added `docs/plugin-system-design.md` — full design proposal for the plugin/community extension system: philosophy, extension points, packaging model, registration API, versioning/security considerations, an end-to-end example, and the deferred work + decisions requiring maintainer sign-off.
-- **Documentation site scaffold** — Added a navigable, searchable documentation site under `docs/site/`, built with [Jekyll](https://jekyllrb.com/) and the [`just-the-docs`](https://just-the-docs.com/) theme and intended for GitHub Pages:
-  - Tooling proposal and justification (Jekyll + just-the-docs vs. MkDocs Material / Docusaurus) in `docs/site/README.md`
-  - Full section structure: Getting Started, Guides (Resource DSL, Dashboards, Fields, Theming, Components), Adapters, Authorization, Imports & Exports, Tools, Reference, Upgrade Guide, FAQ
-  - Three pages fully migrated from existing docs to validate the pipeline (Installation, Quick Start, Resource DSL); remaining sections are stubs with TODOs pointing at their source `docs/` files
-  - Client-side search, sidebar navigation, and "edit on GitHub" links configured
-  - **Proposed** (manual-trigger only, non-auto-deploying) GitHub Actions deploy workflow at `.github/workflows/docs.yml` — requires maintainer review and GitHub Pages setup before it can publish
+- **Component overrides by class name** — A component override can be a class name String (for example `config.components.navbar = "MyNavbarComponent"`), looked up when the page renders. Use a String in an initializer: Rails raises `NameError` when an initializer references a class from `app/components`.
+- **Component slot contract** — Each override slot passes a documented set of keyword arguments (`IronAdmin::Configuration::Components::SLOTS`). A component receives only the ones its `initialize` declares, or all of them with `**options`. The navbar slot also passes `title:`.
+- **Dependabot** — Configuration for the root bundle, the docs site bundle and GitHub Actions: weekly grouped updates with a 7-day cooldown.
 
 ### Changed
 
+- **Breaking: Ruby >= 3.3 and Rails >= 8.0.4 are now required.** Ruby 3.2 and Rails 7.1/7.2 are no longer supported. The Rails floor is 8.0.4 because Rails 8.0.0–8.0.3 break `as: :html` integration-test requests (`NoMethodError: undefined method 'to_html' for an instance of Hash`). On Rails 8.0, keep `json` below 3.0. See UPGRADING.md.
+- **Breaking: tighter dependency floors.** `pagy` is now `>= 43.7.1, < 44`: the engine has always needed `Pagy::Method` (pagy 43+), the old `>= 6.0` allowed versions that fail to load, and 43.7.1 is the first release that renders malformed or huge `page` params (`0`, `abc`, `page[]=1`, `2**63`) instead of raising a `500`. `view_component` is now `>= 4.0, < 5`, because no 3.x release works on Rails 8. `turbo-rails` is now `>= 2.0.6`, because 2.0.0–2.0.5 crash at eager-load boot when Action Cable is not loaded.
+- **Breaking: `importmap-rails` is now a declared runtime dependency (`>= 2.0`), and the engine requires it.** The engine layout calls `javascript_importmap_tags`, so hosts without importmap-rails got a `NameError` on every admin page. Hosts that pin importmap-rails 1.x must upgrade it.
+- **Breaking: `Resource.component` raises `ArgumentError` for slots a resource cannot override.** The valid slots are `:table`, `:form`, `:filter_bar` and `:search`. `:index`, `:show` and `:row`, which only an old code comment mentioned and which never did anything, now raise at boot. `:navbar`, `:sidebar` and `:shell` are global only (`config.components`).
+- **Component overrides are checked when they are set.** An override that is not a `ViewComponent::Base` subclass, takes a positional argument, or requires a keyword its slot never passes raises `ArgumentError`. A class name is checked when it is first looked up.
 - **Mobile responsiveness** — Audited and improved the admin UI on small viewports:
-  - Sidebar is now an off-canvas drawer below the `lg` breakpoint, toggled by a hamburger button in the navbar, with a tap-to-dismiss backdrop, a close button, and Escape-to-close (via a new `cp-sidebar` Stimulus controller). It remains statically positioned on desktop, so the desktop layout is unchanged.
-  - Page containers use responsive padding (`p-4 sm:p-6 lg:p-8`) instead of a fixed `p-8` across index, show, new, edit, imports, audit, search, tools, and action-form views.
+  - Sidebar is now an off-canvas drawer below the `lg` breakpoint, toggled by a hamburger button in the navbar, with a tap-to-dismiss translucent backdrop (`bg-gray-900/50`), a close button, and Escape-to-close (via a new `cp-sidebar` Stimulus controller). It remains statically positioned on desktop, so the desktop layout is unchanged. The `cp-sidebar` controller is pinned in the engine importmap; without the pin, the browser could not resolve `iron_admin/index.js`, and none of IronAdmin's Stimulus controllers registered.
+  - Page containers use responsive padding (`p-4 sm:p-6 lg:p-8`) instead of a fixed `p-8` across the dashboard and the index, show, new, edit, imports, audit, search, tools, and action-form views. The bulk-action form still uses `p-8`.
   - Wide tables that lacked a scroll container are now wrapped in `overflow-x-auto` (dashboard recent tables, related lists, the audit log table, and `DataTableComponent`).
   - Show-page detail rows stack label above value on mobile and switch to the side-by-side layout at `sm`.
   - Index/show/imports header rows and action button groups now wrap instead of overflowing; scope tabs scroll horizontally when numerous; the audit filter row stacks vertically on mobile.
+- **Generic message for unexpected errors** — When a custom action, bulk action, or import raises an unexpected exception, the user now sees `iron_admin.errors.unexpected` ("Something went wrong. Please try again.") instead of the exception message, and the exception is logged as `[IronAdmin] <class>: <message>`. Import validation errors (`ArgumentError`) still show their own message. The `iron_admin.resources.action.failure` and `iron_admin.resources.bulk_action.failure` translations are no longer used, so host-app overrides of those keys have no effect.
+- **`iron_admin:install_audit` migration version** — The generated audit migration now inherits from `ActiveRecord::Migration[<running Active Record version>]` (for example `[8.0]` or `[8.1]`), the same way Rails' own generators do, instead of a hardcoded `[7.1]`. The generator still never opens a database connection.
+- **Gem contents and metadata** — The packaged gem no longer includes the Jekyll docs-site source (`docs/site/`), an internal audit, or the `Rakefile`, and now includes `CHANGELOG.md` and `UPGRADING.md`. Gem metadata adds `documentation_uri` and `bug_tracker_uri`, links `source_code_uri`/`changelog_uri` to the release tag, and drops the unused `github_repo` key.
+- **CI and release pipeline**:
+  - CI runs the suite on Ruby 3.3, 3.4 and 4.0 against Rails 8.0 and 8.1 (`gemfiles/rails_8_0.gemfile`, `gemfiles/rails_8_1.gemfile`; the old matrix never actually varied Rails). It also runs a minimum-versions job on Ruby 3.3 that pins every runtime dependency to its gemspec floor (`gemfiles/minimum.gemfile`), lints with RuboCop, and checks the gem package. A single "CI result" check fails unless every job succeeded.
+  - The release workflow checks that the tag is exactly `v` plus the `version.rb` version before anything else, then runs the full CI workflow, then builds, verifies and pushes the gem through trusted publishing. All workflow actions are pinned to commit SHAs (configure-rubygems-credentials was on `@main`), and forks never publish.
+  - The docs site workflow builds with the Ruby 3.4 series (3.2.2 is EOL and has no ubuntu-26.04 build), uses Node 24 action majors pinned to SHAs, uses a per-PR concurrency group, deploys only from `main`, and drops the stale "PROPOSED" header.
+
+### Deprecated
+
+- `IronAdmin::Adapters::Base#pagy_method` and the built-in implementations are unused: pagination always uses Pagy's default `:offset` paginator, and Pagy 43 has no `pagy_mongoid` backend. They will be removed in 0.8.0.
+
+### Fixed
+
+- **Breaking: authorization gaps** — `deny :read` and `deny_actions :read` now apply to the index, CSV/JSON export, autocomplete, global search, and sidebar. A resource whose `policy` never allows `:read` now returns `403` on its index (before, the index stayed reachable) and disappears from the sidebar and global search. Global search also skips searchable columns hidden from the current user. Imports honor the create policy, not only `deny_actions`. The New and Import buttons on index pages and the Edit and Delete buttons on show pages now follow the resource policy as well as `deny_actions`, so users the policy denies no longer see them.
+- **Breaking: CRUD aliases** — `:delete` maps to `:destroy`, `:new` to `:create`, and `:edit` to `:update` in policies and `deny_actions`, and `deny_actions` now also treats `:index` and `:show` as `:read`. The aliases grant as well as deny: `allow :delete` now grants destroy, and `deny :delete` / `deny_actions :delete` now block it (before, neither had any effect on destroy). `deny_actions :show` or `deny_actions :index` now blocks the whole resource; before, it had no effect. A failing alias condition no longer hides a later alias rule.
+- **Breaking: tool actions** — Undeclared tool URLs can only call methods defined directly on that tool class. Methods inherited from a parent tool class or included from a module now return `404` unless they are declared with `tool_action`.
+- **Readonly fields** — Values marked `readonly` are omitted from mass-assignment on create and update, including direct `POST`/`PATCH` requests.
+- **Invalid JSON** — A malformed JSON field re-renders the form with `422 Unprocessable Content` and an inline error, and does not save the record.
+- **Bulk actions** — Selected ids are resolved with the resource primary key, including slug and composite keys.
+- **Datetime search ranges** — `field:from..to` includes the whole end date for datetime columns.
+- **Soft delete** — On models whose default scope hides deleted rows, editing, updating, or running a custom member action other than `restore` on a soft-deleted row returns `404` until it is restored. Show, restore, and destroy can still see it, and the show page no longer shows an Edit button for a soft-deleted record.
+- **Export and display safety** — CSV cells that start with `=`, `+`, `-`, `@`, a tab, or a carriage return are prefixed with `'` (so negative numbers such as `-5` are exported as `'-5`), HTTP adapter ids cannot change the request path, polymorphic types must be in the field allowlist, and rich text is sanitized.
+- **Component overrides now take effect** — Before, they were stored but never used when rendering. `config.components` (`shell`, `navbar`, `sidebar`, `table`, `form`, `filter_bar`, `search`, `fields[type]`), per-resource `component :table|:form|:filter_bar|:search` overrides (which win over global ones) and plugin `admin.component` registrations all change what renders. `fields[type]` replaces the form input only; show and index display is unchanged. Pages without overrides render as before.
+- **Ruby 3.4 / 4.0 loading** — `csv` and `ostruct` are now declared as runtime dependencies. They are no longer default gems (csv since Ruby 3.4, ostruct since Ruby 4.0), so under Bundler `require "iron_admin"` failed on Ruby 3.4+ with `cannot load such file -- csv`.
+- **Boot crash when the host app loads ViewComponent early** — IronAdmin added `Heroicon::ApplicationHelper` to `ViewComponent::Base` from the `:view_component` load hook. Boot failed with `NameError: uninitialized constant Heroicon::ApplicationHelper` when a host initializer, or another gem's initializer, referenced `ViewComponent::Base` during boot (for example `ViewComponent::Base.include(...)`). The helper is now included in `to_prepare`.
+- **PaginationComponent** — `IronAdmin::Ui::PaginationComponent` now works with Pagy 43. Before, every render raised `NoMethodError` because the component called `prev`, the non-existent `pagy_url_for`, and the protected `series`. It now builds links with `Pagy#page_url`, which keeps the current query params, and adds `aria-label` / `aria-current`. Pass it the pagy object returned by the controller `pagy` method.
+- **Translucent modal overlay on Tailwind v4** — The modal overlay used `bg-opacity-75`, which Tailwind v4 removed, so it rendered solid gray. It now uses `bg-gray-500/75`. `flex-shrink-0`, also removed in v4, is replaced with `shrink-0`.
+- **Focus styles on invalid inputs** — Form inputs with validation errors now keep a red border and ring on focus. The classes put the important modifier before the variant (`!focus:border-red-500`), which Tailwind generates no CSS for; they are now `focus:!border-red-500`.
+- **Empty id attributes** — With haml 6 or later, index rows and dashboard metric cards no longer render an invalid empty `id=""` when live updates are off.
+- **Connection checkout** — Search and operator filters now borrow a connection with `with_connection` instead of calling the soft-deprecated `ActiveRecord::Base.connection` / `Relation#connection`, so they work with `config.active_record.permanent_connection_checkout = :disallowed`.
+- **Published gem contents** — The published gem can no longer include repository-only files: a new gem contents check (`.github/scripts/verify_gem.rb`) runs on every PR and before `gem push`. It rejects `vendor/bundle` (43.9 MB of it leaked into the published 0.6.0), `docs/site`, specs, untracked files, missing runtime files and oversized packages.
+
+### Documentation
+
+- Added `docs/plugin-system-design.md` — design proposal for the plugin/community extension system: philosophy, extension points, packaging model, registration API, versioning/security considerations, an end-to-end example, and the deferred work + decisions requiring maintainer sign-off. It now describes menu items and component overrides as rendered.
+- **Documentation site** — A navigable, searchable documentation site built with [Jekyll](https://jekyllrb.com/) and the [`just-the-docs`](https://just-the-docs.com/) theme lives under `docs/site/` and is published to GitHub Pages at https://rubylab-app.github.io/iron_admin/:
+  - Tooling rationale (Jekyll + just-the-docs vs. MkDocs Material / Docusaurus) in `docs/site/README.md`
+  - Section structure: Getting Started, Guides (Resource DSL, Dashboards, Fields, Theming, Components), Adapters, Authorization, Imports & Exports, Tools, Reference, Upgrade Guide, FAQ
+  - Installation, Quick Start, and Resource DSL are fully migrated; the other sections are stubs that link to their source files in the repo
+  - Client-side search, sidebar navigation, and "Edit this page on GitHub" links
+  - `.github/workflows/docs.yml` builds the site on pull requests that touch `docs/` or the workflow itself, and deploys it to GitHub Pages only when a maintainer runs it manually (`workflow_dispatch`) on `main`
+  - Fixed six internal links that returned 404 on the live site; they now use Jekyll's `{% link %}` tag, so the PR build fails if a target goes missing
+- **Supported versions** — The README, installation guides, FAQ, and docs site list Ruby >= 3.3, Rails >= 8.0.4, and every runtime dependency with its exact gemspec requirement, and `UPGRADING.md` has a 0.6 → 0.7 section.
+- **Host requirements** — Documented `tailwindcss-rails` >= 4.3 (was >= 4.0; only 4.3 and later generate the IronAdmin bridge file with `tailwindcss:engines`) and the default importmap + Stimulus JavaScript setup the admin layout relies on (`javascript_importmap_tags`, `window.Stimulus`). The FAQ no longer describes the Tailwind v3 `tailwind.config.js` setup.
+- **Component overrides** — `docs/guides/components.md` documents every slot, the keyword arguments it passes, the per-resource slots, plugin overrides and field input overrides.
+- **Authorization and fields guides** — Describe what `:read` and `:create` now cover, the alias table for policies and `deny_actions`, the policy-gated buttons, and how readonly fields are handled.
+- **Custom adapters guide / UPGRADING** — `Adapters::Base#pagy_method` is documented as unused. Pagination always uses Pagy's `:offset` paginator, and Pagy 43 has no `pagy_mongoid` backend.
+- **Component namespace** — The component docs use `IronAdmin::Ui::` (44 references said `IronAdmin::UI::`, which does not exist), and the `PaginationComponent` docs say the pagy object must come from the controller `pagy` method.
+- **Release process** — `RELEASING.md` describes the new release pipeline and CI jobs, the docs-site redeploy after a release, and the one-time admin setup: require "CI result" in the "Protect main" ruleset, restrict the release environment to `v*` tags, bind the RubyGems trusted publisher to that environment, and protect release tags.
+- **Contributing** — `CONTRIBUTING.md` states Ruby >= 3.3, the lint command CI runs (`bundle exec rubocop . .github/scripts`), how to reproduce a CI gemfile leg, and the 90% coverage threshold the suite enforces.
 
 ## [0.6.0] - 2026-06-28
 
@@ -381,7 +422,8 @@ First public release.
 - Policy instances now cached at Resource class level
 - Field visibility filtering applied consistently in index, show, forms, exports, and search
 
-[Unreleased]: https://github.com/rubylab-app/iron_admin/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/rubylab-app/iron_admin/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/rubylab-app/iron_admin/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/rubylab-app/iron_admin/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/rubylab-app/iron_admin/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/rubylab-app/iron_admin/compare/v0.3.0...v0.4.0

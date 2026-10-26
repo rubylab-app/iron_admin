@@ -15,10 +15,10 @@ Get a full admin panel running in 6 steps.
 ## Prerequisites
 
 IronAdmin uses [Tailwind CSS](https://tailwindcss.com/) for all styling and requires
-`tailwindcss-rails` >= 4.0. Ensure your application has a supported version installed:
+`tailwindcss-rails` >= 4.3. Ensure your application has a supported version installed:
 
 ```bash
-bundle add tailwindcss-rails --version ">= 4.0"
+bundle add tailwindcss-rails --version ">= 4.3"
 rails tailwindcss:install
 ```
 
@@ -88,7 +88,7 @@ module IronAdmin
 end
 ```
 
-See the [Resource DSL guide](../guides/resource-dsl/) for the full set of options.
+See the [Resource DSL guide]({% link guides/resource-dsl.md %}) for the full set of options.
 
 ## 5. Create a Dashboard
 

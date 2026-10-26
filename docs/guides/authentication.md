@@ -82,19 +82,31 @@ end
 
 | Action | Covers |
 |--------|--------|
-| `:read` | Index and show |
-| `:create` | New and create |
+| `:read` | Index, show, CSV/JSON export, `belongs_to` autocomplete, global search results, and the sidebar link |
+| `:create` | New, create, and imports (including import rows that update an existing record matched by `import_upsert_key`) |
 | `:update` | Edit and update |
-| `:delete` | Destroy |
+| `:destroy` | Destroy |
 
-You can use either the CRUD action names (`:read`, `:create`, `:update`, `:delete`) or the controller action names (`:index`, `:show`, `:new`, `:edit`, `:destroy`). They are automatically mapped:
+You can use either the CRUD action names (`:read`, `:create`, `:update`, `:destroy`) or the controller action names (`:index`, `:show`, `:new`, `:edit`, `:delete`). They are mapped in both directions, in `policy` and in `deny_actions`:
+
+| Alias | CRUD action |
+|-------|-------------|
+| `:index`, `:show` | `:read` |
+| `:new` | `:create` |
+| `:edit` | `:update` |
+| `:delete` | `:destroy` |
 
 ```ruby
 policy do
   allow :index, :show  # Same as allow :read
   allow :create
+  allow :delete        # Same as allow :destroy
 end
 ```
+
+Once a resource has a `policy` block, every CRUD action must be allowed explicitly. If `:read` is not allowed, the resource's index and show pages return `403`, and the resource is hidden from the sidebar and from global search. The New, Import, Edit, and Delete buttons are only shown when the policy (and `deny_actions`) allows the action.
+
+Policy `if:` conditions run on every admin page, not only on the resource's own pages: the sidebar and global search check `:read` for every resource. Make sure each condition handles every user it can receive, including `nil` when no `current_user` block is configured.
 
 ### Conditional Policies
 
@@ -141,6 +153,8 @@ class AuditLogResource < IronAdmin::Resource
   deny_actions :create, :update, :delete
 end
 ```
+
+`deny_actions` uses the same aliases as policies: `:delete` blocks destroy, `:new` blocks create (and imports), `:edit` blocks update, and `:index` or `:show` blocks every read of the resource, which also hides it from the sidebar and global search.
 
 ## Field-Level Authorization
 

@@ -4,6 +4,8 @@
 
 IronAdmin is a **Ruby on Rails Engine gem** that provides a convention-over-configuration admin panel. It auto-generates CRUD interfaces from ActiveRecord models. The gem is mountable, uses ViewComponent, HAML templates, Stimulus controllers, and Tailwind CSS.
 
+Supported versions: Ruby >= 3.3 and Rails >= 8.0.4. Don't suggest compatibility shims for older Ruby or Rails; Ruby 3.3+ syntax is fine.
+
 ## What to Review
 
 ### Ruby Code Quality

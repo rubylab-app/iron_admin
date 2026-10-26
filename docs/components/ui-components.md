@@ -7,7 +7,7 @@ Core UI elements for building admin interfaces.
 Displays status indicators with colored backgrounds.
 
 ```ruby
-IronAdmin::UI::BadgeComponent.new(
+IronAdmin::Ui::BadgeComponent.new(
   text: "Active",      # Required: display text
   color: :green,       # Optional: :gray, :green, :red, :yellow, :blue, :indigo, :purple, :pink, :orange, :teal
   size: :md            # Optional: :sm, :md, :lg
@@ -17,8 +17,8 @@ IronAdmin::UI::BadgeComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::BadgeComponent.new(text: "Published", color: :green)
-= render IronAdmin::UI::BadgeComponent.new(text: "Draft", color: :yellow, size: :sm)
+= render IronAdmin::Ui::BadgeComponent.new(text: "Published", color: :green)
+= render IronAdmin::Ui::BadgeComponent.new(text: "Draft", color: :yellow, size: :sm)
 ```
 
 ---
@@ -28,7 +28,7 @@ IronAdmin::UI::BadgeComponent.new(
 Styled buttons with multiple variants and optional icons.
 
 ```ruby
-IronAdmin::UI::ButtonComponent.new(
+IronAdmin::Ui::ButtonComponent.new(
   text: "Save",            # Optional: button text
   variant: :primary,       # Optional: :primary, :secondary, :danger, :ghost
   size: :md,               # Optional: :sm, :md, :lg
@@ -45,10 +45,10 @@ IronAdmin::UI::ButtonComponent.new(
 
 ```haml
 -# Primary button
-= render IronAdmin::UI::ButtonComponent.new(text: "Save Changes", variant: :primary)
+= render IronAdmin::Ui::ButtonComponent.new(text: "Save Changes", variant: :primary)
 
 -# Danger button with confirmation
-= render IronAdmin::UI::ButtonComponent.new(
+= render IronAdmin::Ui::ButtonComponent.new(
   text: "Delete",
   variant: :danger,
   icon: "trash",
@@ -58,7 +58,7 @@ IronAdmin::UI::ButtonComponent.new(
 )
 
 -# Icon-only button
-= render IronAdmin::UI::ButtonComponent.new(icon: "pencil", variant: :ghost, size: :sm)
+= render IronAdmin::Ui::ButtonComponent.new(icon: "pencil", variant: :ghost, size: :sm)
 ```
 
 ---
@@ -68,7 +68,7 @@ IronAdmin::UI::ButtonComponent.new(
 Container with optional header and footer slots.
 
 ```ruby
-IronAdmin::UI::CardComponent.new(
+IronAdmin::Ui::CardComponent.new(
   padding: true,    # Optional: add padding to content area
   shadow: true      # Optional: add shadow
 )
@@ -81,14 +81,14 @@ IronAdmin::UI::CardComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::CardComponent.new do |card|
+= render IronAdmin::Ui::CardComponent.new do |card|
   - card.with_header do
     %h3 User Details
 
   %p Card content goes here
 
   - card.with_footer do
-    = render IronAdmin::UI::ButtonComponent.new(text: "Save", variant: :primary)
+    = render IronAdmin::Ui::ButtonComponent.new(text: "Save", variant: :primary)
 ```
 
 ---
@@ -98,7 +98,7 @@ IronAdmin::UI::CardComponent.new(
 Flash messages and notifications.
 
 ```ruby
-IronAdmin::UI::AlertComponent.new(
+IronAdmin::Ui::AlertComponent.new(
   message: "Success!",   # Required: alert message
   type: :success,        # Optional: :success, :error, :warning, :info
   dismissible: true      # Optional: show close button
@@ -108,13 +108,13 @@ IronAdmin::UI::AlertComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::AlertComponent.new(
+= render IronAdmin::Ui::AlertComponent.new(
   message: "Your changes have been saved.",
   type: :success,
   dismissible: true
 )
 
-= render IronAdmin::UI::AlertComponent.new(
+= render IronAdmin::Ui::AlertComponent.new(
   message: "Please fix the errors below.",
   type: :error
 )
@@ -127,7 +127,7 @@ IronAdmin::UI::AlertComponent.new(
 Dialog overlays with customizable content.
 
 ```ruby
-IronAdmin::UI::ModalComponent.new(
+IronAdmin::Ui::ModalComponent.new(
   size: :md,           # Optional: :sm, :md, :lg, :xl, :full
   dismissible: true    # Optional: allow closing
 )
@@ -140,15 +140,15 @@ IronAdmin::UI::ModalComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::ModalComponent.new(size: :lg) do |modal|
+= render IronAdmin::Ui::ModalComponent.new(size: :lg) do |modal|
   - modal.with_title do
     Confirm Action
 
   %p Are you sure you want to proceed?
 
   - modal.with_footer do
-    = render IronAdmin::UI::ButtonComponent.new(text: "Cancel", variant: :secondary)
-    = render IronAdmin::UI::ButtonComponent.new(text: "Confirm", variant: :primary)
+    = render IronAdmin::Ui::ButtonComponent.new(text: "Cancel", variant: :secondary)
+    = render IronAdmin::Ui::ButtonComponent.new(text: "Confirm", variant: :primary)
 ```
 
 ---
@@ -158,7 +158,7 @@ IronAdmin::UI::ModalComponent.new(
 Dropdown menus with trigger and items.
 
 ```ruby
-IronAdmin::UI::DropdownComponent.new(
+IronAdmin::Ui::DropdownComponent.new(
   align: :right,    # Optional: :left, :right
   width: 48         # Optional: width in Tailwind units (w-48)
 )
@@ -177,9 +177,9 @@ IronAdmin::UI::DropdownComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::DropdownComponent.new(align: :right) do |dropdown|
+= render IronAdmin::Ui::DropdownComponent.new(align: :right) do |dropdown|
   - dropdown.with_trigger do
-    = render IronAdmin::UI::ButtonComponent.new(text: "Actions", icon: "chevron-down")
+    = render IronAdmin::Ui::ButtonComponent.new(text: "Actions", icon: "chevron-down")
 
   - dropdown.with_item(href: edit_path, icon: "pencil") do
     Edit
@@ -195,7 +195,7 @@ IronAdmin::UI::DropdownComponent.new(
 Hover tooltips for additional information.
 
 ```ruby
-IronAdmin::UI::TooltipComponent.new(
+IronAdmin::Ui::TooltipComponent.new(
   text: "Helpful info",   # Required: tooltip text
   position: :top          # Optional: :top, :bottom, :left, :right
 )
@@ -204,8 +204,8 @@ IronAdmin::UI::TooltipComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::TooltipComponent.new(text: "Click to edit", position: :bottom) do
-  = render IronAdmin::UI::ButtonComponent.new(icon: "pencil", variant: :ghost)
+= render IronAdmin::Ui::TooltipComponent.new(text: "Click to edit", position: :bottom) do
+  = render IronAdmin::Ui::ButtonComponent.new(icon: "pencil", variant: :ghost)
 ```
 
 ---
@@ -215,17 +215,25 @@ IronAdmin::UI::TooltipComponent.new(
 Pagination controls using Pagy.
 
 ```ruby
-IronAdmin::UI::PaginationComponent.new(
+IronAdmin::Ui::PaginationComponent.new(
   pagy: @pagy    # Required: Pagy object
 )
 ```
 
 **Note:** Only renders when there are multiple pages.
 
+**Note:** `@pagy` must come from the `pagy` controller method (`Pagy::Method`, Pagy 43), so
+it carries the request needed to build page URLs. Page links keep the current query params.
+
 **Example:**
 
+```ruby
+# In a controller that includes Pagy::Method
+@pagy, @records = pagy(scope)
+```
+
 ```haml
-= render IronAdmin::UI::PaginationComponent.new(pagy: @pagy)
+= render IronAdmin::Ui::PaginationComponent.new(pagy: @pagy)
 ```
 
 ---
@@ -235,7 +243,7 @@ IronAdmin::UI::PaginationComponent.new(
 Tab-style scope navigation.
 
 ```ruby
-IronAdmin::UI::ScopesComponent.new(
+IronAdmin::Ui::ScopesComponent.new(
   scopes: scopes,           # Required: array of scope hashes
   current_scope: "all",     # Required: currently active scope
   base_path: "/admin/users", # Required: base URL
@@ -254,7 +262,7 @@ scopes = [
 ```
 
 ```haml
-= render IronAdmin::UI::ScopesComponent.new(
+= render IronAdmin::Ui::ScopesComponent.new(
   scopes: scopes,
   current_scope: params[:scope] || "all",
   base_path: request.path
@@ -268,7 +276,7 @@ scopes = [
 Placeholder for empty data states.
 
 ```ruby
-IronAdmin::UI::EmptyStateComponent.new(
+IronAdmin::Ui::EmptyStateComponent.new(
   title: "No users found",       # Required: main message
   description: "Get started...", # Optional: secondary text
   icon: "users",                 # Optional: Heroicon name
@@ -280,7 +288,7 @@ IronAdmin::UI::EmptyStateComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::UI::EmptyStateComponent.new(
+= render IronAdmin::Ui::EmptyStateComponent.new(
   title: "No records found",
   description: "Try adjusting your search or filters.",
   icon: "magnifying-glass"

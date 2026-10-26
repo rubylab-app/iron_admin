@@ -48,7 +48,7 @@ IronAdmin.configure do |config|
   config.theme do |t|
   end
 
-  # --- Components ---
+  # --- Components (a ViewComponent class or its class name; nil = built-in) ---
   config.components.table = nil
   config.components.form = nil
   config.components.filter_bar = nil
@@ -116,18 +116,22 @@ config.badge_colors[:cyan] = "bg-cyan-100 text-cyan-800"
 
 ### Components
 
-Override global components:
+Override global components. Each value is a `ViewComponent::Base` subclass or its class name
+as a String (use a String in initializers); `nil` keeps the built-in component. A resource's
+own `component` override wins over `table`, `form`, `filter_bar` and `search`. See
+[Components](../guides/components.md#overriding-components) for the keyword arguments each
+slot passes.
 
 | Component | Description |
 |-----------|-------------|
-| `table` | Data table component |
-| `form` | Form wrapper component |
-| `filter_bar` | Filter bar component |
-| `search` | Search input component |
-| `navbar` | Top navigation component |
-| `sidebar` | Side navigation component |
-| `shell` | Layout shell component |
-| `fields[:type]` | Field-type specific components |
+| `table` | Records table on index pages |
+| `form` | Form on new and edit pages |
+| `filter_bar` | Filters dropdown on index pages |
+| `search` | Search box on index pages |
+| `navbar` | Top bar inside the built-in shell |
+| `sidebar` | Navigation inside the built-in shell |
+| `shell` | Shell around every admin page |
+| `fields[:type]` | Form input for every field of that type (form only; display is unchanged) |
 
 ## Reset
 

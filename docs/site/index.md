@@ -47,9 +47,12 @@ rails generate iron_admin:install
 
 ## Requirements
 
-- Ruby >= 3.2
-- Rails >= 7.1
-- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.0
+- Ruby >= 3.3 (tested on 3.3, 3.4, and 4.0)
+- Rails >= 8.0.4 (tested on 8.0 and 8.1)
+- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.3
+- The default `rails new` JavaScript setup (importmap with Stimulus)
+
+Upgrading from 0.6? See the [Upgrade Guide]({% link upgrade-guide.md %}).
 
 ## Where to next?
 

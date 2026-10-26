@@ -289,6 +289,11 @@ class AuditLogResource < IronAdmin::Resource
 end
 ```
 
+`deny_actions` maps controller names to CRUD actions: `:delete` blocks destroy, `:new` blocks
+create (and imports), `:edit` blocks update, and `:index` or `:show` blocks every read of the
+resource, which also hides it from the sidebar and global search. Denied actions also hide
+their buttons.
+
 ## Associations
 
 ```ruby
@@ -412,7 +417,7 @@ Exports respect:
 - Field visibility (users only see fields they have permission to view)
 - Current filters and search query
 
-See [Imports & Exports](../imports-exports/) for more.
+See [Imports & Exports]({% link imports-exports.md %}) for more.
 
 ## Policies
 
@@ -425,12 +430,21 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
-See [Authorization](../authorization/) for details.
+See [Authorization]({% link authorization.md %}) for details.
 
 ## Component Overrides
+
+Replace the index table, the new/edit form, the filter bar or the search box of this
+resource with your own ViewComponent:
 
 ```ruby
 class UserResource < IronAdmin::Resource
   component :table, CustomUserTableComponent
+  component :form, "CustomUserFormComponent"
 end
 ```
+
+The valid slots are `:table`, `:form`, `:filter_bar` and `:search`; any other name raises
+`ArgumentError`. A resource override wins over a global one in `config.components`. See
+the [components guide](https://github.com/rubylab-app/iron_admin/blob/main/docs/guides/components.md#overriding-components)
+for the keyword arguments each slot passes.
