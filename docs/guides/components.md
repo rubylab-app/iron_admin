@@ -169,6 +169,8 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   `_top` updates the address bar and the browser history. If the resource has bulk actions,
   render a checkbox per row named `ids[]` with
   `data-cp-bulk-select-target="checkbox"` and `data-action="change->cp-bulk-select#toggle"`.
+  Give each one an `aria-label`, as the built-in table does with
+  `iron_admin.resources.index.select_record` ("Select %{record}").
   `base_url` already includes the scope, the search query and the active filters, but never
   `sort`, `direction` or `page`, so append `sort=` and `direction=` to it. Give sort links
   `data-turbo-frame="_top"`, as the built-in table and `DataTableComponent` do: a
@@ -179,7 +181,11 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
 - `search`: submit `q` to `form_url` with a GET request, and add every `hidden_params`
   entry as a hidden field, so the current scope, filters and sort are kept. `hidden_params`
   carries `scope`, the active filters and, when they are set, `sort` and `direction`. Its
-  keys are flat field names such as `filters[title][op]`.
+  keys are flat field names such as `filters[title][op]`. Render those hidden fields without
+  an `id` (`hidden_field_tag name, value, id: nil`): the filter panel uses ids such as
+  `filters_title_op`. Give the search input an accessible name; the built-in box and
+  `IronAdmin::Filters::SearchComponent` use `aria-label` "Search <resource label>"
+  (`iron_admin.resources.index.search_label`).
 
 ### Global overrides
 
@@ -267,7 +273,9 @@ end
 
 The component receives `form:` (the record's form builder), `field:` (the
 `IronAdmin::Field`) and `record:`. IronAdmin still renders the field's label and validation
-errors around it. For a custom type, it takes precedence over a `form_component` or
+errors around it. The label points at `form.field_id(field.name)` (`record_<field>`), so
+give the input that id, as the form builder's own helpers do, or screen readers announce
+it without a name. For a custom type, it takes precedence over a `form_component` or
 `form_partial` registered with `FieldTypeRegistry`.
 
 A field input override only changes the input in IronAdmin's built-in new and edit form.

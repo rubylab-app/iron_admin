@@ -1,21 +1,25 @@
 .relative{ id: component_id, data: { autocomplete_url: autocomplete_url } }
   %input{ type: "hidden", name: name, id: "#{component_id}-hidden", value: selected_id }
   %input{ type: "text",
-          id: "#{component_id}-input",
+          id: input_id,
+          role: "combobox",
+          "aria-autocomplete": "list",
+          "aria-controls": listbox_id,
+          "aria-expanded": "false",
           class: input_classes,
           placeholder: placeholder,
           disabled: effectively_disabled?,
           value: selected_label,
           autocomplete: "off",
           data: { autocomplete_input: true } }
-  .hidden{ id: "#{component_id}-dropdown", class: dropdown_classes }
+  .hidden{ id: listbox_id, role: "listbox", class: dropdown_classes }
 
 :javascript
   (function() {
     const container = document.getElementById('#{component_id}');
     const hiddenInput = document.getElementById('#{component_id}-hidden');
-    const textInput = document.getElementById('#{component_id}-input');
-    const dropdown = document.getElementById('#{component_id}-dropdown');
+    const textInput = document.getElementById('#{input_id}');
+    const dropdown = document.getElementById('#{listbox_id}');
     const autocompleteUrl = container.dataset.autocompleteUrl;
 
     let debounceTimer = null;
@@ -24,10 +28,13 @@
 
     function showDropdown() {
       dropdown.classList.remove('hidden');
+      textInput.setAttribute('aria-expanded', 'true');
     }
 
     function hideDropdown() {
       dropdown.classList.add('hidden');
+      textInput.setAttribute('aria-expanded', 'false');
+      textInput.removeAttribute('aria-activedescendant');
       selectedIndex = -1;
     }
 
@@ -40,6 +47,9 @@
     function createResultItem(item, index) {
       const div = document.createElement('div');
       div.className = '#{dropdown_item_classes}';
+      div.id = dropdown.id + '-option-' + index;
+      div.setAttribute('role', 'option');
+      div.setAttribute('aria-selected', 'false');
       div.dataset.id = item.id;
       div.dataset.index = index;
       div.textContent = item.label;
@@ -52,6 +62,8 @@
     function createNoResultsItem() {
       const div = document.createElement('div');
       div.className = 'px-3 py-2 text-sm text-gray-500';
+      div.setAttribute('role', 'option');
+      div.setAttribute('aria-disabled', 'true');
       div.textContent = 'No results found';
       return div;
     }
@@ -59,6 +71,7 @@
     function renderResults(items) {
       results = items;
       selectedIndex = -1;
+      textInput.removeAttribute('aria-activedescendant');
       clearDropdown();
 
       if (items.length === 0) {
@@ -88,8 +101,12 @@
       items.forEach((el, i) => {
         if (i === index) {
           el.classList.add('bg-gray-100');
+          el.setAttribute('aria-selected', 'true');
+          textInput.setAttribute('aria-activedescendant', el.id);
+          el.scrollIntoView({ block: 'nearest' });
         } else {
           el.classList.remove('bg-gray-100');
+          el.setAttribute('aria-selected', 'false');
         }
       });
     }

@@ -370,12 +370,37 @@ New keys in IronAdmin's `en.yml`:
 | `iron_admin.fields.boolean_true` / `boolean_false` | "Yes" / "No" |
 | `iron_admin.fields.color_picker_label` | "%{field} picker" |
 | `iron_admin.fields.color_invalid` | "Enter a hex color such as #1a2b3c or #abc." |
+| `iron_admin.fields.polymorphic_record_label` | "%{field} record" |
+| `iron_admin.resources.index.search_label` | "Search %{resource}" |
+| `iron_admin.resources.index.select_all` / `select_record` | "Select all" / "Select %{record}" |
+| `iron_admin.filters.from_label` / `to_label` | "%{filter} from" / "%{filter} to" |
+| `iron_admin.filters.operator_label` | "%{filter} operator" |
+| `iron_admin.filters.upper_value_label` | "%{filter} upper value" |
 
 `iron_admin.imports.preview.summary` is now a plural hash (`one`: "%{count} row detected.", `other`: "%{count} rows detected.").
 
 The engine import map pins two new Stimulus controllers, `iron_admin/controllers/cp_alert_controller` and `iron_admin/controllers/cp_color_field_controller`, and `iron_admin/index.js` registers them as `cp-alert` and `cp-color-field`.
 
 **Action required:** If your app ships its own IronAdmin translations (another locale, or overrides of the English texts), add the new keys and the plural forms of `summary`. If you pin IronAdmin's JavaScript in your own import map, or register its Stimulus controllers yourself instead of importing `iron_admin`, add both controllers. The engine layout's `import "iron_admin"` already registers them.
+
+### 30. Form, filter and bulk-select control names
+
+Every control of the built-in forms, filter panel, search box and bulk-select column now has an accessible name, and every label points at an existing control. Some ids and elements changed:
+
+- Field labels point at the control: `record_<foreign_key>` for a `belongs_to` select or autocomplete, `record_<type_column>` for a polymorphic `belongs_to` (its record select has `aria-label` "<Field> record"), and `record_<field>` for the text input of a `:tags` field. Nested-form row labels are `<label for>` elements pointing at `record_<association>_attributes_<index>_<field>`.
+- The field name of a `:radio` or `:boolean_group` field is a `<span id="record_<field>_label">`, and the association name above has_many checkboxes a `<span id="record_<singular>_ids_label">`, instead of a `<label>`. Each names the `role="radiogroup"` or `role="group"` container of the choices. has_many checkboxes have the ids `record_<singular>_ids_<id>` instead of all sharing `record_<singular>_ids_`.
+- The "Remove" checkbox of an attached `:file` field has the id `record_<field>_purge` (it was `<field>_purge`). Its name, `record[<field>_purge]`, is unchanged.
+- The autocomplete text input has the id `record_<foreign_key>` in the form (it was `autocomplete-<hex>-input`), `role="combobox"` and `aria-expanded`, and its results are `role="option"` items of a `role="listbox"`. `BelongsToAutocompleteComponent.new` takes an optional `input_id:`; without it the input keeps the `<component_id>-input` id.
+- Filter panel controls have ids: `filters_<name>` for select and boolean filters, `filters_<name>_op` for operator selects, and the existing `filters_<name>_value`, `_value_2`, `_from` and `_to` inputs. `Filters::SelectFilterComponent` gives its select `filters_<name>` and `Filters::DateRangeComponent` its inputs `filters_<name>_from` / `_to`. The hidden `q` and `scope` fields of the filter panel and `Filters::BarComponent`, and the hidden fields of `Filters::SearchComponent`, have no id any more.
+- The search box has `aria-label` "Search <resource label>". `Filters::SearchComponent` accepts `resource_class:` (the `search` slot passes it when `initialize` declares it) and otherwise uses its placeholder as the name.
+- Bulk-select checkboxes have `aria-label` "Select all" and "Select <record label>".
+- The audit log filter controls and buttons carry `h-10.5`, and its date inputs use the same padding as the selects (`cp_input_class`).
+
+**Action required:**
+
+- Update system specs that find controls by the old ids (`autocomplete-…-input`, `<field>_purge`, `record_<singular>_ids_`) or that expect a `<label>` for the field name of radio, boolean group or has_many choices. Specs can now find controls by their label, for example `select "ada@example.com", from: "User"`, and, with `Capybara.enable_aria_label = true`, by their `aria-label`, for example `check "Select all"`.
+- In a `search` or `table` override, render hidden fields without ids and name the search input and the bulk-select checkboxes (see the [components guide](docs/guides/components.md)). A field input override must give its input the id `form.field_id(field.name)` for the field label to point at it.
+- If your app ships its own IronAdmin translations, add the keys listed in section 29.
 
 ## What does NOT change
 

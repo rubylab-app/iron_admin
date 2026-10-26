@@ -181,6 +181,29 @@ RSpec.describe "IronAdmin::Audit", type: :request do
     end
   end
 
+  describe "GET /audit filter row" do
+    subject(:filter_row) do
+      get iron_admin.audit_path
+      response.parsed_body.at_css("form")
+    end
+
+    before do
+      IronAdmin.configure { |c| c.audit_enabled = true }
+      IronAdmin::AuditLog.log(OpenStruct.new(user: nil, action: :create, resource: "UserResource", record_id: 1,
+                                             changes: {}, ip_address: "127.0.0.1"))
+    end
+
+    it "gives the selects, date inputs, Filter button and Clear link one height, so they line up" do
+      controls = filter_row.css("select, input[type=date], button, a")
+      expect(controls.map { |control| control[:class].split.include?("h-10.5") }).to all(be(true))
+    end
+
+    it "pads the date inputs like the selects" do
+      paddings = filter_row.css("select, input[type=date]").map { |control| control[:class].split.grep(/\Ap[xy]-/).sort }
+      expect(paddings.uniq).to eq([%w[px-3.5 py-2.5]])
+    end
+  end
+
   describe "GET /audit with database storage" do
     subject(:page) do
       get iron_admin.audit_path(filters)

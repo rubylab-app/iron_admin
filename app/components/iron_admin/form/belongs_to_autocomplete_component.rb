@@ -39,6 +39,8 @@ module IronAdmin
       attr_accessor :autocomplete_url
 
       # @param name [String] Input name
+      # @param input_id [String, nil] Id of the visible text input, for a label to point at.
+      #   Defaults to "<component_id>-input".
       # @param resource_name [String] Resource for autocomplete
       # @param selected_id [Integer, nil] Selected ID
       # @param selected_label [String, nil] Selected label
@@ -47,10 +49,11 @@ module IronAdmin
       # @param has_error [Boolean] Error state
       # @param field [IronAdmin::Field, nil] Field config
       # @param current_user [Object, nil] Current user
-      def initialize(name:, resource_name:, selected_id: nil, selected_label: nil,
+      def initialize(name:, resource_name:, input_id: nil, selected_id: nil, selected_label: nil,
                      placeholder: nil, disabled: false, has_error: false,
                      field: nil, current_user: nil)
         @name = name
+        @input_id = input_id
         @resource_name = resource_name
         @selected_id = selected_id
         @selected_label = selected_label
@@ -95,6 +98,18 @@ module IronAdmin
       # @return [String] Unique component DOM ID
       def component_id
         @component_id ||= "autocomplete-#{SecureRandom.hex(4)}"
+      end
+
+      # @api private
+      # @return [String] DOM id of the visible text input
+      def input_id
+        @input_id || "#{component_id}-input"
+      end
+
+      # @api private
+      # @return [String] DOM id of the results listbox
+      def listbox_id
+        "#{component_id}-dropdown"
       end
     end
   end

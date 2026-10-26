@@ -88,4 +88,14 @@ RSpec.describe IronAdmin::Filters::BarComponent, type: :component do
       expect(described_class.registered_slots).to have_key(:filters)
     end
   end
+
+  describe "hidden fields" do
+    subject(:hidden_ids) { render_inline(component).css("input[type=hidden]").pluck("id").compact }
+
+    let(:component) { described_class.new(form_url: "/admin/users", scope: "active", query: "ada") }
+
+    it "renders scope and q without ids, so they do not clash with the search input's id" do
+      expect(hidden_ids).to be_empty
+    end
+  end
 end

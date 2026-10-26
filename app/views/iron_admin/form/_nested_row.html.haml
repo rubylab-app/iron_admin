@@ -28,8 +28,8 @@
       - input_class = "block w-full px-3 py-2 text-sm border #{t.input_border} #{t.border_radius} shadow-sm outline-none transition duration-150 ease-in-out #{t.input_focus}"
       - input_class += " !border-red-400" if has_error
       %div
-        %label.block.text-xs.font-medium.text-gray-500.mb-1
-          = field.name.to_s.humanize
+        = child_f.label(field.type == :belongs_to ? field.options[:foreign_key] : field.name, field.name.to_s.humanize,
+          class: "block text-xs font-medium text-gray-500 mb-1")
         - case field.type
         - when :belongs_to
           - fk = field.options[:foreign_key]

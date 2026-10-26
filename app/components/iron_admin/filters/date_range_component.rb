@@ -46,6 +46,18 @@ module IronAdmin
       end
 
       # @api private
+      # @return [String] DOM id of the start date input, which the label points at
+      def from_field_id
+        "filters_#{name}_from"
+      end
+
+      # @api private
+      # @return [String] DOM id of the end date input
+      def to_field_id
+        "filters_#{name}_to"
+      end
+
+      # @api private
       # @return [String] CSS classes for label elements
       def label_classes
         "block text-xs font-semibold uppercase tracking-wider #{theme.muted_text}"
