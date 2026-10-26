@@ -216,5 +216,83 @@ RSpec.describe "Index state", type: :request do
         expect(query_of(clear_link[:href])).to include("sort" => "expires_at", "direction" => "asc")
       end
     end
+
+    describe "bulk actions form" do
+      subject(:bulk_fields) { hidden_fields(document.at_css("form#bulk-actions-form")) }
+
+      context "with an active scope, search, filters, sort and page" do
+        before { get iron_admin.resources_path("index_state_licenses", state), as: :html }
+
+        it "carries the index state to the bulk action" do
+          expect(bulk_fields).to eq(
+            "scope" => "expired", "q" => "KEY", "sort" => "expires_at", "direction" => "asc", "page" => "2",
+            "filters[status]" => "expired",
+            "filters[license_key][op]" => "contains", "filters[license_key][value]" => "KEY",
+            "filters[max_devices][op]" => "between", "filters[max_devices][value]" => "1",
+            "filters[max_devices][value_2]" => "9", "filters[created_at_from]" => "2024-01-01"
+          )
+        end
+      end
+
+      context "without index params" do
+        before { get iron_admin.resources_path("index_state_licenses"), as: :html }
+
+        it "carries nothing" do
+          expect(bulk_fields).to be_empty
+        end
+      end
+    end
+  end
+
+  describe "POST /:resource_name/bulk_actions/:action_name" do
+    subject(:location) { URI.parse(response.location) }
+
+    let(:licenses) { create_list(:license, 2, status: :expired) }
+
+    context "with the index state it was run from" do
+      before do
+        post iron_admin.resource_bulk_action_path("index_state_licenses", "export"),
+             params: state.merge("ids" => licenses.map(&:id)), as: :html
+      end
+
+      it "redirects to the resource index" do
+        expect(location.path).to eq(iron_admin.resources_path("index_state_licenses"))
+      end
+
+      it "keeps the scope, search, filters, sort and page" do
+        expect(query_of(response.location)).to eq(state)
+      end
+    end
+
+    context "when no record is selected" do
+      before do
+        post iron_admin.resource_bulk_action_path("index_state_licenses", "export"), params: state, as: :html
+      end
+
+      it "keeps the index state" do
+        expect(query_of(response.location)).to eq(state)
+      end
+    end
+
+    context "with params outside the index state" do
+      before do
+        post iron_admin.resource_bulk_action_path("index_state_licenses", "export"),
+             params: { "ids" => licenses.map(&:id), "host" => "evil.example", "protocol" => "javascript",
+                       "only_path" => "false", "sort" => { "nested" => "1" }, "filters" => { "bogus" => "1" }, },
+             as: :html
+      end
+
+      it "stays on this application" do
+        expect(location.host).to eq("www.example.com")
+      end
+
+      it "redirects to the resource index" do
+        expect(location.path).to eq(iron_admin.resources_path("index_state_licenses"))
+      end
+
+      it "drops them" do
+        expect(location.query).to be_nil
+      end
+    end
   end
 end
