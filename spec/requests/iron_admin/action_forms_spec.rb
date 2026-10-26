@@ -61,6 +61,14 @@ RSpec.describe "Action Forms", type: :request do
         expect(response.body).to include("Reason")
       end
 
+      it "submits to the whole page so Turbo follows the redirect after Execute" do
+        get iron_admin.resource_action_form_path("form_exec_licenses", license, "revoke_with_reason"),
+            as: :html
+
+        action_path = iron_admin.resource_action_path("form_exec_licenses", license, "revoke_with_reason")
+        expect(response.parsed_body.at_css("form[action='#{action_path}']")["data-turbo-frame"]).to eq("_top")
+      end
+
       it "returns not found for an unknown action before finding the record" do
         get iron_admin.resource_action_form_path("form_exec_licenses", 999_999, "missing_action"),
             as: :html
@@ -245,6 +253,15 @@ RSpec.describe "Action Forms", type: :request do
 
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("Note")
+      end
+
+      it "submits to the whole page so Turbo follows the redirect after Execute" do
+        get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"),
+            params: { ids: licenses.map(&:id) },
+            as: :html
+
+        action_path = iron_admin.resource_bulk_action_path("bulk_form_exec_licenses", "bulk_revoke_with_note")
+        expect(response.parsed_body.at_css("form[action='#{action_path}']")["data-turbo-frame"]).to eq("_top")
       end
     end
 

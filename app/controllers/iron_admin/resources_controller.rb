@@ -46,7 +46,8 @@ module IronAdmin
     def show
       @record = find_record(record_scope(include_deleted: true), params[:id])
       @fields = @resource_class.resolved_fields
-      @edit_reachable = edit_reachable?(@record)
+      @record_reachable = record_reachable?(@record)
+      @member_actions = @resource_class.defined_actions.select { |action| member_action_offered?(action) }
     end
 
     # Renders the new record form.
@@ -286,12 +287,18 @@ module IronAdmin
     end
 
     def prepare_action_record?(action)
-      include_deleted = action[:name].to_sym == :restore
-      @record = find_record(record_scope(include_deleted: include_deleted), params[:id])
+      @record = find_record(record_scope(include_deleted: action_includes_deleted?(action)), params[:id])
       return true if action_condition_met?(action, @record)
 
       render_forbidden
       false
+    end
+
+    # The show page offers only the member actions that execute_action runs:
+    # authorized, able to load the shown record, and with a passing condition.
+    def member_action_offered?(action)
+      action_authorized?(action[:name]) && (@record_reachable || action_includes_deleted?(action)) &&
+        action_condition_met?(action, @record)
     end
 
     def index_fields
