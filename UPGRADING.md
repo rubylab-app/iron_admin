@@ -208,7 +208,9 @@ In 0.6.0, `config.components` and `Resource.component` stored overrides that not
 
 The changes IronAdmin records for a create, update or destroy replace the values of `:password` fields, and of every attribute matched by your app's `config.filter_parameters`, with `"[FILTERED]"`. This applies to new audit log entries and to the `changes` of the event passed to `config.on_action`. Entries recorded before the upgrade are not rewritten.
 
-**Action required:** If an `on_action` callback needs a filtered value, read it from the record instead of `event.changes`. To keep a column visible in the audit log, remove it from `filter_parameters`. Review existing `iron_admin_audit_entries` rows for secrets stored by earlier versions.
+Bulk actions and imports are now audited too. A bulk action logs one entry per selected record under the action's name once its block succeeds (a block that returns `false` or raises logs nothing), and an import logs `create` or `update` for each saved row. Both go through the same masking and call `on_action` once per record, from inside the bulk action's or the import's transaction. An import can therefore call `on_action` up to `import_options max_rows` times (5,000 by default).
+
+**Action required:** If an `on_action` callback needs a filtered value, read it from the record instead of `event.changes`. To keep a column visible in the audit log, remove it from `filter_parameters`. Review existing `iron_admin_audit_entries` rows for secrets stored by earlier versions. If an `on_action` callback sends mail or calls an API, make sure it can take one call per record of a bulk action or import. An error it raises there rolls the whole bulk action or import back.
 
 ### 18. Flash messages are rendered
 
