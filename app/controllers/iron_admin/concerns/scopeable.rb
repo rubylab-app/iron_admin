@@ -29,12 +29,22 @@ module IronAdmin
         adapter.unscope_column(scope, @resource_class.soft_delete_column)
       end
 
-      # Whether edit and update can load a record. They use record_scope, so a
-      # default scope that hides soft-deleted rows makes them 404 for those rows.
+      # Restore is the one member action meant for soft-deleted rows, so only
+      # its record lookup includes them.
+      #
+      # @param action [Hash] a defined member action
+      # @return [Boolean]
+      def action_includes_deleted?(action)
+        action[:name].to_sym == :restore
+      end
+
+      # Whether edit, update and member actions other than restore can load a
+      # record. They use record_scope, which a default scope hiding
+      # soft-deleted rows stops from reaching them.
       #
       # @param record [Object] a record loaded with deleted rows included
       # @return [Boolean]
-      def edit_reachable?(record)
+      def record_reachable?(record)
         return true unless @resource_class.soft_delete? && record.public_send(@resource_class.soft_delete_column).present?
 
         find_record(record_scope, params[:id])

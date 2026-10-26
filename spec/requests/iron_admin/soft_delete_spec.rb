@@ -121,6 +121,60 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
+  describe "member actions on the show page" do
+    let(:post_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = SoftDeletePost
+
+        def self.name
+          "SoftDeletePostResource"
+        end
+
+        def self.resource_name
+          "soft_delete_posts"
+        end
+
+        action :publish do |post|
+          post.update!(title: "Published")
+        end
+      end
+    end
+
+    def action_buttons(record, action_name)
+      response.parsed_body.css("form[action='#{iron_admin.resource_action_path("soft_delete_posts", record, action_name)}']")
+    end
+
+    context "with a deleted record that the default scope hides" do
+      let!(:deleted_post) do
+        SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current)
+      end
+
+      before { get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html }
+
+      it "offers the restore action" do
+        expect(action_buttons(deleted_post, :restore)).not_to be_empty
+      end
+
+      it "does not offer actions that cannot load the deleted record" do
+        expect(action_buttons(deleted_post, :publish)).to be_empty
+      end
+    end
+
+    context "with an active record" do
+      let!(:active_post) { SoftDeletePost.create!(title: "Active Post", body: "Content") }
+
+      before { get iron_admin.resource_path("soft_delete_posts", active_post), as: :html }
+
+      it "offers its custom actions" do
+        expect(action_buttons(active_post, :publish)).not_to be_empty
+      end
+
+      it "does not offer restore, whose condition is false" do
+        expect(action_buttons(active_post, :restore)).to be_empty
+      end
+    end
+  end
+
   # discard (with discard_column = :deleted_at) and hand-rolled soft delete
   # leave deleted rows visible, so edit and update can still load them.
   describe "show of a deleted record on a model without a default scope" do
@@ -152,6 +206,10 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
         def self.resource_name
           "plain_soft_delete_posts"
         end
+
+        action :publish do |post|
+          post.update!(title: "Published")
+        end
       end
     end
 
@@ -164,6 +222,13 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
 
       edit_path = iron_admin.edit_resource_path("plain_soft_delete_posts", deleted_post)
       expect(response.parsed_body.css("a[href='#{edit_path}']")).not_to be_empty
+    end
+
+    it "offers custom actions, which can still load the deleted record" do
+      get iron_admin.resource_path("plain_soft_delete_posts", deleted_post), as: :html
+
+      action_path = iron_admin.resource_action_path("plain_soft_delete_posts", deleted_post, :publish)
+      expect(response.parsed_body.css("form[action='#{action_path}']")).not_to be_empty
     end
   end
 

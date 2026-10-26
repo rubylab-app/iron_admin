@@ -4,7 +4,7 @@
       = @resource_class.model.model_name.human
       %span.text-gray-400= "##{@record.id}"
     .flex.gap-2.flex-wrap
-      - if @resource_class.crud_allowed?(:update, iron_admin_current_user) && @edit_reachable
+      - if @resource_class.crud_allowed?(:update, iron_admin_current_user) && @record_reachable
         = link_to I18n.t("iron_admin.resources.show.edit_button"), edit_resource_path(@resource_class.resource_name, @record),
           class: cp_btn_primary
       - if @resource_class.crud_allowed?(:destroy, iron_admin_current_user)
@@ -74,12 +74,11 @@
                   resource_path(assoc[:resource].resource_name, related),
                   class: cp_link
 
-  - if @resource_class.defined_actions.any?
+  - if @member_actions.any?
     .mt-6.p-6{ class: cp_card }
       %h2.text-lg.font-semibold.mb-4= I18n.t("iron_admin.resources.show.actions_label")
       .flex.gap-2.flex-wrap
-        - @resource_class.defined_actions.each do |action|
-          - next if action[:condition] && !action[:condition].call(@record)
+        - @member_actions.each do |action|
           = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
             data: action[:confirm] ? { turbo_confirm: I18n.t("iron_admin.resources.show.delete_confirm") } : {},
             class: cp_btn_ghost do
