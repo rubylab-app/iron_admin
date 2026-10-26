@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Rich text on index pages** — `:rich_text` fields rendered their whole HTML content in index and dashboard recent table cells. They now show plain text, truncated to 50 characters like long text fields, with the full text in the cell's `title`. Headings and paragraphs stay apart, script and style content is dropped, and an attachment shows as its caption or `[filename]`. Show pages still render the formatted content.
 - **Foreign key select filters show labels** — A `:select` filter without `options` on the foreign key of a `belongs_to` association (`filter :category_id, type: :select`) listed the raw ids found in the column. It now offers the records the form's belongs_to select offers, with the same labels (the association's `display:` option, else the record's name, title, email, label or slug) and the same `tenant_scope`. That includes records no row refers to yet; to limit the choices on a large table, give the filter `options:`.
 - **Scope tabs keep the index state** — Clicking a scope tab on an index page keeps the search, the active filters and the sort, and starts back at the first page. Before, it kept only the search. `Ui::ScopesComponent` drops the `scope` and `page` of its `params:`, so passing it `iron_admin_index_state` does the same; before, a String `"scope"` key in `params:` could win over the tab's own scope.
 

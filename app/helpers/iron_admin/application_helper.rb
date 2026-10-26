@@ -65,14 +65,17 @@ module IronAdmin
       end
     end
 
-    # Displays a field value for index pages with text truncation.
+    # Displays a field value for index pages with text truncation. Rich text
+    # shows as truncated plain text, never as HTML.
     #
     # @param record [ActiveRecord::Base] The record
     # @param field [IronAdmin::Field] Field configuration
-    # @return [String, nil] Formatted value (truncated for text fields)
+    # @return [String, nil] Formatted value (truncated for text and rich text fields)
     def display_index_field_value(record, field)
       if TRUNCATABLE_TYPES.include?(field.type)
         display_truncated_index_value(record, field)
+      elsif field.type == :rich_text
+        display_index_rich_text(record, field)
       elsif INDEX_COMPACT_TYPES.include?(field.type)
         display_compact_field_value(record, field)
       elsif (custom = IronAdmin::FieldTypeRegistry.find(field.type))

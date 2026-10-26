@@ -320,12 +320,40 @@ module IronAdmin
       value = record.public_send(field.name)
       return if value.blank?
 
-      truncated = truncate(value.to_s, length: ApplicationHelper::INDEX_TRUNCATION_LENGTH)
-      if value.to_s.length > ApplicationHelper::INDEX_TRUNCATION_LENGTH
-        content_tag(:span, truncated, title: value.to_s)
-      else
-        truncated
-      end
+      display_truncated_text(value.to_s)
+    end
+
+    # A long text is cut to INDEX_TRUNCATION_LENGTH, with the whole text in the title.
+    def display_truncated_text(text)
+      truncated = truncate(text, length: ApplicationHelper::INDEX_TRUNCATION_LENGTH)
+      return truncated if text.length <= ApplicationHelper::INDEX_TRUNCATION_LENGTH
+
+      content_tag(:span, truncated, title: text)
+    end
+
+    # Index cells show rich text as plain text, truncated like long text fields.
+    def display_index_rich_text(record, field)
+      text = rich_text_plain_text(record.public_send(field.name))
+      display_truncated_text(text) if text.present?
+    end
+
+    # The text of rich text HTML on one line: tags dropped, block elements
+    # (headings included) kept apart, script and style elements dropped with
+    # their content. Loofah ships with Rails through rails-html-sanitizer.
+    def rich_text_plain_text(content)
+      return "" if content.blank?
+
+      Loofah.fragment(rich_text_html(content)).scrub!(:prune).to_text(encode_special_chars: false).squish
+    end
+
+    # A has_rich_text attribute's stored HTML, with each attachment replaced by
+    # its plain text (an image's caption or "[filename]", a mention's name) as
+    # ActionText's to_plain_text does; any other value as a String.
+    def rich_text_html(content)
+      body = content.try(:body)
+      return content.to_s unless body.respond_to?(:render_attachments)
+
+      body.render_attachments(with_full_attributes: false, &:to_plain_text).to_html
     end
 
     def display_compact_field_value(record, field)

@@ -261,6 +261,49 @@ RSpec.describe "Display Formatting", type: :request do
       end
     end
 
+    describe "GET /:resource_name (index) with a rich text column" do
+      subject(:cell) do
+        get iron_admin.resources_path("rich_text_index_documents"), as: :html
+        response.parsed_body.at_css("turbo-frame#records tbody tr td:nth-child(2)")
+      end
+
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "RichTextIndexDocumentResource"
+          end
+
+          def self.resource_name
+            "rich_text_index_documents"
+          end
+
+          field :content, type: :rich_text
+          index_fields :title, :content
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(resource)
+        create(:document, title: "Notes", content: "<h2>Get in Touch</h2><p>Write to us at any time, " \
+                                                   "<strong>day or night</strong>, and we will answer.</p>")
+      end
+
+      it "renders no markup from the rich text" do
+        expect(cell.css("h2, p, strong, .trix-content")).to be_empty
+      end
+
+      it "shows the start of its plain text" do
+        expect(cell.text.squish).to start_with("Get in Touch Write to us at any time")
+      end
+
+      it "keeps the full plain text in the title" do
+        expect(cell.at_css("span[title]")["title"])
+          .to eq("Get in Touch Write to us at any time, day or night, and we will answer.")
+      end
+    end
+
     describe "GET /:resource_name/:id (show)" do
       it "shows full text on show page" do
         long_bio = "A" * 100
