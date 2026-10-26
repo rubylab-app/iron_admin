@@ -40,6 +40,7 @@ IronAdmin.configure do |config|
   # --- Audit Logging ---
   config.audit_enabled = true
   config.audit_storage = :memory  # or :database
+  config.audit_user_labels { |identifiers| User.where(id: identifiers).pluck(:id, :email).to_h }
 
   config.on_action do |event|
   end
@@ -94,6 +95,7 @@ The tenant scope is applied to:
 |--------|------|---------|-------------|
 | `audit_enabled` | Boolean | `false` | Enable built-in audit logging |
 | `audit_storage` | Symbol | `:memory` | Storage backend (`:memory` or `:database`) |
+| `audit_user_labels` | Block | `nil` | Labels the audit log's users: receives the user identifiers on the page, returns `{ identifier => label }`. See [User Labels](../guides/authentication.md#user-labels) |
 
 When `audit_storage: :database`, run the migration:
 

@@ -173,6 +173,85 @@ RSpec.describe IronAdmin::AuditLog do
     end
   end
 
+  describe ".user_identifier" do
+    it "uses the id of a user that has one" do
+      expect(described_class.user_identifier(OpenStruct.new(id: 42))).to eq("42")
+    end
+
+    it "uses a stored identifier as it is" do
+      expect(described_class.user_identifier("42")).to eq("42")
+    end
+
+    it "is blank without a user" do
+      expect(described_class.user_identifier(nil)).to eq("")
+    end
+  end
+
+  describe ".user_labels" do
+    subject(:user_labels) { described_class.user_labels(entries) }
+
+    let(:entries) do
+      [
+        OpenStruct.new(user: "7"),
+        OpenStruct.new(user: OpenStruct.new(id: 9)),
+        OpenStruct.new(user: "7"),
+        OpenStruct.new(user: ""),
+      ]
+    end
+    let(:calls) { [] }
+
+    context "without an audit_user_labels block" do
+      it "labels no user" do
+        expect(user_labels).to eq({})
+      end
+    end
+
+    context "with an audit_user_labels block" do
+      before do
+        IronAdmin.configure do |c|
+          c.audit_user_labels do |identifiers|
+            calls << identifiers
+            { 7 => "Jane", "9" => "", "8" => "Not on the page" }
+          end
+        end
+      end
+
+      it "looks up every user of the entries in one call" do
+        user_labels
+
+        expect(calls).to eq([%w[7 9]])
+      end
+
+      it "keys the labels by identifier, whatever type the block returns" do
+        expect(user_labels["7"]).to eq("Jane")
+      end
+
+      it "leaves out a user the block gives a blank label" do
+        expect(user_labels).not_to have_key("9")
+      end
+    end
+
+    context "when the block returns nothing" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { nil } } }
+
+      it "labels no user" do
+        expect(user_labels).to eq({})
+      end
+    end
+
+    context "when the entries have no user" do
+      let(:entries) { [OpenStruct.new(user: nil)] }
+
+      before { IronAdmin.configure { |c| c.audit_user_labels { |identifiers| calls << identifiers } } }
+
+      it "does not call the block" do
+        user_labels
+
+        expect(calls).to be_empty
+      end
+    end
+  end
+
   describe ".clear!" do
     before do
       IronAdmin.configure { |c| c.audit_enabled = true }

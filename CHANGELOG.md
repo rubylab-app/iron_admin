@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Audit log user labels** — `config.audit_user_labels { |identifiers| ... }` lets the audit log page show a label for each user instead of the stored identifier (the user id, with database storage). The block is called once per page with the distinct identifiers on it, so one query labels them all, and returns a hash of labels keyed by identifier, for example `User.where(id: identifiers).pluck(:id, :email).to_h`. A user the hash does not label, such as a deleted user, still shows the identifier, and if the block raises, the error is logged and the page shows the identifiers. Without the block, the page is unchanged.
+
 ### Fixed
 
+- **Audit log entries without a user** — With database storage, an entry logged without a user showed an empty User cell. It now shows "Unknown", as with memory storage.
 - **Import preview values** — The import preview formats each cell as the show page displays its field, instead of the raw cast value: "Yes" or "No" for a boolean (it showed `true` and `false`), the field's `format:` for a date or datetime, the symbol, delimiters and precision of a `:currency` field, the humanized value of a `:badge` or `:radio` field, and a mask for `:password` and `:hidden` fields. A blank cell stays blank. Only the text changes: the import saves the values from the file, as before. `IronAdmin::Import::ImportPreview` has a new `fields` member, the field of each mapped column.
 - **Stats grid layout** — `IronAdmin::Dashboards::StatsGridComponent` now lays out its cards like the dashboard metric cards. The grid uses the same `gap-6` spacing (it used `gap-4`), and with `columns: 4` (the default) it keeps two columns until the `xl` breakpoint instead of switching to four at `lg`, where the sidebar leaves each card about 160px. In each card the label wraps beside the icon with a gap instead of touching it, and the value sits on its own row below them, a size smaller at `xl`, so a long value such as `$123,456.78` no longer pushes the icon out of the card.
 
