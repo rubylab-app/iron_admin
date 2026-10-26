@@ -19,13 +19,12 @@ module IronAdmin
       end
     end
 
-    # @param filters [Array<Hash>] The visible filters
     # @return [ViewComponent::Base, nil] The index page's search override
-    def iron_admin_search_component(resource_class, filters:, scope:)
+    def iron_admin_search_component(resource_class, scope:)
       iron_admin_resource_component(:search, resource_class) do
         { form_url: resources_path(resource_class.resource_name), value: params[:q],
           placeholder: I18n.t("iron_admin.resources.index.search_placeholder"),
-          hidden_params: iron_admin_search_hidden_params(filters, scope), }
+          hidden_params: iron_admin_search_hidden_params(scope), }
       end
     end
 
@@ -56,6 +55,36 @@ module IronAdmin
       IronAdmin.configuration.components.build_field(field, form: form, record: form.object)
     end
 
+    # Index path sorted by +field_name+, keeping the scope, search and filters.
+    # A new sort starts back at the first page.
+    #
+    # @return [String]
+    def iron_admin_sort_path(resource_class, scope, field_name, direction)
+      resources_path(resource_class.resource_name, **iron_admin_unsorted_state(scope), sort: field_name, direction: direction)
+    end
+
+    # The hidden fields a search submit adds to keep the scope, active filters and sort.
+    #
+    # @return [Hash{String => String}] Field name => value
+    def iron_admin_search_hidden_params(scope)
+      iron_admin_hidden_params({ "scope" => scope }.merge(iron_admin_index_state.slice("sort", "direction", "filters")))
+    end
+
+    # Flattens nested params into hidden field names, such as "filters[title][op]".
+    #
+    # @param state [Hash] Params shaped like {IronAdmin::Concerns::IndexStatePreservable#iron_admin_index_state}
+    # @return [Hash{String => String}] Field name => value
+    def iron_admin_hidden_params(state, prefix = nil)
+      state.each_with_object({}) do |(key, value), fields|
+        name = prefix ? "#{prefix}[#{key}]" : key.to_s
+        if value.is_a?(Hash)
+          fields.merge!(iron_admin_hidden_params(value, name))
+        else
+          fields[name] = value
+        end
+      end
+    end
+
     private
 
     # Builds the arguments (the block) only when the slot has an override.
@@ -67,30 +96,15 @@ module IronAdmin
       IronAdmin::Configuration::Components.instantiate(component_class, arguments)
     end
 
-    # Index URL keeping the scope and query, ready for "&sort=..." to be appended.
+    # Index URL keeping the scope, query and filters, ready for "&sort=..." to be appended.
     def iron_admin_sort_base_url(resource_class, scope)
-      url = resources_path(resource_class.resource_name, scope: scope, q: params[:q].presence)
+      url = resources_path(resource_class.resource_name, **iron_admin_unsorted_state(scope))
       url.include?("?") ? url : "#{url}?"
     end
 
-    # The hidden fields the built-in search form adds to keep the scope and active filters.
-    def iron_admin_search_hidden_params(filters, scope)
-      filters.each_with_object({ "scope" => scope }) do |filter, hidden|
-        name = filter[:name].to_s
-        value = iron_admin_filter_param(name)
-        if filter[:type].in?(%i[string number])
-          next unless value.is_a?(ActionController::Parameters) && value["value"].present?
-
-          %w[op value value_2].each { |key| hidden["filters[#{name}][#{key}]"] = value[key] if value[key].present? }
-        elsif filter[:type] == :date_range
-          %w[from to].each do |suffix|
-            range_value = iron_admin_filter_param("#{name}_#{suffix}")
-            hidden["filters[#{name}_#{suffix}]"] = range_value if range_value.present?
-          end
-        elsif value.present?
-          hidden["filters[#{name}]"] = value
-        end
-      end
+    # The index state without its sort and page, with +scope+ as the scope.
+    def iron_admin_unsorted_state(scope)
+      iron_admin_index_state.except("sort", "direction", "page").merge("scope" => scope).compact.symbolize_keys
     end
   end
 end

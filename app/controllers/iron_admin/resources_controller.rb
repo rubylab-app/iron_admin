@@ -22,6 +22,7 @@ module IronAdmin
     include Concerns::Authorizable
     include Concerns::EventEmittable
     include Concerns::Filterable
+    include Concerns::IndexStatePreservable
     include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
     include Concerns::Scopeable
