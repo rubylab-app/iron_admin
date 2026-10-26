@@ -99,25 +99,21 @@ module IronAdmin
       "#{record.class.model_name.human} ##{record.id}"
     end
 
-    # Returns options for a filter select dropdown.
+    # Returns options for a filter select dropdown, evaluated when the page renders.
+    #
+    # A +:select+ filter offers, in order of precedence: its +options+ (an Array,
+    # or a callable that takes no arguments and returns one), the enum values of
+    # its column, the records of the +belongs_to+ association whose foreign key
+    # it filters (labelled and scoped like the form's belongs_to select), or the
+    # column's distinct values.
     #
     # @param resource_class [Class] The resource class
     # @param filter [Hash] Filter configuration
-    # @return [Array<Array(String, String)>] Options for select tag
+    # @return [Array<Array(String, Object)>] [label, value] pairs for the select tag
     def filter_options_for(resource_class, filter)
-      resource_adapter = resource_class.adapter
-      column_name = filter[:name].to_s
-
       case filter[:type]
       when :select
-        enums = resource_adapter.enums
-        if filter[:options]
-          normalize_filter_options(filter[:options])
-        elsif enums.key?(column_name)
-          enums[column_name].keys.map { |k| [k.humanize, k] }
-        else
-          resource_adapter.distinct_values(column_name).map { |v| [v.to_s.humanize, v] }
-        end
+        select_filter_options(resource_class, filter)
       when :boolean
         [[I18n.t("iron_admin.filters.true"), "true"], [I18n.t("iron_admin.filters.false"), "false"]]
       else
@@ -125,8 +121,10 @@ module IronAdmin
       end
     end
 
+    # @param options [Array, nil] Labels with values, or bare values labelled by humanizing them
+    # @return [Array<Array(String, Object)>] [label, value] pairs
     def normalize_filter_options(options)
-      options.map do |option|
+      Array(options).map do |option|
         option.is_a?(Array) ? option : [option.to_s.humanize, option]
       end
     end
@@ -137,6 +135,38 @@ module IronAdmin
       return resource if resource
 
       IronAdmin::ResourceRegistry.find(association_class.model_name.plural)
+    end
+
+    private
+
+    def select_filter_options(resource_class, filter)
+      options = filter[:options]
+      return normalize_filter_options(options.respond_to?(:call) ? options.call : options) if options
+
+      column_name = filter[:name].to_s
+      enum_values = resource_class.adapter.enums[column_name]
+      return enum_values.keys.map { |key| [key.humanize, key] } if enum_values
+
+      belongs_to_filter_options(resource_class, column_name) ||
+        resource_class.adapter.distinct_values(column_name).map { |value| [value.to_s.humanize, value] }
+    end
+
+    # The records a belongs_to select offers on the form, when +column_name+ is
+    # the foreign key of a (non-polymorphic) belongs_to association; nil otherwise.
+    def belongs_to_filter_options(resource_class, column_name)
+      association = resource_class.adapter.associations(:belongs_to).find do |candidate|
+        !candidate.polymorphic? && candidate.foreign_key.to_s == column_name
+      end
+      association_class = association&.klass
+      return unless association_class
+
+      field = resource_class.resolved_fields.find do |candidate|
+        candidate.type == :belongs_to && candidate.options[:foreign_key].to_s == column_name
+      end
+      scope = association_class.all
+      tenant_scope = IronAdmin.configuration.tenant_scope_block
+      scope = tenant_scope.call(scope) if tenant_scope
+      scope.map { |record| [display_record_label(record, field&.options&.dig(:display)), record.id] }
     end
   end
 end
