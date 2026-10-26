@@ -147,6 +147,18 @@ RSpec.describe "Error pages", type: :request do
     end
   end
 
+  describe "an HTML request for an export" do
+    before { get iron_admin.export_path("users"), as: :html }
+
+    it "keeps the not found status" do
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "renders the not found page" do
+      expect(heading).to eq("Page not found")
+    end
+  end
+
   describe "a JSON request the policy forbids" do
     before { get iron_admin.edit_resource_path("read_only_users", user), as: :json }
 

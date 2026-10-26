@@ -60,7 +60,7 @@ module IronAdmin
     def ensure_format_enabled
       return if performed?
 
-      head(:not_found) unless @resource_class.export_formats.map(&:to_sym).include?(request.format.symbol)
+      render_not_found unless @resource_class.export_formats.map(&:to_sym).include?(request.format.symbol)
     end
 
     def adapter
