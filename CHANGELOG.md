@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Stats grid layout** — `IronAdmin::Dashboards::StatsGridComponent` now lays out its cards like the dashboard metric cards. The grid uses the same `gap-6` spacing (it used `gap-4`), and with `columns: 4` (the default) it keeps two columns until the `xl` breakpoint instead of switching to four at `lg`, where the sidebar leaves each card about 160px. In each card the label wraps beside the icon with a gap instead of touching it, and the value sits on its own row below them, a size smaller at `xl`, so a long value such as `$123,456.78` no longer pushes the icon out of the card.
+
 ## [0.7.0] - 2026-10-26
 
 > **Upgrading from 0.6.0?** IronAdmin 0.7.0 requires **Ruby >= 3.3** and **Rails >= 8.0.4**, raises several dependency floors, and tightens authorization, so some requests that used to succeed now return `403` or `404`. Entries marked **Breaking** need attention, and UPGRADING.md lists every change that may need action, including the responsive layout markup changes (`p-8` padding, off-canvas sidebar, overlay classes). Read the [0.7.0 upgrade guide](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md) before upgrading.

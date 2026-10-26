@@ -47,6 +47,11 @@ IronAdmin::Dashboards::StatsGridComponent.new(
 )
 ```
 
+The grid has one column on phones and two from `sm`. Three columns start at `lg` and four at
+`xl`, as in the dashboard's metric grid: from `lg` the sidebar leaves the page about 700px, too
+narrow for four cards. The cards are spaced like the metric cards (`gap-6`). In each card the label
+wraps beside the icon, and the value sits on its own row below them.
+
 **Slots:**
 - `stats` - Individual stat items (renders `StatComponent`)
 
