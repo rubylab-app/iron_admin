@@ -4,7 +4,10 @@
     %p.mt-1.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.imports.new.subtitle")
 
   .border.p-6{ class: "#{t.card_border} #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
-    = form_tag resource_import_preview_path(@resource_class.resource_name), multipart: true, class: "space-y-5" do
+    -# The preview is rendered in reply to this POST. Turbo Drive only accepts a
+    -# redirect after a form submission, so the upload is a full page request.
+    = form_tag resource_import_preview_path(@resource_class.resource_name),
+      multipart: true, class: "space-y-5", data: { turbo: false } do
       .space-y-2
         %label.block.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.file_label")
         = file_field_tag :file, required: true, class: "block w-full text-sm #{cp_body_text}"

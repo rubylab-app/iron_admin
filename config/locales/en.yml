@@ -59,11 +59,16 @@ en:
         preview_button: "Preview"
       preview:
         title: "Preview %{model} Import"
-        summary: "%{count} rows detected."
+        summary:
+          one: "%{count} row detected."
+          other: "%{count} rows detected."
         mapping_title: "Column mapping"
         status_column: "Status"
         valid_status: "Valid"
         back_button: "Back"
+        import_button:
+          one: "Import %{count} row"
+          other: "Import %{count} rows"
       create:
         success: "Import finished: %{created} created, %{updated} updated, %{failed} failed."
       errors:
