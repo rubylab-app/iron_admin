@@ -72,4 +72,67 @@ RSpec.describe "Resource show page", type: :request do
       expect(action_button(:purge)).to be_nil
     end
   end
+
+  describe "has_many related list" do
+    let!(:license) { create(:license, user: user) }
+    let!(:other_license) { create(:license) }
+
+    def view_all_link
+      response.parsed_body.css("a").find { |link| link.text.strip == "View all" }
+    end
+
+    it "wraps the related records table in a horizontal scroll container" do
+      get iron_admin.resource_path("users", user), as: :html
+
+      license_link = ".overflow-x-auto table a[href='#{iron_admin.resource_path("licenses", license)}']"
+      expect(response.parsed_body.css(license_link)).not_to be_empty
+    end
+
+    context "when the associated resource has a filter on the foreign key" do
+      let(:filtered_license_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "FilteredLicenseResource"
+          end
+
+          def self.resource_name
+            "licenses"
+          end
+
+          filter :user_id, type: :select
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(filtered_license_resource)
+        get iron_admin.resource_path("users", user), as: :html
+      end
+
+      it "links View all to the index filtered by the parent record" do
+        expect(view_all_link["href"]).to eq(iron_admin.resources_path("licenses", filters: { user_id: user.id }))
+      end
+
+      it "lists only the parent's records behind the View all link" do
+        get view_all_link["href"], as: :html
+
+        expect(response.body).not_to include(other_license.license_key)
+      end
+
+      it "keeps the parent's records behind the View all link" do
+        get view_all_link["href"], as: :html
+
+        expect(response.body).to include(license.license_key)
+      end
+    end
+
+    context "when the associated resource has no filter on the foreign key" do
+      before { get iron_admin.resource_path("users", user), as: :html }
+
+      it "links View all to the index, which could not apply the filter" do
+        expect(view_all_link["href"]).to eq(iron_admin.resources_path("licenses"))
+      end
+    end
+  end
 end

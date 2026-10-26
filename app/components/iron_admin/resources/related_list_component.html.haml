@@ -1,12 +1,12 @@
-.mt-6.overflow-hidden{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow}" }
+.mt-6.overflow-hidden{ class: "#{theme.card_bg} #{theme.border_radius} #{theme.card_shadow}" }
   .px-6.py-4.border-b.flex.items-center.justify-between{ class: theme.card_border }
     %h2.text-lg.font-semibold{ class: theme.body_text }
       = title
-    = link_to "View all", view_all_url, class: "text-sm #{theme.link}"
+    = link_to I18n.t("iron_admin.resources.show.view_all"), view_all_url, class: "text-sm #{theme.link}"
 
   .overflow-x-auto
-    %table.min-w-full{ class: "#{theme.card_border} divide-y" }
-      %tbody{ class: "#{theme.card_border} divide-y" }
+    %table.min-w-full{ class: "#{theme.table_border} divide-y" }
+      %tbody{ class: "#{theme.table_border} divide-y" }
         - records.each do |record|
           %tr{ class: theme.table_row_hover }
             %td.px-6.py-3.text-sm{ class: theme.body_text }
