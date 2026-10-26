@@ -13,6 +13,7 @@ module IronAdmin
 
       # Field types the UI never shows; a filter on one would let readers probe the value.
       SENSITIVE_FIELD_TYPES = %i[password hidden].freeze
+      private_constant :SKIP_FILTER_COLUMNS, :SENSITIVE_FIELD_TYPES
 
       module FilterDsl
         # Defines an index filter. It replaces the auto-inferred filter of the same name.
