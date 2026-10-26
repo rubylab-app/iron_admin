@@ -299,7 +299,7 @@ end
 -# app/components/admin_navbar_component.html.haml
 %nav{ class: "#{theme.navbar_bg} p-4" }
   .flex.items-center.justify-between
-    %h1{ class: theme.body_text }= @title
+    %span{ class: theme.body_text }= @title
     %span{ class: theme.muted_text }= @current_user&.name
 ```
 

@@ -183,6 +183,7 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 
 - Page containers use `p-4 sm:p-6 lg:p-8` instead of `p-8` on the dashboard and on index, show, new, edit, import, audit, search, tool, and action-form pages. The bulk-action form still uses `p-8`.
 - Below the `lg` breakpoint (1024px), the sidebar is an off-canvas drawer, opened with the "Open menu" button in the navbar. While it is closed, the drawer is `inert`. While it is open, the rest of the shell is `inert` and focus starts on its "Close menu" button; closing it moves focus back to "Open menu".
+- The sidebar brand (the configured `title`) is a `<div>` with the same classes (`text-xl font-bold`) instead of an `<h1>`, so the page title is the only `h1` on the page.
 - Wide tables are wrapped in `overflow-x-auto`, and show-page detail rows stack vertically below `sm`.
 - The built-in shell renders the page content in `<main id="main-content">` (the element was a `<div>` with the same classes), preceded by a "Skip to content" link that is visually hidden until focused. A custom shell (`config.components.shell`) should provide its own `<main>` landmark.
 - Overlays use Tailwind v4 opacity modifiers (`bg-gray-900/50`, `bg-gray-500/75`) instead of `bg-opacity-*`, which Tailwind v4 removed. On Tailwind v4 the modal overlay rendered solid gray; it is translucent now.
@@ -190,7 +191,7 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 - The dashboard metrics grid keeps two columns until the `xl` breakpoint (`md:grid-cols-2 xl:grid-cols-4`, was `lg:grid-cols-4`), so metric labels do not touch their icons.
 - In a dashboard metric card, the label and the icon share the top row, and the value sits on its own row below them (`text-3xl`, `xl:text-2xl 2xl:text-3xl`), so a long value such as `$123,456.78` is never split across two lines.
 
-**Action required:** Update host CSS or system specs that select `.p-8` or assume the sidebar is always visible. Run browser system specs with a window at least 1024px wide (Rails' default `screen_size: [1400, 1400]` is fine), or click "Open menu" before using sidebar links.
+**Action required:** Update host CSS or system specs that select `.p-8`, select the sidebar brand as an `h1`, or assume the sidebar is always visible. Run browser system specs with a window at least 1024px wide (Rails' default `screen_size: [1400, 1400]` is fine), or click "Open menu" before using sidebar links.
 
 ### 15. Component overrides now take effect
 

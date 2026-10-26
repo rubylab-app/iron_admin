@@ -149,6 +149,18 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
       end
     end
 
+    context "with a page title" do
+      subject(:rendered) do
+        with_controller_class(IronAdmin::ApplicationController) do
+          render_inline(described_class.new) { "<h1>Users</h1>".html_safe }
+        end
+      end
+
+      it "renders it as the page's only h1" do
+        expect(rendered.css("h1").map { |heading| heading.text.strip }).to eq(["Users"])
+      end
+    end
+
     context "with a flash message" do
       subject(:rendered) do
         with_controller_class(IronAdmin::ApplicationController) do
