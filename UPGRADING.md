@@ -182,7 +182,7 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 ### 14. Layout markup changed (responsive UI)
 
 - Page containers use `p-4 sm:p-6 lg:p-8` instead of `p-8` on the dashboard and on index, show, new, edit, import, audit, search, tool, and action-form pages. The bulk-action form still uses `p-8`.
-- Below the `lg` breakpoint (1024px), the sidebar is an off-canvas drawer, opened with the "Open menu" button in the navbar.
+- Below the `lg` breakpoint (1024px), the sidebar is an off-canvas drawer, opened with the "Open menu" button in the navbar. While it is closed, the drawer is `inert`. While it is open, the rest of the shell is `inert` and focus starts on its "Close menu" button; closing it moves focus back to "Open menu".
 - Wide tables are wrapped in `overflow-x-auto`, and show-page detail rows stack vertically below `sm`.
 - The built-in shell renders the page content in `<main id="main-content">` (the element was a `<div>` with the same classes), preceded by a "Skip to content" link that is visually hidden until focused. A custom shell (`config.components.shell`) should provide its own `<main>` landmark.
 - Overlays use Tailwind v4 opacity modifiers (`bg-gray-900/50`, `bg-gray-500/75`) instead of `bg-opacity-*`, which Tailwind v4 removed. On Tailwind v4 the modal overlay rendered solid gray; it is translucent now.

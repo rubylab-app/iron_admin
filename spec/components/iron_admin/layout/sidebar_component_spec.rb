@@ -49,6 +49,18 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     expect(result.text).to include("Licensing")
   end
 
+  describe "drawer close button" do
+    subject(:close_button) { render_inline(described_class.new).at_css("button[aria-label='Close menu']") }
+
+    it "closes the drawer" do
+      expect(close_button["data-action"]).to eq("cp-sidebar#close")
+    end
+
+    it "is the cp-sidebar target that takes focus when the drawer opens" do
+      expect(close_button["data-cp-sidebar-target"]).to eq("closeButton")
+    end
+  end
+
   context "with custom menu items" do
     subject(:result) { render_inline(described_class.new) }
 
