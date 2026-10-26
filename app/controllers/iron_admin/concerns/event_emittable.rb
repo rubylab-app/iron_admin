@@ -6,6 +6,8 @@ module IronAdmin
   module Concerns
     # Builds the event for each resource change, records it in the audit log
     # and passes it to the on_action callback.
+    #
+    # Expects @resource_class to hold the resource being changed.
     module EventEmittable
       extend ActiveSupport::Concern
 
@@ -34,9 +36,19 @@ module IronAdmin
       # @param record [Object]
       # @return [Hash]
       def audited_changes(record)
-        exact_passwords = password_field_names.map { |name| /\A#{Regexp.escape(name)}\z/ }
-        filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters + exact_passwords)
-        filter.filter(adapter.record_changes(record).to_h)
+        audit_parameter_filter.filter(@resource_class.adapter.record_changes(record).to_h)
+      end
+
+      # Built once per request: bulk actions and imports emit one event per
+      # record, and resolving the resource's fields for each would repeat the
+      # same work for every row.
+      #
+      # @return [ActiveSupport::ParameterFilter]
+      def audit_parameter_filter
+        @audit_parameter_filter ||= begin
+          exact_passwords = password_field_names.map { |name| /\A#{Regexp.escape(name)}\z/ }
+          ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters + exact_passwords)
+        end
       end
 
       # @return [Array<String>] Names of the resource's password fields

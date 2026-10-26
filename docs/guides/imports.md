@@ -65,7 +65,9 @@ an array of objects, or an object with a `records` array.
    `POST /admin/:resource_name/import`, so the file is not uploaded twice, and imports every row
    of the file, not only the previewed ones. The browser returns to the index with a summary
    such as "Import finished: 12 created, 3 updated, 1 failed." Rows that fail validation are
-   counted as failed and the other rows are saved.
+   counted as failed and the other rows are saved. Each saved row is recorded in the audit log
+   (when it is enabled) as `create` or `update` and passed to `on_action`, inside the import's
+   transaction.
 
 Only a real file upload is accepted as the `file` parameter.
 
@@ -99,6 +101,8 @@ end
 Pass `context:` (an object that responds to `current_user`) when field visibility, readonly
 rules, or your `import_transform` and `import_validate` blocks need the user. Rows are numbered
 from 2, as in a spreadsheet whose first row is the header, for CSV and JSON files alike.
+`execute!` yields `:create` or `:update` and the record for each saved row, inside the import's
+transaction. An import run from Ruby is not audited unless that block records it.
 
 ## Overriding the Import Views
 

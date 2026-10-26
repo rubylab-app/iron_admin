@@ -5,6 +5,8 @@ require "ostruct"
 
 module IronAdmin
   class ImportsController < ApplicationController
+    include Concerns::EventEmittable
+
     before_action :set_resource_class
     before_action :ensure_import_enabled
     before_action :ensure_create_allowed
@@ -41,7 +43,10 @@ module IronAdmin
     def create
       return redirect_missing_file unless import_content
 
-      result = importer.execute!
+      # Each saved row is audited as it is saved, inside the import's
+      # transaction: no records are kept, and an import that rolls back
+      # takes its database audit entries with it.
+      result = importer.execute! { |action, record| emit_event(action, record) }
       redirect_to resources_path(@resource_class.resource_name),
                   notice: I18n.t(
                     "iron_admin.imports.create.success",

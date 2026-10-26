@@ -35,7 +35,13 @@ module IronAdmin
         )
       end
 
-      def execute!
+      # Imports every row in one transaction.
+      #
+      # @yieldparam action [Symbol] :create or :update
+      # @yieldparam record [Object] A row's record, right after it was saved,
+      #   inside the transaction. Rows that fail are not yielded.
+      # @return [ImportResult]
+      def execute!(&on_saved)
         raw_rows = parse_rows
         enforce_row_limit!(raw_rows)
         mapping = mapper.map_headers(headers_for(raw_rows))
@@ -43,7 +49,7 @@ module IronAdmin
 
         adapter.transaction do
           raw_rows.each_with_index do |raw_row, index|
-            import_row(raw_row, index + 2, mapping, result_state)
+            import_row(raw_row, index + 2, mapping, result_state, &on_saved)
           end
         end
 
@@ -98,10 +104,12 @@ module IronAdmin
         validation_errors = validate_record(record, row.attributes)
         return add_error_messages(row, validation_errors, result_state) if validation_errors.any?
 
-        persist_errors = persist_row(record, row.attributes)
+        action = record ? :update : :create
+        saved_record, persist_errors = persist_row(record, row.attributes)
         return add_error_messages(row, persist_errors, result_state) if persist_errors.any?
 
-        increment_success_count(record, result_state)
+        increment_success_count(action, result_state)
+        yield action, saved_record if block_given?
       end
 
       def collect_existing_errors(row, result_state)
@@ -113,8 +121,8 @@ module IronAdmin
         collect_existing_errors(row, result_state)
       end
 
-      def increment_success_count(record, result_state)
-        key = record ? :updated_count : :created_count
+      def increment_success_count(action, result_state)
+        key = action == :update ? :updated_count : :created_count
         result_state[key] += 1
       end
 
@@ -197,12 +205,13 @@ module IronAdmin
         end.first
       end
 
+      # @return [Array(Object, Array<String>)] The saved record and its errors
       def persist_row(record, attributes)
         if record
-          adapter.update_record(record, attributes) ? [] : record_error_messages(record)
+          [record, adapter.update_record(record, attributes) ? [] : record_error_messages(record)]
         else
           new_record = adapter.create_record(attributes)
-          record_error_messages(new_record)
+          [new_record, record_error_messages(new_record)]
         end
       end
 

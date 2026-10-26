@@ -197,4 +197,22 @@ RSpec.describe IronAdmin::Import::Importer do
     expect(result.failed_count).to eq(1)
     expect(result.errors.first.message).to include("Name")
   end
+
+  describe "#execute! with a block" do
+    subject(:saved) do
+      yielded = []
+      described_class.new(resource_class, file: csv, format: :csv).execute! do |action, record|
+        yielded << [action, record.email, record.saved_changes.key?("name")]
+      end
+      yielded
+    end
+
+    let(:csv) { StringIO.new("Name,Email\nNew,new@example.com\nRenamed,old@example.com\n,invalid@example.com\n") }
+
+    before { create(:user, name: "Old", email: "old@example.com") }
+
+    it "yields each saved row's action and record, with its changes, and skips failed rows" do
+      expect(saved).to eq([[:create, "new@example.com", true], [:update, "old@example.com", true]])
+    end
+  end
 end

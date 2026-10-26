@@ -245,6 +245,8 @@ Action filter lists the actions logged so far, custom resource actions included.
 The built-in audit log:
 - Stores the last 1000 entries in memory (or unlimited in database)
 - Records user, action, resource, record ID, changes, and IP address
+- Logs one entry per record for create, update, destroy, member actions, bulk actions (under the
+  action's name, once the block succeeds) and imports (`create` or `update` per saved row)
 - Works without any database table (graceful fallback)
 - Is 100% optional - no configuration required if not needed
 
@@ -270,7 +272,7 @@ end
 | Property | Description |
 |----------|-------------|
 | `event.user` | Current admin user |
-| `event.action` | Action performed (`:create`, `:update`, `:destroy`, or custom action name) |
+| `event.action` | Action performed (`:create`, `:update`, `:destroy`, or the member or bulk action name). Imports send `:create` or `:update` for each saved row |
 | `event.resource` | Resource class name |
 | `event.record_id` | ID of affected record |
 | `event.changes` | Hash of changed attributes |

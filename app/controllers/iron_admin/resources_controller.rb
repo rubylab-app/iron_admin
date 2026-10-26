@@ -265,12 +265,19 @@ module IronAdmin
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
+    # Audits each selected record after the block succeeds, inside the
+    # transaction. Loading them first keeps records the block destroys, and
+    # gives a block that iterates the relation the same objects, so their
+    # changes are recorded.
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
       adapter.transaction do
         adapter.wrap_rollback do
+          affected = records.to_a
           result = call_action_block(action[:block], records, collected)
           raise IronAdmin::Rollback if result == false
+
+          affected.each { |record| emit_event(action[:name], record) }
         end
       end
     end
