@@ -172,16 +172,19 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 - On show pages, a polymorphic `belongs_to` whose stored type is not in the field's allowed types (declared with `types:`, or inferred from `has_many`/`has_one ... as:`) is shown as plain `Type#id` text instead of a link.
 - HTTP adapter: a record id that is empty or contains `/`, `\`, or `..` raises `IronAdmin::RecordNotFound` (`404`). Other ids are URL-escaped with `CGI.escape` before they go into the request path.
 - Global search results are labelled like the rest of the UI (`display_record_label`): the record's `name`, `title`, `email`, `label` or `slug`, or `<Model> #<id>` when it has none. Before, a record without `name` or `email` showed `#<id>`.
-- Boolean values on index and show pages are wrapped in `<span class="inline-flex">` with visually hidden "Yes" or "No" text (`<span class="sr-only">`) next to the icon. Specs that compare the exact icon markup, or the full text of a row, now see the wrapper and the text.
+- Boolean values on index and show pages are wrapped in `<span class="relative inline-flex">` with visually hidden "Yes" or "No" text (`<span class="sr-only">`) next to the icon. Specs that compare the exact icon markup, or the full text of a row, now see the wrapper and the text.
+- The search results heading reads `Search results for "<query>"`, and the navbar search box keeps the query on that page.
+- The audit log's Resource column shows the resource label ("Users") instead of the stored class name.
 - The audit log's Action filter lists the actions that were logged, custom actions included, and action names are shown with `humanize` ("Send now") instead of `capitalize` ("Send_now").
 
-**Action required:** Update system specs that expect `#<id>` in global search results, the old boolean markup, or the fixed create/update/destroy options of the audit Action filter.
+**Action required:** Update system specs that expect `#<id>` in global search results, the old boolean markup, the fixed create/update/destroy options of the audit Action filter, the plain "Search results" heading, or class names in the audit Resource column.
 
 ### 14. Layout markup changed (responsive UI)
 
 - Page containers use `p-4 sm:p-6 lg:p-8` instead of `p-8` on the dashboard and on index, show, new, edit, import, audit, search, tool, and action-form pages. The bulk-action form still uses `p-8`.
 - Below the `lg` breakpoint (1024px), the sidebar is an off-canvas drawer, opened with the "Open menu" button in the navbar.
 - Wide tables are wrapped in `overflow-x-auto`, and show-page detail rows stack vertically below `sm`.
+- The built-in shell renders the page content in `<main id="main-content">` (the element was a `<div>` with the same classes), preceded by a "Skip to content" link that is visually hidden until focused. A custom shell (`config.components.shell`) should provide its own `<main>` landmark.
 - Overlays use Tailwind v4 opacity modifiers (`bg-gray-900/50`, `bg-gray-500/75`) instead of `bg-opacity-*`, which Tailwind v4 removed. On Tailwind v4 the modal overlay rendered solid gray; it is translucent now.
 - With haml 6 or later, index rows and dashboard metric cards no longer render an empty `id=""` when live updates are off.
 - The dashboard metrics grid keeps two columns until the `xl` breakpoint (`md:grid-cols-2 xl:grid-cols-4`, was `lg:grid-cols-4`), so metric labels do not touch their icons.
