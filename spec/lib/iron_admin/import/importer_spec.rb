@@ -101,6 +101,16 @@ RSpec.describe IronAdmin::Import::Importer do
         expect(preview.rows.first.errors.map(&:message)).to include("Email has already been taken")
       end
     end
+
+    context "when the file has more rows than max_rows" do
+      let(:csv) { StringIO.new("Name,Email\nJane,jane@example.com\nJohn,john@example.com\n") }
+
+      before { resource_class.import_options(max_rows: 1) }
+
+      it "rejects the file before rendering it" do
+        expect { preview }.to raise_error(ArgumentError, /exceeding the 1 row limit/)
+      end
+    end
   end
 
   it "creates records from CSV rows" do

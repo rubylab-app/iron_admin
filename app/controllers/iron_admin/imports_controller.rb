@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "base64"
 require "ostruct"
 
 module IronAdmin
@@ -14,10 +15,15 @@ module IronAdmin
     end
 
     def preview
-      return redirect_missing_file unless uploaded_file
+      return redirect_missing_file unless import_content
 
       @preview = importer.preview
       @resource_name = @resource_class.resource_name
+      @import_format = import_format
+      # The preview page's import form posts this copy back to #create, so the
+      # import runs on exactly the previewed bytes without a second upload.
+      # Base64 keeps line endings and encoding intact through the form.
+      @import_data = Base64.strict_encode64(import_content)
       render :preview, formats: :html
     rescue ArgumentError => e
       redirect_to resource_import_path(@resource_class.resource_name), alert: e.message
@@ -27,7 +33,7 @@ module IronAdmin
     end
 
     def create
-      return redirect_missing_file unless uploaded_file
+      return redirect_missing_file unless import_content
 
       result = importer.execute!
       redirect_to resources_path(@resource_class.resource_name),
@@ -61,6 +67,14 @@ module IronAdmin
       head(:forbidden) unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
     end
 
+    # The bytes to import: a fresh upload, or the copy of a previewed upload
+    # carried by the preview page's import form.
+    def import_content
+      return @import_content if defined?(@import_content)
+
+      @import_content = uploaded_file&.read || carried_import_data
+    end
+
     # Only a real multipart upload counts. A plain string would otherwise reach
     # the parsers, which read it as a path on the server.
     def uploaded_file
@@ -68,8 +82,20 @@ module IronAdmin
       file if file.respond_to?(:read) && file.respond_to?(:original_filename)
     end
 
+    def carried_import_data
+      data = params[:import_data]
+      Base64.strict_decode64(data) if data.is_a?(String) && data.present?
+    rescue ArgumentError
+      nil
+    end
+
     def importer
-      Import::Importer.new(@resource_class, file: uploaded_file, format: import_format, context: import_context)
+      Import::Importer.new(
+        @resource_class,
+        file: StringIO.new(import_content),
+        format: import_format,
+        context: import_context
+      )
     end
 
     def import_format

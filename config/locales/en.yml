@@ -58,6 +58,9 @@ en:
         status_column: "Status"
         valid_status: "Valid"
         back_button: "Back"
+        import_button:
+          one: "Import %{count} row"
+          other: "Import %{count} rows"
       create:
         success: "Import finished: %{created} created, %{updated} updated, %{failed} failed."
       errors:

@@ -18,6 +18,7 @@ module IronAdmin
 
       def preview(limit: nil)
         raw_rows = parse_rows
+        enforce_row_limit!(raw_rows)
         headers = headers_for(raw_rows)
         mapping = mapper.map_headers(headers)
         preview_limit = limit || import_options.fetch(:preview_rows, 20)
