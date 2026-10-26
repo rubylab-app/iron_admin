@@ -76,6 +76,10 @@ RSpec.describe IronAdmin::Configuration::Theme do
       expect(theme.sidebar_link_hover).to include("hover:bg-gray-800")
     end
 
+    it "sets sidebar_link_active to the hover colors, so the current page looks like a hovered link" do
+      expect(theme.sidebar_link_active).to eq("bg-gray-800 text-white")
+    end
+
     it "sets sidebar_group_label" do
       expect(theme.sidebar_group_label).to eq("text-gray-400")
     end

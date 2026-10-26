@@ -118,6 +118,36 @@ RSpec.describe "Engine layout", type: :request do
     end
   end
 
+  describe "sidebar link for the current page" do
+    subject(:current_links) { response.parsed_body.css("#cp-sidebar-panel a[aria-current='page']").pluck(:href) }
+
+    before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::LicenseResource) }
+
+    context "with GET /" do
+      before { get iron_admin.root_path, as: :html }
+
+      it "is the dashboard link" do
+        expect(current_links).to eq([iron_admin.root_path])
+      end
+    end
+
+    context "with GET /:resource_name/:id/edit" do
+      before { get iron_admin.edit_resource_path("users", create(:user)), as: :html }
+
+      it "is the resource's link" do
+        expect(current_links).to eq([iron_admin.resources_path("users")])
+      end
+    end
+
+    context "with a create that fails validation and renders the form again" do
+      before { post iron_admin.resources_path("users"), params: { record: { name: "", email: "" } }, as: :html }
+
+      it "is still the resource's link" do
+        expect(current_links).to eq([iron_admin.resources_path("users")])
+      end
+    end
+  end
+
   describe "GET /search" do
     subject(:search_input) do
       get iron_admin.search_path(q: "Rails"), as: :html

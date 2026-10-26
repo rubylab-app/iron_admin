@@ -75,6 +75,137 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     end
   end
 
+  describe "current page link" do
+    subject(:result) { with_request_url(path) { render_inline(described_class.new) } }
+
+    let(:current_links) { result.css("a[aria-current='page']").pluck(:href) }
+
+    before do
+      tool_class = Class.new(IronAdmin::Tool) do
+        def self.name = "SidebarActiveTool"
+      end
+      tool_class.menu label: "Active Tool", group: "Utilities"
+      IronAdmin::ToolRegistry.register(tool_class)
+      IronAdmin::MenuRegistry.register(IronAdmin::MenuItem.new(label: "Reports", path: "/admin/reports"))
+    end
+
+    context "when on the dashboard" do
+      let(:path) { "/admin" }
+
+      it "marks only the dashboard link as the current page" do
+        expect(current_links).to eq(["/admin/"])
+      end
+    end
+
+    {
+      "index" => "/admin/users",
+      "show" => "/admin/users/1",
+      "edit" => "/admin/users/1/edit",
+      "new" => "/admin/users/new",
+      "import" => "/admin/users/import",
+      "action form" => "/admin/users/1/actions/deactivate/form",
+    }.each do |page, page_path|
+      context "when on a resource's #{page} page" do
+        let(:path) { page_path }
+
+        it "marks only that resource's link as the current page" do
+          expect(current_links).to eq(["/admin/users"])
+        end
+      end
+    end
+
+    {
+      "page" => "/admin/tools/sidebar_active",
+      "action form" => "/admin/tools/sidebar_active/flush/form",
+    }.each do |page, page_path|
+      context "when on a tool's #{page}" do
+        let(:path) { page_path }
+
+        it "marks only the tool's link as the current page" do
+          expect(current_links).to eq(["/admin/tools/sidebar_active"])
+        end
+      end
+    end
+
+    context "when on a custom menu item's path" do
+      let(:path) { "/admin/reports" }
+
+      it "marks only the menu item's link as the current page" do
+        expect(current_links).to eq(["/admin/reports"])
+      end
+    end
+
+    context "when on a custom menu item's path with a query string" do
+      let(:path) { "/admin/reports?range=week" }
+
+      it "marks the menu item's link as the current page" do
+        expect(current_links).to eq(["/admin/reports"])
+      end
+    end
+
+    context "with a custom menu item that links to an absolute URL" do
+      before { IronAdmin::MenuRegistry.register(IronAdmin::MenuItem.new(label: "Stats", path: "http://test.host/admin/stats")) }
+
+      context "when on that URL" do
+        let(:path) { "/admin/stats" }
+
+        it "marks the menu item's link as the current page" do
+          expect(current_links).to eq(["http://test.host/admin/stats"])
+        end
+      end
+
+      context "when on the same path on another host" do
+        let(:path) { "/admin/stats" }
+
+        before { vc_test_request.host = "other.host" }
+
+        it "marks no link as the current page" do
+          expect(current_links).to be_empty
+        end
+      end
+    end
+
+    context "when on a page with no sidebar link" do
+      let(:path) { "/admin/search" }
+
+      it "marks no link as the current page" do
+        expect(current_links).to be_empty
+      end
+    end
+
+    context "when the query string names a resource and a tool" do
+      let(:path) { "/admin/search?resource_name=users&tool_name=sidebar_active" }
+
+      it "marks no link as the current page" do
+        expect(current_links).to be_empty
+      end
+    end
+
+    describe "link classes" do
+      let(:path) { "/admin/users" }
+      let(:active_link) { result.at_css("a[aria-current='page']")[:class].split }
+      let(:other_link) { result.at_css("a[href='/admin/licenses']")[:class].split }
+
+      before { IronAdmin.configuration.theme.sidebar_link_active = "bg-indigo-700 text-white" }
+
+      it "styles the current page's link with the theme's sidebar_link_active classes" do
+        expect(active_link).to include("bg-indigo-700", "text-white")
+      end
+
+      it "drops the inactive link classes from the current page's link" do
+        expect(active_link).not_to include("text-gray-300", "hover:bg-gray-800")
+      end
+
+      it "keeps the inactive link classes on the other links" do
+        expect(other_link).to include("text-gray-300", "hover:bg-gray-800")
+      end
+
+      it "leaves the active classes off the other links" do
+        expect(other_link).not_to include("bg-indigo-700")
+      end
+    end
+  end
+
   describe "drawer close button" do
     subject(:close_button) { render_inline(described_class.new).at_css("button[aria-label='Close menu']") }
 

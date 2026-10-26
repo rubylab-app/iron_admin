@@ -3,8 +3,15 @@
 module IronAdmin
   module Layout
     # Renders the sidebar navigation menu.
+    #
+    # The current page's link gets +aria-current="page"+ and the theme's
+    # +sidebar_link_active+ classes. See the theming guide for which pages
+    # make each link current.
     class SidebarComponent < ViewComponent::Base
       include IronAdmin::ThemeHelper
+
+      # Classes of every sidebar link, current or not.
+      LINK_CLASSES = "flex items-center gap-3 px-3 py-2 rounded-lg"
 
       # @param current_user [Object, nil]
       def initialize(current_user: nil)
@@ -37,6 +44,47 @@ module IronAdmin
       end
 
       # @api private
+      # @param active [Boolean] Whether the link is for the current page
+      # @param extra [String] More classes for the link
+      # @return [Hash] +link_to+ options: the link classes, plus +aria-current="page"+ when +active+
+      def link_options(active, extra = nil)
+        classes = active ? cp_sidebar_link_active : cp_sidebar_link
+        { class: [LINK_CLASSES, classes, extra].compact_blank.join(" "), aria: { current: ("page" if active) } }
+      end
+
+      # @api private
+      # @return [Boolean] Whether the current page is the dashboard
+      def dashboard_active?
+        path_parameter(:controller) == "iron_admin/dashboard"
+      end
+
+      # @api private
+      # @param resource [Class<IronAdmin::Resource>]
+      # @return [Boolean] Whether the current page belongs to +resource+
+      def resource_active?(resource)
+        path_parameter(:resource_name) == resource.resource_name.to_s
+      end
+
+      # @api private
+      # @param tool [Class<IronAdmin::Tool>]
+      # @return [Boolean] Whether the current page belongs to +tool+
+      def tool_active?(tool)
+        path_parameter(:tool_name) == tool.tool_name.to_s
+      end
+
+      # @api private
+      # Query strings, fragments and a trailing slash are ignored.
+      #
+      # @param item [IronAdmin::MenuItem]
+      # @return [Boolean] Whether the request's path (or URL, for an absolute item URL) is the item's
+      def menu_item_active?(item)
+        item_url = item.path.sub(/[?#].*\z/, "").chomp("/")
+        request = helpers.request
+        current_url = item_url.match?(%r{\A[a-z][a-z\d+.-]*://}i) ? "#{request.base_url}#{request.path}" : request.path
+        item_url == current_url.chomp("/")
+      end
+
+      # @api private
       # @return [String] Configured admin panel title
       def title
         IronAdmin.configuration.title
@@ -46,6 +94,13 @@ module IronAdmin
       # @return [String, nil] Configured logo URL or path
       def logo
         IronAdmin.configuration.logo
+      end
+
+      private
+
+      # From the route, not the query string, so +?resource_name=+ cannot mark a link current.
+      def path_parameter(name)
+        helpers.request.path_parameters[name]&.to_s
       end
     end
   end
