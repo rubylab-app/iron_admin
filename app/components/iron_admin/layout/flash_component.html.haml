@@ -1,0 +1,4 @@
+-# data-turbo-temporary keeps the messages out of the snapshot Turbo shows on back navigation.
+.max-w-7xl.mx-auto.px-4.pt-4.space-y-3{ class: "sm:px-6 sm:pt-6 lg:px-8 lg:pt-8", data: { turbo_temporary: true } }
+  - messages.each do |type, message|
+    = render IronAdmin::Ui::AlertComponent.new(message: message, type: type)

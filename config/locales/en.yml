@@ -79,6 +79,8 @@ en:
       cancel_button: "Cancel"
     navigation:
       dashboard: "Dashboard"
+    alerts:
+      dismiss: "Dismiss"
     nested_form:
       add_button: "Add row"
       remove_button: "Remove"
