@@ -266,6 +266,7 @@ In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource serv
 - Columns follow the order of `export_fields`. In 0.6.0 they followed the table's column order.
 - CSV rows follow the index sort (`sort`/`direction`, or `config.default_sort`), as JSON already did. ActiveRecord's `find_each` dropped the `ORDER BY`, so CSV rows came out in primary-key order. The ActiveRecord adapter now pages an ordered scope with `LIMIT`/`OFFSET` plus a primary-key tiebreak.
 - `:file` and `:files` fields export filenames (for `:files`, a JSON array or a comma-separated CSV cell), and are blank when nothing is attached. In 0.6.0 they exported an object inspect string.
+- `:rich_text` fields export the stored HTML. In 0.6.0 they exported the content rendered through the ActionText layout, wrapped in `<div class="trix-content">` and, in development, surrounded by comments with template paths on the server.
 
 **Action required:** Update consumers that read export columns by position. A custom adapter's `find_each(scope)` must keep the scope's order, or CSV exports from that adapter ignore the sort (see `find_each` in the [custom adapters guide](docs/guides/custom-adapters.md)).
 
@@ -313,6 +314,7 @@ Imports can now be completed from the UI:
 - The preview page has an "Import N rows" button. It posts the previewed file back to `POST /admin/:resource_name/import` (multipart) in the hidden fields `import_format` and `import_data` (Base64), so the file is not uploaded again.
 - The preview validates a row that matches an existing record on `import_upsert_key` against that record, as the import does, shows plain cell values (`IronAdmin::Import::ImportPreview#cell_text`; dates and times use the show page's default formats, with no locale lookup), and pluralizes the row count.
 - `import_options max_rows:` (default 5,000) is also checked at the preview step: a larger file is rejected with "Import contains N rows, exceeding the M row limit".
+- The upload form lists the importable fields, and the preview shows its columns, in the order of `import_fields`. In 0.6.0 the list followed the table's column order and the preview followed the file's headers. `importable_fields` and `IronAdmin::Import::ColumnMapper#map_headers` return that order too.
 - The `file` param must be a multipart upload. A plain string is ignored; in 0.6.0 it was read as a path on the server.
 
 The confirm step carries the file in a form field, which Base64 makes about 33% larger. Rack 3.1 and later count non-file multipart fields against `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT` (16 MiB by default), so the preview rejects files larger than 12 MB with "The file is larger than 12 MB. Split it into smaller files." (`iron_admin.imports.errors.file_too_large`) instead of showing an Import button that fails with a server error. The 12 MB limit does not follow the Rack variable.

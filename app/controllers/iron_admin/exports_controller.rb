@@ -118,8 +118,18 @@ module IronAdmin
       when :datetime, :date then value.iso8601
       when :boolean then value ? "Yes" : "No"
       when :belongs_to then format_belongs_to(value, field)
+      when :rich_text then format_rich_text(value)
       else value.to_s
       end
+    end
+
+    # ActionText::RichText#to_s renders the content through the ActionText layout:
+    # a "trix-content" wrapper and, with annotate_rendered_view_with_filenames
+    # (on in development), comments naming template paths on the server.
+    # The export carries the stored HTML instead.
+    def format_rich_text(value)
+      content = value.try(:body)
+      content.respond_to?(:to_html) ? content.to_html : value.to_s
     end
 
     # ActiveStorage proxies are never nil and would otherwise export their inspect string.

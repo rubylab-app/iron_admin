@@ -832,6 +832,78 @@ RSpec.describe "IronAdmin::Exports", type: :request do
     end
   end
 
+  describe "rich text" do
+    let(:stored_html) { "<h2>Get in Touch</h2><p>Write to us.</p>" }
+    let(:csv_content) { CSV.parse(response.body, headers: true).first["Content"] }
+
+    before do
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource)
+      create(:document, title: "Rich Doc", content: stored_html)
+    end
+
+    it "exports the stored HTML in CSV" do
+      get iron_admin.export_path("documents", format: :csv)
+
+      expect(csv_content).to eq(stored_html)
+    end
+
+    it "exports the stored HTML in JSON" do
+      get iron_admin.export_path("documents", format: :json)
+
+      expect(response.parsed_body.first["content"]).to eq(stored_html)
+    end
+
+    context "when the text starts with a formula character" do
+      let(:stored_html) { "=HYPERLINK(\"http://example.com\")" }
+
+      it "neutralizes the CSV cell" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(csv_content).to eq("'=HYPERLINK(\"http://example.com\")")
+      end
+    end
+
+    context "without rich text" do
+      before { create(:document, title: "Plain Doc") }
+
+      it "exports a blank value" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.find { |row| row["title"] == "Plain Doc" }["content"]).to eq("")
+      end
+    end
+
+    context "when the field is a plain column declared as :rich_text" do
+      let(:column_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "RichColumnExportUserResource"
+          end
+
+          def self.resource_name
+            "rich_column_export_users"
+          end
+
+          field :name, type: :rich_text
+          export_fields :name
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(column_resource)
+        create(:user, name: "<p>Column HTML</p>", email: "column@example.com")
+      end
+
+      it "exports the column value" do
+        get iron_admin.export_path("rich_column_export_users", format: :json)
+
+        expect(response.parsed_body.first["name"]).to eq("<p>Column HTML</p>")
+      end
+    end
+  end
+
   describe "enabled export formats" do
     let(:csv_only_resource) do
       Class.new(IronAdmin::Resource) do

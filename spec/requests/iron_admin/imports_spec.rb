@@ -69,6 +69,14 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       upload_form = html.at_css(%(form[action="#{preview_path}"]))
       expect(upload_form["data-turbo"]).to eq("false")
     end
+
+    it "lists the importable fields in import_fields order" do
+      import_resource.import_fields :preferences, :active, :email, :name
+
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      expect(html.css("form .flex-wrap > span").map { |chip| chip.text.strip }).to eq(%w[Preferences Active Email Name])
+    end
   end
 
   describe "importing from the preview page" do
@@ -123,6 +131,14 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       preview_csv("Name,Email\nJane,jane@example.com\n")
 
       expect(preview_cells.first.first(2)).to eq(["Jane", "jane@example.com"])
+    end
+
+    it "orders the columns as import_fields does" do
+      import_resource.import_fields :email, :name
+
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(html.css("thead th").map { |header| header.text.strip }.first(2)).to eq(%w[Email Name])
     end
 
     it "renders missing values as empty cells" do

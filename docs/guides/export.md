@@ -61,5 +61,6 @@ as on the index page (`sort`/`direction`, or `config.default_sort`), in CSV and 
 - `:file` fields export the attached file's name, and `:files` fields export the names of all
   attached files: a JSON array, or a comma-separated CSV cell. Both are blank when nothing is
   attached.
+- `:rich_text` fields export the stored HTML, without the ActionText layout around it.
 - In CSV, cells that start with `=`, `+`, `-`, `@`, a tab or a carriage return get a leading
   `'`, so spreadsheet apps do not evaluate them as formulas.
