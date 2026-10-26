@@ -263,6 +263,7 @@ In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource serv
 - Columns follow the order of `export_fields`. In 0.6.0 they followed the table's column order.
 - CSV rows follow the index sort (`sort`/`direction`, or `config.default_sort`), as JSON already did. ActiveRecord's `find_each` dropped the `ORDER BY`, so CSV rows came out in primary-key order. The ActiveRecord adapter now pages an ordered scope with `LIMIT`/`OFFSET` plus a primary-key tiebreak.
 - `:file` and `:files` fields export filenames (for `:files`, a JSON array or a comma-separated CSV cell), and are blank when nothing is attached. In 0.6.0 they exported an object inspect string.
+- `:rich_text` fields export the stored HTML. In 0.6.0 they exported the content rendered through the ActionText layout, wrapped in `<div class="trix-content">` and, in development, surrounded by comments with template paths on the server.
 
 **Action required:** Update consumers that read export columns by position. A custom adapter's `find_each(scope)` must keep the scope's order, or CSV exports from that adapter ignore the sort (see `find_each` in the [custom adapters guide](docs/guides/custom-adapters.md)).
 
