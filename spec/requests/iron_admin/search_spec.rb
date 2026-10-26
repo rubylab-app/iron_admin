@@ -25,6 +25,36 @@ RSpec.describe "IronAdmin::Search", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    context "with a record that has a title but no name or email" do
+      subject(:result_label) do
+        get iron_admin.search_path(q: "Quarterly")
+        response.parsed_body.at_css("a[href='#{iron_admin.resource_path("posts", report)}']").text.strip
+      end
+
+      let!(:report) { create(:post, title: "Quarterly report") }
+
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::PostResource) }
+
+      it "labels the result with its title" do
+        expect(result_label).to eq("Quarterly report")
+      end
+    end
+
+    context "with a record that has no display attribute" do
+      subject(:result_label) do
+        get iron_admin.search_path(q: "KEY-LABEL")
+        response.parsed_body.at_css("a[href='#{iron_admin.resource_path("licenses", license)}']").text.strip
+      end
+
+      let!(:license) { create(:license, license_key: "KEY-LABEL-1") }
+
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::LicenseResource) }
+
+      it "labels the result with the model name and id" do
+        expect(result_label).to eq("License ##{license.id}")
+      end
+    end
+
     it "applies tenant scope to global search results" do
       create(:user, name: "In Tenant", email: "visible@example.com", active: true)
       create(:user, name: "Out Of Tenant", email: "hidden@example.com", active: false)

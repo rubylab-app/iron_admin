@@ -8,6 +8,6 @@
           - group[:records].each do |record|
             = link_to resource_path(group[:resource].resource_name, record),
               class: "block px-6 py-4 hover:bg-gray-50 text-sm text-gray-900" do
-              = record.try(:name) || record.try(:email) || "##{record.id}"
+              = display_record_label(record)
   - elsif @query.present?
     .text-center.text-gray-500.py-12 No results found.
