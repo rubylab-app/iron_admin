@@ -311,7 +311,8 @@ module IronAdmin
 
     def form_fields
       base_fields = if @resource_class.form_field_names
-                      @resource_class.resolved_fields.select { |f| f.name.in?(@resource_class.form_field_names) }
+                      fields_by_name = @resource_class.resolved_fields.index_by(&:name)
+                      @resource_class.form_field_names.filter_map { |name| fields_by_name[name] }
                     else
                       @resource_class.resolved_fields.reject { |f| f.name.in?(%i[id created_at updated_at]) }
                     end
