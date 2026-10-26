@@ -188,8 +188,10 @@ module IronAdmin
     end
 
     # The icon SVGs ship with aria-hidden, so screen readers announce the visually hidden label instead.
+    # The wrapper is `relative` so the absolutely positioned sr-only text stays inside the table cell;
+    # otherwise a wide table's overflow-x-auto does not clip it and the whole page scrolls sideways.
     def boolean_icon(icon, color, label)
-      content_tag(:span, class: "inline-flex") do
+      content_tag(:span, class: "relative inline-flex") do
         heroicon(icon, variant: :mini, options: { class: "h-5 w-5 #{color}" }) +
           content_tag(:span, label, class: "sr-only")
       end
