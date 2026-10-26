@@ -126,7 +126,7 @@ Pages without overrides render exactly as before.
 | `sidebar` | The navigation inside the built-in shell | `current_user` | Global |
 | `table` | The records table on index pages | `records`, `fields`, `resource_class`, `current_user`, `current_sort`, `current_direction`, `scope`, `query`, `base_url` | Global or per resource |
 | `form` | The form on new and edit pages | `record`, `fields`, `resource_class`, `url`, `current_user` | Global or per resource |
-| `filter_bar` | The filters dropdown on index pages (only rendered when the resource has filters) | `filters`, `resource_class`, `form_url`, `scope`, `query`, `active_count`, `current_user` | Global or per resource |
+| `filter_bar` | The filters dropdown on index pages (only rendered when the resource has filters) | `filters`, `resource_class`, `form_url`, `scope`, `query`, `active_count`, `current_user`, `current_sort`, `current_direction` | Global or per resource |
 | `search` | The search box on index pages (only rendered when the resource has searchable columns) | `resource_class`, `form_url`, `value`, `placeholder`, `hidden_params`, `current_user` | Global or per resource |
 
 The same list is available in code as `IronAdmin::Configuration::Components::SLOTS`.
@@ -180,6 +180,16 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   The bundled `IronAdmin::Resources::DataTableComponent` fits this slot as is.
 - `form`: submit to `url`, with the record's attributes under `record`
   (`form_with model: record, url: url, scope: :record`).
+- `filter_bar`: submit the filters to `form_url` with a GET request, and add hidden fields
+  for `scope`, `query` (as `q`) and, when they are set, `current_sort` (as `sort`) and
+  `current_direction` (as `direction`), so applying filters keeps the scope, search and sort.
+  Render those hidden fields without an `id`, as for `search`. `active_count` is the number
+  of filters with a value. `IronAdmin::Filters::BarComponent` takes the same `scope:`,
+  `query:`, `active_count:`, `current_sort:` and `current_direction:` keywords. Build the
+  choices of a `:select` or `:boolean` filter with
+  `helpers.filter_options_for(resource_class, filter)`, which returns `[label, value]` pairs:
+  a filter's `:options` can be a callable, and a foreign key filter without options offers
+  the associated records.
 - `search`: submit `q` to `form_url` with a GET request, and add every `hidden_params`
   entry as a hidden field, so the current scope, filters and sort are kept. `hidden_params`
   carries `scope`, the active filters and, when they are set, `sort` and `direction`. Its

@@ -209,5 +209,28 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
 
       expect(result.to_html).to include("Users")
     end
+
+    context "when the index fields include a rich text field" do
+      subject(:cell) do
+        render_inline(described_class.new(resource_name: :rich_document, records: [document])).at_css("tbody td:last-child")
+      end
+
+      let(:document) { create(:document, content: "<h2>Agenda</h2><p>Plan the <strong>launch</strong></p>") }
+
+      before do
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.resource_name = "rich_documents"
+
+          field :content, type: :rich_text
+          index_fields :title, :content
+        end)
+      end
+
+      it "shows its plain text without the content's markup" do
+        expect(cell.inner_html.strip).to eq("Agenda Plan the launch")
+      end
+    end
   end
 end

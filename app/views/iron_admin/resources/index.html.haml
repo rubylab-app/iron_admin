@@ -17,11 +17,13 @@
   - if @resource_class.all_scopes.any? || @resource_class.searchable_columns.any?
     .flex.items-center.justify-between.gap-3.flex-wrap.mb-4
       - if @resource_class.all_scopes.any?
+        -# A tab keeps the search, filters and sort, and starts back at the first page.
+        - scope_tab_state = iron_admin_index_state.except("scope", "page").symbolize_keys
         .flex.gap-1.border-b.overflow-x-auto{ class: t.card_border }
           - @resource_class.all_scopes.each do |scope|
             - active = @current_scope == scope[:name].to_s
             = link_to scope[:name].to_s.humanize,
-              resources_path(@resource_class.resource_name, scope: scope[:name], q: params[:q]),
+              resources_path(@resource_class.resource_name, **scope_tab_state, scope: scope[:name]),
               class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap #{active ? cp_scope_active : cp_scope_inactive}"
 
       - if @resource_class.searchable_columns.any? && (search_component = iron_admin_search_component(@resource_class, scope: @current_scope))

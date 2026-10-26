@@ -2,13 +2,17 @@
 
 module IronAdmin
   module Ui
-    # Renders scope tabs for filtering resource lists.
+    # Renders scope tabs for filtering resource lists. Each tab links to
+    # +base_path+ with +params+ and its own scope, without the current scope
+    # and page, so switching tabs keeps the search, filters and sort and
+    # starts back at the first page.
     #
-    # @example Scopes from resource
+    # @example Scopes from resource, keeping the index state
     #   render IronAdmin::Ui::ScopesComponent.new(
     #     scopes: @resource_class.all_scopes,
     #     current_scope: @current_scope,
-    #     base_path: resources_path(@resource_class.resource_name)
+    #     base_path: resources_path(@resource_class.resource_name),
+    #     params: iron_admin_index_state
     #   )
     class ScopesComponent < ViewComponent::Base
       # @return [Array<Hash>] Scope definitions
@@ -20,13 +24,17 @@ module IronAdmin
       # @return [String] Base URL path
       attr_reader :base_path
 
-      # @return [Hash] Additional query params
+      # @return [Hash] Query params the tabs keep
       attr_reader :params
+
+      # Params a tab link never keeps: it sets its own scope and starts back at the first page.
+      DROPPED_PARAMS = %w[scope page].freeze
 
       # @param scopes [Array<Hash>] Scope definitions
       # @param current_scope [String, nil] Active scope name
       # @param base_path [String] Base URL
-      # @param params [Hash] Additional query params
+      # @param params [Hash] Query params the tabs keep, such as +iron_admin_index_state+
+      #   (the search, filters and sort); their +scope+ and +page+ are dropped
       def initialize(scopes:, current_scope:, base_path:, params: {})
         @scopes = scopes
         @current_scope = current_scope
@@ -42,9 +50,10 @@ module IronAdmin
 
       # @api private
       # @param scope_name [Symbol, String] Scope name
-      # @return [String] URL with scope parameter
+      # @return [String] URL with +params+ and the scope, without a page
       def scope_url(scope_name)
-        "#{base_path}?#{params.merge(scope: scope_name).to_query}"
+        query = params.to_h.stringify_keys.except(*DROPPED_PARAMS).merge("scope" => scope_name.to_s)
+        "#{base_path}?#{query.to_query}"
       end
 
       # @api private

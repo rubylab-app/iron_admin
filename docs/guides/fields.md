@@ -186,7 +186,7 @@ class ArticleResource < IronAdmin::Resource
 end
 ```
 
-On forms, a Trix WYSIWYG editor is rendered. On show pages, the rich text content is displayed with HTML formatting.
+On forms, a Trix WYSIWYG editor is rendered. On show pages, the rich text content is displayed with HTML formatting. On index pages and dashboard recent tables it is shown as plain text, truncated like long text fields (see [Index Text Truncation](#index-text-truncation)): no HTML from the content is rendered, and attachments appear as their caption or `[filename]`.
 
 ## Password Field
 
@@ -270,7 +270,7 @@ Date and datetime fields are auto-inferred from their database column types. On 
 
 ## Index Text Truncation
 
-On index pages, `:text` and `:textarea` fields that exceed 50 characters are automatically truncated with an ellipsis. The full text is available via a tooltip on hover.
+On index pages, `:text` and `:textarea` fields that exceed 50 characters are automatically truncated with an ellipsis. The full text is available via a tooltip on hover. `:rich_text` fields are reduced to their plain text first, then truncated the same way.
 
 ## Polymorphic Belongs To
 

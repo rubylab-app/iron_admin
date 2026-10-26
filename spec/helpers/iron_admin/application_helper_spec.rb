@@ -386,6 +386,78 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
   end
 
   describe "#display_index_field_value" do
+    context "with rich_text field" do
+      subject(:cell) { Nokogiri::HTML.fragment(helper.display_index_field_value(document, field).to_s) }
+
+      let(:document) { create(:document) }
+      let(:field) { IronAdmin::Field.new(:content, type: :rich_text) }
+      let(:full_text) { "Release notes The new importer keeps every row you uploaded & more." }
+
+      context "when the content is longer than the index limit" do
+        before do
+          document.update!(content: "<h1>Release notes</h1><p>The <strong>new</strong> importer keeps every row " \
+                                    "you uploaded &amp; more.</p>")
+        end
+
+        it "renders none of the content's markup" do
+          expect(cell.css("h1, p, strong, div")).to be_empty
+        end
+
+        it "truncates the plain text like a long text field" do
+          expect(cell.text).to eq("#{full_text.first(47)}...")
+        end
+
+        it "keeps the full plain text in the title" do
+          expect(cell.at_css("span[title]")["title"]).to eq(full_text)
+        end
+      end
+
+      context "when the content has headings" do
+        before { document.update!(content: "<h2>Get in Touch</h2><p>Write to us.</p>") }
+
+        it "keeps the heading apart from the next paragraph" do
+          expect(helper.display_index_field_value(document, field)).to eq("Get in Touch Write to us.")
+        end
+      end
+
+      context "when the content has an attachment" do
+        let(:blob) do
+          ActiveStorage::Blob.create_and_upload!(io: StringIO.new("PNG"), filename: "chart.png", content_type: "image/png")
+        end
+
+        before do
+          document.update!(content: ActionText::Content.new("<div>See the chart</div>").append_attachables(blob))
+        end
+
+        it "shows the attachment as its plain text" do
+          expect(helper.display_index_field_value(document, field)).to eq("See the chart [chart.png]")
+        end
+      end
+
+      context "when the content is short" do
+        before { document.update!(content: "<p>Hello <em>world</em></p>") }
+
+        it "renders the plain text" do
+          expect(helper.display_index_field_value(document, field)).to eq("Hello world")
+        end
+      end
+
+      context "without content" do
+        it "renders nothing" do
+          expect(helper.display_index_field_value(document, field)).to be_nil
+        end
+      end
+
+      context "when the field is a plain column holding HTML" do
+        let(:user) { create(:user, name: "<p>Fish &amp; <b>chips</b></p><script>alert(1)</script>") }
+        let(:field) { IronAdmin::Field.new(:name, type: :rich_text) }
+
+        it "renders its text without tags or script content" do
+          expect(helper.display_index_field_value(user, field)).to eq("Fish &amp; chips")
+        end
+      end
+    end
+
     context "with boolean_group field (compact display)" do
       let(:widget) { create(:widget, permissions: "read,write,delete") }
       let(:field) { IronAdmin::Field.new(:permissions, type: :boolean_group, choices: %w[read write delete admin]) }
@@ -490,6 +562,67 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         options = helper.filter_options_for(IronAdmin::Resources::UserResource, filter)
 
         expect(options).to eq([%w[Enterprise enterprise], %w[Standard standard]])
+      end
+    end
+
+    context "with select filter with callable options" do
+      let(:filter) { { name: :role, type: :select, options: -> { [%w[Admin admin], "user"] } } }
+
+      it "evaluates them and normalizes the result" do
+        options = helper.filter_options_for(IronAdmin::Resources::UserResource, filter)
+
+        expect(options).to eq([%w[Admin admin], %w[User user]])
+      end
+    end
+
+    context "with select filter on a belongs_to foreign key" do
+      let(:filter) { { name: :user_id, type: :select } }
+      let(:ada) { create(:user, name: "Ada", email: "ada@example.com", role: "admin") }
+      let(:grace) { create(:user, name: "Grace", email: "grace@example.com") }
+
+      before do
+        ada
+        grace
+      end
+
+      # LicenseResource declares `belongs_to :user, display: :email`.
+      it "labels each associated record with the association's display method" do
+        options = helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)
+
+        expect(options).to eq([["ada@example.com", ada.id], ["grace@example.com", grace.id]])
+      end
+
+      context "with a tenant scope" do
+        before do
+          IronAdmin.configure { |config| config.tenant_scope { |scope| scope.where(role: "admin") } }
+        end
+
+        it "offers only the records the tenant scope keeps" do
+          options = helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)
+
+          expect(options).to eq([["ada@example.com", ada.id]])
+        end
+      end
+
+      context "with options of its own" do
+        let(:filter) { { name: :user_id, type: :select, options: [["Ada only", "1"]] } }
+
+        it "returns only those options" do
+          expect(helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)).to eq([["Ada only", "1"]])
+        end
+      end
+    end
+
+    context "with select filter on a polymorphic foreign key" do
+      let(:filter) { { name: :notable_id, type: :select } }
+      let(:license) { create(:license) }
+
+      before { license.notes.create!(title: "Renewal") }
+
+      it "returns the distinct ids" do
+        options = helper.filter_options_for(IronAdmin::Resources::NoteResource, filter)
+
+        expect(options).to eq([[license.id.to_s, license.id]])
       end
     end
 

@@ -153,9 +153,16 @@ IronAdmin::Filters::BarComponent.new(
   form_url: "/admin/users",    # Required: form submit URL
   scope: nil,                  # Optional: current scope
   query: nil,                  # Optional: current search query
-  active_count: 0              # Optional: number of active filters
+  active_count: 0,             # Optional: number of active filters
+  current_sort: nil,           # Optional: current sort column
+  current_direction: nil       # Optional: current sort direction
 )
 ```
+
+Applying the filters keeps `scope`, `query` (as `q`) and, when they are set, `current_sort`
+and `current_direction` (as `sort` and `direction`) as hidden fields. The Clear link keeps
+them too and drops only the filters. These keywords match the ones the `filter_bar` override
+slot passes.
 
 **Slots:**
 - `filters` - Individual filter components

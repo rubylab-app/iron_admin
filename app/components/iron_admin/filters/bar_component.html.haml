@@ -12,6 +12,8 @@
       = form_tag form_url, method: :get, class: "p-4" do
         = hidden_field_tag :scope, scope, id: nil
         = hidden_field_tag :q, query, id: nil
+        - sort_params.each do |name, value|
+          = hidden_field_tag name, value, id: nil
 
         .space-y-3
           - filters.each do |filter|
@@ -20,4 +22,4 @@
         .flex.items-center.gap-3.mt-4.pt-3.border-t.border-gray-100
           %button.px-4.py-2.text-sm.font-medium.rounded-lg{ type: "submit", class: theme.btn_primary }
             Apply
-          = link_to "Clear", form_url, class: "text-sm #{theme.link_muted}"
+          = link_to "Clear", clear_url, class: "text-sm #{theme.link_muted}"

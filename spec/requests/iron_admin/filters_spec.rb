@@ -198,6 +198,81 @@ RSpec.describe "IronAdmin index filters", type: :request do
     end
   end
 
+  describe "a select filter on a belongs_to foreign key" do
+    subject(:options) { response.parsed_body.css("select[name='filters[user_id]'] option") }
+
+    let(:resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "ForeignKeyFilterLicenseResource"
+        end
+
+        def self.resource_name
+          "foreign_key_filter_licenses"
+        end
+
+        filter :user_id, type: :select
+        index_fields :license_key
+      end
+    end
+    let(:ada) { create(:user, name: "Ada") }
+    let(:grace) { create(:user, name: "Grace") }
+
+    before do
+      IronAdmin::ResourceRegistry.register(resource)
+      create(:license, user: ada)
+      create(:license, user: grace)
+    end
+
+    it "labels each option with the associated record instead of its id" do
+      get iron_admin.resources_path("foreign_key_filter_licenses"), as: :html
+
+      expect(options.map { |option| [option.text.strip, option["value"]] })
+        .to eq([["All", ""], ["Ada", ada.id.to_s], ["Grace", grace.id.to_s]])
+    end
+
+    it "selects the chosen record" do
+      get iron_admin.resources_path("foreign_key_filter_licenses"), params: { filters: { user_id: grace.id } }, as: :html
+
+      expect(options.select { |option| option["selected"] }.map { |option| option.text.strip }).to eq(["Grace"])
+    end
+  end
+
+  describe "a select filter with callable options" do
+    subject(:options) { response.parsed_body.css("select[name='filters[license_type]'] option") }
+
+    let(:resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "CallableOptionsFilterLicenseResource"
+        end
+
+        def self.resource_name
+          "callable_options_filter_licenses"
+        end
+
+        filter :license_type, type: :select, options: -> { License.distinct.order(:license_type).pluck(:license_type) }
+        index_fields :license_key
+      end
+    end
+
+    # The license is created after the resource is defined, so only a render-time evaluation offers its type.
+    before do
+      IronAdmin::ResourceRegistry.register(resource)
+      create(:license, license_type: "enterprise")
+    end
+
+    it "offers what the callable returns when the page renders" do
+      get iron_admin.resources_path("callable_options_filter_licenses"), as: :html
+
+      expect(options.map { |option| [option.text.strip, option["value"]] }).to eq([["All", ""], %w[Enterprise enterprise]])
+    end
+  end
+
   # Filters follow field visibility, and a visible: false field is hidden from every user.
   describe "a declared filter on a visible: false field" do
     let(:resource) do
