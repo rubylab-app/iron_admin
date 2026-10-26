@@ -117,6 +117,36 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       end
     end
 
+    context "with boolean field" do
+      subject(:rendered) { Nokogiri::HTML.fragment(helper.display_field_value(user, field)) }
+
+      let(:field) { IronAdmin::Field.new(:active, type: :boolean) }
+
+      context "when the value is true" do
+        before { user.active = true }
+
+        it "renders a screen reader text alternative" do
+          expect(rendered.at_css(".sr-only")&.text).to eq("Yes")
+        end
+
+        it "keeps the check icon hidden from screen readers" do
+          expect(rendered.at_css("svg.text-green-500")["aria-hidden"]).to eq("true")
+        end
+      end
+
+      context "when the value is false" do
+        before { user.active = false }
+
+        it "renders a screen reader text alternative" do
+          expect(rendered.at_css(".sr-only")&.text).to eq("No")
+        end
+
+        it "keeps the cross icon hidden from screen readers" do
+          expect(rendered.at_css("svg.text-red-400")["aria-hidden"]).to eq("true")
+        end
+      end
+    end
+
     context "with radio field" do
       let(:widget) { create(:widget, status: "active") }
       let(:field) { IronAdmin::Field.new(:status, type: :radio, choices: %w[active inactive draft]) }

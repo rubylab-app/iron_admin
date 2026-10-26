@@ -63,6 +63,8 @@ en:
     fields:
       select_placeholder: "Select..."
       boolean_enable: "Enable %{field}"
+      boolean_true: "Yes"
+      boolean_false: "No"
       url_placeholder: "https://"
       email_placeholder: "user@example.com"
       file_remove: "Remove"
