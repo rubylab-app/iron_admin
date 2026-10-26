@@ -34,7 +34,7 @@
           - if resource_class
             - scope = recent[:scope] ? resource_class.model.instance_exec(&recent[:scope]) : resource_class.model.all
             - records = scope.limit(recent[:limit])
-            = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: recent[:resource_name], records: records)
+            = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: recent[:resource_name], records: records, current_user: iron_admin_current_user)
 
   - else
     .p-12.text-center{ class: cp_card }

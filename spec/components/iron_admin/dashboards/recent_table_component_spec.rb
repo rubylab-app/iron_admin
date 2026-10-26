@@ -36,27 +36,131 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
   end
 
   describe "#fields" do
-    context "when resource exists in registry" do
-      it "returns first 4 fields" do
-        component = described_class.new(resource_name: :user, records: [])
+    subject(:field_names) { described_class.new(resource_name: resource_name, records: []).fields.map(&:name) }
 
-        fields = component.fields
-        expect(fields.length).to be <= 4
+    context "when the resource declares index fields" do
+      let(:resource_name) { :document }
+
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource) }
+
+      it "uses the index fields" do
+        expect(field_names).to eq(%i[id title published created_at])
+      end
+    end
+
+    context "when the resource declares no index fields" do
+      let(:resource_name) { :profile }
+
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::ProfileResource) }
+
+      it "shows the id, the first short columns and the creation time, skipping long text" do
+        expect(field_names).to eq(%i[id user website created_at])
+      end
+    end
+
+    context "when a label column comes after other columns" do
+      let(:resource_name) { :catalog_item }
+
+      before do
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = Post
+
+          def self.resource_name = "catalog_items"
+
+          def self.resolved_fields
+            [
+              IronAdmin::Field.new(:id, type: :number),
+              IronAdmin::Field.new(:sku, type: :text),
+              IronAdmin::Field.new(:status, type: :select),
+              IronAdmin::Field.new(:title, type: :text),
+              IronAdmin::Field.new(:created_at, type: :datetime),
+            ]
+          end
+        end)
       end
 
-      it "returns Field objects" do
-        component = described_class.new(resource_name: :user, records: [])
+      it "shows the label column first" do
+        expect(field_names).to eq(%i[id title sku created_at])
+      end
+    end
 
-        fields = component.fields
-        expect(fields).to all(be_a(IronAdmin::Field))
+    context "when a field is hidden from the current user" do
+      subject(:field_names) do
+        described_class.new(resource_name: :staff_member, records: [], current_user: :viewer).fields.map(&:name)
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.resource_name = "staff_members"
+
+          field :email, visible: ->(user) { user == :admin }
+        end)
+      end
+
+      it "leaves the field out" do
+        expect(field_names).not_to include(:email)
       end
     end
 
     context "when resource does not exist in registry" do
-      it "returns empty array" do
-        component = described_class.new(resource_name: :nonexistent, records: [])
+      let(:resource_name) { :nonexistent }
 
-        expect(component.fields).to eq([])
+      it "returns empty array" do
+        expect(field_names).to eq([])
+      end
+    end
+  end
+
+  describe "#ordered_records" do
+    subject(:ordered_ids) { described_class.new(resource_name: :post, records: records).ordered_records.map(&:id) }
+
+    let!(:older) { create(:post, created_at: 2.days.ago) }
+    let!(:newer) { create(:post, created_at: 1.hour.ago) }
+    let!(:oldest) { create(:post, created_at: 1.week.ago) }
+
+    context "with an unordered relation" do
+      let(:records) { Post.limit(2) }
+
+      it "lists the newest records first" do
+        expect(ordered_ids).to eq([newer.id, older.id])
+      end
+    end
+
+    context "when records share a creation time" do
+      let(:records) { Post.all }
+
+      before { Post.update_all(created_at: 1.day.ago) }
+
+      it "lists the highest primary key first" do
+        expect(ordered_ids).to eq([oldest.id, newer.id, older.id])
+      end
+    end
+
+    context "when the model has no created_at column" do
+      let(:records) { Post.all }
+
+      before { allow(Post).to receive(:column_names).and_return(Post.column_names - ["created_at"]) }
+
+      it "lists the highest primary key first" do
+        expect(ordered_ids).to eq([oldest.id, newer.id, older.id])
+      end
+    end
+
+    context "with a relation that is already ordered" do
+      let(:records) { Post.order(:id) }
+
+      it "keeps the given order" do
+        expect(ordered_ids).to eq([older.id, newer.id, oldest.id])
+      end
+    end
+
+    context "with an array" do
+      let(:records) { [oldest, newer] }
+
+      it "keeps the given order" do
+        expect(ordered_ids).to eq([oldest.id, newer.id])
       end
     end
   end
