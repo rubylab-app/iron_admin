@@ -48,7 +48,7 @@ module IronAdmin
           return resolved_fields.reject { |field| field.name.in?(%i[id created_at updated_at]) } unless import_field_names
 
           fields_by_name = resolved_fields.index_by(&:name)
-          import_field_names.filter_map { |name| fields_by_name[name] }
+          import_field_names.uniq.filter_map { |name| fields_by_name[name] }
         end
 
         def import_excluded_field_type?(field_type)

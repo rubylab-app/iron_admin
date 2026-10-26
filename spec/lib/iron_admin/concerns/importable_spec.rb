@@ -26,6 +26,14 @@ RSpec.describe IronAdmin::Concerns::Importable do
       end
     end
 
+    context "when import_fields repeats a name" do
+      before { resource.import_fields :email, :name, :email }
+
+      it "lists the field once, at its first position" do
+        expect(field_names).to eq(%i[email name])
+      end
+    end
+
     context "when import_fields lists a name with no field" do
       before { resource.import_fields :email, :nickname }
 
