@@ -10,8 +10,8 @@
 
     %div{ class: dropdown_classes }
       = form_tag form_url, method: :get, class: "p-4" do
-        = hidden_field_tag :scope, scope
-        = hidden_field_tag :q, query
+        = hidden_field_tag :scope, scope, id: nil
+        = hidden_field_tag :q, query, id: nil
 
         .space-y-3
           - filters.each do |filter|

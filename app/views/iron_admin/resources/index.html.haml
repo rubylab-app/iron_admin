@@ -35,6 +35,7 @@
               = heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }
             = text_field_tag :q, params[:q],
               placeholder: I18n.t("iron_admin.resources.index.search_placeholder"),
+              "aria-label": I18n.t("iron_admin.resources.index.search_label", resource: @resource_class.label),
               class: cp_search_class
 
   - if filters.any? && (filter_bar_component = iron_admin_filter_bar_component(@resource_class, filters: filters, scope: @current_scope))
@@ -54,23 +55,27 @@
           = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4 text-gray-400 transition-transform group-open:rotate-180" }
         .absolute.right-0.top-full.mt-2.w-72.border.z-20{ class: "#{t.border_radius} #{t.card_border} #{t.card_bg} #{t.card_shadow}-lg" }
           = form_tag resources_path(@resource_class.resource_name), method: :get, class: "p-4" do
-            = hidden_field_tag :scope, @current_scope
-            = hidden_field_tag :q, params[:q]
+            = hidden_field_tag :scope, @current_scope, id: nil
+            = hidden_field_tag :q, params[:q], id: nil
             - iron_admin_index_state.slice("sort", "direction").each do |name, value|
               = hidden_field_tag name, value, id: nil
             .space-y-3
               - filters.each do |filter|
+                - filter_label = filter[:name].to_s.humanize
+                - filter_id = "filters_#{filter[:name]}"
+                -# The label names the select, or the value input of an operator filter.
+                - label_for = { date_range: "#{filter_id}_from", string: "#{filter_id}_value", number: "#{filter_id}_value" }.fetch(filter[:type], filter_id)
                 .space-y-1
-                  %label.block.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_muted_text }
-                    = filter[:name].to_s.humanize
+                  %label.block.text-xs.font-semibold.uppercase.tracking-wider{ for: label_for, class: cp_muted_text }
+                    = filter_label
                   - case filter[:type]
                   - when :select
-                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
+                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", id: filter_id, class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                       %option{ value: "" }= I18n.t("iron_admin.resources.index.all_option")
                       - filter_options_for(@resource_class, filter).each do |label, value|
                         %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
                   - when :boolean
-                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
+                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", id: filter_id, class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                       %option{ value: "" }= I18n.t("iron_admin.resources.index.all_option")
                       - filter_options_for(@resource_class, filter).each do |label, value|
                         %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
@@ -78,16 +83,18 @@
                     .space-y-2
                       = date_field_tag "filters[#{filter[:name]}_from]", iron_admin_filter_param("#{filter[:name]}_from"),
                         class: cp_filter_input_class,
+                        "aria-label": I18n.t("iron_admin.filters.from_label", filter: filter_label),
                         placeholder: I18n.t("iron_admin.filters.from")
                       = date_field_tag "filters[#{filter[:name]}_to]", iron_admin_filter_param("#{filter[:name]}_to"),
                         class: cp_filter_input_class,
+                        "aria-label": I18n.t("iron_admin.filters.to_label", filter: filter_label),
                         placeholder: I18n.t("iron_admin.filters.to")
                   - when :string
                     - string_ops = %w[contains equals starts_with ends_with]
                     - current_op = iron_admin_filter_param(filter[:name].to_s, "op") || "contains"
                     - current_val = iron_admin_filter_param(filter[:name].to_s, "value") || ""
                     .space-y-2
-                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
+                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", id: "#{filter_id}_op", "aria-label": I18n.t("iron_admin.filters.operator_label", filter: filter_label), class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                         - string_ops.each do |op|
                           %option{ value: op, selected: current_op == op }= I18n.t("iron_admin.filters.operators.#{op}")
                       = text_field_tag "filters[#{filter[:name]}][value]", current_val,
@@ -99,7 +106,7 @@
                     - current_val = iron_admin_filter_param(filter[:name].to_s, "value") || ""
                     - current_val_upper = iron_admin_filter_param(filter[:name].to_s, "value_2") || ""
                     .space-y-2{ data: { controller: "filter-operator" } }
-                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style, data: { action: "change->filter-operator#toggle", filter_operator_target: "opSelect" } }
+                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", id: "#{filter_id}_op", "aria-label": I18n.t("iron_admin.filters.operator_label", filter: filter_label), class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style, data: { action: "change->filter-operator#toggle", filter_operator_target: "opSelect" } }
                         - number_ops.each do |op|
                           %option{ value: op, selected: current_op == op }= I18n.t("iron_admin.filters.operators.#{op}")
                       = number_field_tag "filters[#{filter[:name]}][value]", current_val,
@@ -108,7 +115,8 @@
                       .flex.items-center.gap-2{ data: { filter_operator_target: "betweenRow" }, class: current_op == "between" ? "" : "hidden" }
                         %span.text-xs{ class: cp_muted_text }= I18n.t("iron_admin.filters.between_separator")
                         = number_field_tag "filters[#{filter[:name]}][value_2]", current_val_upper,
-                          class: cp_filter_input_class, step: "any"
+                          class: cp_filter_input_class, step: "any",
+                          "aria-label": I18n.t("iron_admin.filters.upper_value_label", filter: filter_label)
             .flex.items-center.gap-3.mt-4.pt-3.border-t.border-gray-100
               %button{ type: "submit", class: cp_btn_filter_apply }= I18n.t("iron_admin.resources.index.apply_button")
               = link_to I18n.t("iron_admin.resources.index.clear_button"),
@@ -147,6 +155,7 @@
                 - if has_bulk_actions
                   %th.px-6.py-3.w-4
                     %input{ type: "checkbox", class: "rounded border-gray-300",
+                      "aria-label": I18n.t("iron_admin.resources.index.select_all"),
                       data: { cp_bulk_select_target: "selectAll", action: "change->cp-bulk-select#toggleAll" } }
                 - @fields.each do |field|
                   - next unless field.visible?(iron_admin_current_user)
@@ -172,6 +181,7 @@
                   - if has_bulk_actions
                     %td.px-6.py-4.w-4
                       %input{ type: "checkbox", name: "ids[]", value: record.id, class: "rounded border-gray-300",
+                        "aria-label": I18n.t("iron_admin.resources.index.select_record", record: display_record_label(record)),
                         data: { cp_bulk_select_target: "checkbox", action: "change->cp-bulk-select#toggle" } }
                   - @fields.each do |field|
                     - next unless field.visible?(iron_admin_current_user)

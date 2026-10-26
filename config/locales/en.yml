@@ -32,6 +32,7 @@ en:
         new_button: "New %{model}"
         import_button: "Import"
         search_placeholder: "Search..."
+        search_label: "Search %{resource}"
         filters_label: "Filters"
         apply_button: "Apply"
         clear_button: "Clear"
@@ -39,6 +40,8 @@ en:
         view_link: "View"
         all_option: "All"
         bulk_actions_label: "Bulk actions:"
+        select_all: "Select all"
+        select_record: "Select %{record}"
       edit:
         title: "Edit %{model}"
       new:
@@ -89,6 +92,7 @@ en:
       color_placeholder: "#000000"
       color_picker_label: "%{field} picker"
       color_invalid: "Enter a hex color such as #1a2b3c or #abc."
+      polymorphic_record_label: "%{field} record"
       number_placeholder: "0"
       currency_placeholder: "0.00"
       radio_placeholder: "Select an option"
@@ -111,6 +115,10 @@ en:
       "false": "No"
       from: "From"
       to: "To"
+      from_label: "%{filter} from"
+      to_label: "%{filter} to"
+      operator_label: "%{filter} operator"
+      upper_value_label: "%{filter} upper value"
       operators:
         contains: "Contains"
         equals: "Equals"

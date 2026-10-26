@@ -11,9 +11,13 @@ IronAdmin::Filters::SearchComponent.new(
   form_url: "/admin/users",    # Required: form submit URL
   placeholder: "Search...",    # Optional: placeholder text
   value: nil,                  # Optional: current search query
-  hidden_params: {}            # Optional: hidden form params to preserve
+  hidden_params: {},           # Optional: hidden form params to preserve
+  resource_class: nil          # Optional: names the input "Search <resource label>"
 )
 ```
+
+The input's `aria-label` is "Search <resource label>" (`iron_admin.resources.index.search_label`)
+when `resource_class:` is given, and the placeholder otherwise.
 
 **Example:**
 
