@@ -129,7 +129,7 @@
                 class: "text-sm #{cp_link_muted}"
 
   - has_bulk_actions = @resource_class.defined_bulk_actions.any?
-  = turbo_frame_tag "records" do
+  = turbo_frame_tag "records", data: { turbo_action: "advance" } do
     = form_tag "#", method: :post, id: "bulk-actions-form", data: (has_bulk_actions ? { controller: "cp-bulk-select" } : {}) do
       - if has_bulk_actions
         .hidden.items-center.gap-3.mb-4.px-4.py-3.border{ data: { cp_bulk_select_target: "bar" }, class: "#{t.border_radius} #{t.card_border} #{t.card_bg} #{t.card_shadow}" }
