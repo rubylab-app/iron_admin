@@ -107,7 +107,7 @@ anywhere" model the PoC uses for the config-level extension points. See §5.
 ### 2b. Component overrides — **implemented**
 
 Same as setting `config.components.<slot>`. Any global slot (`:shell`,
-`:navbar`, `:sidebar`, `:table`, `:form`, `:filter_bar`, `:search`) can be
+`:navbar`, `:sidebar`, `:flash`, `:table`, `:form`, `:filter_bar`, `:search`) can be
 swapped, and the override is used when IronAdmin renders that slot. A
 resource's own `component` override still wins for `:table`, `:form`,
 `:filter_bar` and `:search`:

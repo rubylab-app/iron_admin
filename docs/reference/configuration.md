@@ -130,6 +130,7 @@ slot passes.
 | `search` | Search box on index pages |
 | `navbar` | Top bar inside the built-in shell |
 | `sidebar` | Navigation inside the built-in shell |
+| `flash` | Flash messages above the page content inside the built-in shell |
 | `shell` | Shell around every admin page |
 | `fields[:type]` | Form input for every field of that type (form only; display is unchanged) |
 
