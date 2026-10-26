@@ -33,6 +33,24 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent, type: :component do
       expect(described_class.registered_slots).to have_key(:items)
     end
   end
+
+  # The dashboard page title is the h1, so a widget title is an h2.
+  describe "widget title" do
+    subject(:headings) do
+      render_inline(described_class.new(title: "Latest Events")) { |feed| feed.with_item(description: "User signed up", timestamp: "now") }
+        .css("h1, h2, h3, h4, h5, h6")
+    end
+
+    before do
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    it "is an h2, one level below the page title" do
+      expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([["h2", "Latest Events"]])
+    end
+  end
 end
 
 RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type: :component do

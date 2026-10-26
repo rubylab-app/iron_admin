@@ -2,7 +2,7 @@
   .flex.items-center.justify-between.gap-3.flex-wrap.mb-6
     %h1.text-2xl{ class: cp_heading }
       = @resource_class.model.model_name.human
-      %span.text-gray-400= "##{@record.id}"
+      %span{ class: cp_muted_text }= "##{@record.id}"
     .flex.gap-2.flex-wrap
       - if @resource_class.crud_allowed?(:update, iron_admin_current_user) && @record_reachable
         = link_to I18n.t("iron_admin.resources.show.edit_button"), edit_resource_path(@resource_class.resource_name, @record),

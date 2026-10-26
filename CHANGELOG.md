@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`ActivityFeedComponent` items raised `NoMethodError`** — Rendering an `IronAdmin::Dashboards::ActivityFeedComponent` with any item failed with ``undefined method 'wrapper'``, because the item template called a local variable with a block. Items now render as a link when they have an `href` and as a plain row otherwise.
+- **Heading levels skipped on the dashboard and on forms with nested records** — axe-core reported `heading-order` because these titles were `h3` right below the page's `h1`. They are now `h2`, with the same classes, so they look the same: the titles of `ChartComponent`, `ProgressComponent`, `RecentTableComponent`, `ActivityFeedComponent` and `QuickLinksComponent`, and the section title of `NestedFormComponent`. Host CSS or tests that select these titles as `h3` need updating.
+- **Default-theme text below WCAG AA contrast** — axe-core reported `color-contrast` on these default-theme texts:
+  - The record id next to the title on show and edit pages was `text-gray-400` on the `gray-50` page (2.5:1). It now uses the theme's `muted_text` (default `text-gray-500`, 4.6:1).
+  - The column chips on the import and import preview pages used `muted_text` on their `bg-gray-100` chip (4.4:1 by default). They now use the theme's `label_text` (default `text-gray-700`, 9.4:1).
+  - The unavailable Previous/Next item of the index pagination (`text-gray-300` on white) was a plain `span`. It is now exposed as a disabled link (`role="link"`, `aria-disabled="true"`), so screen readers announce it as unavailable and, as an inactive control, it needs no minimum contrast. It looks the same.
 
 ## [0.7.0] - 2026-10-26
 
