@@ -55,7 +55,20 @@ module IronAdmin
     end
 
     def render_not_found
-      head(:not_found)
+      render_error_page(:not_found)
+    end
+
+    def render_forbidden
+      render_error_page(:forbidden)
+    end
+
+    # A bare 403/404 makes the browser show its own error page, so HTML requests
+    # get a page inside the admin layout. Other formats keep the bare status.
+    def render_error_page(status)
+      respond_to do |format|
+        format.html { render template: "iron_admin/shared/error", status: status, locals: { error: status } }
+        format.any { head(status) }
+      end
     end
 
     def render_bad_request

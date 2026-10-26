@@ -134,8 +134,8 @@ module IronAdmin
     # @return [void]
     def bulk_action_form
       action = find_bulk_action
-      return head(:not_found) unless action
-      return head(:forbidden) unless action_authorized?(action[:name])
+      return render_not_found unless action
+      return render_forbidden unless action_authorized?(action[:name])
 
       @action = action
       @form_fields = action[:form_fields]
@@ -164,7 +164,7 @@ module IronAdmin
       redirect_to resource_path(@resource_class.resource_name, @record),
                   notice: I18n.t("iron_admin.resources.action.success")
     rescue IronAdmin::RecordNotFound
-      head(:not_found)
+      render_not_found
     rescue StandardError => e
       log_iron_admin_error(e)
       redirect_to resources_path(@resource_class.resource_name),
@@ -184,8 +184,8 @@ module IronAdmin
       requested, records = find_bulk_records(ids)
       action = find_bulk_action
 
-      return head(:not_found) unless action
-      return head(:forbidden) unless action_authorized?(action[:name])
+      return render_not_found unless action
+      return render_forbidden unless action_authorized?(action[:name])
       return redirect_bulk(:alert, inaccessible_bulk_message) unless records.count == requested.size
 
       run_bulk_action_in_transaction(action, records)
@@ -221,7 +221,7 @@ module IronAdmin
 
     def set_resource_class
       @resource_class = ResourceRegistry.find(params[:resource_name])
-      head(:not_found) and return unless @resource_class
+      render_not_found unless @resource_class
     end
 
     def resource_policy
@@ -241,11 +241,11 @@ module IronAdmin
     def find_single_record_action
       action = @resource_class.defined_actions.find { |defined| defined[:name].to_s == params[:action_name] }
       unless action
-        head(:not_found)
+        render_not_found
         return nil
       end
       unless action_authorized?(action[:name])
-        head(:forbidden)
+        render_forbidden
         return nil
       end
 
@@ -290,7 +290,7 @@ module IronAdmin
       @record = find_record(record_scope(include_deleted: include_deleted), params[:id])
       return true if action_condition_met?(action, @record)
 
-      head(:forbidden)
+      render_forbidden
       false
     end
 

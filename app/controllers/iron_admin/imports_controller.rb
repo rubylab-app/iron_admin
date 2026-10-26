@@ -48,17 +48,17 @@ module IronAdmin
 
     def set_resource_class
       @resource_class = ResourceRegistry.find(params[:resource_name])
-      head(:not_found) and return unless @resource_class
+      render_not_found unless @resource_class
     end
 
     def ensure_import_enabled
-      head(:not_found) and return unless @resource_class&.import_enabled?
+      render_not_found unless @resource_class&.import_enabled?
     end
 
     def ensure_create_allowed
       return if performed? || @resource_class.nil?
 
-      head(:forbidden) unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
+      render_forbidden unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
     end
 
     def uploaded_file
