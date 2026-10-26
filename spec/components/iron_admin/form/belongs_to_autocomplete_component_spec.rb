@@ -210,6 +210,10 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
       end
 
       it "renders the results panel as a listbox" do
+        expect(result.at_css("##{text_input["aria-controls"]}")["role"]).to eq("listbox")
+      end
+
+      it "starts with the results panel hidden" do
         expect(listbox["class"]).to include("hidden")
       end
 

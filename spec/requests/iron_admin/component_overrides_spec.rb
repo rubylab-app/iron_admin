@@ -256,6 +256,20 @@ RSpec.describe "Component overrides", type: :request do
 
   describe "GET /:resource_name/:id/edit" do
     let(:user) { User.create!(name: "Ada", email: "ada@example.com") }
+    let(:text_input_override) do
+      component = Class.new(ViewComponent::Base) do
+        def initialize(form:, field:)
+          super()
+          @form = form
+          @field = field
+        end
+
+        def call
+          @form.text_field(@field.name)
+        end
+      end
+      named_component("TextInputOverride", component)
+    end
 
     context "with a per-resource form override" do
       it "renders the override with the update URL" do
@@ -312,6 +326,58 @@ RSpec.describe "Component overrides", type: :request do
 
       it "replaces the built-in input" do
         expect(response.body).not_to include('type="email"')
+      end
+    end
+
+    # An override renders a single input with the id form.field_id(field.name),
+    # so the label points at that id: not at the foreign key of a belongs_to,
+    # and not at a group label span for a radio field.
+    context "with a field component for a belongs_to field" do
+      let(:license) { create(:license, user: user) }
+
+      around do |example|
+        original_form_field_names = IronAdmin::Resources::LicenseResource.form_field_names&.dup
+        example.run
+      ensure
+        IronAdmin::Resources::LicenseResource.form_field_names = original_form_field_names
+      end
+
+      before do
+        IronAdmin.configuration.components.fields[:belongs_to] = text_input_override
+        IronAdmin::Resources::LicenseResource.form_fields :user
+        get iron_admin.edit_resource_path("licenses", license)
+      end
+
+      it "points the field label at the override's input" do
+        expect(Nokogiri::HTML5(response.body).at_css("label[for=record_user]")).to be_present
+      end
+
+      it "names the override's input and points every label at a control" do
+        expect(form_accessibility_problems(response.body)).to be_empty
+      end
+    end
+
+    context "with a field component for a radio field" do
+      around do |example|
+        original_form_field_names = IronAdmin::Resources::WidgetResource.form_field_names&.dup
+        example.run
+      ensure
+        IronAdmin::Resources::WidgetResource.form_field_names = original_form_field_names
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::WidgetResource)
+        IronAdmin.configuration.components.fields[:radio] = text_input_override
+        IronAdmin::Resources::WidgetResource.form_fields :status
+        get iron_admin.edit_resource_path("widgets", create(:widget))
+      end
+
+      it "labels the override's input instead of a radio group" do
+        expect(Nokogiri::HTML5(response.body).at_css("label[for=record_status]")).to be_present
+      end
+
+      it "names the override's input and points every label at a control" do
+        expect(form_accessibility_problems(response.body)).to be_empty
       end
     end
   end

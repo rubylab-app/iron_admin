@@ -1,22 +1,26 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Off-canvas sidebar drawer below `lg`. Closed, the panel is inert; open, the
-// `content` targets are inert, so Tab stays in the drawer. From `lg` up nothing
-// is inert, and crossing the breakpoint resets the drawer to closed.
+// Off-canvas sidebar drawer while the panel is `fixed` (below the host's `lg`).
+// Closed, the drawer is inert; open, the `content` targets are inert, so Tab
+// stays in it. Otherwise nothing is inert; switching modes closes the drawer.
 export default class extends Controller {
   static targets = ["panel", "backdrop", "toggle", "closeButton", "content"]
 
   connect() {
-    // Tailwind's `lg` breakpoint.
-    this.largeScreen = window.matchMedia("(min-width: 64rem)")
-    this.reset = () => this.render(false)
-    this.largeScreen.addEventListener("change", this.reset)
+    this.drawer = this.isDrawer
+    this.reset = () => {
+      const drawer = this.isDrawer
+      if (drawer === this.drawer) return
+      this.drawer = drawer
+      this.render(false)
+    }
+    window.addEventListener("resize", this.reset)
     // Also undoes an open drawer restored from a Turbo cache snapshot.
     this.render(false)
   }
 
   disconnect() {
-    this.largeScreen.removeEventListener("change", this.reset)
+    window.removeEventListener("resize", this.reset)
   }
 
   open() {
@@ -48,9 +52,15 @@ export default class extends Controller {
     return this.hasPanelTarget && !this.panelTarget.classList.contains("-translate-x-full")
   }
 
+  // Read from the compiled CSS (`fixed … lg:static`), not a fixed width, so a
+  // host that changes the `lg` breakpoint keeps the JS and the layout in step.
+  get isDrawer() {
+    return this.hasPanelTarget && getComputedStyle(this.panelTarget).position === "fixed"
+  }
+
   render(open) {
     if (!this.hasPanelTarget) return
-    const drawer = !this.largeScreen.matches
+    const drawer = this.isDrawer
     this.panelTarget.classList.toggle("-translate-x-full", !open)
     this.panelTarget.inert = drawer && !open
     this.backdropTargets.forEach((backdrop) => backdrop.classList.toggle("hidden", !open))

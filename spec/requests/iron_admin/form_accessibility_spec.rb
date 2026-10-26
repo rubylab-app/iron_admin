@@ -126,7 +126,11 @@ RSpec.describe "Form control accessible names", type: :request do
     context "with a tags field" do
       let(:path) { iron_admin.new_resource_path("posts") }
 
-      it "points the field label at the text input" do
+      it "points the field label at the field id" do
+        expect(document.at_css("label[for=record_category_tags]").text.squish).to eq("Category tags")
+      end
+
+      it "gives the tag text input the field id" do
         expect(document.at_css("input#record_category_tags")).to have_attribute("data-tag-input")
       end
     end
@@ -262,6 +266,14 @@ RSpec.describe "Form control accessible names", type: :request do
 
     it "names the search input after the resource" do
       expect(document.at_css("input#q")["aria-label"]).to eq("Search Users")
+    end
+
+    it "keeps the q id for the search box only" do
+      expect(document.css("[id=q]").size).to eq(1)
+    end
+
+    it "renders the filter panel's hidden fields without ids" do
+      expect(document.css("details input[type=hidden]").pluck("id").compact).to be_empty
     end
 
     it "points each filter label at its control" do
