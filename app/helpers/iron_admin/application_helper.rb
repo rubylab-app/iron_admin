@@ -107,8 +107,10 @@ module IronAdmin
     # A +:select+ filter offers, in order of precedence: its +options+ (an Array,
     # or a callable that takes no arguments and returns one), the enum values of
     # its column, the records of the +belongs_to+ association whose foreign key
-    # it filters (labelled and scoped like the form's belongs_to select), or the
-    # column's distinct values.
+    # it filters (labelled and scoped like the form's belongs_to select, valued by
+    # the key the foreign key stores), or the column's distinct values. A foreign
+    # key filter keeps the column's distinct values when the +belongs_to+ field
+    # is not visible to the current user or is declared +autocomplete: true+.
     #
     # @param resource_class [Class] The resource class
     # @param filter [Hash] Filter configuration
@@ -163,13 +165,43 @@ module IronAdmin
       association_class = association&.klass
       return unless association_class
 
-      field = resource_class.resolved_fields.find do |candidate|
-        candidate.type == :belongs_to && candidate.options[:foreign_key].to_s == column_name
-      end
+      field = belongs_to_filter_field(resource_class, column_name)
+      return unless labels_foreign_key_filter?(field)
+
       scope = association_class.all
       tenant_scope = IronAdmin.configuration.tenant_scope_block
       scope = tenant_scope.call(scope) if tenant_scope
-      scope.map { |record| [display_record_label(record, field&.options&.dig(:display)), record.id] }
+      value_key = foreign_key_target(association)
+      scope.map { |record| [display_record_label(record, field&.options&.dig(:display)), record.public_send(value_key)] }
+    end
+
+    def belongs_to_filter_field(resource_class, column_name)
+      resource_class.resolved_fields.find do |candidate|
+        candidate.type == :belongs_to && candidate.options[:foreign_key].to_s == column_name
+      end
+    end
+
+    # Whether a foreign key filter lists the associated records. It keeps the
+    # column's distinct values, as in 0.7.0, when the viewer cannot see the
+    # belongs_to field, or when the field is +autocomplete+ (a table too large to list).
+    def labels_foreign_key_filter?(field)
+      return true unless field
+
+      field.visible?(filter_options_viewer) && !field.options[:autocomplete]
+    end
+
+    # The current admin user, or nil where the view has no IronAdmin controller
+    # behind it (such as a component or helper rendered in isolation).
+    def filter_options_viewer
+      iron_admin_current_user if respond_to?(:iron_admin_current_user)
+    end
+
+    # The attribute of the associated record that the foreign key stores: the
+    # belongs_to +primary_key:+ option or the associated model's primary key,
+    # falling back to +id+ (Mongoid, or a composite key).
+    def foreign_key_target(association)
+      key = association.try(:association_primary_key)
+      key.is_a?(String) || key.is_a?(Symbol) ? key : :id
     end
   end
 end

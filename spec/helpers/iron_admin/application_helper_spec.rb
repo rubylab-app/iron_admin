@@ -611,6 +611,47 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
           expect(helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)).to eq([["Ada only", "1"]])
         end
       end
+
+      context "when the belongs_to field is hidden" do
+        let(:resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = License
+
+            def self.name
+              "HiddenOwnerHelperLicenseResource"
+            end
+
+            field :user, visible: false
+          end
+        end
+
+        before { create(:license, user: ada) }
+
+        # The helper renders without an IronAdmin controller, so there is no current user.
+        it "returns the distinct ids" do
+          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id]])
+        end
+      end
+
+      context "when the association is declared autocomplete" do
+        let(:resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = License
+
+            def self.name
+              "AutocompleteOwnerHelperLicenseResource"
+            end
+
+            belongs_to :user, autocomplete: true
+          end
+        end
+
+        before { create(:license, user: ada) }
+
+        it "returns the distinct ids" do
+          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id]])
+        end
+      end
     end
 
     context "with select filter on a polymorphic foreign key" do

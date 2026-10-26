@@ -265,9 +265,12 @@ IronAdmin::Ui::ScopesComponent.new(
 ```
 
 Each tab links to `base_path` with `params` and its own `scope`. The `scope` and `page` in
-`params` are dropped, so a tab starts back at the first page. Pass `iron_admin_index_state`
-(available in IronAdmin's views and components through `helpers`) to keep the search,
-filters and sort, as the built-in index page does.
+`params` are dropped, so a tab starts back at the first page. Pass `iron_admin_index_state` to
+keep the search, filters and sort, as the built-in index page does. It is a view helper of the
+resource pages only (the views `IronAdmin::ResourcesController` renders; use
+`helpers.iron_admin_index_state` in a component rendered there). On other pages, such as a tool
+or the dashboard, pass the params to keep yourself, for example
+`request.query_parameters.slice("q", "sort", "direction", "filters")`.
 
 **Example:**
 
@@ -280,12 +283,11 @@ scopes = [
 ```
 
 ```haml
-= render IronAdmin::Ui::ScopesComponent.new(
-  scopes: scopes,
+-# In a view rendered by IronAdmin::ResourcesController
+= render IronAdmin::Ui::ScopesComponent.new(scopes: scopes,
   current_scope: params[:scope] || "all",
   base_path: request.path,
-  params: iron_admin_index_state
-)
+  params: iron_admin_index_state)
 ```
 
 ---

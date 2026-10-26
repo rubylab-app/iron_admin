@@ -142,6 +142,22 @@ RSpec.describe "IronAdmin::Audit", type: :request do
         expect(user_cell).to eq("Admin Five")
       end
     end
+
+    context "when audit_user_labels does not label the user" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { |_identifiers| {} } } }
+
+      it "shows the user's email" do
+        expect(user_cell).to eq("admin@example.com")
+      end
+    end
+
+    context "when the audit_user_labels block raises" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { |_identifiers| raise "boom" } } }
+
+      it "shows the user's email" do
+        expect(user_cell).to eq("admin@example.com")
+      end
+    end
   end
 
   describe "GET /audit resource labels" do

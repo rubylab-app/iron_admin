@@ -17,7 +17,9 @@ module IronAdmin
         #
         # A +:select+ filter without +options+ offers the enum values of its column,
         # the associated records when the column is a +belongs_to+ foreign key, or
-        # else the column's distinct values.
+        # else the column's distinct values. A foreign key filter keeps the column's
+        # distinct values when the +belongs_to+ field is not visible to the current
+        # user, or is declared +autocomplete: true+ (give it +options+ to label them).
         #
         # @param name [Symbol] The column or attribute to filter by
         # @param options [Hash] :type, :options, :label

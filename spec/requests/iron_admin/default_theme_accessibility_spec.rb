@@ -7,6 +7,17 @@ require "rails_helper"
 # (below WCAG AA); gray-500 on gray-50 is 4.6:1 and gray-700 on gray-100 is 9.4:1.
 RSpec.describe "Default theme accessibility", type: :request do
   let(:document) { response.parsed_body }
+  let(:import_resource) do
+    Class.new(IronAdmin::Resource) do
+      self.model_class_override = User
+
+      def self.name = "ContrastImportUserResource"
+      def self.resource_name = "contrast_import_users"
+
+      imports :csv
+      import_fields :name, :email
+    end
+  end
 
   describe "heading order" do
     context "with a dashboard that has every built-in widget" do
@@ -73,18 +84,6 @@ RSpec.describe "Default theme accessibility", type: :request do
   end
 
   describe "GET /:resource_name/import" do
-    let(:import_resource) do
-      Class.new(IronAdmin::Resource) do
-        self.model_class_override = User
-
-        def self.name = "ContrastImportUserResource"
-        def self.resource_name = "contrast_import_users"
-
-        imports :csv
-        import_fields :name, :email
-      end
-    end
-
     let(:column_chips) { document.css("span.bg-gray-100.rounded-md") }
 
     before do
@@ -101,21 +100,53 @@ RSpec.describe "Default theme accessibility", type: :request do
     end
   end
 
+  describe "POST /:resource_name/import/preview" do
+    let(:column_chips) { document.css("span.bg-gray-100.rounded-md") }
+
+    before do
+      IronAdmin::ResourceRegistry.register(import_resource)
+      file = Rack::Test::UploadedFile.new(StringIO.new("Name,Email\nJane,jane@example.com\n"), "text/csv", true,
+                                          original_filename: "users.csv")
+      post iron_admin.resource_import_preview_path("contrast_import_users"), params: { file: file }
+    end
+
+    it "writes the mapping chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
+      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-gray-700"))
+    end
+
+    it "lists every mapped column" do
+      expect(column_chips.map { |chip| chip.text.squish }).to eq(["Name -> Name", "Email -> Email"])
+    end
+  end
+
   describe "pagination" do
     let(:disabled_links) { document.css("nav[aria-label='Pagination'] .cursor-not-allowed") }
 
     before do
       IronAdmin.configuration.per_page = 1
       create_list(:user, 2)
-      get iron_admin.resources_path("users"), as: :html
+      get iron_admin.resources_path("users", page: page), as: :html
     end
 
-    it "renders the unavailable Previous link" do
-      expect(disabled_links.map { |link| link.text.strip }).to eq(["Previous"])
+    context "when on the first page" do
+      let(:page) { 1 }
+
+      it "renders the unavailable Previous link" do
+        expect(disabled_links.map { |link| link.text.strip }).to eq(["Previous"])
+      end
+
+      it "exposes it as a disabled link, so its faded text needs no 4.5:1 contrast" do
+        expect(disabled_links.map { |link| [link[:role], link["aria-disabled"]] }).to eq([%w[link true]])
+      end
     end
 
-    it "exposes it as a disabled link, so its faded text needs no 4.5:1 contrast" do
-      expect(disabled_links.map { |link| [link[:role], link["aria-disabled"]] }).to eq([%w[link true]])
+    context "when on the last page" do
+      let(:page) { 2 }
+
+      it "exposes the unavailable Next item as a disabled link" do
+        expect(disabled_links.map { |link| [link.text.strip, link[:role], link["aria-disabled"]] })
+          .to eq([%w[Next link true]])
+      end
     end
   end
 end

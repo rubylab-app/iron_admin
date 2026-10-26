@@ -256,10 +256,12 @@ module IronAdmin
       @current_user_block = block
     end
 
-    # Labels the users of the audit log page, which stores each user's id as a
-    # String. Called once per page with every identifier, so one query loads
-    # them all. Unlabeled users (deleted ones), and all users when it raises,
-    # show the identifier.
+    # Labels the users of the audit log page. Called once per page with the
+    # id (as a String) of every user on it, so one query loads them all. With
+    # database storage the page only has that id; with memory storage the
+    # label replaces the user's email or name. Users it does not label
+    # (deleted ones), and all users when it raises, keep the default: the id
+    # with database storage, the email or name with memory storage.
     #
     # @yield [identifiers] Block that returns the label of each user
     # @yieldparam identifiers [Array<String>] Distinct, non-blank user identifiers

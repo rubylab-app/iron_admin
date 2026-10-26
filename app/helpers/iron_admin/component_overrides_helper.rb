@@ -5,8 +5,10 @@ module IronAdmin
   # {IronAdmin::Configuration::Components}). Each method returns nil when the
   # slot has no override, and the view then renders its built-in markup.
   module ComponentOverridesHelper
-    # @param slot [Symbol] A layout slot (+:shell+, +:navbar+ or +:sidebar+)
+    # @param slot [Symbol] A layout slot (+:shell+, +:navbar+, +:sidebar+ or +:flash+)
     # @return [ViewComponent::Base] The override, or the built-in component
+    # @example Render the flash slot in a custom shell
+    #   = render helpers.iron_admin_component(:flash, flash: helpers.flash, current_user: @current_user)
     def iron_admin_component(slot, **arguments)
       IronAdmin.configuration.components.build(slot, **arguments)
     end

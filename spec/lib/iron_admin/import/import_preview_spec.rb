@@ -45,10 +45,8 @@ RSpec.describe IronAdmin::Import::ImportPreview do
         expect(field_cell_text(true, IronAdmin::Field.new(:value, type: :boolean))).to eq("Yes")
       end
     end
-  end
 
-  # The show page's formatting of the column's field (FieldDisplayHelper), as plain text.
-  describe "#cell_text with the column's field" do
+    # With the column's field: the show page's formatting of that field (FieldDisplayHelper), as plain text.
     context "with a boolean field" do
       let(:field) { IronAdmin::Field.new(:value, type: :boolean) }
 
