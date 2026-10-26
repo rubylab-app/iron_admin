@@ -100,6 +100,8 @@ en:
       dashboard: "Dashboard"
     alerts:
       dismiss: "Dismiss"
+    modal:
+      close: "Close"
     nested_form:
       add_button: "Add row"
       remove_button: "Remove"

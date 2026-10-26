@@ -162,7 +162,8 @@ module IronAdmin
 
       # Displays a list of recent records from a resource.
       #
-      # Shows a table of the most recent records, with links to view each one.
+      # Shows a table of the most recent records, newest first (created_at,
+      # then primary key) unless the scope already orders them.
       # Useful for quick access to newly created or updated items.
       #
       # @param resource_name [Symbol] The resource name (pluralized, e.g., :orders)

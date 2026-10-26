@@ -1,7 +1,7 @@
-%div{ class: "fixed inset-0 z-50 overflow-y-auto", data: { controller: "modal" }, role: "dialog", aria: { modal: true } }
+%div{ class: "fixed inset-0 z-50 overflow-y-auto", data: dismissible ? { controller: "cp-modal", action: "keydown.esc@window->cp-modal#close" } : {}, role: "dialog", aria: { modal: true } }
   .flex.min-h-full.items-center.justify-center.p-4
     -# Backdrop
-    .fixed.inset-0.transition-opacity{ class: "bg-gray-500/75", data: dismissible ? { action: "click->modal#close" } : {} }
+    .fixed.inset-0.transition-opacity{ class: "bg-gray-500/75", data: dismissible ? { action: "click->cp-modal#close" } : {} }
 
     -# Modal panel
     %div{ class: modal_classes }
@@ -12,7 +12,7 @@
             %h3.text-lg.font-semibold{ class: theme.body_text }
               = title
           - if dismissible
-            %button.text-gray-400.hover:text-gray-500.transition-colors{ type: "button", data: { action: "modal#close" } }
+            %button.text-gray-400.hover:text-gray-500.transition-colors{ type: "button", "aria-label": close_label, data: { action: "cp-modal#close" } }
               = heroicon "x-mark", variant: :outline, options: { class: "h-6 w-6" }
 
       -# Content

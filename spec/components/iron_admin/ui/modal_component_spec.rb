@@ -90,6 +90,57 @@ RSpec.describe IronAdmin::Ui::ModalComponent, type: :component do
     end
   end
 
+  describe "dismissing" do
+    subject(:dialog) { render_inline(component.with_content("Body")).at_css("[role=dialog]") }
+
+    let(:close_button) { dialog.at_css("button") }
+    let(:backdrop) { dialog.at_css("div.fixed.inset-0.transition-opacity") }
+
+    context "when dismissible" do
+      let(:component) { described_class.new }
+
+      it "attaches the cp-modal Stimulus controller" do
+        expect(dialog["data-controller"]).to eq("cp-modal")
+      end
+
+      it "closes on Escape" do
+        expect(dialog["data-action"]).to eq("keydown.esc@window->cp-modal#close")
+      end
+
+      it "closes when the backdrop is clicked" do
+        expect(backdrop["data-action"]).to eq("click->cp-modal#close")
+      end
+
+      it "wires the close button to the controller" do
+        expect(close_button["data-action"]).to eq("cp-modal#close")
+      end
+
+      it "labels the close button for screen readers" do
+        expect(close_button["aria-label"]).to eq("Close")
+      end
+    end
+
+    context "when not dismissible" do
+      let(:component) { described_class.new(dismissible: false) }
+
+      it "attaches no Stimulus controller" do
+        expect(dialog["data-controller"]).to be_nil
+      end
+
+      it "renders no close button" do
+        expect(close_button).to be_nil
+      end
+    end
+  end
+
+  describe "close controller" do
+    subject(:entry_point) { IronAdmin::Engine.root.join("app/javascript/iron_admin/index.js").read }
+
+    it "is registered under the identifier the template uses" do
+      expect(entry_point).to include(%(application.register("cp-modal", CpModalController)))
+    end
+  end
+
   describe "slots" do
     it "has title slot" do
       expect(described_class.registered_slots).to have_key(:title)

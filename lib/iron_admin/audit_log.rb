@@ -26,7 +26,7 @@ module IronAdmin
   # When enabled, audit logs are viewable at /admin/audit.
   #
   # @example Query recent audit entries
-  #   entries = IronAdmin::AuditLog.query(resource: "users", action: :update)
+  #   entries = IronAdmin::AuditLog.query(resource: "IronAdmin::Resources::UserResource", action: :update)
   #   entries.each do |entry|
   #     puts "#{entry.user} updated user #{entry.record_id}"
   #   end
@@ -135,7 +135,7 @@ module IronAdmin
       # @return [Array<Entry>, ActiveRecord::Relation] Matching entries
       #
       # @example Query by resource
-      #   AuditLog.query(resource: "users")
+      #   AuditLog.query(resource: "IronAdmin::Resources::UserResource")
       #
       # @example Query by date range
       #   AuditLog.query(from: 1.week.ago, to: Time.current)

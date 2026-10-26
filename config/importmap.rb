@@ -11,6 +11,7 @@ pin "iron_admin/controllers/cp_alert_controller", to: "iron_admin/controllers/cp
 pin "iron_admin/controllers/cp_bulk_select_controller", to: "iron_admin/controllers/cp_bulk_select_controller.js"
 pin "iron_admin/controllers/cp_chart_controller", to: "iron_admin/controllers/cp_chart_controller.js"
 pin "iron_admin/controllers/cp_color_field_controller", to: "iron_admin/controllers/cp_color_field_controller.js"
+pin "iron_admin/controllers/cp_modal_controller", to: "iron_admin/controllers/cp_modal_controller.js"
 pin "iron_admin/controllers/cp_nested_form_controller", to: "iron_admin/controllers/cp_nested_form_controller.js"
 pin "iron_admin/controllers/cp_sidebar_controller", to: "iron_admin/controllers/cp_sidebar_controller.js"
 pin "iron_admin/controllers/filter_operator_controller", to: "iron_admin/controllers/filter_operator_controller.js"
