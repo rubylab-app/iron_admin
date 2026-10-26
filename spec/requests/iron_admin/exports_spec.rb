@@ -1,4 +1,5 @@
 require "rails_helper"
+require "csv"
 require "ostruct"
 require_relative "../../support/test_resources"
 
@@ -556,6 +557,94 @@ RSpec.describe "IronAdmin::Exports", type: :request do
         expect(response).to have_http_status(:ok)
         json = response.parsed_body
         expect(json.first["user"]).to eq("json-special@example.com")
+      end
+    end
+  end
+
+  describe "password fields" do
+    let(:export_documents) { CSV.parse(response.body, headers: true) }
+
+    before do
+      IronAdmin::ResourceRegistry.register(password_resource)
+      create(:document, title: "Secret Doc", password_hash: "tok_plaintext")
+    end
+
+    context "when export_fields is not declared" do
+      let(:password_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "PasswordExportDocumentResource"
+          end
+
+          def self.resource_name
+            "password_export_documents"
+          end
+
+          field :password_hash, type: :password
+        end
+      end
+
+      it "leaves the field out of the CSV header" do
+        get iron_admin.export_path("password_export_documents", format: :csv)
+
+        expect(export_documents.headers).not_to include("Password hash")
+      end
+
+      it "never writes the value to the CSV" do
+        get iron_admin.export_path("password_export_documents", format: :csv)
+
+        expect(response.body).not_to include("tok_plaintext")
+      end
+
+      it "leaves the field out of the JSON" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.parsed_body.first.keys).not_to include("password_hash")
+      end
+
+      it "never writes the value to the JSON" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.body).not_to include("tok_plaintext")
+      end
+    end
+
+    context "when export_fields lists the field" do
+      let(:password_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "ListedPasswordExportDocumentResource"
+          end
+
+          def self.resource_name
+            "password_export_documents"
+          end
+
+          field :password_hash, type: :password
+          export_fields :title, :password_hash
+        end
+      end
+
+      it "masks the CSV value" do
+        get iron_admin.export_path("password_export_documents", format: :csv)
+
+        expect(export_documents.first["Password hash"]).to eq("[FILTERED]")
+      end
+
+      it "masks the JSON value" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.parsed_body.first["password_hash"]).to eq("[FILTERED]")
+      end
+
+      it "never writes the value" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.body).not_to include("tok_plaintext")
       end
     end
   end

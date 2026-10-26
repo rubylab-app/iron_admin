@@ -472,7 +472,8 @@ module IronAdmin
 
       # Specifies which fields appear in exports.
       #
-      # By default, exports include all visible fields.
+      # By default, exports include all visible fields except :password ones.
+      # A :password field listed here exports as "[FILTERED]".
       #
       # @param fields [Array<Symbol>] Field names to export
       #
