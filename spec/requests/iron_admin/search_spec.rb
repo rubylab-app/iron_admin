@@ -20,9 +20,58 @@ RSpec.describe "IronAdmin::Search", type: :request do
       expect(response.body).not_to include("Jane Smith")
     end
 
+    context "with a query" do
+      let(:document) do
+        get iron_admin.search_path(q: "John")
+        response.parsed_body
+      end
+
+      it "shows the query in the heading" do
+        expect(document.at_css("h1").text.strip).to eq('Search results for "John"')
+      end
+    end
+
+    context "without a query" do
+      it "shows the plain heading" do
+        get iron_admin.search_path
+
+        expect(response.parsed_body.at_css("h1").text.strip).to eq("Search results")
+      end
+    end
+
     it "returns empty when no query" do
       get iron_admin.search_path
       expect(response).to have_http_status(:ok)
+    end
+
+    context "with a record that has a title but no name or email" do
+      subject(:result_label) do
+        get iron_admin.search_path(q: "Quarterly")
+        response.parsed_body.at_css("a[href='#{iron_admin.resource_path("posts", report)}']").text.strip
+      end
+
+      let!(:report) { create(:post, title: "Quarterly report") }
+
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::PostResource) }
+
+      it "labels the result with its title" do
+        expect(result_label).to eq("Quarterly report")
+      end
+    end
+
+    context "with a record that has no display attribute" do
+      subject(:result_label) do
+        get iron_admin.search_path(q: "KEY-LABEL")
+        response.parsed_body.at_css("a[href='#{iron_admin.resource_path("licenses", license)}']").text.strip
+      end
+
+      let!(:license) { create(:license, license_key: "KEY-LABEL-1") }
+
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::LicenseResource) }
+
+      it "labels the result with the model name and id" do
+        expect(result_label).to eq("License ##{license.id}")
+      end
     end
 
     it "applies tenant scope to global search results" do

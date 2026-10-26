@@ -54,6 +54,12 @@ module IronAdmin
       def modal_classes
         "relative #{theme.card_bg} #{theme.border_radius} #{theme.card_shadow}-xl w-full #{size_classes}"
       end
+
+      # @api private
+      # @return [String] Accessible label of the close button
+      def close_label
+        I18n.t("iron_admin.modal.close")
+      end
     end
   end
 end

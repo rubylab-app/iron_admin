@@ -23,7 +23,7 @@ class AdminDashboard < IronAdmin::Dashboard
     total.zero? ? 0 : (paying.to_f / total * 100).round(1)
   end
 
-  recent :users, limit: 5, scope: -> { order(created_at: :desc) }
+  recent :users, limit: 5, scope: -> { where(active: true) }
   recent :payments, limit: 10
 end
 ```
@@ -99,6 +99,21 @@ recent :resource_name, limit: 5, scope: -> { custom_scope }
 
 The `resource_name` must match a registered resource's name (model's plural form).
 
+**Access:** like the index page, the table is only rendered when the current user may read the
+resource (`policy` and `deny_actions`), and `config.tenant_scope` applies to it, after the
+`scope:`.
+
+**Order:** records are listed newest first: by `created_at` descending, then by primary key
+descending (by primary key alone when the model has no `created_at`). A `scope:` that calls
+`order(...)` keeps its own order, for example `scope: -> { order(total: :desc) }`.
+
+**Columns:** the table shows the resource's `index_fields` when it declares them. Otherwise it
+shows up to four columns: the id, the label column (`name`, `title`, `email`, `label` or
+`slug`), other short columns, and `created_at`. Long or sensitive types (`:textarea`,
+`:rich_text`, `:markdown`, `:code`, `:json`, `:key_value`, `:boolean_group`, `:file`,
+`:files`, `:password`, `:hidden`) are skipped. Like on the index page, fields hidden from the
+current user are left out.
+
 ### Recent Table Component
 
 Recent records render using `IronAdmin::Dashboards::RecentTableComponent`:
@@ -106,9 +121,14 @@ Recent records render using `IronAdmin::Dashboards::RecentTableComponent`:
 ```haml
 = render IronAdmin::Dashboards::RecentTableComponent.new(
   resource_name: :user,
-  records: User.order(created_at: :desc).limit(5)
+  records: User.limit(5),
+  current_user: iron_admin_current_user
 )
 ```
+
+`current_user:` is optional. Pass it so that fields with a `visible:` proc are checked for that
+user; without it, the procs receive `nil`. An unordered relation is listed newest first, so
+`User.order(created_at: :desc).limit(5)` is not needed, but still works.
 
 ## Stats Grid
 

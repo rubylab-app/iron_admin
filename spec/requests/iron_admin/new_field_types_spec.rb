@@ -63,6 +63,31 @@ RSpec.describe "New Field Types", type: :request do
     end
   end
 
+  describe "PATCH /:resource_name/:id with a password field" do
+    subject(:stored_password) do
+      patch iron_admin.resource_path("documents", document), params: { record: { title: "Renamed", password_hash: submitted } }
+      document.reload.password_hash
+    end
+
+    let(:document) { create(:document, password_hash: "hashed_secret") }
+
+    context "when the password input is left blank" do
+      let(:submitted) { "" }
+
+      it "keeps the stored value" do
+        expect(stored_password).to eq("hashed_secret")
+      end
+    end
+
+    context "when a new password is typed" do
+      let(:submitted) { "new_secret" }
+
+      it "stores the new value" do
+        expect(stored_password).to eq("new_secret")
+      end
+    end
+  end
+
   describe "GET /:resource_name/new" do
     it "renders form with password field" do
       get iron_admin.new_resource_path("documents"), as: :html

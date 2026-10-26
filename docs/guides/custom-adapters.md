@@ -295,7 +295,7 @@ Updates a record's attributes. Returns `true` on success, `false` on validation 
 
 Permanently deletes a record. Should raise on failure (bang method).
 
-### Transactions (1 method)
+### Transactions (2 methods)
 
 #### `transaction(&block)` → `Object`
 
@@ -306,6 +306,10 @@ def transaction
   yield
 end
 ```
+
+#### `after_commit(&block)` → `void`
+
+Runs the block once the current transaction commits, and never if it rolls back. IronAdmin writes audit entries and calls `on_action` through it, so a member action, bulk action or import that rolls back records nothing. `Adapters::Base` runs the block at once, which is right for a data source without transactions, where each write is kept as soon as it is made. If your `transaction` is atomic, override it to run the block after the commit. The ActiveRecord adapter uses `ActiveRecord.after_all_transactions_commit`.
 
 ### Scope Manipulation (1 method)
 
@@ -325,13 +329,15 @@ end
 
 #### `find_each(scope, &block)` → `void`
 
-Iterates all records in memory-efficient batches. Used by CSV export. If your data source doesn't support batching, fall back to `.each`:
+Iterates all records in memory-efficient batches. Used by CSV export, which passes the index scope already sorted (`sort`/`direction`, or `config.default_sort`). Yield the records **in the scope's order**, or CSV rows will not follow the sort that the index page and the JSON export use. If your data source doesn't support batching, fall back to `.each`:
 
 ```ruby
 def find_each(scope, &block)
   scope.each(&block)
 end
 ```
+
+ActiveRecord's own `find_each` ignores `ORDER BY` and walks the primary key, so the built-in ActiveRecord adapter only uses it for unordered scopes. An ordered scope is paged with `LIMIT`/`OFFSET` and the primary key added as a tiebreak, which keeps the pages stable.
 
 ### Adapter-Agnostic Interface (5 methods)
 
@@ -367,6 +373,8 @@ end
 | Mongoid | Rescue `IronAdmin::Rollback`, return `nil` |
 | No transactions | Rescue `IronAdmin::Rollback`, return `nil` |
 
+The return values of `transaction` and `wrap_rollback` are not used. IronAdmin treats an action as completed only when its block ran to the end, so with any of these implementations an action that returns `false` shows "Action was not completed" instead of the success notice.
+
 #### `query_builder_class` → `Class`
 
 Returns the `BaseQueryBuilder` subclass for operator-based filters (`:string` and `:number` filter types). If you don't support operator filters, create a no-op builder:
@@ -380,15 +388,9 @@ class NoOpQueryBuilder < IronAdmin::Filters::BaseQueryBuilder
 end
 ```
 
-#### `pagy_method` → `Symbol`
+#### `pagy_method` → `Symbol` (deprecated, unused)
 
-Returns the Pagy backend method name used for pagination.
-
-| ORM | Value |
-|-----|-------|
-| ActiveRecord | `:pagy` |
-| Mongoid | `:pagy_mongoid` |
-| Custom | `:pagy` (default) or implement a custom Pagy backend |
+Not called by IronAdmin. `ResourcesController#index` always calls `pagy(collection_scope, limit: IronAdmin.configuration.per_page)`, which uses Pagy 43's default `:offset` paginator. That paginator works with any scope that responds to `count`, `offset(n)` and `limit(n)`; ActiveRecord relations, Mongoid criteria and `IronAdmin::Adapters::Http::Query` all do. The return value (`:pagy` / `:pagy_mongoid`) has no effect, and it is not a valid Pagy 43 paginator name. It is scheduled for removal in 0.8.0. To make a custom adapter paginate, have its scope respond to `count`, `offset` and `limit`.
 
 #### `cast_boolean(value)` → `Boolean`
 
@@ -593,14 +595,15 @@ Use this checklist when building a new adapter:
 
 ### Transactions & Scope
 - [ ] `transaction(&block)` — atomic or yield
+- [ ] `after_commit(&block)` — optional; override when `transaction` is atomic
 - [ ] `unscope_column(scope, column)` — removes condition
-- [ ] `find_each(scope, &block)` — batched or `.each`
+- [ ] `find_each(scope, &block)` — batched or `.each`, in the scope's order
 
 ### Adapter-Agnostic
 - [ ] `record_changes(record)` — returns changes hash
 - [ ] `wrap_rollback(&block)` — catches `IronAdmin::Rollback`
 - [ ] `query_builder_class` — returns your QueryBuilder subclass
-- [ ] `pagy_method` — returns `:pagy` or custom
+- [ ] `pagy_method` — deprecated and unused; return `:pagy` (removed in 0.8.0)
 - [ ] `cast_boolean(value)` — string to boolean
 
 ### Testing

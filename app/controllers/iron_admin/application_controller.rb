@@ -38,12 +38,16 @@ module IronAdmin
       iron_admin_param_dig(params[:filters], *keys)
     end
 
+    # String and number filters always submit their operator, so like Filterable
+    # they count only when their value is filled in.
     def iron_admin_active_filter?(filter)
-      iron_admin_filter_param(filter[:name]).present? ||
-        iron_admin_filter_param("#{filter[:name]}_from").present? ||
-        iron_admin_filter_param("#{filter[:name]}_to").present? ||
-        (iron_admin_filter_param(filter[:name].to_s).is_a?(ActionController::Parameters) &&
-          iron_admin_filter_param(filter[:name].to_s, "value").present?)
+      name = filter[:name].to_s
+      value = iron_admin_filter_param(name)
+      return value["value"].present? if value.is_a?(ActionController::Parameters)
+
+      value.present? ||
+        iron_admin_filter_param("#{name}_from").present? ||
+        iron_admin_filter_param("#{name}_to").present?
     end
 
     def iron_admin_param_dig(value, *keys)
@@ -55,7 +59,20 @@ module IronAdmin
     end
 
     def render_not_found
-      head(:not_found)
+      render_error_page(:not_found)
+    end
+
+    def render_forbidden
+      render_error_page(:forbidden)
+    end
+
+    # A bare 403/404 makes the browser show its own error page, so HTML requests
+    # get a page inside the admin layout. Other formats keep the bare status.
+    def render_error_page(status)
+      respond_to do |format|
+        format.html { render template: "iron_admin/shared/error", status: status, locals: { error: status } }
+        format.any { head(status) }
+      end
     end
 
     def render_bad_request

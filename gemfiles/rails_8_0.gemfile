@@ -1,0 +1,13 @@
+# Rails 8.0 leg of the CI matrix (BUNDLE_GEMFILE in .github/workflows/ci.yml).
+# The lockfile is resolved fresh in CI and not committed, so CI tests the newest
+# Rails 8.0.x a new host app would get.
+source "https://rubygems.org"
+
+gemspec path: ".."
+
+gem "rails", "~> 8.0.4"
+
+# Active Support 8.0.0-8.0.5.1 pass `quirks_mode: true` to JSON.generate/parse,
+# which json >= 3.0 rejects. Fixed on 8-0-stable (rails/rails@2786de26c6) but
+# unreleased; drop this pin once an 8.0.x release ships the fix.
+gem "json", "< 3"

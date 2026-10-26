@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
@@ -112,6 +114,44 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
 
       it "returns nil" do
         expect(helper.display_field_value(widget, field)).to be_nil
+      end
+    end
+
+    context "with boolean field" do
+      subject(:rendered) { Nokogiri::HTML.fragment(helper.display_field_value(user, field)) }
+
+      let(:field) { IronAdmin::Field.new(:active, type: :boolean) }
+
+      context "when the value is true" do
+        before { user.active = true }
+
+        it "renders a screen reader text alternative" do
+          expect(rendered.at_css(".sr-only")&.text).to eq("Yes")
+        end
+
+        it "keeps the check icon hidden from screen readers" do
+          expect(rendered.at_css("svg.text-green-500")["aria-hidden"]).to eq("true")
+        end
+
+        it "positions the wrapper so the screen reader text stays inside its cell" do
+          expect(rendered.at_css(".sr-only").parent[:class].split).to include("relative")
+        end
+      end
+
+      context "when the value is false" do
+        before { user.active = false }
+
+        it "renders a screen reader text alternative" do
+          expect(rendered.at_css(".sr-only")&.text).to eq("No")
+        end
+
+        it "keeps the cross icon hidden from screen readers" do
+          expect(rendered.at_css("svg.text-red-400")["aria-hidden"]).to eq("true")
+        end
+
+        it "positions the wrapper so the screen reader text stays inside its cell" do
+          expect(rendered.at_css(".sr-only").parent[:class].split).to include("relative")
+        end
       end
     end
 
@@ -422,6 +462,14 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
 
         expect(options).to include(%w[Active active])
         expect(options).to include(%w[Expired expired])
+      end
+    end
+
+    context "with select filter on enum column with options of its own" do
+      let(:filter) { { name: :status, type: :select, options: %w[active] } }
+
+      it "returns only those options" do
+        expect(helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)).to eq([%w[Active active]])
       end
     end
 

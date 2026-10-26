@@ -2,6 +2,14 @@ en:
   iron_admin:
     errors:
       unexpected: "Something went wrong. Please try again."
+      forbidden:
+        title: "Not authorized"
+        message: "You don't have permission to view this page or perform this action."
+      not_found:
+        title: "Page not found"
+        message: "This page doesn't exist, or the record was removed."
+      back_to_resource: "Back to %{resource}"
+      back_to_dashboard: "Back to dashboard"
     resources:
       errors:
         invalid_json: "Invalid JSON. The record was not saved."
@@ -13,16 +21,21 @@ en:
         success: "%{model} deleted."
       action:
         success: "Action completed"
+        not_completed: "Action was not completed"
+        not_completed_with_errors: "Action was not completed: %{errors}"
         failure: "Action failed: %{error}"
+        confirm: "Are you sure?"
       bulk_action:
         no_records: "No records selected"
         success: "Bulk action completed"
+        not_completed: "Bulk action was not completed"
         failure: "Action failed: %{error}"
         inaccessible: "Some records are not accessible"
       index:
         new_button: "New %{model}"
         import_button: "Import"
         search_placeholder: "Search..."
+        search_label: "Search %{resource}"
         filters_label: "Filters"
         apply_button: "Apply"
         clear_button: "Clear"
@@ -30,6 +43,8 @@ en:
         view_link: "View"
         all_option: "All"
         bulk_actions_label: "Bulk actions:"
+        select_all: "Select all"
+        select_record: "Select %{record}"
       edit:
         title: "Edit %{model}"
       new:
@@ -51,24 +66,36 @@ en:
         preview_button: "Preview"
       preview:
         title: "Preview %{model} Import"
-        summary: "%{count} rows detected."
+        summary:
+          one: "%{count} row detected."
+          other: "%{count} rows detected."
         mapping_title: "Column mapping"
         status_column: "Status"
         valid_status: "Valid"
         back_button: "Back"
+        import_button:
+          one: "Import %{count} row"
+          other: "Import %{count} rows"
       create:
         success: "Import finished: %{created} created, %{updated} updated, %{failed} failed."
       errors:
         missing_file: "Choose a file to import."
+        file_too_large: "The file is larger than %{size}. Split it into smaller files."
+        not_saved: "The record could not be saved."
     fields:
       select_placeholder: "Select..."
       boolean_enable: "Enable %{field}"
+      boolean_true: "Yes"
+      boolean_false: "No"
       url_placeholder: "https://"
       email_placeholder: "user@example.com"
       file_remove: "Remove"
       markdown_placeholder: "Write markdown here..."
       tags_placeholder: "Type and press Enter to add..."
       color_placeholder: "#000000"
+      color_picker_label: "%{field} picker"
+      color_invalid: "Enter a hex color such as #1a2b3c or #abc."
+      polymorphic_record_label: "%{field} record"
       number_placeholder: "0"
       currency_placeholder: "0.00"
       radio_placeholder: "Select an option"
@@ -79,6 +106,10 @@ en:
       cancel_button: "Cancel"
     navigation:
       dashboard: "Dashboard"
+    alerts:
+      dismiss: "Dismiss"
+    modal:
+      close: "Close"
     nested_form:
       add_button: "Add row"
       remove_button: "Remove"
@@ -87,6 +118,10 @@ en:
       "false": "No"
       from: "From"
       to: "To"
+      from_label: "%{filter} from"
+      to_label: "%{filter} to"
+      operator_label: "%{filter} operator"
+      upper_value_label: "%{filter} upper value"
       operators:
         contains: "Contains"
         equals: "Equals"

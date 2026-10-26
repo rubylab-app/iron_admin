@@ -149,6 +149,63 @@ RSpec.describe IronAdmin::Concerns::Nestable do
         end
       end
 
+      context "with explicit fields in another order than the columns" do
+        let(:resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = User
+
+            def self.name
+              "NestableReaderOrderedResource"
+            end
+
+            has_many :licenses, nested: true, fields: %i[max_devices status license_key]
+          end
+        end
+
+        it "keeps the declared order" do
+          field_names = resource.nested_associations.first.fields.map(&:name)
+          expect(field_names).to eq(%i[max_devices status license_key])
+        end
+      end
+
+      context "with repeated explicit fields" do
+        let(:resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = User
+
+            def self.name
+              "NestableReaderRepeatedResource"
+            end
+
+            has_many :licenses, nested: true, fields: %i[status license_key status]
+          end
+        end
+
+        it "includes each field once, at its first position" do
+          field_names = resource.nested_associations.first.fields.map(&:name)
+          expect(field_names).to eq(%i[status license_key])
+        end
+      end
+
+      context "with an explicit field that is not a column" do
+        let(:resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = User
+
+            def self.name
+              "NestableReaderUnknownResource"
+            end
+
+            has_many :licenses, nested: true, fields: %i[status nickname license_key]
+          end
+        end
+
+        it "ignores it" do
+          field_names = resource.nested_associations.first.fields.map(&:name)
+          expect(field_names).to eq(%i[status license_key])
+        end
+      end
+
       context "with auto-inferred fields" do
         let(:resource) do
           Class.new(IronAdmin::Resource) do

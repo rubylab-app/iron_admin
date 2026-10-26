@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "ostruct"
-
 module IronAdmin
   # Main controller handling CRUD operations for all admin resources.
   #
@@ -22,7 +20,10 @@ module IronAdmin
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
     include Concerns::Authorizable
+    include Concerns::EventEmittable
     include Concerns::Filterable
+    include Concerns::IndexReturnable
+    include Concerns::IndexStatePreservable
     include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
     include Concerns::Scopeable
@@ -36,6 +37,8 @@ module IronAdmin
     # @return [void]
     def index
       @pagy, @records = pagy(collection_scope, limit: IronAdmin.configuration.per_page)
+      return redirect_to_last_page if @pagy.page > @pagy.last
+
       @fields = index_fields
       @current_scope = current_scope_name
     end
@@ -47,6 +50,8 @@ module IronAdmin
     def show
       @record = find_record(record_scope(include_deleted: true), params[:id])
       @fields = @resource_class.resolved_fields
+      @record_reachable = record_reachable?(@record)
+      @member_actions = @resource_class.defined_actions.select { |action| member_action_offered?(action) }
     end
 
     # Renders the new record form.
@@ -89,7 +94,7 @@ module IronAdmin
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def update
       @record = find_record(record_scope, params[:id])
-      attrs = resource_params
+      attrs = without_blank_passwords(resource_params)
       return render_invalid_json(:edit) if invalid_json_submission?
 
       purge_attachments(@record)
@@ -134,8 +139,8 @@ module IronAdmin
     # @return [void]
     def bulk_action_form
       action = find_bulk_action
-      return head(:not_found) unless action
-      return head(:forbidden) unless action_authorized?(action[:name])
+      return render_not_found unless action
+      return render_forbidden unless action_authorized?(action[:name])
 
       @action = action
       @form_fields = action[:form_fields]
@@ -153,18 +158,16 @@ module IronAdmin
 
       collected = action_form_params(action)
 
-      adapter.transaction do
-        adapter.wrap_rollback do
-          result = call_action_block(action[:block], @record, collected)
-          emit_event(params[:action_name], @record)
-          raise IronAdmin::Rollback if result == false
-        end
+      completed = action_transaction_completed? do
+        result = call_action_block(action[:block], @record, collected)
+        raise IronAdmin::Rollback if result == false
+
+        emit_event_after_commit(params[:action_name], @record)
       end
 
-      redirect_to resource_path(@resource_class.resource_name, @record),
-                  notice: I18n.t("iron_admin.resources.action.success")
+      redirect_to resource_path(@resource_class.resource_name, @record), member_action_flash(completed, @record)
     rescue IronAdmin::RecordNotFound
-      head(:not_found)
+      render_not_found
     rescue StandardError => e
       log_iron_admin_error(e)
       redirect_to resources_path(@resource_class.resource_name),
@@ -174,7 +177,8 @@ module IronAdmin
     # Executes a bulk action on multiple selected records.
     #
     # All records are processed within a database transaction.
-    # If the action block returns false, the transaction is rolled back.
+    # If the action block returns false, the transaction is rolled back
+    # and the index shows an alert instead of the success notice.
     #
     # @return [void]
     def execute_bulk_action
@@ -184,12 +188,14 @@ module IronAdmin
       requested, records = find_bulk_records(ids)
       action = find_bulk_action
 
-      return head(:not_found) unless action
-      return head(:forbidden) unless action_authorized?(action[:name])
+      return render_not_found unless action
+      return render_forbidden unless action_authorized?(action[:name])
       return redirect_bulk(:alert, inaccessible_bulk_message) unless records.count == requested.size
 
-      run_bulk_action_in_transaction(action, records)
-      redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"))
+      return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.not_completed")) unless
+        run_bulk_action_in_transaction(action, records)
+
+      redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"), state: bulk_return_state)
     rescue StandardError => e
       log_iron_admin_error(e)
       redirect_bulk(:alert, I18n.t("iron_admin.errors.unexpected"))
@@ -221,7 +227,7 @@ module IronAdmin
 
     def set_resource_class
       @resource_class = ResourceRegistry.find(params[:resource_name])
-      head(:not_found) and return unless @resource_class
+      render_not_found unless @resource_class
     end
 
     def resource_policy
@@ -241,11 +247,11 @@ module IronAdmin
     def find_single_record_action
       action = @resource_class.defined_actions.find { |defined| defined[:name].to_s == params[:action_name] }
       unless action
-        head(:not_found)
+        render_not_found
         return nil
       end
       unless action_authorized?(action[:name])
-        head(:forbidden)
+        render_forbidden
         return nil
       end
 
@@ -260,22 +266,24 @@ module IronAdmin
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
-    def redirect_bulk(type, message)
-      redirect_to resources_path(@resource_class.resource_name), type => message
-    end
-
+    # Audits each selected record after the commit, from a copy loaded first:
+    # the block still gets an unloaded relation, destroyed records keep their
+    # entry, and objects the block loaded replace the copies. Returns false
+    # when the block rolled back.
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
-      adapter.transaction do
-        adapter.wrap_rollback do
-          result = call_action_block(action[:block], records, collected)
-          raise IronAdmin::Rollback if result == false
-        end
+      action_transaction_completed? do
+        selected = records.dup.to_a
+        result = call_action_block(action[:block], records, collected)
+        raise IronAdmin::Rollback if result == false
+
+        loaded = records.respond_to?(:loaded?) && records.loaded? ? records.index_by(&:id) : {}
+        selected.each { |record| emit_event_after_commit(action[:name], loaded.fetch(record.id, record)) }
       end
     end
 
     def searchable_display_attribute
-      @resource_class.searchable_columns.find { |column| adapter.has_column?(column) }
+      @resource_class.visible_searchable_columns(iron_admin_current_user).find { |column| adapter.has_column?(column) }
     end
 
     def action_condition_met?(action, record)
@@ -286,12 +294,18 @@ module IronAdmin
     end
 
     def prepare_action_record?(action)
-      include_deleted = action[:name].to_sym == :restore
-      @record = find_record(record_scope(include_deleted: include_deleted), params[:id])
+      @record = find_record(record_scope(include_deleted: action_includes_deleted?(action)), params[:id])
       return true if action_condition_met?(action, @record)
 
-      head(:forbidden)
+      render_forbidden
       false
+    end
+
+    # The show page offers only the member actions that execute_action runs:
+    # authorized, able to load the shown record, and with a passing condition.
+    def member_action_offered?(action)
+      action_authorized?(action[:name]) && (@record_reachable || action_includes_deleted?(action)) &&
+        action_condition_met?(action, @record)
     end
 
     def index_fields
@@ -311,7 +325,8 @@ module IronAdmin
 
     def form_fields
       base_fields = if @resource_class.form_field_names
-                      @resource_class.resolved_fields.select { |f| f.name.in?(@resource_class.form_field_names) }
+                      fields_by_name = @resource_class.resolved_fields.index_by(&:name)
+                      @resource_class.form_field_names.filter_map { |name| fields_by_name[name] }
                     else
                       @resource_class.resolved_fields.reject { |f| f.name.in?(%i[id created_at updated_at]) }
                     end
@@ -357,21 +372,10 @@ module IronAdmin
       parsed
     end
 
-    def emit_event(action, record)
-      event = OpenStruct.new(
-        user: iron_admin_current_user,
-        action: action,
-        resource: @resource_class.name,
-        record_id: record.id.to_s,
-        changes: adapter.record_changes(record),
-        ip_address: request.remote_ip
-      )
-
-      # Log to audit log if enabled
-      IronAdmin::AuditLog.log(event)
-
-      # Call on_action callback if configured
-      IronAdmin.configuration.on_action_block&.call(event)
+    # Password inputs never render the stored value, so a blank one means "unchanged".
+    def without_blank_passwords(attrs)
+      names = password_field_names
+      attrs.reject { |name, value| name.in?(names) && value.blank? }
     end
   end
 end

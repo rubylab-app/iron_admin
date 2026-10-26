@@ -14,4 +14,4 @@ permalink: /guides/fields/
 > **TODO:** copy the body, add front matter, and fix relative links to site URLs.
 
 Field types, schema inference, and per-view customization. See the
-[Resource DSL guide](resource-dsl/#fields) for the field DSL basics.
+[Resource DSL guide]({% link guides/resource-dsl.md %}#fields) for the field DSL basics.

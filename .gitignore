@@ -12,3 +12,10 @@ examples/
 # Obsidian vault — personal editor config, not part of the gem
 .obsidian/
 .trash/
+
+# Dummy app SQLite database, recreated from spec/dummy/db/schema.rb on every run
+spec/dummy/db/*.sqlite3
+spec/dummy/db/*.sqlite3-*
+
+# Per-gemfile lockfiles are resolved in CI and not committed
+gemfiles/*.gemfile.lock

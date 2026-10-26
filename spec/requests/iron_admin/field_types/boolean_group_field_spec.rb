@@ -48,7 +48,7 @@ RSpec.describe "Boolean group field type", type: :request do
       get iron_admin.new_resource_path("widgets"), as: :html
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('type="checkbox"')
+      expect(response.parsed_body.css("input[type=checkbox]")).not_to be_empty
       expect(response.body).to include("Read")
       expect(response.body).to include("Write")
       expect(response.body).to include("Delete")
@@ -62,7 +62,7 @@ RSpec.describe "Boolean group field type", type: :request do
       get iron_admin.edit_resource_path("widgets", widget), as: :html
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('type="checkbox"')
+      expect(response.parsed_body.css("input[type=checkbox]")).not_to be_empty
       expect(response.body).to include("checked")
     end
   end

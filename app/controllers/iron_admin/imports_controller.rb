@@ -1,12 +1,20 @@
 # frozen_string_literal: true
 
+require "base64"
 require "ostruct"
 
 module IronAdmin
   class ImportsController < ApplicationController
+    include Concerns::EventEmittable
+
     before_action :set_resource_class
     before_action :ensure_import_enabled
     before_action :ensure_create_allowed
+
+    # Rack buffers at most 16 MiB of non-file multipart fields
+    # (RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT) and Base64 adds a third,
+    # so a larger upload could be previewed but never imported from the preview page.
+    MAX_CARRIED_IMPORT_BYTES = 12_000_000
 
     def new
       @formats = @resource_class.import_formats
@@ -14,10 +22,16 @@ module IronAdmin
     end
 
     def preview
-      return redirect_missing_file unless uploaded_file
+      return redirect_missing_file unless import_content
+      return redirect_file_too_large if import_content.bytesize > MAX_CARRIED_IMPORT_BYTES
 
       @preview = importer.preview
       @resource_name = @resource_class.resource_name
+      @import_format = import_format
+      # The preview page's import form posts this copy back to #create, so the
+      # import runs on exactly the previewed bytes without a second upload.
+      # Base64 keeps line endings and encoding intact through the form.
+      @import_data = Base64.strict_encode64(import_content)
       render :preview, formats: :html
     rescue ArgumentError => e
       redirect_to resource_import_path(@resource_class.resource_name), alert: e.message
@@ -27,9 +41,11 @@ module IronAdmin
     end
 
     def create
-      return redirect_missing_file unless uploaded_file
+      return redirect_missing_file unless import_content
 
-      result = importer.execute!
+      # Each saved row is audited once the import's transaction commits, so
+      # the rows of an import that rolls back are never logged.
+      result = importer.execute! { |action, record| emit_event_after_commit(action, record) }
       redirect_to resources_path(@resource_class.resource_name),
                   notice: I18n.t(
                     "iron_admin.imports.create.success",
@@ -48,25 +64,48 @@ module IronAdmin
 
     def set_resource_class
       @resource_class = ResourceRegistry.find(params[:resource_name])
-      head(:not_found) and return unless @resource_class
+      render_not_found unless @resource_class
     end
 
     def ensure_import_enabled
-      head(:not_found) and return unless @resource_class&.import_enabled?
+      render_not_found unless @resource_class&.import_enabled?
     end
 
     def ensure_create_allowed
       return if performed? || @resource_class.nil?
 
-      head(:forbidden) unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
+      render_forbidden unless @resource_class.crud_allowed?(:create, iron_admin_current_user)
     end
 
+    # The bytes to import: a fresh upload, or the copy of a previewed upload
+    # carried by the preview page's import form.
+    def import_content
+      return @import_content if defined?(@import_content)
+
+      @import_content = uploaded_file&.read || carried_import_data
+    end
+
+    # Only a real multipart upload counts. A plain string would otherwise reach
+    # the parsers, which read it as a path on the server.
     def uploaded_file
-      params[:file]
+      file = params[:file]
+      file if file.respond_to?(:read) && file.respond_to?(:original_filename)
+    end
+
+    def carried_import_data
+      data = params[:import_data]
+      Base64.strict_decode64(data) if data.is_a?(String) && data.present?
+    rescue ArgumentError
+      nil
     end
 
     def importer
-      Import::Importer.new(@resource_class, file: uploaded_file, format: import_format, context: import_context)
+      Import::Importer.new(
+        @resource_class,
+        file: StringIO.new(import_content),
+        format: import_format,
+        context: import_context
+      )
     end
 
     def import_format
@@ -86,6 +125,11 @@ module IronAdmin
 
     def redirect_missing_file
       redirect_to resource_import_path(@resource_class.resource_name), alert: I18n.t("iron_admin.imports.errors.missing_file")
+    end
+
+    def redirect_file_too_large
+      redirect_to resource_import_path(@resource_class.resource_name),
+                  alert: I18n.t("iron_admin.imports.errors.file_too_large", size: "12 MB")
     end
   end
 end

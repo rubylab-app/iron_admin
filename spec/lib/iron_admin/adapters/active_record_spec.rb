@@ -273,6 +273,37 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
     end
   end
 
+  describe "#after_commit" do
+    let(:ran) { [] }
+
+    context "when no transaction is open" do
+      it "runs the block at once" do
+        adapter.after_commit { ran << :callback }
+        expect(ran).to eq([:callback])
+      end
+    end
+
+    context "when the transaction commits" do
+      it "runs the block after the commit" do
+        adapter.transaction do
+          adapter.after_commit { ran << :callback }
+          ran << :inside
+        end
+        expect(ran).to eq(%i[inside callback])
+      end
+    end
+
+    context "when the transaction rolls back" do
+      it "does not run the block" do
+        adapter.transaction do
+          adapter.after_commit { ran << :callback }
+          raise ActiveRecord::Rollback
+        end
+        expect(ran).to be_empty
+      end
+    end
+  end
+
   describe "#search_column" do
     it "searches a column with LIKE" do
       create(:user, name: "Alice Smith")
@@ -280,6 +311,15 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       result = adapter.search_column(adapter.all, :name, "Alice")
       expect(result.count).to eq(1)
       expect(result.first.name).to eq("Alice Smith")
+    end
+
+    context "when building the LIKE condition" do
+      before { allow(User).to receive(:connection).and_call_original }
+
+      it "borrows a connection instead of calling the soft-deprecated .connection" do
+        adapter.search_column(adapter.all, :name, "alice")
+        expect(User).not_to have_received(:connection)
+      end
     end
   end
 
@@ -289,6 +329,15 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       create(:user, name: "Carol", email: "alice@test.com")
       result = adapter.search_columns(adapter.all, %i[name email], "alice")
       expect(result.count).to eq(2)
+    end
+
+    context "when building the LIKE conditions" do
+      before { allow(User).to receive(:connection).and_call_original }
+
+      it "borrows a connection instead of calling the soft-deprecated .connection" do
+        adapter.search_columns(adapter.all, %i[name email], "alice")
+        expect(User).not_to have_received(:connection)
+      end
     end
   end
 
@@ -313,6 +362,64 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       names = []
       adapter.find_each(adapter.all) { |user| names << user.name }
       expect(names.size).to eq(3)
+    end
+
+    context "when the scope is ordered" do
+      subject(:names) do
+        collected = []
+        adapter.find_each(User.order(name: :desc), batch_size: 2) { |user| collected << user.name }
+        collected
+      end
+
+      before do
+        %w[Bravo Delta Alpha Echo Charlie].each { |name| create(:user, name: name) }
+      end
+
+      it "keeps the scope order across batches" do
+        expect(names).to eq(%w[Echo Delta Charlie Bravo Alpha])
+      end
+    end
+
+    context "when the order has ties" do
+      subject(:emails) do
+        collected = []
+        adapter.find_each(User.order(role: :asc), batch_size: 2) { |user| collected << user.email }
+        collected
+      end
+
+      before do
+        5.times { |i| create(:user, role: "member", email: "tie#{i}@example.com") }
+      end
+
+      it "yields every record exactly once" do
+        expect(emails).to match_array(User.pluck(:email))
+      end
+
+      # SQLite returns ties in rowid order anyway; PostgreSQL and MySQL do not.
+      it "adds the primary key to the batch order" do
+        queries = []
+        callback = ->(*, payload) { queries << payload[:sql] }
+        ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { emails }
+
+        expect(queries).to include(a_string_matching(/ORDER BY "users"\."role" ASC, "users"\."id" ASC LIMIT/))
+      end
+    end
+
+    context "when the model has no primary key" do
+      subject(:names) do
+        collected = []
+        adapter.find_each(User.order(name: :asc), batch_size: 2) { |user| collected << user.name }
+        collected
+      end
+
+      before do
+        %w[Charlie Alpha Bravo].each { |name| create(:user, name: name) }
+        allow(User).to receive(:primary_key).and_return(nil)
+      end
+
+      it "keeps the scope order" do
+        expect(names).to eq(%w[Alpha Bravo Charlie])
+      end
     end
   end
 

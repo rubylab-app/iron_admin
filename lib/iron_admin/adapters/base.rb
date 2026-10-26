@@ -270,6 +270,16 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Runs the block once the current transaction commits, and never if it
+      # rolls back. IronAdmin audits changes and calls on_action through it.
+      # Data sources without transactions persist each write at once, so the
+      # default runs the block now. Override it when {#transaction} is atomic.
+      # @yield The block to run after the commit
+      # @return [void]
+      def after_commit
+        yield
+      end
+
       # --- Scope Manipulation ---
 
       # Removes a WHERE condition on a specific column from a scope.
@@ -313,7 +323,10 @@ module IronAdmin
       end
 
       # Returns the Pagy backend method name for this adapter.
-      # @return [Symbol] :pagy or :pagy_mongoid
+      # @deprecated Unused: pagination always calls Pagy's default :offset
+      #   paginator, which needs a scope that responds to count/offset/limit.
+      #   Will be removed in 0.8.0.
+      # @return [Symbol]
       def pagy_method
         raise NotImplementedError
       end

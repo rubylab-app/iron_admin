@@ -109,15 +109,13 @@ module IronAdmin
       # --- Search ---
 
       def search_column(scope, column, query)
-        table = quoted_table_name
-        col = connection.quote_column_name(column)
-        scope.where("#{table}.#{col} #{like_operator} ? #{like_escape_clause}", "%#{sanitize_like(query)}%")
+        condition = model_class.with_connection { |conn| like_condition(conn, column, "?") }
+        scope.where(condition, "%#{sanitize_like(query)}%")
       end
 
       def search_columns(scope, columns, query)
-        table = quoted_table_name
-        conditions = columns.map do |col|
-          "#{table}.#{connection.quote_column_name(col)} #{like_operator} :q #{like_escape_clause}"
+        conditions = model_class.with_connection do |conn|
+          columns.map { |col| like_condition(conn, col, ":q") }
         end
         scope.where(conditions.join(" OR "), q: "%#{sanitize_like(query)}%")
       end
@@ -152,10 +150,25 @@ module IronAdmin
         ::ActiveRecord::Base.transaction(&)
       end
 
+      # Waits for every open transaction to commit, or runs the block at once
+      # when none is open.
+      def after_commit(&)
+        ::ActiveRecord.after_all_transactions_commit(&)
+      end
+
       # --- Batch ---
 
-      def find_each(scope, &)
-        scope.find_each(&)
+      # ActiveRecord's find_each drops ORDER BY and walks the primary key, so an
+      # ordered scope is paged with LIMIT/OFFSET instead, keeping the index order.
+      def find_each(scope, batch_size: 1000, &)
+        return scope.find_each(batch_size: batch_size, &) if scope.order_values.empty?
+
+        ordered = order_with_primary_key_tiebreak(scope)
+        0.step(by: batch_size) do |offset|
+          batch = ordered.limit(batch_size).offset(offset).to_a
+          batch.each(&)
+          break if batch.size < batch_size
+        end
       end
 
       # --- Adapter-Agnostic Interface ---
@@ -174,6 +187,7 @@ module IronAdmin
         IronAdmin::Filters::ActiveRecordQueryBuilder
       end
 
+      # (see Base#pagy_method)
       def pagy_method
         :pagy
       end
@@ -184,20 +198,21 @@ module IronAdmin
 
       private
 
-      def connection
-        model_class.connection
+      # Builds `"table"."column" LIKE|ILIKE <placeholder> ESCAPE '\'` with a
+      # connection borrowed through `with_connection`, so search never calls
+      # the soft-deprecated `ActiveRecord::Base.connection` (which raises when
+      # a host sets `config.active_record.permanent_connection_checkout =
+      # :disallowed`).
+      def like_condition(conn, column, placeholder)
+        table = conn.quote_table_name(model_class.table_name)
+        operator = conn.adapter_name.downcase.include?("postgresql") ? "ILIKE" : "LIKE"
+        "#{table}.#{conn.quote_column_name(column)} #{operator} #{placeholder} #{like_escape_clause}"
       end
 
-      def quoted_table_name
-        connection.quote_table_name(model_class.table_name)
-      end
-
-      def postgresql?
-        connection.adapter_name.downcase.include?("postgresql")
-      end
-
-      def like_operator
-        postgresql? ? "ILIKE" : "LIKE"
+      # OFFSET pages are only stable when the order is total.
+      def order_with_primary_key_tiebreak(scope)
+        keys = Array(primary_key).map(&:to_sym)
+        keys.empty? ? scope : scope.order(*keys)
       end
 
       def like_escape_clause
@@ -209,8 +224,6 @@ module IronAdmin
       end
 
       def eager_load_model_paths
-        return unless defined?(::Rails) && ::Rails.respond_to?(:autoloaders)
-
         Array(::Rails.application.config.eager_load_paths).each do |path|
           next unless path.to_s.end_with?("/app/models")
           next unless File.directory?(path)

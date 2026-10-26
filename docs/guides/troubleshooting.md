@@ -143,6 +143,10 @@ appear if the deferred retry *also* fails.
      allow :my_action
    end
    ```
+3. Check the action's `condition:`. The show page hides an action whose condition is false for
+   that record.
+4. On a soft-deleted record whose default scope hides deleted rows, the show page only offers
+   `restore`. Restore the record first.
 
 ## Authorization Issues
 
@@ -227,6 +231,16 @@ The proc receives the current user, not the record.
    ```ruby
    field :secret, visible: ->(user) { user.admin? }
    ```
+3. `:password` and `:hidden` fields are left out of exports unless `export_fields` lists them.
+   A listed `:hidden` field is exported with its value, and a listed `:password` field as
+   `[FILTERED]`.
+
+### Export returning 404
+
+**Cause:** The resource does not enable that format. `exports :csv` serves only CSV, and a bare
+`exports` turns exports off.
+
+**Solution:** List the format: `exports :csv, :json`.
 
 ## Performance Issues
 

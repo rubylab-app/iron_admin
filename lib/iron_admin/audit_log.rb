@@ -3,9 +3,9 @@
 module IronAdmin
   # Audit logging system for tracking admin panel actions.
   #
-  # The AuditLog provides built-in tracking of create, update, and delete
-  # operations performed through the admin panel. It supports two storage
-  # backends: in-memory (default) and database.
+  # The AuditLog provides built-in tracking of the creates, updates, destroys,
+  # member actions, bulk actions and imports performed through the admin
+  # panel. It supports two storage backends: in-memory (default) and database.
   #
   # == Enabling Audit Logging
   #
@@ -26,7 +26,7 @@ module IronAdmin
   # When enabled, audit logs are viewable at /admin/audit.
   #
   # @example Query recent audit entries
-  #   entries = IronAdmin::AuditLog.query(resource: "users", action: :update)
+  #   entries = IronAdmin::AuditLog.query(resource: "IronAdmin::Resources::UserResource", action: :update)
   #   entries.each do |entry|
   #     puts "#{entry.user} updated user #{entry.record_id}"
   #   end
@@ -41,10 +41,10 @@ module IronAdmin
       # @return [Object] The user who performed the action
       attr_accessor :user
 
-      # @return [Symbol] The action type (:create, :update, :delete)
+      # @return [Symbol, String] The action (:create, :update, :destroy, or a custom action name)
       attr_accessor :action
 
-      # @return [String] The resource name (e.g., "users")
+      # @return [String] The resource class name (e.g., "IronAdmin::Resources::UserResource")
       attr_accessor :resource
 
       # @return [Integer, String] The ID of the affected record
@@ -63,8 +63,8 @@ module IronAdmin
       #
       # @param attrs [Hash] Entry attributes
       # @option attrs [Object] :user The user who performed the action
-      # @option attrs [Symbol] :action The action type
-      # @option attrs [String] :resource The resource name
+      # @option attrs [Symbol, String] :action The action (:create, :update, :destroy, or a custom action name)
+      # @option attrs [String] :resource The resource class name
       # @option attrs [Integer, String] :record_id The record ID
       # @option attrs [Hash] :changes The attribute changes
       # @option attrs [String] :ip_address The request IP
@@ -72,6 +72,13 @@ module IronAdmin
       def initialize(attrs = {})
         attrs.each { |k, v| send("#{k}=", v) }
         @timestamp ||= Time.current
+      end
+
+      # The attribute changes, matching {AuditEntry#record_changes}.
+      #
+      # @return [Hash]
+      def record_changes
+        changes
       end
 
       # Converts the entry to a hash.
@@ -119,7 +126,7 @@ module IronAdmin
       # Queries audit entries with optional filters.
       #
       # @param filters [Hash] Filter criteria
-      # @option filters [String] :resource Filter by resource name
+      # @option filters [String] :resource Filter by resource class name
       # @option filters [Symbol, String] :action Filter by action type
       # @option filters [Integer, String] :record_id Filter by record ID
       # @option filters [Time, Date] :from Entries after this time
@@ -128,7 +135,7 @@ module IronAdmin
       # @return [Array<Entry>, ActiveRecord::Relation] Matching entries
       #
       # @example Query by resource
-      #   AuditLog.query(resource: "users")
+      #   AuditLog.query(resource: "IronAdmin::Resources::UserResource")
       #
       # @example Query by date range
       #   AuditLog.query(from: 1.week.ago, to: Time.current)

@@ -18,12 +18,15 @@ Convention-over-configuration admin panel engine for Ruby on Rails.
 - [Theming](guides/theming.md) - Customize every visual aspect
 - [Components](guides/components.md) - Override and extend UI components
 - [Export](guides/export.md) - CSV and JSON export
+- [Imports](guides/imports.md) - CSV and JSON import with a validated preview
 - [Extending the Engine](guides/extending.md) - Advanced customization
 - [Troubleshooting](guides/troubleshooting.md) - Common issues and solutions
 
 ### Help
 
 - [FAQ](FAQ.md) - Frequently asked questions
+- [Upgrade Guide](../UPGRADING.md) - Version-by-version upgrade notes and breaking changes
+- [Documentation site](https://rubylab-app.github.io/iron_admin/) - These docs as a searchable site
 
 ### Components Library
 

@@ -1,4 +1,4 @@
-- error_input_class = "!border-red-400 !focus:border-red-500 !focus:ring-red-500/20"
+- error_input_class = "!border-red-400 focus:!border-red-500 focus:!ring-red-500/20"
 
 = form_with model: @record, url: form_url, scope: :record, html: { multipart: true } do |f|
   - if @record.errors[:base].any?
@@ -12,10 +12,20 @@
       - next if field.readonly?(iron_admin_current_user)
       - span_full = field.type.in?(%i[textarea json file files rich_text tags markdown code key_value boolean_group])
       - has_error = @record.errors[field.name].any?
+      -# An input override gets the label for field_id(field.name). Built-in radio and boolean
+      -# group choices have their own labels, so the field name labels the group instead.
+      - overridden = field.type.in?(iron_admin_field_component_types)
+      - group_label_id = f.field_id(field.name, :label) if !overridden && field.type.in?(%i[radio boolean_group])
+      - label_target = overridden ? field.name : { belongs_to: field.options[:foreign_key], polymorphic_belongs_to: field.options[:type_column] }.fetch(field.type, field.name)
       %div{ class: span_full ? "md:col-span-2 2xl:col-span-3" : nil }
-        = f.label field.name, field.name.to_s.humanize,
-          class: "block text-sm font-medium #{cp_label_text} mb-1.5"
+        - if group_label_id
+          %span{ id: group_label_id, class: "block text-sm font-medium #{cp_label_text} mb-1.5" }= field.name.to_s.humanize
+        - else
+          = f.label label_target, field.name.to_s.humanize,
+            class: "block text-sm font-medium #{cp_label_text} mb-1.5"
         - case field.type
+        - when *iron_admin_field_component_types
+          = render iron_admin_field_component(f, field)
         - when :belongs_to
           - assoc_class = field.options[:association_class]
           - fk = field.options[:foreign_key]
@@ -24,7 +34,7 @@
           - if field.options[:autocomplete]
             - selected_record = @record.public_send(field.name) if @record.respond_to?(field.name)
             - autocomplete_resource_name = association_resource&.resource_name || assoc_class.model_name.route_key
-            - autocomplete_component = IronAdmin::Form::BelongsToAutocompleteComponent.new(name: "record[#{fk}]", resource_name: autocomplete_resource_name, selected_id: @record.public_send(fk), selected_label: selected_record ? display_record_label(selected_record, display_method) : nil, has_error: has_error)
+            - autocomplete_component = IronAdmin::Form::BelongsToAutocompleteComponent.new(name: "record[#{fk}]", input_id: f.field_id(fk), resource_name: autocomplete_resource_name, selected_id: @record.public_send(fk), selected_label: selected_record ? display_record_label(selected_record, display_method) : nil, has_error: has_error)
             = render autocomplete_component
           - else
             - belongs_to_scope = assoc_class.all
@@ -72,11 +82,16 @@
           = f.email_field field.name, placeholder: I18n.t("iron_admin.fields.email_placeholder"),
             class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
         - when :color
-          .flex.items-center.gap-3
-            = f.color_field field.name, class: "h-10 w-14 rounded border border-gray-300 cursor-pointer p-0.5"
+          -# Only the hex input has a name, so the form submits one value; cp-color-field keeps the picker in sync.
+          .flex.items-center.gap-3{ data: { controller: "cp-color-field" } }
+            = f.color_field field.name, name: nil, id: "#{f.field_id(field.name)}_picker",
+              "aria-label": I18n.t("iron_admin.fields.color_picker_label", field: field.name.to_s.humanize),
+              class: "h-10 w-14 rounded border border-gray-300 cursor-pointer p-0.5",
+              data: { cp_color_field_target: "picker", action: "input->cp-color-field#fromPicker" }
             = f.text_field field.name, placeholder: I18n.t("iron_admin.fields.color_placeholder"),
+              pattern: "#(?:[0-9a-fA-F]{3}){1,2}", title: I18n.t("iron_admin.fields.color_invalid"),
               class: [cp_input_class, "flex-1 font-mono text-sm", (error_input_class if has_error)].compact.join(" "),
-              data: { color_text: true }
+              data: { cp_color_field_target: "text", action: "input->cp-color-field#fromText" }
         - when :currency
           .relative
             %span.pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3.text-gray-500.text-sm
@@ -95,7 +110,7 @@
                   %span.text-sm{ class: cp_body_text }= attachment.filename
               .ml-auto
                 = f.label "#{field.name}_purge", class: "flex items-center gap-1.5 text-sm text-red-600 cursor-pointer" do
-                  = check_box_tag "record[#{field.name}_purge]", "1", false, id: "#{field.name}_purge", class: cp_checkbox_class
+                  = check_box_tag "record[#{field.name}_purge]", "1", false, id: f.field_id("#{field.name}_purge"), class: cp_checkbox_class
                   = I18n.t("iron_admin.fields.file_remove")
           = f.file_field field.name,
             class: [cp_file_input_class, (error_input_class if has_error)].compact.join(" ")
@@ -132,6 +147,7 @@
             = f.select id_col,
               (current_type.present? ? current_type.constantize.all.map { |r| [display_record_label(r), r.id] } : []),
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_id },
+              "aria-label": I18n.t("iron_admin.fields.polymorphic_record_label", field: field.name.to_s.humanize),
               class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
         - when :tags
           - current_tags = @record.public_send(field.name)
@@ -145,7 +161,7 @@
                   = tag_value
                   %button.ml-1.text-indigo-400.hover:text-indigo-600{ type: "button", data: { remove_tag: true } } &times;
             .flex.items-center.gap-2
-              %input.flex-1{ type: "text", placeholder: I18n.t("iron_admin.fields.tags_placeholder"), data: { tag_input: true },
+              %input.flex-1{ type: "text", id: f.field_id(field.name), placeholder: I18n.t("iron_admin.fields.tags_placeholder"), data: { tag_input: true },
                 class: [cp_input_class, (error_input_class if has_error)].compact.join(" ") }
           :javascript
             (function() {
@@ -213,7 +229,7 @@
           - container_id = "boolean-group-#{field.name}"
           %div{ id: container_id, data: { boolean_group_field: true } }
             = f.hidden_field field.name, value: current_values.join(","), id: "boolean-group-hidden-#{field.name}"
-            .flex.flex-wrap.gap-3
+            .flex.flex-wrap.gap-3{ role: "group", "aria-labelledby": group_label_id }
               - choices.each do |choice|
                 - label_text, choice_value = choice.is_a?(Array) ? choice : [choice.to_s.humanize, choice]
                 %label.inline-flex.items-center.gap-2.cursor-pointer
@@ -247,7 +263,7 @@
         - when :radio
           - layout = field.options[:layout] == :vertical ? "flex-col space-y-2" : "flex flex-wrap gap-4"
           - choices = field.options[:choices] || []
-          .flex{ class: layout }
+          .flex{ class: layout, role: "radiogroup", "aria-labelledby": group_label_id }
             - choices.each do |choice|
               - label_text, choice_value = choice.is_a?(Array) ? choice : [choice.to_s.humanize, choice]
               %label.inline-flex.items-center.gap-2.cursor-pointer
@@ -271,14 +287,15 @@
             %p.text-sm.text-red-600= @record.errors[field.name].join(", ")
 
   - @resource_class.habtm_associations.each do |assoc|
+    - ids_attribute = "#{assoc[:name].to_s.singularize}_ids"
     .md:col-span-2.2xl:col-span-3.mt-4
-      %label.block.text-sm.font-medium.mb-2{ class: cp_label_text }= assoc[:name].to_s.humanize
+      %span.block.text-sm.font-medium.mb-2{ id: f.field_id(ids_attribute, :label), class: cp_label_text }= assoc[:name].to_s.humanize
       - all_options = assoc[:reflection].klass.all
       - selected_ids = @record.public_send(assoc[:name]).pluck(:id)
-      .flex.flex-wrap.gap-3
+      .flex.flex-wrap.gap-3{ role: "group", "aria-labelledby": f.field_id(ids_attribute, :label) }
         - all_options.each do |option|
           %label.inline-flex.items-center.gap-2.cursor-pointer
-            = check_box_tag "record[#{assoc[:name].to_s.singularize}_ids][]", option.id, selected_ids.include?(option.id), class: cp_checkbox_class
+            = check_box_tag "record[#{ids_attribute}][]", option.id, selected_ids.include?(option.id), id: f.field_id(ids_attribute, option.id), class: cp_checkbox_class
             %span.text-sm{ class: cp_body_text }= display_record_label(option, assoc[:display])
 
   - @resource_class.nested_associations.each do |nested_assoc|

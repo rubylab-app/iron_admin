@@ -71,6 +71,17 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
+  describe "show of an active record" do
+    let!(:active_post) { SoftDeletePost.create!(title: "Active Post", body: "Content") }
+
+    it "links to the edit page" do
+      get iron_admin.resource_path("soft_delete_posts", active_post), as: :html
+
+      edit_path = iron_admin.edit_resource_path("soft_delete_posts", active_post)
+      expect(response.parsed_body.css("a[href='#{edit_path}']")).not_to be_empty
+    end
+  end
+
   describe "show and update of a deleted record" do
     let!(:deleted_post) do
       SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current)
@@ -80,6 +91,19 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
       get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
 
       expect(response).to have_http_status(:ok)
+    end
+
+    it "does not link to the edit page, which cannot load the deleted record" do
+      get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
+
+      edit_path = iron_admin.edit_resource_path("soft_delete_posts", deleted_post)
+      expect(response.parsed_body.css("a[href='#{edit_path}']")).to be_empty
+    end
+
+    it "keeps the delete button" do
+      get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html
+
+      expect(response.parsed_body.css("form[action='#{iron_admin.resource_path("soft_delete_posts", deleted_post)}']")).not_to be_empty
     end
 
     it "returns not found when updating the deleted record" do
@@ -97,6 +121,117 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     end
   end
 
+  describe "member actions on the show page" do
+    let(:post_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = SoftDeletePost
+
+        def self.name
+          "SoftDeletePostResource"
+        end
+
+        def self.resource_name
+          "soft_delete_posts"
+        end
+
+        action :publish do |post|
+          post.update!(title: "Published")
+        end
+      end
+    end
+
+    def action_buttons(record, action_name)
+      response.parsed_body.css("form[action='#{iron_admin.resource_action_path("soft_delete_posts", record, action_name)}']")
+    end
+
+    context "with a deleted record that the default scope hides" do
+      let!(:deleted_post) do
+        SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current)
+      end
+
+      before { get iron_admin.resource_path("soft_delete_posts", deleted_post), as: :html }
+
+      it "offers the restore action" do
+        expect(action_buttons(deleted_post, :restore)).not_to be_empty
+      end
+
+      it "does not offer actions that cannot load the deleted record" do
+        expect(action_buttons(deleted_post, :publish)).to be_empty
+      end
+    end
+
+    context "with an active record" do
+      let!(:active_post) { SoftDeletePost.create!(title: "Active Post", body: "Content") }
+
+      before { get iron_admin.resource_path("soft_delete_posts", active_post), as: :html }
+
+      it "offers its custom actions" do
+        expect(action_buttons(active_post, :publish)).not_to be_empty
+      end
+
+      it "does not offer restore, whose condition is false" do
+        expect(action_buttons(active_post, :restore)).to be_empty
+      end
+    end
+  end
+
+  # discard (with discard_column = :deleted_at) and hand-rolled soft delete
+  # leave deleted rows visible, so edit and update can still load them.
+  describe "show of a deleted record on a model without a default scope" do
+    before(:all) do
+      ActiveRecord::Base.connection.create_table :plain_soft_delete_posts, force: true do |t|
+        t.string :title
+        t.datetime :deleted_at
+        t.timestamps
+      end
+
+      Object.const_set(:PlainSoftDeletePost, Class.new(ApplicationRecord) do
+        self.table_name = "plain_soft_delete_posts"
+      end)
+    end
+
+    after(:all) do
+      ActiveRecord::Base.connection.drop_table :plain_soft_delete_posts, if_exists: true
+      Object.send(:remove_const, :PlainSoftDeletePost) if defined?(PlainSoftDeletePost)
+    end
+
+    let(:plain_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = PlainSoftDeletePost
+
+        def self.name
+          "PlainSoftDeletePostResource"
+        end
+
+        def self.resource_name
+          "plain_soft_delete_posts"
+        end
+
+        action :publish do |post|
+          post.update!(title: "Published")
+        end
+      end
+    end
+
+    let!(:deleted_post) { PlainSoftDeletePost.create!(title: "Deleted Post", deleted_at: Time.current) }
+
+    before { IronAdmin::ResourceRegistry.register(plain_resource) }
+
+    it "links to the edit page, which can still load the deleted record" do
+      get iron_admin.resource_path("plain_soft_delete_posts", deleted_post), as: :html
+
+      edit_path = iron_admin.edit_resource_path("plain_soft_delete_posts", deleted_post)
+      expect(response.parsed_body.css("a[href='#{edit_path}']")).not_to be_empty
+    end
+
+    it "offers custom actions, which can still load the deleted record" do
+      get iron_admin.resource_path("plain_soft_delete_posts", deleted_post), as: :html
+
+      action_path = iron_admin.resource_action_path("plain_soft_delete_posts", deleted_post, :publish)
+      expect(response.parsed_body.css("form[action='#{action_path}']")).not_to be_empty
+    end
+  end
+
   describe "POST /:resource_name/:id/actions/restore" do
     let!(:deleted_post) { SoftDeletePost.unscoped.create!(title: "Deleted Post", body: "Content", deleted_at: Time.current) }
 
@@ -111,6 +246,72 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
     it "redirects to the show page after restore" do
       post iron_admin.resource_action_path("soft_delete_posts", deleted_post.id, "restore"), as: :html
       expect(response).to redirect_to(iron_admin.resource_path("soft_delete_posts", deleted_post))
+    end
+
+    it "shows the success notice after restore" do
+      post iron_admin.resource_action_path("soft_delete_posts", deleted_post.id, "restore"), as: :html
+      expect(flash[:notice]).to eq("Action completed")
+    end
+
+    context "when the restored record fails validation" do
+      subject(:restore) { post iron_admin.resource_action_path("validated_soft_delete_posts", invalid_post.id, "restore") }
+
+      let(:validated_model) do
+        Class.new(ApplicationRecord) do
+          self.table_name = "soft_delete_posts"
+          default_scope { where(deleted_at: nil) }
+          validates :body, presence: true
+
+          def self.name
+            "ValidatedSoftDeletePost"
+          end
+        end
+      end
+      let(:validated_resource) do
+        model = validated_model
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = model
+
+          def self.name
+            "ValidatedSoftDeletePostResource"
+          end
+
+          def self.resource_name
+            "validated_soft_delete_posts"
+          end
+        end
+      end
+      let!(:invalid_post) { SoftDeletePost.unscoped.create!(title: "Invalid Post", body: "", deleted_at: Time.current) }
+
+      before do
+        IronAdmin.configure { |config| config.audit_enabled = true }
+        IronAdmin::ResourceRegistry.register(validated_resource)
+      end
+
+      it "keeps the record deleted" do
+        restore
+        expect(invalid_post.reload.deleted_at).to be_present
+      end
+
+      it "shows the validation errors" do
+        restore
+        expect(flash[:alert]).to eq("Action was not completed: Body can't be blank")
+      end
+
+      it "does not show the success notice" do
+        restore
+        expect(flash[:notice]).to be_nil
+      end
+
+      it "redirects to the show page" do
+        restore
+        expect(response).to redirect_to(iron_admin.resource_path("validated_soft_delete_posts", invalid_post))
+      end
+
+      it "logs nothing" do
+        restore
+        expect(IronAdmin::AuditLog.entries).to be_empty
+      end
     end
   end
 

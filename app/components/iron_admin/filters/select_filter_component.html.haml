@@ -1,7 +1,7 @@
 .space-y-1
-  %label{ class: label_classes }
+  %label{ for: field_id, class: label_classes }
     = label
-  %select{ name: field_name, class: select_classes, style: chevron_style }
+  %select{ name: field_name, id: field_id, class: select_classes, style: chevron_style }
     %option{ value: "" } All
     - options.each do |option|
       - opt_label, opt_value = option.is_a?(Array) ? option : [option.to_s.humanize, option]

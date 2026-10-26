@@ -103,6 +103,41 @@ RSpec.describe IronAdmin::Resources::DataTableComponent, type: :component do
     end
   end
 
+  describe "sort links" do
+    subject(:sort_links) { rendered.css("thead a") }
+
+    let(:rendered) do
+      render_inline(described_class.new(records: User.none, fields: fields,
+                                        resource_class: IronAdmin::Resources::UserResource, base_url: "/admin/users?"))
+    end
+
+    # Forms outside the records frame (search, filters) must pick up the new sort.
+    it "navigate the whole page" do
+      expect(sort_links.pluck("data-turbo-frame")).to eq(%w[_top _top _top])
+    end
+  end
+
+  describe "screen reader text" do
+    subject(:rendered) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(records: User.all, fields: boolean_fields,
+                                          resource_class: IronAdmin::Resources::UserResource, base_url: "/admin/users?"))
+      end
+    end
+
+    let(:boolean_fields) { IronAdmin::Resources::UserResource.resolved_fields.select { |field| field.name == :active } }
+
+    before { create(:user, active: false) }
+
+    it "renders screen reader text in the table" do
+      expect(sr_only_in_table_cells(rendered)).to be_present
+    end
+
+    it "gives each one a positioned ancestor inside its cell" do
+      expect(unpositioned_sr_only_in_table_cells(rendered)).to be_empty
+    end
+  end
+
   describe "#sorted?" do
     it "returns true when field matches current_sort" do
       component = described_class.new(

@@ -52,7 +52,7 @@ end
 Visibility and readonly rules are enforced across:
 - Index table columns
 - Show page fields
-- Form fields (readonly fields are disabled)
+- Form fields (readonly fields are not rendered, and values submitted for them are not assigned on create or update; the `<name>_purge` remove-file parameter of a readonly `:file` field is still honored)
 - CSV/JSON exports
 - Search queries
 
@@ -196,7 +196,7 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
-Renders a password input with masking on forms. The value is never displayed on show or index pages.
+Renders a password input with masking on forms. Leaving it blank on an edit form keeps the stored value. The value is never displayed on show or index pages, and never exported: CSV and JSON exports leave `:password` fields out, and a `:password` field listed in `export_fields` is exported as `[FILTERED]`. A `:password` field also gets no inferred index filter, is never searched (search box, `field:value` queries, global search, autocomplete), and cannot be sorted on.
 
 ## Tags Field
 
@@ -226,7 +226,14 @@ class ThemeResource < IronAdmin::Resource
 end
 ```
 
-On show and index pages, displays a color swatch next to the hex value. On forms, renders a color picker input alongside a hex text input.
+On show and index pages, displays a color swatch next to the hex value. On forms, renders a color picker alongside a hex text input:
+
+- Only the text input is submitted, as `record[<field>]`. The picker has no `name`; its id is `record_<field>_picker` and its accessible label is "<Field> picker" (`iron_admin.fields.color_picker_label`).
+- The `cp-color-field` Stimulus controller keeps the two in sync: picking a color fills the text input, and typing a hex color moves the picker. A blank field stays blank.
+- The text input accepts `#rgb` or `#rrggbb` only (pattern `#(?:[0-9a-fA-F]{3}){1,2}`). Anything else is rejected by the browser with the hint `iron_admin.fields.color_invalid`.
+- Without JavaScript, the text input still works and the picker only shows the color.
+
+For columns that store other CSS color formats (names such as `red`, `rgb(...)`, or `#rrggbbaa`), use `type: :text` or a custom field type instead.
 
 ## Currency Field
 
@@ -248,7 +255,7 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
-Boolean fields are auto-inferred from boolean database columns. On show and index pages, `true` values display a green check icon and `false` values display a red X icon (instead of raw `true`/`false` text).
+Boolean fields are auto-inferred from boolean database columns. On show and index pages, `true` values display a green check icon and `false` values display a red X icon (instead of raw `true`/`false` text). Next to the icon, visually hidden text ("Yes" or "No", from `iron_admin.fields.boolean_true` and `boolean_false`) tells screen readers the value.
 
 ## Date and DateTime Fields
 

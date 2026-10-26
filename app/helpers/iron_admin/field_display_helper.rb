@@ -180,12 +180,20 @@ module IronAdmin
     end
 
     def display_boolean(record, field)
-      value = record.public_send(field.name)
-
-      if value
-        heroicon("check-circle", variant: :mini, options: { class: "h-5 w-5 text-green-500" })
+      if record.public_send(field.name)
+        boolean_icon("check-circle", "text-green-500", I18n.t("iron_admin.fields.boolean_true"))
       else
-        heroicon("x-circle", variant: :mini, options: { class: "h-5 w-5 text-red-400" })
+        boolean_icon("x-circle", "text-red-400", I18n.t("iron_admin.fields.boolean_false"))
+      end
+    end
+
+    # The icon SVGs ship with aria-hidden, so screen readers announce the visually hidden label instead.
+    # The wrapper is `relative` so the absolutely positioned sr-only text stays inside the table cell;
+    # otherwise a wide table's overflow-x-auto does not clip it and the whole page scrolls sideways.
+    def boolean_icon(icon, color, label)
+      content_tag(:span, class: "relative inline-flex") do
+        heroicon(icon, variant: :mini, options: { class: "h-5 w-5 #{color}" }) +
+          content_tag(:span, label, class: "sr-only")
       end
     end
 

@@ -24,29 +24,23 @@
               resources_path(@resource_class.resource_name, scope: scope[:name], q: params[:q]),
               class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap #{active ? cp_scope_active : cp_scope_inactive}"
 
-      - if @resource_class.searchable_columns.any?
+      - if @resource_class.searchable_columns.any? && (search_component = iron_admin_search_component(@resource_class, scope: @current_scope))
+        = render search_component
+      - elsif @resource_class.searchable_columns.any?
         = form_tag resources_path(@resource_class.resource_name), method: :get, class: "flex ml-auto" do
-          = hidden_field_tag :scope, @current_scope
-          - filters.each do |filter|
-            - if filter[:type].in?(%i[string number])
-              - sub = iron_admin_filter_param(filter[:name].to_s)
-              - if sub.is_a?(ActionController::Parameters) && sub["value"].present?
-                = hidden_field_tag "filters[#{filter[:name]}][op]", sub["op"]
-                = hidden_field_tag "filters[#{filter[:name]}][value]", sub["value"]
-                - if sub["value_2"].present?
-                  = hidden_field_tag "filters[#{filter[:name]}][value_2]", sub["value_2"]
-            - else
-              - value = iron_admin_filter_param(filter[:name])
-              - if value.present?
-                = hidden_field_tag "filters[#{filter[:name]}]", value
+          - iron_admin_search_hidden_params(@current_scope).each do |name, value|
+            = hidden_field_tag name, value, id: nil
           .relative
             .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center{ class: "pl-3.5" }
               = heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }
             = text_field_tag :q, params[:q],
               placeholder: I18n.t("iron_admin.resources.index.search_placeholder"),
+              "aria-label": I18n.t("iron_admin.resources.index.search_label", resource: @resource_class.label),
               class: cp_search_class
 
-  - if filters.any?
+  - if filters.any? && (filter_bar_component = iron_admin_filter_bar_component(@resource_class, filters: filters, scope: @current_scope))
+    = render filter_bar_component
+  - elsif filters.any?
     - has_active_filters = filters.any? { |f| iron_admin_active_filter?(f) }
     - select_chevron_style = "background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;"
     .flex.justify-end.mb-4
@@ -61,21 +55,27 @@
           = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4 text-gray-400 transition-transform group-open:rotate-180" }
         .absolute.right-0.top-full.mt-2.w-72.border.z-20{ class: "#{t.border_radius} #{t.card_border} #{t.card_bg} #{t.card_shadow}-lg" }
           = form_tag resources_path(@resource_class.resource_name), method: :get, class: "p-4" do
-            = hidden_field_tag :scope, @current_scope
-            = hidden_field_tag :q, params[:q]
+            = hidden_field_tag :scope, @current_scope, id: nil
+            = hidden_field_tag :q, params[:q], id: nil
+            - iron_admin_index_state.slice("sort", "direction").each do |name, value|
+              = hidden_field_tag name, value, id: nil
             .space-y-3
               - filters.each do |filter|
+                - filter_label = filter[:name].to_s.humanize
+                - filter_id = "filters_#{filter[:name]}"
+                -# The label names the select, or the value input of an operator filter.
+                - label_for = { date_range: "#{filter_id}_from", string: "#{filter_id}_value", number: "#{filter_id}_value" }.fetch(filter[:type], filter_id)
                 .space-y-1
-                  %label.block.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_muted_text }
-                    = filter[:name].to_s.humanize
+                  %label.block.text-xs.font-semibold.uppercase.tracking-wider{ for: label_for, class: cp_muted_text }
+                    = filter_label
                   - case filter[:type]
                   - when :select
-                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
+                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", id: filter_id, class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                       %option{ value: "" }= I18n.t("iron_admin.resources.index.all_option")
                       - filter_options_for(@resource_class, filter).each do |label, value|
                         %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
                   - when :boolean
-                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
+                    %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}]", id: filter_id, class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                       %option{ value: "" }= I18n.t("iron_admin.resources.index.all_option")
                       - filter_options_for(@resource_class, filter).each do |label, value|
                         %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
@@ -83,16 +83,18 @@
                     .space-y-2
                       = date_field_tag "filters[#{filter[:name]}_from]", iron_admin_filter_param("#{filter[:name]}_from"),
                         class: cp_filter_input_class,
+                        "aria-label": I18n.t("iron_admin.filters.from_label", filter: filter_label),
                         placeholder: I18n.t("iron_admin.filters.from")
                       = date_field_tag "filters[#{filter[:name]}_to]", iron_admin_filter_param("#{filter[:name]}_to"),
                         class: cp_filter_input_class,
+                        "aria-label": I18n.t("iron_admin.filters.to_label", filter: filter_label),
                         placeholder: I18n.t("iron_admin.filters.to")
                   - when :string
                     - string_ops = %w[contains equals starts_with ends_with]
                     - current_op = iron_admin_filter_param(filter[:name].to_s, "op") || "contains"
                     - current_val = iron_admin_filter_param(filter[:name].to_s, "value") || ""
                     .space-y-2
-                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
+                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", id: "#{filter_id}_op", "aria-label": I18n.t("iron_admin.filters.operator_label", filter: filter_label), class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style }
                         - string_ops.each do |op|
                           %option{ value: op, selected: current_op == op }= I18n.t("iron_admin.filters.operators.#{op}")
                       = text_field_tag "filters[#{filter[:name]}][value]", current_val,
@@ -104,7 +106,7 @@
                     - current_val = iron_admin_filter_param(filter[:name].to_s, "value") || ""
                     - current_val_upper = iron_admin_filter_param(filter[:name].to_s, "value_2") || ""
                     .space-y-2{ data: { controller: "filter-operator" } }
-                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style, data: { action: "change->filter-operator#toggle", filter_operator_target: "opSelect" } }
+                      %select.block.w-full.appearance-none.border.px-3.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ name: "filters[#{filter[:name]}][op]", id: "#{filter_id}_op", "aria-label": I18n.t("iron_admin.filters.operator_label", filter: filter_label), class: "#{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}", style: select_chevron_style, data: { action: "change->filter-operator#toggle", filter_operator_target: "opSelect" } }
                         - number_ops.each do |op|
                           %option{ value: op, selected: current_op == op }= I18n.t("iron_admin.filters.operators.#{op}")
                       = number_field_tag "filters[#{filter[:name]}][value]", current_val,
@@ -113,16 +115,21 @@
                       .flex.items-center.gap-2{ data: { filter_operator_target: "betweenRow" }, class: current_op == "between" ? "" : "hidden" }
                         %span.text-xs{ class: cp_muted_text }= I18n.t("iron_admin.filters.between_separator")
                         = number_field_tag "filters[#{filter[:name]}][value_2]", current_val_upper,
-                          class: cp_filter_input_class, step: "any"
+                          class: cp_filter_input_class, step: "any",
+                          "aria-label": I18n.t("iron_admin.filters.upper_value_label", filter: filter_label)
             .flex.items-center.gap-3.mt-4.pt-3.border-t.border-gray-100
               %button{ type: "submit", class: cp_btn_filter_apply }= I18n.t("iron_admin.resources.index.apply_button")
-              = link_to I18n.t("iron_admin.resources.index.clear_button"), resources_path(@resource_class.resource_name, scope: @current_scope, q: params[:q]),
+              = link_to I18n.t("iron_admin.resources.index.clear_button"),
+                resources_path(@resource_class.resource_name, scope: @current_scope, q: params[:q], **iron_admin_index_state.slice("sort", "direction").symbolize_keys),
                 class: "text-sm #{cp_link_muted}"
 
   - has_bulk_actions = @resource_class.defined_bulk_actions.any?
-  = turbo_frame_tag "records" do
-    = form_tag "#", method: :post, id: "bulk-actions-form", data: (has_bulk_actions ? { controller: "cp-bulk-select" } : {}) do
+  = turbo_frame_tag "records", data: { turbo_action: "advance" } do
+    -# Submitted to the whole page, so the shell shows the redirect's flash message.
+    = form_tag "#", method: :post, id: "bulk-actions-form", data: { turbo_frame: "_top", **(has_bulk_actions ? { controller: "cp-bulk-select" } : {}) } do
       - if has_bulk_actions
+        - iron_admin_hidden_params(iron_admin_index_state).each do |name, value|
+          = hidden_field_tag name, value, id: nil
         .hidden.items-center.gap-3.mb-4.px-4.py-3.border{ data: { cp_bulk_select_target: "bar" }, class: "#{t.border_radius} #{t.card_border} #{t.card_bg} #{t.card_shadow}" }
           %span.text-sm.font-medium{ class: cp_muted_text }
             %span{ data: { cp_bulk_select_target: "count" } } 0
@@ -134,49 +141,57 @@
                 - if action[:icon]
                   = heroicon action[:icon], variant: :mini, options: { class: "h-4 w-4" }
                 = action[:name].to_s.humanize
-      - sticky = IronAdmin.configuration.sticky_actions_column
-      - sticky_th = sticky ? "sticky right-0 z-10 #{t.table_header_bg}" : ""
-      - sticky_td = sticky ? "sticky right-0 z-10 #{t.card_bg}" : ""
-      - sticky_shadow = sticky ? "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]" : ""
-      .overflow-x-auto
-        %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
-          %thead{ class: cp_table_header_bg }
-            %tr
-              - if has_bulk_actions
-                %th.px-6.py-3.w-4
-                  %input{ type: "checkbox", class: "rounded border-gray-300",
-                    data: { cp_bulk_select_target: "selectAll", action: "change->cp-bulk-select#toggleAll" } }
-              - @fields.each do |field|
-                - next unless field.visible?(iron_admin_current_user)
-                - sorted = params[:sort] == field.name.to_s
-                - next_dir = sorted && params[:direction] == "asc" ? "desc" : "asc"
-                %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }
-                  = link_to resources_path(@resource_class.resource_name, sort: field.name, direction: next_dir, scope: @current_scope, q: params[:q]),
-                    class: "inline-flex items-center gap-1 group" do
-                    = field.name.to_s.humanize
-                    - if sorted
-                      = heroicon(params[:direction] == "asc" ? "chevron-up" : "chevron-down", variant: :mini, options: { class: "h-3.5 w-3.5" })
-                    - else
-                      = heroicon "chevron-up-down", variant: :mini, options: { class: "h-3.5 w-3.5 opacity-0 group-hover:opacity-50 transition-opacity" }
-              %th{ class: "px-6 py-3 #{sticky_th} #{sticky_shadow}" }
-          %tbody{ class: "#{cp_table_border} divide-y" }
-            - if @records.empty?
+      - if (table_component = iron_admin_table_component(@resource_class, records: @records, fields: @fields, scope: @current_scope))
+        = render table_component
+      - else
+        - sticky = IronAdmin.configuration.sticky_actions_column
+        - sticky_th = sticky ? "sticky right-0 z-10 #{t.table_header_bg}" : ""
+        - sticky_td = sticky ? "sticky right-0 z-10 #{t.card_bg}" : ""
+        - sticky_shadow = sticky ? "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]" : ""
+        .overflow-x-auto
+          %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
+            %thead{ class: cp_table_header_bg }
               %tr
-                %td.px-6.py-8.text-center.text-sm{ colspan: (@fields.count { |f| f.visible?(iron_admin_current_user) }) + (has_bulk_actions ? 2 : 1), class: cp_muted_text }
-                  = I18n.t("iron_admin.resources.index.empty_state")
-            - @records.each do |record|
-              %tr{ id: ("iron_admin_#{@resource_class.resource_name}_row_#{record.id}" if @resource_class.live_index_enabled?), class: cp_table_row_hover }
                 - if has_bulk_actions
-                  %td.px-6.py-4.w-4
-                    %input{ type: "checkbox", name: "ids[]", value: record.id, class: "rounded border-gray-300",
-                      data: { cp_bulk_select_target: "checkbox", action: "change->cp-bulk-select#toggle" } }
+                  %th.px-6.py-3.w-4
+                    %input{ type: "checkbox", class: "rounded border-gray-300",
+                      "aria-label": I18n.t("iron_admin.resources.index.select_all"),
+                      data: { cp_bulk_select_target: "selectAll", action: "change->cp-bulk-select#toggleAll" } }
                 - @fields.each do |field|
                   - next unless field.visible?(iron_admin_current_user)
-                  %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-                    = display_index_field_value(record, field)
-                %td.whitespace-nowrap.text-right.text-sm{ class: "px-6 py-4 #{sticky_td} #{sticky_shadow}" }
-                  = link_to I18n.t("iron_admin.resources.index.view_link"), resource_path(@resource_class.resource_name, record),
-                    class: cp_link, data: { turbo_frame: "_top" }
+                  - sorted = params[:sort] == field.name.to_s
+                  - next_dir = sorted && params[:direction] == "asc" ? "desc" : "asc"
+                  %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }
+                    -# A whole-page visit, so the search and filter forms outside the frame get the new sort.
+                    = link_to iron_admin_sort_path(@resource_class, @current_scope, field.name, next_dir),
+                      class: "inline-flex items-center gap-1 group", data: { turbo_frame: "_top" } do
+                      = field.name.to_s.humanize
+                      - if sorted
+                        = heroicon(params[:direction] == "asc" ? "chevron-up" : "chevron-down", variant: :mini, options: { class: "h-3.5 w-3.5" })
+                      - else
+                        = heroicon "chevron-up-down", variant: :mini, options: { class: "h-3.5 w-3.5 opacity-0 group-hover:opacity-50 transition-opacity" }
+                -# sticky or relative keeps the absolutely positioned sr-only text inside the scrolling table.
+                %th{ class: "px-6 py-3 #{sticky ? sticky_th : 'relative'} #{sticky_shadow}" }
+                  %span.sr-only= I18n.t("iron_admin.resources.show.actions_label")
+            %tbody{ class: "#{cp_table_border} divide-y" }
+              - if @records.empty?
+                %tr
+                  %td.px-6.py-8.text-center.text-sm{ colspan: (@fields.count { |f| f.visible?(iron_admin_current_user) }) + (has_bulk_actions ? 2 : 1), class: cp_muted_text }
+                    = I18n.t("iron_admin.resources.index.empty_state")
+              - @records.each do |record|
+                %tr{ class: cp_table_row_hover, **(@resource_class.live_index_enabled? ? { id: "iron_admin_#{@resource_class.resource_name}_row_#{record.id}" } : {}) }
+                  - if has_bulk_actions
+                    %td.px-6.py-4.w-4
+                      %input{ type: "checkbox", name: "ids[]", value: record.id, class: "rounded border-gray-300",
+                        "aria-label": I18n.t("iron_admin.resources.index.select_record", record: display_record_label(record)),
+                        data: { cp_bulk_select_target: "checkbox", action: "change->cp-bulk-select#toggle" } }
+                  - @fields.each do |field|
+                    - next unless field.visible?(iron_admin_current_user)
+                    %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                      = display_index_field_value(record, field)
+                  %td.whitespace-nowrap.text-right.text-sm{ class: "px-6 py-4 #{sticky_td} #{sticky_shadow}" }
+                    = link_to I18n.t("iron_admin.resources.index.view_link"), resource_path(@resource_class.resource_name, record),
+                      class: cp_link, data: { turbo_frame: "_top" }
 
     .mt-4
       = render "iron_admin/shared/pagination", pagy: @pagy

@@ -40,6 +40,12 @@ module IronAdmin
       end
 
       # @api private
+      # @return [String] DOM id of the select, which the label points at
+      def field_id
+        "filters_#{name}"
+      end
+
+      # @api private
       # @return [String] CSS classes for label elements
       def label_classes
         "block text-xs font-semibold uppercase tracking-wider #{theme.muted_text}"

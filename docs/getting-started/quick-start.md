@@ -4,10 +4,10 @@ Get a full admin panel running in 6 steps.
 
 ## Prerequisites
 
-IronAdmin uses [Tailwind CSS](https://tailwindcss.com/) for all styling and requires `tailwindcss-rails` >= 4.0. Ensure your application has a supported version installed:
+IronAdmin uses [Tailwind CSS](https://tailwindcss.com/) for all styling and requires `tailwindcss-rails` >= 4.3. Ensure your application has a supported version installed:
 
 ```bash
-bundle add tailwindcss-rails --version ">= 4.0"
+bundle add tailwindcss-rails --version ">= 4.3"
 rails tailwindcss:install
 ```
 
@@ -55,7 +55,7 @@ class UserResource < IronAdmin::Resource
   field :email, type: :text
 
   searchable :name, :email
-  filter :role, type: :select, choices: User.roles.keys
+  filter :role, type: :select, options: User.roles.keys
   filter :created_at, type: :date_range
 
   scope :admins, -> { where(role: :admin) }

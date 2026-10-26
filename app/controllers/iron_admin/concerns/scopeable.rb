@@ -29,6 +29,30 @@ module IronAdmin
         adapter.unscope_column(scope, @resource_class.soft_delete_column)
       end
 
+      # Restore is the one member action meant for soft-deleted rows, so only
+      # its record lookup includes them.
+      #
+      # @param action [Hash] a defined member action
+      # @return [Boolean]
+      def action_includes_deleted?(action)
+        action[:name].to_sym == :restore
+      end
+
+      # Whether edit, update and member actions other than restore can load a
+      # record. They use record_scope, which a default scope hiding
+      # soft-deleted rows stops from reaching them.
+      #
+      # @param record [Object] a record loaded with deleted rows included
+      # @return [Boolean]
+      def record_reachable?(record)
+        return true unless @resource_class.soft_delete? && record.public_send(@resource_class.soft_delete_column).present?
+
+        find_record(record_scope, params[:id])
+        true
+      rescue IronAdmin::RecordNotFound
+        false
+      end
+
       # Resolves bulk ids through the real primary key, including composite keys.
       #
       # @param ids [Array]
@@ -79,10 +103,15 @@ module IronAdmin
 
       def apply_sorting(scope)
         sort_col = params[:sort].to_s
-        sort_col = IronAdmin.configuration.default_sort.to_s unless adapter.has_column?(sort_col)
+        sort_col = IronAdmin.configuration.default_sort.to_s unless sortable_column?(sort_col)
         valid_dir = %w[asc desc].include?(params[:direction].to_s.downcase)
         sort_dir = valid_dir ? params[:direction] : IronAdmin.configuration.default_sort_direction
         adapter.order_by(scope, sort_col, sort_dir)
+      end
+
+      # Sorting by a secret field would leak the relative order of its values.
+      def sortable_column?(name)
+        adapter.has_column?(name) && @resource_class.resolved_fields.none? { |f| f.name.to_s == name && f.secret? }
       end
 
       def apply_preloading(scope)

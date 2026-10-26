@@ -18,9 +18,17 @@ permalink: /getting-started/installation/
 
 ## Requirements
 
-- Ruby >= 3.2
-- Rails >= 7.1
-- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.0
+- Ruby >= 3.3 (tested on 3.3, 3.4, and 4.0)
+- Rails >= 8.0.4 (tested on 8.0 and 8.1)
+- [tailwindcss-rails](https://github.com/rails/tailwindcss-rails) >= 4.3
+- The default `rails new` JavaScript setup: importmap with Stimulus. IronAdmin installs
+  `importmap-rails` itself; its layout loads the admin JavaScript with
+  `javascript_importmap_tags` and registers its Stimulus controllers on `window.Stimulus`,
+  which `bin/rails stimulus:install` sets up.
+
+On Rails 8.0, keep the `json` gem below 3.0 (`gem "json", "< 3"`). Active Support 8.0
+passes `quirks_mode:` to JSON, which json 3.0 rejects with an `ArgumentError`. Rails 8.1
+is not affected.
 
 ## Step 1: Add the Gems
 
@@ -187,7 +195,8 @@ Check:
 If `app/assets/builds/tailwind/iron_admin.css` doesn't exist after running
 `rails tailwindcss:build`:
 
-- Ensure `tailwindcss-rails` >= 4.0 is installed (`bundle info tailwindcss-rails`)
+- Ensure `tailwindcss-rails` >= 4.3 is installed (`bundle info tailwindcss-rails`). Older
+  versions have no `tailwindcss:engines` task, so they never write the bridge file.
 - Ensure `iron_admin` is properly loaded (check `bundle info iron_admin`)
 - Try running `rails tailwindcss:engines` directly
 
@@ -202,16 +211,19 @@ IronAdmin depends on the following gems (installed automatically):
 
 | Gem | Version | Purpose |
 |-----|---------|---------|
-| `rails` | >= 7.1 | Framework |
-| `view_component` | >= 3.0 | UI components |
-| `turbo-rails` | >= 2.0 | Hotwire Turbo |
+| `rails` | >= 8.0.4 | Framework |
+| `view_component` | >= 4.0, < 5 | UI components |
+| `turbo-rails` | >= 2.0.6 | Hotwire Turbo |
 | `stimulus-rails` | >= 1.3 | Hotwire Stimulus |
-| `pagy` | >= 6.0 | Pagination |
+| `importmap-rails` | >= 2.0 | Loads the admin JavaScript (`javascript_importmap_tags`) |
+| `pagy` | >= 43.7.1, < 44 | Pagination |
 | `haml-rails` | >= 2.0 | Template engine |
 | `heroicon` | >= 1.0 | SVG icons |
+| `csv` | >= 3.2.8 | CSV import and export (not a default gem since Ruby 3.4) |
+| `ostruct` | >= 0.6 | Action event objects (not a default gem since Ruby 4.0) |
 
 **Peer dependency** (must be added to your Gemfile manually):
 
 | Gem | Version | Purpose |
 |-----|---------|---------|
-| `tailwindcss-rails` | >= 4.0 | Tailwind CSS compilation |
+| `tailwindcss-rails` | >= 4.3 | Tailwind CSS compilation (`tailwindcss:engines` writes the IronAdmin bridge file) |

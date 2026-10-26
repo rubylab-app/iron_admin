@@ -1,73 +1,88 @@
 name: Release Gem
 
-# Publishing is gated on a GitHub Release. Pushing a bare tag does NOT publish
-# anything — only *publishing a GitHub Release* fires this workflow, which then
-# tests, builds, and pushes the gem to RubyGems via trusted publishing (OIDC).
-# See RELEASING.md for the full runbook.
+# Only *publishing a GitHub Release* fires this workflow; a bare tag push does
+# not. It checks the tag, runs the full CI workflow, then builds, verifies and
+# pushes the gem through RubyGems trusted publishing (OIDC). See RELEASING.md.
 on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gem-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  test:
+  # Fails in seconds, before CI runs, when the tag and version.rb disagree: the
+  # mismatch that broke the first 0.6.0 publish late at `gem push`.
+  verify-tag:
+    name: Verify tag matches gem version
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
-          ruby-version: '3.2'
-          bundler-cache: true
+          ruby-version: '3.4'
 
-      - name: Run tests
-        run: bundle exec rspec
+      # The tag is read only through $GITHUB_REF_NAME, never interpolated with ${{ }}.
+      - name: Verify tag matches gem version
+        run: |
+          GEM_VERSION="$(ruby -r ./lib/iron_admin/version -e 'print IronAdmin::VERSION')"
+          if [ "${GITHUB_REF_NAME}" != "v${GEM_VERSION}" ]; then
+            echo "::error::Release tag ${GITHUB_REF_NAME} does not match gem version ${GEM_VERSION} in lib/iron_admin/version.rb (expected tag v${GEM_VERSION}). Bump version.rb (and Gemfile.lock) to match before publishing the Release."
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF_NAME} matches gem version ${GEM_VERSION}"
 
-      - name: Run RuboCop
-        run: bundle exec rubocop
+  # The same jobs that guard main: Ruby x Rails matrix, minimum deps, RuboCop,
+  # gem package check, and the "CI result" gate.
+  ci:
+    needs: verify-tag
+    uses: ./.github/workflows/ci.yml
 
   release:
-    needs: test
+    name: Publish to RubyGems
+    needs: [verify-tag, ci]
+    # Forks skip publishing, so a fork is a safe place to rehearse a release.
+    if: github.repository == 'rubylab-app/iron_admin'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       id-token: write
-    # Declaring an environment records a deployment that turns GREEN on success
-    # and shows in the repo's Deployments sidebar. The OIDC token now carries an
-    # `environment: release` claim, but the RubyGems trusted publisher has no
-    # environment configured, so that claim is ignored and publishing still works.
+    # The `release` environment only accepts v* tags, and the RubyGems trusted
+    # publisher requires its `environment: release` OIDC claim (see RELEASING.md).
     environment:
       name: release
       url: https://rubygems.org/gems/iron_admin
 
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ruby-version: '3.2'
-          bundler-cache: true
+          persist-credentials: false
 
-      # Fail fast if the release tag and the gem version disagree. Without this,
-      # a mismatch (e.g. tag v0.6.0 while version.rb still says 0.5.0) builds the
-      # wrong gem and fails late at `gem push` with a confusing "repushing not
-      # allowed" — exactly the failure that broke the first 0.6.0 publish.
-      - name: Verify tag matches gem version
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          GEM_VERSION="$(ruby -r ./lib/iron_admin/version -e 'print IronAdmin::VERSION')"
-          if [ "$TAG_VERSION" != "$GEM_VERSION" ]; then
-            echo "::error::Release tag v${TAG_VERSION} does not match gem version ${GEM_VERSION} in lib/iron_admin/version.rb. Bump version.rb (and Gemfile.lock) to match before publishing the Release."
-            exit 1
-          fi
-          echo "Tag v${TAG_VERSION} matches gem version ${GEM_VERSION}"
+      # No bundler-cache: build and push need only RubyGems, and no restored
+      # cache enters the job that holds the publishing token.
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: '3.4'
 
       - name: Build gem
         run: gem build iron_admin.gemspec
 
+      - name: Verify gem contents
+        run: ruby .github/scripts/verify_gem.rb "iron_admin-${GITHUB_REF_NAME#v}.gem" "${GITHUB_REF_NAME#v}"
+
       - name: Configure trusted publisher credentials
-        uses: rubygems/configure-rubygems-credentials@main
+        uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
 
       - name: Publish to RubyGems
-        run: gem push *.gem
+        run: gem push "iron_admin-${GITHUB_REF_NAME#v}.gem"

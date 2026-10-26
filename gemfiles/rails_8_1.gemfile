@@ -1,0 +1,8 @@
+# Rails 8.1 leg of the CI matrix (BUNDLE_GEMFILE in .github/workflows/ci.yml).
+# The lockfile is resolved fresh in CI and not committed, so CI tests the newest
+# Rails 8.1.x a new host app would get.
+source "https://rubygems.org"
+
+gemspec path: ".."
+
+gem "rails", "~> 8.1.0"

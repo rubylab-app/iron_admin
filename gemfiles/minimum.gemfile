@@ -1,0 +1,19 @@
+# "Minimum deps" CI job, run on Ruby 3.3. Pins every runtime dependency to the
+# exact lower bound iron_admin.gemspec declares, derived from the gemspec so the
+# pins cannot drift. Transitive gems still float (haml-rails 2.0.0 brings haml 5.2.2).
+source "https://rubygems.org"
+
+gemspec path: ".."
+
+Bundler.load_gemspec(File.expand_path("../iron_admin.gemspec", __dir__)).runtime_dependencies.each do |dep|
+  floors = dep.requirement.requirements.filter_map do |op, version|
+    version if [">=", "~>", "="].include?(op) && version > Gem::Version.new("0")
+  end
+  raise "#{dep.name} (#{dep.requirement}) has no lower bound in iron_admin.gemspec" if floors.empty?
+
+  gem dep.name, "= #{floors.max}"
+end
+
+# The Rails floor is an 8.0 release, whose Active Support passes `quirks_mode:`
+# to JSON.generate/parse; json >= 3.0 rejects it. Permanent while the floor is 8.0.
+gem "json", "< 3"

@@ -6,7 +6,6 @@ SimpleCov.start "rails" do
   add_filter "/lib/generators/"
   add_filter "/lib/iron_admin/version.rb"
   add_filter "/lib/iron_admin/engine.rb"
-  add_filter "/app/components/iron_admin/ui/pagination_component.rb"
 
   add_group "Lib", "lib/iron_admin"
   add_group "Controllers", "app/controllers"

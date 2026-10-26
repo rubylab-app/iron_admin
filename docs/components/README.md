@@ -18,9 +18,9 @@ All components live under the `IronAdmin` namespace and are organized by categor
 
 ```ruby
 # UI Components
-IronAdmin::UI::BadgeComponent
-IronAdmin::UI::ButtonComponent
-IronAdmin::UI::CardComponent
+IronAdmin::Ui::BadgeComponent
+IronAdmin::Ui::ButtonComponent
+IronAdmin::Ui::CardComponent
 
 # Form Components
 IronAdmin::Form::TextInputComponent
@@ -44,9 +44,9 @@ IronAdmin::Dashboards::StatsGridComponent
 Components can be rendered in views using ViewComponent's `render` helper:
 
 ```haml
-= render IronAdmin::UI::BadgeComponent.new(text: "Active", color: :green)
+= render IronAdmin::Ui::BadgeComponent.new(text: "Active", color: :green)
 
-= render IronAdmin::UI::ButtonComponent.new(text: "Save", variant: :primary)
+= render IronAdmin::Ui::ButtonComponent.new(text: "Save", variant: :primary)
 ```
 
 ## Theme Integration

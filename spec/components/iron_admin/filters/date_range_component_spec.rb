@@ -86,4 +86,20 @@ RSpec.describe IronAdmin::Filters::DateRangeComponent, type: :component do
       expect(component.input_classes).to include("text-sm")
     end
   end
+
+  describe "accessible names" do
+    let(:document) { Nokogiri::HTML5(render_inline(described_class.new(name: :created_at)).to_html) }
+
+    it "points the label at the from input and names both inputs" do
+      expect(form_accessibility_problems(document)).to be_empty
+    end
+
+    it "names the from input after the filter" do
+      expect(document.at_css("input[name='filters[created_at_from]']")["aria-label"]).to eq("Created at from")
+    end
+
+    it "names the to input after the filter" do
+      expect(document.at_css("input[name='filters[created_at_to]']")["aria-label"]).to eq("Created at to")
+    end
+  end
 end

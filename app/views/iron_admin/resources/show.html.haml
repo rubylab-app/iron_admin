@@ -4,7 +4,7 @@
       = @resource_class.model.model_name.human
       %span.text-gray-400= "##{@record.id}"
     .flex.gap-2.flex-wrap
-      - if @resource_class.crud_allowed?(:update, iron_admin_current_user)
+      - if @resource_class.crud_allowed?(:update, iron_admin_current_user) && @record_reachable
         = link_to I18n.t("iron_admin.resources.show.edit_button"), edit_resource_path(@resource_class.resource_name, @record),
           class: cp_btn_primary
       - if @resource_class.crud_allowed?(:destroy, iron_admin_current_user)
@@ -56,32 +56,17 @@
                 = display_record_label(related, display)
 
   - @resource_class.has_many_associations.each do |assoc|
-    - related_records = @record.public_send(assoc[:name]).limit(20)
-    - next if related_records.empty?
-    .mt-6.overflow-hidden{ class: cp_card }
-      .px-6.py-4.border-b.flex.items-center.justify-between{ class: t.card_border }
-        %h2.text-lg.font-semibold= assoc[:name].to_s.humanize
-        = link_to I18n.t("iron_admin.resources.show.view_all"),
-          resources_path(assoc[:resource].resource_name),
-          class: "text-sm #{cp_link}"
-      %table.min-w-full{ class: "#{cp_table_border} divide-y" }
-        %tbody{ class: "#{cp_table_border} divide-y" }
-          - related_records.each do |related|
-            %tr{ class: cp_table_row_hover }
-              %td.px-6.py-3.text-sm{ class: cp_body_text }
-                - display = assoc[:display]
-                = link_to display_record_label(related, display),
-                  resource_path(assoc[:resource].resource_name, related),
-                  class: cp_link
+    = render IronAdmin::Resources::RelatedListComponent.new(association: assoc,
+      records: @record.public_send(assoc[:name]), parent: @record)
 
-  - if @resource_class.defined_actions.any?
+  - if @member_actions.any?
     .mt-6.p-6{ class: cp_card }
       %h2.text-lg.font-semibold.mb-4= I18n.t("iron_admin.resources.show.actions_label")
       .flex.gap-2.flex-wrap
-        - @resource_class.defined_actions.each do |action|
-          - next if action[:condition] && !action[:condition].call(@record)
+        - @member_actions.each do |action|
+          - confirm = action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
           = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
-            data: action[:confirm] ? { turbo_confirm: I18n.t("iron_admin.resources.show.delete_confirm") } : {},
+            data: action[:confirm] ? { turbo_confirm: confirm } : {},
             class: cp_btn_ghost do
             - if action[:icon]
               = heroicon action[:icon], variant: :outline, options: { class: "h-5 w-5" }

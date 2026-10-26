@@ -8,19 +8,24 @@ module IronAdmin
         @current_user = current_user
       end
 
+      # Maps each recognised header to its field name. The mapping follows the
+      # importable fields' order (import_fields), so the preview lists its
+      # columns as the upload form does; headers for the same field keep the
+      # file's order.
       def map_headers(headers)
-        candidates = field_candidates
+        fields = @resource_class.importable_fields(@current_user)
+        candidates = field_candidates(fields)
+        headers_by_field = headers.group_by { |header| candidates[normalize(header)]&.name }
 
-        headers.each_with_object({}) do |header, mapping|
-          field = candidates[normalize(header)]
-          mapping[header] = field.name if field
+        fields.each_with_object({}) do |field, mapping|
+          headers_by_field.fetch(field.name, []).each { |header| mapping[header] = field.name }
         end
       end
 
       private
 
-      def field_candidates
-        @resource_class.importable_fields(@current_user).each_with_object({}) do |field, candidates|
+      def field_candidates(fields)
+        fields.each_with_object({}) do |field, candidates|
           candidate_labels(field).each { |label| candidates[normalize(label)] = field }
         end
       end

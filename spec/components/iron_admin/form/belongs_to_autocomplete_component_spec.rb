@@ -167,6 +167,65 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
       expect(result.at_css("[data-autocomplete-url]")["data-autocomplete-url"]).to end_with("/autocomplete/users")
     end
 
+    context "with an input_id" do
+      subject(:text_input) { result.at_css("input[type='text']") }
+
+      let(:result) { render_inline(described_class.new(name: "record[user_id]", input_id: "record_user_id", resource_name: "users")) }
+
+      it "gives the text input that id, so the field label names it" do
+        expect(text_input["id"]).to eq("record_user_id")
+      end
+
+      it "keeps the generated id on the hidden input" do
+        expect(result.at_css("input[type='hidden']")["id"]).to match(/\Aautocomplete-\h+-hidden\z/)
+      end
+    end
+
+    it "defaults the text input id to the component id" do
+      component = described_class.new(name: :user_id, resource_name: "users")
+      result = render_inline(component)
+      expect(result.at_css("input[type='text']")["id"]).to eq("#{component.component_id}-input")
+    end
+
+    describe "combobox semantics" do
+      subject(:text_input) { result.at_css("input[type='text']") }
+
+      let(:result) { render_inline(described_class.new(name: "record[user_id]", input_id: "record_user_id", resource_name: "users")) }
+      let(:listbox) { result.at_css("[role=listbox]") }
+
+      it "renders the text input as a combobox" do
+        expect(text_input["role"]).to eq("combobox")
+      end
+
+      it "announces list autocompletion" do
+        expect(text_input["aria-autocomplete"]).to eq("list")
+      end
+
+      it "starts collapsed" do
+        expect(text_input["aria-expanded"]).to eq("false")
+      end
+
+      it "controls the listbox" do
+        expect(text_input["aria-controls"]).to eq(listbox["id"])
+      end
+
+      it "renders the results panel as a listbox" do
+        expect(result.at_css("##{text_input["aria-controls"]}")["role"]).to eq("listbox")
+      end
+
+      it "starts with the results panel hidden" do
+        expect(listbox["class"]).to include("hidden")
+      end
+
+      it "keeps aria-expanded in sync from its script" do
+        expect(result.at_css("script").text).to include("setAttribute('aria-expanded', 'true')")
+      end
+
+      it "gives each result the option role from its script" do
+        expect(result.at_css("script").text).to include("setAttribute('role', 'option')")
+      end
+    end
+
     it "disables input when disabled" do
       result = render_inline(described_class.new(name: :user_id, resource_name: "users", disabled: true))
       expect(result.css("input[type='text'][disabled]")).to be_present

@@ -1,4 +1,5 @@
 require "rails_helper"
+require "csv"
 require "ostruct"
 require_relative "../../support/test_resources"
 
@@ -557,6 +558,407 @@ RSpec.describe "IronAdmin::Exports", type: :request do
         json = response.parsed_body
         expect(json.first["user"]).to eq("json-special@example.com")
       end
+    end
+  end
+
+  describe "password fields" do
+    let(:export_documents) { CSV.parse(response.body, headers: true) }
+
+    before do
+      IronAdmin::ResourceRegistry.register(password_resource)
+      create(:document, title: "Secret Doc", password_hash: "tok_plaintext")
+    end
+
+    context "when export_fields is not declared" do
+      let(:password_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "PasswordExportDocumentResource"
+          end
+
+          def self.resource_name
+            "password_export_documents"
+          end
+
+          field :password_hash, type: :password
+        end
+      end
+
+      it "leaves the field out of the CSV header" do
+        get iron_admin.export_path("password_export_documents", format: :csv)
+
+        expect(export_documents.headers).not_to include("Password hash")
+      end
+
+      it "never writes the value to the CSV" do
+        get iron_admin.export_path("password_export_documents", format: :csv)
+
+        expect(response.body).not_to include("tok_plaintext")
+      end
+
+      it "leaves the field out of the JSON" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.parsed_body.first.keys).not_to include("password_hash")
+      end
+
+      it "never writes the value to the JSON" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.body).not_to include("tok_plaintext")
+      end
+    end
+
+    context "when export_fields lists the field" do
+      let(:password_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "ListedPasswordExportDocumentResource"
+          end
+
+          def self.resource_name
+            "password_export_documents"
+          end
+
+          field :password_hash, type: :password
+          export_fields :title, :password_hash
+        end
+      end
+
+      it "masks the CSV value" do
+        get iron_admin.export_path("password_export_documents", format: :csv)
+
+        expect(export_documents.first["Password hash"]).to eq("[FILTERED]")
+      end
+
+      it "masks the JSON value" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.parsed_body.first["password_hash"]).to eq("[FILTERED]")
+      end
+
+      it "never writes the value" do
+        get iron_admin.export_path("password_export_documents", format: :json)
+
+        expect(response.body).not_to include("tok_plaintext")
+      end
+    end
+  end
+
+  describe "hidden fields" do
+    before { create(:widget, name: "W1", secret_token: "sk_live_widget_secret") }
+
+    context "when export_fields is not declared" do
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::WidgetResource) }
+
+      it "leaves the field out of the CSV" do
+        get iron_admin.export_path("widgets", format: :csv)
+
+        expect(response.body).not_to include("sk_live_widget_secret")
+      end
+
+      it "leaves the field out of the JSON" do
+        get iron_admin.export_path("widgets", format: :json)
+
+        expect(response.parsed_body.first.keys).not_to include("secret_token")
+      end
+    end
+
+    context "when export_fields lists the field" do
+      let(:hidden_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Widget
+
+          def self.name
+            "ListedHiddenExportWidgetResource"
+          end
+
+          def self.resource_name
+            "hidden_export_widgets"
+          end
+
+          field :secret_token, type: :hidden
+          export_fields :name, :secret_token
+        end
+      end
+
+      before { IronAdmin::ResourceRegistry.register(hidden_resource) }
+
+      it "exports the value" do
+        get iron_admin.export_path("hidden_export_widgets", format: :json)
+
+        expect(response.parsed_body.first["secret_token"]).to eq("sk_live_widget_secret")
+      end
+    end
+  end
+
+  describe "declared export_fields order" do
+    let(:ordered_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "OrderedExportUserResource"
+        end
+
+        def self.resource_name
+          "ordered_export_users"
+        end
+
+        export_fields :email, :name, :id
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(ordered_resource)
+      create(:user, name: "Ordered", email: "ordered@example.com")
+    end
+
+    it "orders the CSV columns as declared" do
+      get iron_admin.export_path("ordered_export_users", format: :csv)
+
+      expect(response.body.lines.first.chomp).to eq("Email,Name,Id")
+    end
+
+    it "orders the JSON keys as declared" do
+      get iron_admin.export_path("ordered_export_users", format: :json)
+
+      expect(response.parsed_body.first.keys).to eq(%w[email name id])
+    end
+  end
+
+  describe "CSV row order" do
+    let(:csv_names) { CSV.parse(response.body, headers: true).pluck("Name") }
+
+    before do
+      create(:user, name: "Zulu User", email: "zulu@example.com", created_at: 2.days.ago)
+      create(:user, name: "Alpha User", email: "alpha@example.com", created_at: 3.days.ago)
+      create(:user, name: "Mike User", email: "mike@example.com", created_at: 1.day.ago)
+    end
+
+    it "applies the requested sort" do
+      get iron_admin.export_path("users", format: :csv), params: { sort: "name", direction: "asc" }
+
+      expect(csv_names).to eq(["Alpha User", "Mike User", "Zulu User"])
+    end
+
+    it "applies the default sort" do
+      get iron_admin.export_path("users", format: :csv)
+
+      expect(csv_names).to eq(["Mike User", "Zulu User", "Alpha User"])
+    end
+
+    it "matches the JSON order" do
+      get iron_admin.export_path("users", format: :json), params: { sort: "email", direction: "desc" }
+      json_names = response.parsed_body.pluck("name")
+      get iron_admin.export_path("users", format: :csv), params: { sort: "email", direction: "desc" }
+
+      expect(csv_names).to eq(json_names)
+    end
+  end
+
+  describe "attachments" do
+    let(:document) { create(:document, title: "Attached Doc") }
+
+    before do
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource)
+    end
+
+    context "with a :file attachment" do
+      before do
+        document.cover_image.attach(io: StringIO.new("img"), filename: "cover.jpg", content_type: "image/jpeg")
+      end
+
+      it "exports the filename in CSV" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(CSV.parse(response.body, headers: true).first["Cover image"]).to eq("cover.jpg")
+      end
+
+      it "exports the filename in JSON" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["cover_image"]).to eq("cover.jpg")
+      end
+    end
+
+    context "with :files attachments" do
+      before do
+        document.attachments.attach(
+          [
+            { io: StringIO.new("one"), filename: "one.pdf", content_type: "application/pdf" },
+            { io: StringIO.new("two"), filename: "two.pdf", content_type: "application/pdf" },
+          ]
+        )
+      end
+
+      it "exports the filenames joined in CSV" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(CSV.parse(response.body, headers: true).first["Attachments"]).to eq("one.pdf, two.pdf")
+      end
+
+      it "exports the filenames as a list in JSON" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["attachments"]).to eq(%w[one.pdf two.pdf])
+      end
+    end
+
+    context "without attachments" do
+      before { document }
+
+      it "exports a blank :file value" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["cover_image"]).to eq("")
+      end
+
+      it "exports an empty :files list in JSON" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["attachments"]).to eq([])
+      end
+
+      it "never exports an object inspect string" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(response.body).not_to include("#<ActiveStorage")
+      end
+    end
+  end
+
+  describe "rich text" do
+    let(:stored_html) { "<h2>Get in Touch</h2><p>Write to us.</p>" }
+    let(:csv_content) { CSV.parse(response.body, headers: true).first["Content"] }
+
+    before do
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource)
+      create(:document, title: "Rich Doc", content: stored_html)
+    end
+
+    it "exports the stored HTML in CSV" do
+      get iron_admin.export_path("documents", format: :csv)
+
+      expect(csv_content).to eq(stored_html)
+    end
+
+    it "exports the stored HTML in JSON" do
+      get iron_admin.export_path("documents", format: :json)
+
+      expect(response.parsed_body.first["content"]).to eq(stored_html)
+    end
+
+    context "when the text starts with a formula character" do
+      let(:stored_html) { "=HYPERLINK(\"http://example.com\")" }
+
+      it "neutralizes the CSV cell" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(csv_content).to eq("'=HYPERLINK(\"http://example.com\")")
+      end
+    end
+
+    context "without rich text" do
+      before { create(:document, title: "Plain Doc") }
+
+      it "exports a blank value" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.find { |row| row["title"] == "Plain Doc" }["content"]).to eq("")
+      end
+    end
+
+    context "when the field is a plain column declared as :rich_text" do
+      let(:column_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "RichColumnExportUserResource"
+          end
+
+          def self.resource_name
+            "rich_column_export_users"
+          end
+
+          field :name, type: :rich_text
+          export_fields :name
+        end
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(column_resource)
+        create(:user, name: "<p>Column HTML</p>", email: "column@example.com")
+      end
+
+      it "exports the column value" do
+        get iron_admin.export_path("rich_column_export_users", format: :json)
+
+        expect(response.parsed_body.first["name"]).to eq("<p>Column HTML</p>")
+      end
+    end
+  end
+
+  describe "enabled export formats" do
+    let(:csv_only_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "CsvOnlyExportUserResource"
+        end
+
+        def self.resource_name
+          "csv_only_export_users"
+        end
+
+        exports :csv
+      end
+    end
+
+    let(:no_export_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "NoExportUserResource"
+        end
+
+        def self.resource_name
+          "no_export_users"
+        end
+
+        exports
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(csv_only_resource)
+      IronAdmin::ResourceRegistry.register(no_export_resource)
+      create(:user, name: "Format User", email: "format@example.com")
+    end
+
+    it "serves an enabled format" do
+      get iron_admin.export_path("csv_only_export_users", format: :csv)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns not found for a format the resource does not enable" do
+      get iron_admin.export_path("csv_only_export_users", format: :json)
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns not found when the resource disables exports" do
+      get iron_admin.export_path("no_export_users", format: :csv)
+
+      expect(response).to have_http_status(:not_found)
     end
   end
 end

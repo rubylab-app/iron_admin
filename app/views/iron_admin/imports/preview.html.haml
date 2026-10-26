@@ -3,7 +3,16 @@
     %div
       %h1.text-2xl{ class: cp_heading }= I18n.t("iron_admin.imports.preview.title", model: @resource_class.label)
       %p.mt-1.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.imports.preview.summary", count: @preview.total_rows)
-    = link_to I18n.t("iron_admin.imports.preview.back_button"), resource_import_path(@resource_class.resource_name), class: cp_btn_secondary
+    .flex.items-center.gap-3.flex-wrap
+      = link_to I18n.t("iron_admin.imports.preview.back_button"), resource_import_path(@resource_class.resource_name), class: cp_btn_secondary
+      - if @preview.total_rows.positive?
+        -# Posts the previewed upload back to #create, so nothing is uploaded twice.
+        = form_tag resource_import_path(@resource_class.resource_name), multipart: true do
+          = hidden_field_tag :import_format, @import_format, id: nil
+          = hidden_field_tag :import_data, @import_data, id: nil
+          %button{ type: "submit", class: "#{cp_btn_primary_lg} gap-2" }
+            = heroicon "arrow-up-tray", variant: :mini, options: { class: "h-4 w-4" }
+            %span= I18n.t("iron_admin.imports.preview.import_button", count: @preview.total_rows)
 
   .mb-6.border.p-4{ class: "#{t.card_border} #{t.card_bg} #{t.border_radius}" }
     %h2.text-sm.font-semibold.mb-3{ class: cp_label_text }= I18n.t("iron_admin.imports.preview.mapping_title")
@@ -23,7 +32,7 @@
         - @preview.rows.each do |row|
           %tr
             - @preview.mapping.values.each do |field_name|
-              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }= row.attributes[field_name].inspect
+              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }= @preview.cell_text(row, field_name)
             %td.px-6.py-4.text-sm{ class: row.errors.any? ? "text-red-600" : cp_muted_text }
               - if row.errors.any?
                 = row.errors.map(&:message).join(", ")

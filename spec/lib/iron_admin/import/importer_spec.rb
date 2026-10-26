@@ -56,6 +56,63 @@ RSpec.describe IronAdmin::Import::Importer do
     )
   end
 
+  describe "#preview" do
+    subject(:preview) { described_class.new(resource_class, file: csv, format: :csv).preview }
+
+    context "when a row matches an existing record on the upsert key" do
+      let(:csv) { StringIO.new("Name,Email\nJane,jane@example.com\n") }
+
+      before { create(:user, name: "Old", email: "jane@example.com") }
+
+      it "validates the row against the existing record" do
+        expect(preview.rows.first.errors).to be_empty
+      end
+
+      it "leaves the existing record unchanged" do
+        preview
+
+        expect(User.find_by(email: "jane@example.com").name).to eq("Old")
+      end
+    end
+
+    context "when a new row reuses a unique value of another record" do
+      let(:resource_class) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "NameKeyedImportUserResource"
+          end
+
+          def self.resource_name
+            "name_keyed_import_users"
+          end
+
+          imports :csv
+          import_fields :name, :email
+          import_upsert_key :name
+        end
+      end
+      let(:csv) { StringIO.new("Name,Email\nNew Jane,jane@example.com\n") }
+
+      before { create(:user, name: "Jane", email: "jane@example.com") }
+
+      it "still reports the uniqueness error" do
+        expect(preview.rows.first.errors.map(&:message)).to include("Email has already been taken")
+      end
+    end
+
+    context "when the file has more rows than max_rows" do
+      let(:csv) { StringIO.new("Name,Email\nJane,jane@example.com\nJohn,john@example.com\n") }
+
+      before { resource_class.import_options(max_rows: 1) }
+
+      it "rejects the file before rendering it" do
+        expect { preview }.to raise_error(ArgumentError, /exceeding the 1 row limit/)
+      end
+    end
+  end
+
   it "creates records from CSV rows" do
     csv = StringIO.new(%(Name,Email,Active\nJane,jane@example.com,true\n))
 
@@ -139,5 +196,75 @@ RSpec.describe IronAdmin::Import::Importer do
     expect(result.created_count).to eq(0)
     expect(result.failed_count).to eq(1)
     expect(result.errors.first.message).to include("Name")
+  end
+
+  describe "#execute!" do
+    context "with a block" do
+      subject(:saved) do
+        yielded = []
+        described_class.new(resource_class, file: csv, format: :csv).execute! do |action, record|
+          yielded << [action, record.email, record.saved_changes.key?("name")]
+        end
+        yielded
+      end
+
+      let(:csv) { StringIO.new("Name,Email\nNew,new@example.com\nRenamed,old@example.com\n,invalid@example.com\n") }
+
+      before { create(:user, name: "Old", email: "old@example.com") }
+
+      it "yields each saved row's action and record, with its changes, and skips failed rows" do
+        expect(saved).to eq([[:create, "new@example.com", true], [:update, "old@example.com", true]])
+      end
+    end
+
+    context "when a callback aborts the save" do
+      subject(:result) do
+        described_class.new(aborting_resource, file: csv, format: :csv).execute! { |*row| yielded << row }
+      end
+
+      let(:yielded) { [] }
+      let(:csv) { StringIO.new("Name,Email\nNew,new@example.com\nRenamed,old@example.com\n") }
+      let(:aborting_resource) do
+        aborting_user = Class.new(User) do
+          def self.name
+            "User"
+          end
+
+          before_create { throw :abort }
+          before_update { throw :abort }
+        end
+
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = aborting_user
+
+          def self.name
+            "AbortingImportUserResource"
+          end
+
+          def self.resource_name
+            "aborting_import_users"
+          end
+
+          imports :csv
+          import_fields :name, :email
+          import_upsert_key :email
+        end
+      end
+
+      before { create(:user, name: "Old", email: "old@example.com") }
+
+      it "counts the created and the updated row as failed" do
+        expect(result.failed_count).to eq(2)
+      end
+
+      it "reports that the records could not be saved" do
+        expect(result.errors.map(&:message)).to eq(["The record could not be saved."] * 2)
+      end
+
+      it "does not yield the rows" do
+        result
+        expect(yielded).to be_empty
+      end
+    end
   end
 end

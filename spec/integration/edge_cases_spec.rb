@@ -110,12 +110,12 @@ RSpec.describe "Edge Cases", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "handles invalid page parameter gracefully" do
+    it "redirects a page past the last page to the last page" do
       create_list(:user, 10)
 
       get iron_admin.resources_path("users"), params: { page: 999 }
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to redirect_to(iron_admin.resources_path("users", page: 1))
     end
   end
 

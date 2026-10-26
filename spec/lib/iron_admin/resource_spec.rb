@@ -124,6 +124,47 @@ RSpec.describe IronAdmin::Resource do
     end
   end
 
+  describe ".visible_searchable_columns" do
+    subject(:columns) { resource.visible_searchable_columns(nil) }
+
+    context "with a :password field" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "PasswordSearchDocumentResource"
+          end
+
+          field :password_hash, type: :password
+        end
+      end
+
+      it "leaves it out" do
+        expect(columns).to eq([:title])
+      end
+    end
+
+    context "with a :hidden field" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Widget
+
+          def self.name
+            "HiddenSearchWidgetResource"
+          end
+
+          field :secret_token, type: :hidden
+          searchable :name, :secret_token
+        end
+      end
+
+      it "leaves it out even when searchable lists it" do
+        expect(columns).to eq([:name])
+      end
+    end
+  end
+
   describe "unsearchable" do
     let(:resource_with_unsearchable) do
       Class.new(IronAdmin::Resource) do
@@ -781,6 +822,216 @@ RSpec.describe IronAdmin::Resource do
         expect(resource_with_non_enum_model.auto_inferred_filters).to eq([])
       end
     end
+
+    context "when a field is declared as :password" do
+      subject(:filter_names) { resource.auto_inferred_filters.pluck(:name) }
+
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "PasswordFilterDocumentResource"
+          end
+
+          field :password_hash, type: :password
+        end
+      end
+
+      it "does not infer a filter for it" do
+        expect(filter_names).not_to include(:password_hash)
+      end
+
+      it "still infers filters for the other columns" do
+        expect(filter_names).to include(:title)
+      end
+
+      context "when the resource declares a filter for it" do
+        before { resource.filter :password_hash, type: :string }
+
+        it "keeps the declared filter" do
+          expect(resource.all_filters.pluck(:name)).to include(:password_hash)
+        end
+      end
+    end
+
+    context "when a field is declared as :hidden" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Widget
+
+          def self.name
+            "HiddenFilterWidgetResource"
+          end
+
+          field :secret_token, type: :hidden
+        end
+      end
+
+      it "does not infer a filter for it" do
+        expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:secret_token)
+      end
+    end
+
+    context "when a field is never visible" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "InvisibleFilterUserResource"
+          end
+
+          field :email, visible: false
+        end
+      end
+
+      it "does not infer a filter for it" do
+        expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:email)
+      end
+    end
+
+    context "when a field's visibility depends on the user" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "ConditionalFilterUserResource"
+          end
+
+          field :email, visible: ->(current_user) { current_user.present? }
+        end
+      end
+
+      it "still infers its filter" do
+        expect(resource.auto_inferred_filters.pluck(:name)).to include(:email)
+      end
+    end
+
+    context "when a field is an enum declared as :password" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "PasswordEnumLicenseResource"
+          end
+
+          field :status, type: :password
+        end
+      end
+
+      it "does not infer the enum filter" do
+        expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:status)
+      end
+    end
+  end
+
+  describe ".remove_filter" do
+    context "with an auto-inferred enum filter" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "RemovedEnumFilterLicenseResource"
+          end
+
+          remove_filter :status
+        end
+      end
+
+      it "removes it from all filters" do
+        expect(resource.all_filters.pluck(:name)).not_to include(:status)
+      end
+    end
+
+    context "with an auto-inferred column filter" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "RemovedColumnFilterUserResource"
+          end
+
+          remove_filter :email
+        end
+      end
+
+      it "removes it from all filters" do
+        expect(resource.all_filters.pluck(:name)).not_to include(:email)
+      end
+    end
+
+    context "with a declared filter" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "RemovedDeclaredFilterLicenseResource"
+          end
+
+          filter :created_at, type: :date_range
+          remove_filter :created_at
+        end
+      end
+
+      it "removes it from the declared filters" do
+        expect(resource.defined_filters).to be_empty
+      end
+    end
+
+    context "when the filter is declared again afterwards" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "RedeclaredFilterLicenseResource"
+          end
+
+          remove_filter :status
+          filter :status, type: :boolean
+        end
+      end
+
+      it "keeps the new declaration" do
+        expect(resource.all_filters.select { |f| f[:name] == :status }).to eq([{ name: :status, type: :boolean }])
+      end
+    end
+
+    context "when a subclass removes a filter" do
+      let(:parent) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "ParentFilterLicenseResource"
+          end
+        end
+      end
+
+      let!(:child) do
+        Class.new(parent) do
+          def self.name
+            "ChildFilterLicenseResource"
+          end
+
+          remove_filter :status
+        end
+      end
+
+      it "leaves the parent's filters alone" do
+        expect(parent.all_filters.pluck(:name)).to include(:status)
+      end
+
+      it "removes the filter from the subclass" do
+        expect(child.all_filters.pluck(:name)).not_to include(:status)
+      end
+    end
   end
 
   describe ".all_filters" do
@@ -793,14 +1044,60 @@ RSpec.describe IronAdmin::Resource do
       expect(filter_names).to include(:created_at)
     end
 
-    it "defined filters come after auto-inferred (allowing override)" do
-      all = TestLicenseResource.all_filters
-      status_filters = all.select { |f| f[:name] == :status }
+    context "when a declared filter shares its name with an enum" do
+      subject(:status_filters) { TestLicenseResource.all_filters.select { |f| f[:name] == :status } }
 
-      # There should be two status filters: one auto-inferred and one defined
-      # The defined one should come last
-      expect(status_filters.length).to eq(2)
-      expect(all.rindex { |f| f[:name] == :status }).to be > all.index { |f| f[:name] == :status }
+      it "keeps a single filter for the name" do
+        expect(status_filters.length).to eq(1)
+      end
+
+      it "keeps the declared filter" do
+        expect(status_filters.first).to include(name: :status, type: :select)
+      end
+
+      it "fills in the enum values when the declared select has no options" do
+        expect(status_filters.first[:options]).to eq(%w[active expired revoked])
+      end
+    end
+
+    context "when a declared select filter on an enum lists its own options" do
+      subject(:status_filter) { resource.all_filters.find { |f| f[:name] == :status } }
+
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "OwnOptionsLicenseResource"
+          end
+
+          filter :status, type: :select, options: %w[active]
+        end
+      end
+
+      it "keeps the declared options" do
+        expect(status_filter[:options]).to eq(%w[active])
+      end
+    end
+
+    context "when a declared filter replaces an enum with another type" do
+      subject(:status_filters) { resource.all_filters.select { |f| f[:name] == :status } }
+
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "BooleanStatusLicenseResource"
+          end
+
+          filter :status, type: :boolean
+        end
+      end
+
+      it "keeps only the declared filter" do
+        expect(status_filters).to eq([{ name: :status, type: :boolean }])
+      end
     end
 
     context "when resource has no defined filters" do

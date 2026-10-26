@@ -1,5 +1,5 @@
 !!!
-%html
+%html{ lang: I18n.locale }
   %head
     %meta{ charset: "utf-8" }
     %meta{ name: "viewport", content: "width=device-width, initial-scale=1" }
@@ -17,5 +17,5 @@
         import "trix"
         import "@rails/actiontext"
   %body.text-gray-900.antialiased{ class: IronAdmin.configuration.theme.main_bg }
-    = render IronAdmin::Layout::ShellComponent.new(current_user: iron_admin_current_user) do
+    = render iron_admin_component(:shell, current_user: iron_admin_current_user) do
       = yield

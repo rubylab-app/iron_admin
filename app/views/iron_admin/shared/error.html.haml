@@ -1,0 +1,12 @@
+- back_resource = @resource_class if @resource_class&.crud_allowed?(:read, iron_admin_current_user)
+.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
+  %section#cp-error-page.max-w-lg.mx-auto.mt-8.p-8.text-center{ class: "border #{t.card_border} #{cp_card}", "aria-labelledby": "cp-error-page-title" }
+    %p.text-sm.font-semibold{ class: cp_muted_text }= Rack::Utils.status_code(error)
+    %h1#cp-error-page-title.mt-2.text-2xl{ class: "#{cp_heading} #{cp_body_text}" }= I18n.t("iron_admin.errors.#{error}.title")
+    %p.mt-2.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.errors.#{error}.message")
+    .mt-6
+      - if back_resource
+        = link_to I18n.t("iron_admin.errors.back_to_resource", resource: back_resource.label),
+          resources_path(back_resource.resource_name), class: cp_btn_primary
+      - else
+        = link_to I18n.t("iron_admin.errors.back_to_dashboard"), root_path, class: cp_btn_primary

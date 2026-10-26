@@ -1,9 +1,9 @@
-.p-8.max-w-7xl.mx-auto{ class: t.font_family }
+.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
   %h1.text-2xl.mb-6{ class: cp_heading }= IronAdmin.configuration.title
 
   - if @dashboard
     - if @dashboard.defined_metrics.any?
-      .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-4.gap-6.mb-8
+      .grid.grid-cols-1.md:grid-cols-2.xl:grid-cols-4.gap-6.mb-8
         - @dashboard.defined_metrics.each do |metric|
           = render IronAdmin::Dashboards::MetricCardComponent.new(name: metric[:name], value: metric[:block].call, format: metric[:format], icon: metric[:icon], live: metric[:live])
 
@@ -31,10 +31,12 @@
       .space-y-6
         - @dashboard.defined_recents.each do |recent|
           - resource_class = IronAdmin::ResourceRegistry.find(recent[:resource_name].to_s.pluralize)
-          - if resource_class
+          -# Like the index page: the read policy decides, and tenant_scope applies after the recent scope.
+          - if resource_class&.crud_allowed?(:read, iron_admin_current_user)
             - scope = recent[:scope] ? resource_class.model.instance_exec(&recent[:scope]) : resource_class.model.all
+            - scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
             - records = scope.limit(recent[:limit])
-            = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: recent[:resource_name], records: records)
+            = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: recent[:resource_name], records: records, current_user: iron_admin_current_user)
 
   - else
     .p-12.text-center{ class: cp_card }

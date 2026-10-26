@@ -98,4 +98,16 @@ RSpec.describe IronAdmin::Filters::SelectFilterComponent, type: :component do
       expect(component.chevron_style).to include("padding-right")
     end
   end
+
+  describe "accessible names" do
+    let(:html) { render_inline(described_class.new(name: :status, options: options)).to_html }
+
+    it "points the label at the select" do
+      expect(form_accessibility_problems(html)).to be_empty
+    end
+
+    it "gives the select a stable id" do
+      expect(Nokogiri::HTML5(html).at_css("select")["id"]).to eq("filters_status")
+    end
+  end
 end

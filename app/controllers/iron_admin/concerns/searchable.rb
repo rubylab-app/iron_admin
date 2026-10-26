@@ -30,7 +30,7 @@ module IronAdmin
 
       def apply_field_search(scope, field, value)
         return scope unless adapter.has_column?(field)
-        return scope unless field_visible?(field.to_sym)
+        return scope unless field_searchable?(field.to_sym)
 
         if value.include?("..") && range_search_column?(field)
           from_str, to_str = value.split("..", 2)
@@ -74,13 +74,14 @@ module IronAdmin
         @resource_class.visible_searchable_columns(iron_admin_current_user)
       end
 
-      def field_visible?(field_name)
-        visible_field_names.include?(field_name)
+      # A field query searches only fields the user sees, and never a secret one.
+      def field_searchable?(field_name)
+        searchable_field_names.include?(field_name)
       end
 
-      def visible_field_names
-        @visible_field_names ||= @resource_class.resolved_fields
-          .select { |f| f.visible?(iron_admin_current_user) }
+      def searchable_field_names
+        @searchable_field_names ||= @resource_class.resolved_fields
+          .select { |f| f.visible?(iron_admin_current_user) && !f.secret? }
           .map(&:name)
       end
     end

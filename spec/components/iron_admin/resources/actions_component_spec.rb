@@ -37,4 +37,30 @@ RSpec.describe IronAdmin::Resources::ActionsComponent, type: :component do
       expect(component.render?).to be false
     end
   end
+
+  describe "confirmation" do
+    def rendered_button(action)
+      render_inline(described_class.new(actions: [action], record: user, resource_class: IronAdmin::Resources::UserResource))
+        .at_css("button")
+    end
+
+    it "asks with the action's confirm_message" do
+      button = rendered_button({ name: :suspend, confirm: true, confirm_message: "Suspend this user?" })
+
+      expect(button["data-turbo-confirm"]).to eq("Suspend this user?")
+    end
+
+    it "asks with iron_admin.resources.action.confirm when the action has no confirm_message" do
+      allow(I18n).to receive(:t).and_call_original
+      allow(I18n).to receive(:t).with("iron_admin.resources.action.confirm").and_return("Run this action?")
+
+      expect(rendered_button({ name: :suspend, confirm: true })["data-turbo-confirm"]).to eq("Run this action?")
+    end
+
+    it "does not ask when the action does not request confirmation" do
+      button = rendered_button({ name: :suspend })
+
+      expect(button["data-turbo-confirm"]).to be_nil
+    end
+  end
 end

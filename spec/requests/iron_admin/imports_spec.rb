@@ -50,6 +50,173 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
+
+    context "with the upload form labels" do
+      subject(:labelled_controls) do
+        get iron_admin.resource_import_path("request_import_users"), as: :html
+        html.css("form label").to_h { |label| [label.text.strip, label[:for] && html.at_css("[id='#{label[:for]}']")&.[](:name)] }
+      end
+
+      it "associates each label with its control" do
+        expect(labelled_controls).to eq("File" => "file", "Format" => "import_format")
+      end
+    end
+
+    it "submits the upload form outside Turbo Drive so the preview page can render" do
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      preview_path = iron_admin.resource_import_preview_path("request_import_users")
+      upload_form = html.at_css(%(form[action="#{preview_path}"]))
+      expect(upload_form["data-turbo"]).to eq("false")
+    end
+
+    it "lists the importable fields in import_fields order" do
+      import_resource.import_fields :preferences, :active, :email, :name
+
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      expect(html.css("form .flex-wrap > span").map { |chip| chip.text.strip }).to eq(%w[Preferences Active Email Name])
+    end
+  end
+
+  describe "importing from the preview page" do
+    let(:csv) { "Name,Email\nJane,jane@example.com\nJohn,john@example.com\n" }
+
+    before do
+      post iron_admin.resource_import_preview_path("request_import_users"),
+           params: { file: upload(csv, "users.csv", "text/csv") }
+    end
+
+    it "renders an import form that posts to the create route" do
+      expect(import_form).to be_present
+    end
+
+    it "labels the import button with the number of rows to import" do
+      expect(import_form.at_css("button[type=submit]").text.squish).to eq("Import 2 rows")
+    end
+
+    it "creates every previewed row without uploading the file again" do
+      expect { submit_import_form }.to change(User, :count).by(2)
+    end
+
+    it "redirects to the resource index with the import summary" do
+      submit_import_form
+
+      expect(response).to redirect_to(iron_admin.resources_path("request_import_users"))
+      expect(flash[:notice]).to eq("Import finished: 2 created, 0 updated, 0 failed.")
+    end
+
+    context "when the previewed file holds multi-line and non-ASCII values" do
+      let(:csv) { %(Name,Email\n"José\nPérez",jose@example.com\n) }
+
+      it "imports the values byte for byte" do
+        submit_import_form
+
+        expect(User.find_by(email: "jose@example.com").name).to eq("José\nPérez")
+      end
+    end
+  end
+
+  describe "POST /:resource_name/import/preview display" do
+    def preview_csv(contents)
+      post iron_admin.resource_import_preview_path("request_import_users"),
+           params: { file: upload(contents, "users.csv", "text/csv") }
+    end
+
+    def preview_cells
+      html.css("tbody tr").map { |row| row.css("td").map { |cell| cell.text.strip } }
+    end
+
+    it "renders text values without Ruby inspect quotes" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(preview_cells.first.first(2)).to eq(["Jane", "jane@example.com"])
+    end
+
+    it "orders the columns as import_fields does" do
+      import_resource.import_fields :email, :name
+
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(html.css("thead th").map { |header| header.text.strip }.first(2)).to eq(%w[Email Name])
+    end
+
+    it "renders missing values as empty cells" do
+      preview_csv("Name,Email,Active\nJane,jane@example.com,\n")
+
+      expect(preview_cells.first[2]).to eq("")
+    end
+
+    it "renders JSON values as JSON" do
+      preview_csv(%(Name,Email,Preferences\nJane,jane@example.com,"{""tier"":""gold""}"\n))
+
+      expect(preview_cells.first[2]).to eq(%({"tier":"gold"}))
+    end
+
+    it "uses the singular summary for a single row" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(html.at_css("h1 + p").text).to eq("1 row detected.")
+    end
+
+    it "uses the plural summary for several rows" do
+      preview_csv("Name,Email\nJane,jane@example.com\nJohn,john@example.com\n")
+
+      expect(html.at_css("h1 + p").text).to eq("2 rows detected.")
+    end
+
+    it "marks a row matching an existing record on the upsert key as valid" do
+      create(:user, name: "Old", email: "jane@example.com")
+
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(preview_cells.first.last).to eq("Valid")
+    end
+
+    context "with a datetime field" do
+      let(:license_import_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "RequestImportLicenseResource"
+          end
+
+          def self.resource_name
+            "request_import_licenses"
+          end
+
+          imports :csv
+          import_fields :license_key, :expires_at
+        end
+      end
+
+      before { IronAdmin::ResourceRegistry.register(license_import_resource) }
+
+      it "renders the time as the show page does instead of the TimeWithZone inspect output" do
+        post iron_admin.resource_import_preview_path("request_import_licenses"),
+             params: { file: upload("License key,Expires at\nKEY-1,2026-10-20 10:00:00\n", "licenses.csv", "text/csv") }
+
+        expect(preview_cells.first[1]).to eq("Oct 20, 2026 at 10:00 AM")
+      end
+
+      context "when the active locale has no time formats" do
+        around do |example|
+          original = I18n.available_locales
+          I18n.available_locales = original + [:xx]
+          I18n.with_locale(:xx) { example.run }
+        ensure
+          I18n.available_locales = original
+        end
+
+        it "still renders the preview" do
+          post iron_admin.resource_import_preview_path("request_import_licenses"),
+               params: { file: upload("License key,Expires at\nKEY-1,2026-10-20 10:00:00\n", "licenses.csv", "text/csv") }
+
+          expect(response).to have_http_status(:ok)
+        end
+      end
+    end
   end
 
   describe "POST /:resource_name/import/preview" do
@@ -95,9 +262,74 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
       expect(flash[:alert]).to eq("Something went wrong. Please try again.")
     end
+
+    it "rejects a file with more rows than the import row limit" do
+      import_resource.import_options(max_rows: 1)
+
+      post iron_admin.resource_import_preview_path("request_import_users"),
+           params: { file: upload("Name,Email\nJane,jane@example.com\nJohn,john@example.com\n", "users.csv", "text/csv") }
+
+      expect(flash[:alert]).to include("exceeding the 1 row limit")
+    end
+
+    # The preview page carries the file back Base64-encoded in a form field,
+    # and Rack buffers at most 16 MiB of such fields.
+    context "when the file is larger than 12 MB" do
+      before do
+        allow(IronAdmin::Import::Importer).to receive(:new).and_call_original
+        preview_upload_of(12_000_001)
+      end
+
+      it "redirects to the upload form" do
+        expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+      end
+
+      it "asks for smaller files" do
+        expect(flash[:alert]).to eq("The file is larger than 12 MB. Split it into smaller files.")
+      end
+
+      it "does not parse the file" do
+        expect(IronAdmin::Import::Importer).not_to have_received(:new)
+      end
+    end
+
+    context "when the file is exactly 12 MB" do
+      before { preview_upload_of(12_000_000) }
+
+      it "renders the preview" do
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "when the file param is a plain string instead of an upload" do
+      let(:server_file) { Rails.root.join("tmp/imports_spec_server_file.csv") }
+
+      before do
+        FileUtils.mkdir_p(server_file.dirname)
+        File.write(server_file, "Name,Email\nServer,server-secret@example.com\n")
+      end
+
+      after { FileUtils.rm_f(server_file) }
+
+      it "does not read the named file from the server" do
+        post iron_admin.resource_import_preview_path("request_import_users"),
+             params: { import_format: "csv", file: server_file.to_s }
+
+        expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+        expect(response.body).not_to include("server-secret@example.com")
+      end
+    end
   end
 
   describe "POST /:resource_name/import" do
+    it "redirects to the upload form when the carried import data is not valid Base64" do
+      post iron_admin.resource_import_path("request_import_users"),
+           params: { import_format: "csv", import_data: "not base64!" }
+
+      expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+      expect(flash[:alert]).to eq("Choose a file to import.")
+    end
+
     it "creates records from uploaded CSV data" do
       expect do
         post iron_admin.resource_import_path("request_import_users"),
@@ -138,9 +370,56 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
       expect(flash[:alert]).to eq("Something went wrong. Please try again.")
     end
+
+    context "when the file param is a plain string instead of an upload" do
+      let(:server_file) { Rails.root.join("tmp/imports_spec_server_file.csv") }
+
+      before do
+        FileUtils.mkdir_p(server_file.dirname)
+        File.write(server_file, "Name,Email\nServer,server-secret@example.com\n")
+      end
+
+      after { FileUtils.rm_f(server_file) }
+
+      it "does not import the named file from the server" do
+        expect do
+          post iron_admin.resource_import_path("request_import_users"),
+               params: { import_format: "csv", file: server_file.to_s }
+        end.not_to change(User, :count)
+      end
+    end
+  end
+
+  # Previews a one-row CSV padded to the given size in bytes.
+  def preview_upload_of(bytes)
+    head = "Name,Email\n"
+    tail = ",big@example.com\n"
+    csv = head + ("J" * (bytes - head.bytesize - tail.bytesize)) + tail
+    post iron_admin.resource_import_preview_path("request_import_users"),
+         params: { file: upload(csv, "users.csv", "text/csv") }
   end
 
   def upload(contents, filename, content_type)
     Rack::Test::UploadedFile.new(StringIO.new(contents), content_type, true, original_filename: filename)
+  end
+
+  def html
+    Nokogiri::HTML(response.body)
+  end
+
+  def import_form
+    create_path = iron_admin.resource_import_path("request_import_users")
+    html.at_css(%(form[method="post"][action="#{create_path}"]))
+  end
+
+  # Submits the preview page's import form the way a browser would: only the
+  # fields rendered in the form are sent, so nothing is uploaded again, and
+  # every line break in a value is sent as CRLF, as HTML form submission does.
+  def submit_import_form
+    form = import_form
+    fields = form.css("input[name]").to_h do |input|
+      [input["name"], input["value"].to_s.gsub(/\r\n?|\n/, "\r\n")]
+    end
+    post form["action"], params: fields
   end
 end
