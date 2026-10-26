@@ -45,11 +45,11 @@ module IronAdmin
     include Concerns::Importable
     include Concerns::LiveUpdatable
     include Concerns::ComponentOverridable
+    include Concerns::FilterDefinable
 
     class_attribute :field_overrides, default: {}
     class_attribute :_searchable_columns, default: nil
     class_attribute :_unsearchable_columns, default: []
-    class_attribute :defined_filters, default: []
     class_attribute :defined_scopes, default: []
     class_attribute :defined_actions, default: []
     class_attribute :defined_bulk_actions, default: []
@@ -200,63 +200,6 @@ module IronAdmin
           .map { |c| c.name.to_sym }
           .reject { |name| name.to_s.end_with?("_digest") }
           .reject { |name| _unsearchable_columns.include?(name) }
-      end
-
-      # Defines a filter for the resource index page.
-      #
-      # Filters appear in the filter bar and allow users to narrow
-      # down the displayed records.
-      #
-      # @param name [Symbol] The column or attribute to filter by
-      # @param options [Hash] Configuration options
-      # @option options [Symbol] :type The filter type (:select, :date_range, :boolean)
-      # @option options [Array] :options For select filters, the available choices
-      # @option options [String] :label Custom label for the filter
-      #
-      # @example Select filter
-      #   filter :status, type: :select, options: %w[pending active completed]
-      #
-      # @example Date range filter
-      #   filter :created_at, type: :date_range
-      #
-      # @note Enum columns automatically get select filters generated.
-      #   Use {.remove_filter} to remove auto-generated filters.
-      #
-      # @return [void]
-      def filter(name, **options)
-        self.defined_filters = defined_filters + [{ name: name, **options }]
-      end
-
-      # Removes a filter (useful for removing auto-generated enum filters).
-      #
-      # @param name [Symbol] The filter name to remove
-      #
-      # @example Remove auto-generated status filter
-      #   remove_filter :status
-      #
-      # @return [void]
-      def remove_filter(name)
-        self.defined_filters = defined_filters.reject { |f| f[:name] == name }
-      end
-
-      # @api private
-      # Returns filters automatically inferred from enum columns and database column types.
-      #
-      # String/text columns auto-infer as :string filters.
-      # Integer/float/decimal columns auto-infer as :number filters.
-      # Enum columns auto-infer as :select filters.
-      #
-      # @return [Array<Hash>] Auto-generated filter configurations
-      def auto_inferred_filters
-        enum_filters = enum_auto_filters
-        enum_filters + infer_column_filters(enum_filters)
-      end
-
-      # Returns all filters (auto-inferred + manually defined).
-      #
-      # @return [Array<Hash>] All filter configurations
-      def all_filters
-        auto_inferred_filters + defined_filters
       end
 
       # Returns all scopes with user-defined scopes first, soft delete scopes last.
@@ -712,9 +655,6 @@ module IronAdmin
         end || :id
       end
 
-      SKIP_FILTER_COLUMNS = %w[id created_at updated_at].freeze
-      private_constant :SKIP_FILTER_COLUMNS
-
       private
 
       # Resolves the adapter class from a symbol or class.
@@ -734,38 +674,6 @@ module IronAdmin
         return resource if resource
 
         ResourceRegistry.find(reflection.klass.model_name.plural)
-      end
-
-      def enum_auto_filters
-        adapter.enums.map do |name, values|
-          {
-            name: name.to_sym,
-            type: :select,
-            options: values.keys,
-          }
-        end
-      end
-
-      def infer_column_filters(enum_filters)
-        already_defined = (defined_filters + enum_filters).map { |f| f[:name].to_sym }
-
-        adapter.columns.filter_map do |col|
-          next if already_defined.include?(col.name.to_sym)
-          next if SKIP_FILTER_COLUMNS.include?(col.name)
-
-          infer_filter_from_column(col)
-        end
-      end
-
-      def infer_filter_from_column(col)
-        case col.type
-        when :string, :text
-          { name: col.name.to_sym, type: :string, label: col.name.humanize }
-        when :integer, :float, :decimal
-          return nil if col.name.end_with?("_id")
-
-          { name: col.name.to_sym, type: :number, label: col.name.humanize }
-        end
       end
 
       def coerce_action_fields(fields)
