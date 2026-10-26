@@ -119,4 +119,34 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
       expect(component.formatted_timestamp).to eq("Yesterday")
     end
   end
+
+  describe "rendering" do
+    subject(:item) { render_inline(described_class.new(description: "User signed up", timestamp: "Yesterday", href: href)) }
+
+    before do
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    context "with an href" do
+      let(:href) { "/admin/users/1" }
+
+      it "wraps the icon, description and time in a link to the href" do
+        expect(item.at_css("li > a[href='/admin/users/1']")&.text&.squish).to eq("User signed up Yesterday")
+      end
+    end
+
+    context "without an href" do
+      let(:href) { nil }
+
+      it "shows the description and time" do
+        expect(item.at_css("li")&.text&.squish).to eq("User signed up Yesterday")
+      end
+
+      it "renders no link" do
+        expect(item.css("a")).to be_empty
+      end
+    end
+  end
 end
