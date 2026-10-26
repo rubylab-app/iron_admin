@@ -21,11 +21,14 @@ en:
         success: "%{model} deleted."
       action:
         success: "Action completed"
+        not_completed: "Action was not completed"
+        not_completed_with_errors: "Action was not completed: %{errors}"
         failure: "Action failed: %{error}"
         confirm: "Are you sure?"
       bulk_action:
         no_records: "No records selected"
         success: "Bulk action completed"
+        not_completed: "Bulk action was not completed"
         failure: "Action failed: %{error}"
         inaccessible: "Some records are not accessible"
       index:

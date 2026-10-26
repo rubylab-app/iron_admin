@@ -222,11 +222,14 @@ IronAdmin auto-detects models with a `deleted_at` column and provides:
 class PostResource < IronAdmin::Resource
   # Auto: scope :with_deleted, -> { unscoped }
   # Auto: scope :only_deleted, -> { only_deleted }
-  # Auto: action :restore { |r| r.update!(deleted_at: nil) }
+  # Auto: action :restore { |r| r.update(deleted_at: nil) }
 end
 ```
 
 Works with gems like `paranoia`, `discard`, or custom soft delete implementations.
+
+Restore saves the record with its validations. If they fail, the record stays deleted and the
+show page says "Action was not completed" followed by the validation errors.
 
 ## Actions
 
@@ -255,14 +258,21 @@ The show page lists the actions the current user can run on that record: the one
 allows, whose `condition` passes, and that can load the record. On a soft-deleted record
 hidden by a default scope, only `restore` is offered.
 
-Actions are wrapped in database transactions. Return `false` to rollback:
+Actions are wrapped in database transactions. Return `false` to rollback (use `next`, not
+`return`, to leave the block early):
 
 ```ruby
 action :process do |record|
-  return false unless record.can_process?
+  next false unless record.can_process?
   record.process!
 end
 ```
+
+When the block returns `false`, or raises `ActiveRecord::Rollback`, nothing is saved or
+audited, and the show page says "Action was not completed"
+(`iron_admin.resources.action.not_completed`), followed by the record's errors when it has
+any. A bulk action that returns `false` shows "Bulk action was not completed"
+(`iron_admin.resources.bulk_action.not_completed`) on the index.
 
 ### Action Forms
 

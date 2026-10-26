@@ -192,11 +192,14 @@ IronAdmin auto-detects models with a `deleted_at` column and provides:
 class PostResource < IronAdmin::Resource
   # Auto: scope :with_deleted, -> { unscoped }
   # Auto: scope :only_deleted, -> { only_deleted }
-  # Auto: action :restore { |r| r.update!(deleted_at: nil) }
+  # Auto: action :restore { |r| r.update(deleted_at: nil) }
 end
 ```
 
 Works with gems like `paranoia`, `discard`, or custom soft delete implementations.
+
+Restore saves the record with its validations. If they fail, the record stays deleted and the
+show page says "Action was not completed" followed by the validation errors.
 
 ## Actions
 
@@ -226,14 +229,24 @@ allows (see [Custom Action Authorization](authentication.md#custom-action-author
 whose `condition` passes, and that can load the record. On a soft-deleted record hidden by a
 default scope, only `restore` is offered.
 
-Actions are wrapped in database transactions. Return `false` to rollback:
+Actions are wrapped in database transactions. Return `false` to rollback (use `next`, not
+`return`, to leave the block early):
 
 ```ruby
 action :process do |record|
-  return false unless record.can_process?
+  next false unless record.can_process?
   record.process!
 end
 ```
+
+After an action that completes, the show page says "Action completed"
+(`iron_admin.resources.action.success`). When the block returns `false`, or raises
+`ActiveRecord::Rollback`, nothing is saved, nothing is audited and `on_action` is not called.
+The show page then says "Action was not completed" (`iron_admin.resources.action.not_completed`),
+followed by the record's errors when it has any (`iron_admin.resources.action.not_completed_with_errors`),
+so an action that ends with `record.update(...)` shows why the update failed. An action that
+raises another error is rolled back too, and the index shows "Something went wrong. Please try
+again." (`iron_admin.errors.unexpected`).
 
 ### Action Forms
 
@@ -281,6 +294,10 @@ end
 ```
 
 Bulk actions validate that all selected records are accessible to the current user (respecting tenant scope). After a bulk action, the index comes back with the scope, search, filters, sort and page it was run from.
+
+Like a record action, a bulk action whose block returns `false` is rolled back and logs nothing.
+The index then says "Bulk action was not completed" (`iron_admin.resources.bulk_action.not_completed`)
+instead of "Bulk action completed".
 
 ## CRUD Restrictions
 
