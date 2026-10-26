@@ -132,6 +132,10 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         it "keeps the check icon hidden from screen readers" do
           expect(rendered.at_css("svg.text-green-500")["aria-hidden"]).to eq("true")
         end
+
+        it "positions the wrapper so the screen reader text stays inside its cell" do
+          expect(rendered.at_css(".sr-only").parent[:class].split).to include("relative")
+        end
       end
 
       context "when the value is false" do
@@ -143,6 +147,10 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
 
         it "keeps the cross icon hidden from screen readers" do
           expect(rendered.at_css("svg.text-red-400")["aria-hidden"]).to eq("true")
+        end
+
+        it "positions the wrapper so the screen reader text stays inside its cell" do
+          expect(rendered.at_css(".sr-only").parent[:class].split).to include("relative")
         end
       end
     end

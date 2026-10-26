@@ -22,6 +22,8 @@ module IronAdmin
       @entries = entries.is_a?(Array) ? entries.reverse : entries
       @filters_applied = params.values_at(:resource, :action_filter, :from, :to).any?(&:present?)
       @action_options = action_options
+      @resource_labels = resource_labels
+      @resource_options = resource_options
     end
 
     private
@@ -32,15 +34,34 @@ module IronAdmin
     # @api private
     # @return [Array<String>]
     def action_options
-      (logged_actions + [params[:action_filter]].grep(String)).compact_blank.uniq.sort
+      (logged_values(:action) + [params[:action_filter]].grep(String)).compact_blank.uniq.sort
+    end
+
+    # Labels of the registered resources, keyed by the class name that audit
+    # entries store. Stored values are only looked up here, never constantized.
+    #
+    # @api private
+    # @return [Hash{String => String}]
+    def resource_labels
+      ResourceRegistry.all.to_h { |resource| [resource.name, resource.label] }
+    end
+
+    # Resources offered by the Resource filter: every registered resource, then
+    # any other resource logged so far or currently selected, under its stored value.
+    #
+    # @api private
+    # @return [Array<Array(String, String)>] Value and label pairs
+    def resource_options
+      others = (logged_values(:resource) + [params[:resource]].grep(String)).compact_blank.uniq.sort
+      @resource_labels.to_a + (others - @resource_labels.keys).map { |name| [name, name] }
     end
 
     # @api private
-    def logged_actions
+    def logged_values(attribute)
       if AuditLog.database_storage_available?
-        AuditEntry.distinct.pluck(:action)
+        AuditEntry.distinct.pluck(attribute)
       else
-        AuditLog.entries.map { |entry| entry.action.to_s }
+        AuditLog.entries.map { |entry| entry.public_send(attribute).to_s }
       end
     end
 

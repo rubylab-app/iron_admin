@@ -1,9 +1,11 @@
 .flex.h-screen.overflow-hidden{ data: { controller: "cp-sidebar", action: "keydown@window->cp-sidebar#closeOnEscape" } }
+  -# Skip link for keyboard users: hidden until it receives focus.
+  %a.sr-only{ href: "#main-content", class: "focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-md focus:bg-white focus:text-sm focus:font-medium focus:text-gray-900 focus:shadow-lg focus:ring-2 focus:ring-indigo-500" } Skip to content
   = sidebar
   -# Backdrop shown behind the off-canvas sidebar on small screens.
   .fixed.inset-0.z-30.hidden{ class: "bg-gray-900/50 lg:hidden", data: { cp_sidebar_target: "backdrop", action: "click->cp-sidebar#close" } }
   .flex-1.flex.flex-col.overflow-hidden
     = navbar
-    .flex-1.overflow-auto{ class: IronAdmin.configuration.theme.main_bg }
+    %main#main-content.flex-1.overflow-auto{ class: IronAdmin.configuration.theme.main_bg }
       = render IronAdmin::Layout::FlashComponent.new
       = content

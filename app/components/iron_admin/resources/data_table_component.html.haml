@@ -13,7 +13,8 @@
                   = heroicon "chevron-up", variant: :mini, options: { class: "h-4 w-4" }
                 - else
                   = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4" }
-        %th.px-6.py-3
+        -# relative keeps the absolutely positioned sr-only text inside the scrolling table.
+        %th.relative.px-6.py-3
           %span.sr-only Actions
 
     %tbody{ class: "#{theme.card_border} divide-y" }
