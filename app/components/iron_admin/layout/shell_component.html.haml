@@ -5,4 +5,5 @@
   .flex-1.flex.flex-col.overflow-hidden
     = navbar
     .flex-1.overflow-auto{ class: IronAdmin.configuration.theme.main_bg }
+      = render IronAdmin::Layout::FlashComponent.new
       = content

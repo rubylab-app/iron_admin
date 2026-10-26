@@ -108,6 +108,25 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
       end
     end
 
+    context "with a flash message" do
+      subject(:rendered) do
+        with_controller_class(IronAdmin::ApplicationController) do
+          vc_test_controller.flash[:notice] = "User created."
+          render_inline(described_class.new) { "Page body" }
+        end
+      end
+
+      let(:html) { rendered.to_html }
+
+      it "renders it as a status message" do
+        expect(rendered.at_css("[role='status']").text.squish).to eq("User created.")
+      end
+
+      it "renders it above the page content" do
+        expect(html.index("User created.")).to be < html.index("Page body")
+      end
+    end
+
     context "with a global navbar override" do
       before do
         IronAdmin.configuration.title = "Acme Admin"

@@ -7,6 +7,7 @@ pin "@rails/actiontext", to: "actiontext.esm.js"
 
 # IronAdmin Stimulus controllers
 pin "iron_admin", to: "iron_admin/index.js"
+pin "iron_admin/controllers/cp_alert_controller", to: "iron_admin/controllers/cp_alert_controller.js"
 pin "iron_admin/controllers/cp_bulk_select_controller", to: "iron_admin/controllers/cp_bulk_select_controller.js"
 pin "iron_admin/controllers/cp_chart_controller", to: "iron_admin/controllers/cp_chart_controller.js"
 pin "iron_admin/controllers/cp_nested_form_controller", to: "iron_admin/controllers/cp_nested_form_controller.js"

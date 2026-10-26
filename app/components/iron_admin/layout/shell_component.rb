@@ -7,6 +7,7 @@ module IronAdmin
     #
     # The sidebar and navbar are the ones set in +config.components+ (or a
     # plugin), falling back to {SidebarComponent} and {NavbarComponent}.
+    # Flash messages ({FlashComponent}) render above the page content.
     class ShellComponent < ViewComponent::Base
       renders_one :sidebar, ->(**arguments) { IronAdmin.configuration.components.build(:sidebar, **arguments) }
       renders_one :navbar, ->(**arguments) { IronAdmin.configuration.components.build(:navbar, **arguments) }

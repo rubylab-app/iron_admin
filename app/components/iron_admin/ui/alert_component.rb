@@ -15,6 +15,10 @@ module IronAdmin
     #     message: "Something went wrong",
     #     type: :error
     #   )
+    #
+    # Errors and warnings use +role="alert"+ and the other types +role="status"+,
+    # so screen readers announce them assertively or politely. The dismiss button
+    # uses the +cp-alert+ Stimulus controller.
     class AlertComponent < ViewComponent::Base
       # @return [String, nil] The alert message
       attr_reader :message
@@ -54,6 +58,10 @@ module IronAdmin
         },
       }.freeze
 
+      # Types announced with +role="alert"+; the others use +role="status"+.
+      # @return [Array<Symbol>]
+      ASSERTIVE_TYPES = %i[error warning].freeze
+
       # @param message [String, nil] Alert message
       # @param type [Symbol] Alert type (default: :info)
       # @param dismissible [Boolean] Can be dismissed (default: true)
@@ -72,7 +80,25 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for alert container
       def alert_classes
-        "#{type_config[:bg]} #{type_config[:border]} #{type_config[:text]} border rounded-lg p-4"
+        "#{type_config[:bg]} #{type_config[:border]} #{type_config[:text]} border #{theme.border_radius} p-4"
+      end
+
+      # @api private
+      # @return [String] ARIA role: "alert" for errors and warnings, "status" otherwise
+      def role
+        ASSERTIVE_TYPES.include?(type) ? "alert" : "status"
+      end
+
+      # @api private
+      # @return [String] Accessible label of the dismiss button
+      def dismiss_label
+        I18n.t("iron_admin.alerts.dismiss")
+      end
+
+      # @api private
+      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      def theme
+        IronAdmin.configuration.theme
       end
 
       # @api private

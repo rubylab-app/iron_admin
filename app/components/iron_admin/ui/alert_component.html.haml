@@ -1,8 +1,8 @@
-%div{ class: alert_classes, role: "alert", data: dismissible ? { controller: "alert" } : {} }
+%div{ class: alert_classes, role: role, data: dismissible ? { controller: "cp-alert" } : {} }
   .flex.items-start.gap-3
     = heroicon icon_name, variant: :solid, options: { class: "h-5 w-5 shrink-0" }
     .flex-1.text-sm
       = message || content
     - if dismissible
-      %button.shrink-0.opacity-70.hover:opacity-100.transition-opacity{ type: "button", data: { action: "alert#dismiss" } }
+      %button.shrink-0.opacity-70.hover:opacity-100.transition-opacity{ type: "button", "aria-label": dismiss_label, data: { action: "cp-alert#dismiss" } }
         = heroicon "x-mark", variant: :mini, options: { class: "h-5 w-5" }

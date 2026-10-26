@@ -11,7 +11,7 @@ module IronAdmin
       def check_action_allowed
         return if performed? || @resource_class.nil?
 
-        head(:forbidden) unless @resource_class.crud_allowed?(crud_action_name, iron_admin_current_user)
+        render_forbidden unless @resource_class.crud_allowed?(crud_action_name, iron_admin_current_user)
       end
 
       def crud_action_name

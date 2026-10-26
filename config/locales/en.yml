@@ -2,6 +2,14 @@ en:
   iron_admin:
     errors:
       unexpected: "Something went wrong. Please try again."
+      forbidden:
+        title: "Not authorized"
+        message: "You don't have permission to view this page or perform this action."
+      not_found:
+        title: "Page not found"
+        message: "This page doesn't exist, or the record was removed."
+      back_to_resource: "Back to %{resource}"
+      back_to_dashboard: "Back to dashboard"
     resources:
       errors:
         invalid_json: "Invalid JSON. The record was not saved."
@@ -79,6 +87,8 @@ en:
       cancel_button: "Cancel"
     navigation:
       dashboard: "Dashboard"
+    alerts:
+      dismiss: "Dismiss"
     nested_form:
       add_button: "Add row"
       remove_button: "Remove"

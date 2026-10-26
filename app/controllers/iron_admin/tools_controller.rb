@@ -18,12 +18,12 @@ module IronAdmin
       declared = @tool_class.find_tool_action(action_name)
 
       if declared
-        return head(:forbidden) unless declared.allowed?(iron_admin_current_user)
+        return render_forbidden unless declared.allowed?(iron_admin_current_user)
         return unless run_tool_action(declared)
       elsif own_tool_method?(action_name)
         run_legacy_action(action_name)
       else
-        return head(:not_found)
+        return render_not_found
       end
 
       redirect_to tool_path(@tool_class.tool_name)
@@ -32,8 +32,8 @@ module IronAdmin
     # Renders the form for a tool action with form_fields.
     def action_form
       @declared_action = @tool_class.find_tool_action(params[:action_name])
-      return head(:not_found) unless @declared_action&.has_form?
-      return head(:forbidden) unless @declared_action.allowed?(iron_admin_current_user)
+      return render_not_found unless @declared_action&.has_form?
+      return render_forbidden unless @declared_action.allowed?(iron_admin_current_user)
 
       @form_fields = @declared_action.form_fields
       @form_url = tool_action_path(@tool_class.tool_name, @declared_action.name)
@@ -43,7 +43,7 @@ module IronAdmin
 
     def set_tool
       @tool_class = ToolRegistry.find(params[:tool_name])
-      head(:not_found) and return unless @tool_class
+      render_not_found unless @tool_class
     end
 
     def own_tool_method?(action_name)
@@ -52,7 +52,7 @@ module IronAdmin
 
     def run_tool_action(declared)
       unless @tool_class.method_defined?(declared.name)
-        head(:not_found)
+        render_not_found
         return nil
       end
 
