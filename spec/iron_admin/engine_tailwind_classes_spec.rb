@@ -42,4 +42,21 @@ RSpec.describe IronAdmin::Engine do
       end
     end
   end
+
+  describe "Tailwind CSS source scanning in engine.css" do
+    subject(:unscanned) { sources.reject { |path| globs.any? { |glob| path.fnmatch?(glob, File::FNM_PATHNAME) } } }
+
+    let(:engine_css) { described_class.root.join("app/assets/tailwind/iron_admin/engine.css") }
+    let(:globs) do
+      engine_css.read.scan(/^@source "([^"]+)";/).flatten.map { |glob| engine_css.dirname.join(glob).cleanpath.to_s }
+    end
+
+    context "with the JavaScript controllers, which toggle classes such as opacity-50" do
+      let(:sources) { described_class.root.glob("app/javascript/**/*.js") }
+
+      it "scans every file" do
+        expect(unscanned).to be_empty
+      end
+    end
+  end
 end

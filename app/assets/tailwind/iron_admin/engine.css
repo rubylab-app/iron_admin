@@ -8,4 +8,5 @@
 @source "../../../components/**/*.haml";
 @source "../../../components/**/*.erb";
 @source "../../../helpers/**/*.rb";
+@source "../../../javascript/**/*.js";
 @source "../../../../lib/iron_admin/**/*.rb";
