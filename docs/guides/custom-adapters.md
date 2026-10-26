@@ -373,6 +373,8 @@ end
 | Mongoid | Rescue `IronAdmin::Rollback`, return `nil` |
 | No transactions | Rescue `IronAdmin::Rollback`, return `nil` |
 
+The return values of `transaction` and `wrap_rollback` are not used. IronAdmin treats an action as completed only when its block ran to the end, so with any of these implementations an action that returns `false` shows "Action was not completed" instead of the success notice.
+
 #### `query_builder_class` → `Class`
 
 Returns the `BaseQueryBuilder` subclass for operator-based filters (`:string` and `:number` filter types). If you don't support operator filters, create a no-op builder:

@@ -247,6 +247,72 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
       post iron_admin.resource_action_path("soft_delete_posts", deleted_post.id, "restore"), as: :html
       expect(response).to redirect_to(iron_admin.resource_path("soft_delete_posts", deleted_post))
     end
+
+    it "shows the success notice after restore" do
+      post iron_admin.resource_action_path("soft_delete_posts", deleted_post.id, "restore"), as: :html
+      expect(flash[:notice]).to eq("Action completed")
+    end
+
+    context "when the restored record fails validation" do
+      subject(:restore) { post iron_admin.resource_action_path("validated_soft_delete_posts", invalid_post.id, "restore") }
+
+      let(:validated_model) do
+        Class.new(ApplicationRecord) do
+          self.table_name = "soft_delete_posts"
+          default_scope { where(deleted_at: nil) }
+          validates :body, presence: true
+
+          def self.name
+            "ValidatedSoftDeletePost"
+          end
+        end
+      end
+      let(:validated_resource) do
+        model = validated_model
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = model
+
+          def self.name
+            "ValidatedSoftDeletePostResource"
+          end
+
+          def self.resource_name
+            "validated_soft_delete_posts"
+          end
+        end
+      end
+      let!(:invalid_post) { SoftDeletePost.unscoped.create!(title: "Invalid Post", body: "", deleted_at: Time.current) }
+
+      before do
+        IronAdmin.configure { |config| config.audit_enabled = true }
+        IronAdmin::ResourceRegistry.register(validated_resource)
+      end
+
+      it "keeps the record deleted" do
+        restore
+        expect(invalid_post.reload.deleted_at).to be_present
+      end
+
+      it "shows the validation errors" do
+        restore
+        expect(flash[:alert]).to eq("Action was not completed: Body can't be blank")
+      end
+
+      it "does not show the success notice" do
+        restore
+        expect(flash[:notice]).to be_nil
+      end
+
+      it "redirects to the show page" do
+        restore
+        expect(response).to redirect_to(iron_admin.resource_path("validated_soft_delete_posts", invalid_post))
+      end
+
+      it "logs nothing" do
+        restore
+        expect(IronAdmin::AuditLog.entries).to be_empty
+      end
+    end
   end
 
   context "when the action condition is false on direct restore routes" do

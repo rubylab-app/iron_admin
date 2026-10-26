@@ -303,6 +303,7 @@ In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource serv
 - has_many related lists are rendered by `IronAdmin::Resources::RelatedListComponent`. The table sits in an `overflow-x-auto` container, the card has no border, rows are divided with `theme.table_border`, and "View all" is localized (`iron_admin.resources.show.view_all`). "View all" opens the associated index filtered by the parent's foreign key when the associated resource has a filter on that column.
 - A resource action's `confirm_message` is used in its confirmation dialog. Without one, the dialog shows `iron_admin.resources.action.confirm`; `iron_admin.resources.show.delete_confirm` is only used for Delete.
 - Action forms and bulk action forms submit with `data-turbo-frame="_top"`, so after Execute the browser lands on the redirect target and shows its flash message.
+- A member action whose block returns `false` (or raises `ActiveRecord::Rollback`) redirects to the record with the alert "Action was not completed" (`iron_admin.resources.action.not_completed`), or "Action was not completed: <errors>" (`iron_admin.resources.action.not_completed_with_errors`) when the record has errors. A bulk action that returns `false` returns to the index with the alert "Bulk action was not completed" (`iron_admin.resources.bulk_action.not_completed`). In 0.6.0 both showed the success notice. The built-in `restore` action leaves a record that fails validation deleted and shows its errors.
 
 **Action required:**
 
@@ -310,6 +311,7 @@ In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource serv
 - To make "View all" open a filtered list, declare a filter on the foreign key in the associated resource, for example `filter :user_id, type: :select` in `LicenseResource`.
 - If you translated `iron_admin.resources.show.delete_confirm` to change the text of custom action dialogs, move that text to `iron_admin.resources.action.confirm` or to each action's `confirm_message`.
 - Update system specs that expect a button for an action the policy denies.
+- Update specs that expect `flash[:notice]` to be "Action completed" or "Bulk action completed" after an action returns `false`; the message is now in `flash[:alert]`.
 
 ### 26. Imports
 
@@ -335,11 +337,12 @@ The confirm step carries the file in a form field, which Base64 makes about 33% 
 ### 27. Forms: field order and color fields
 
 - New and edit forms render fields in the order given to `form_fields`. In 0.6.0 they came in database column order. Names that resolve to no field (for example a has_many such as `:comments`) are still ignored.
+- Nested form rows, existing and added with "Add row", render the fields in the order of the nested association's `fields:` option, each name once. In 0.6.0 they came in database column order.
 - A `:color` field renders a color picker without a `name` (id `record_<field>_picker`, `aria-label` "<Field> picker") and a hex text input, which is the only one submitted as `record[<field>]`. The text input only accepts `#rgb` or `#rrggbb` (pattern `#(?:[0-9a-fA-F]{3}){1,2}`) and shows `iron_admin.fields.color_invalid` otherwise. The new `cp-color-field` Stimulus controller keeps the two in sync. Without JavaScript the text input still works, and the picker only shows the color. In 0.6.0 both inputs were submitted and the text input always won, so a color picked with the swatch was lost.
 
 **Action required:**
 
-- Check that each `form_fields` list is in the order you want the form to show.
+- Check that each `form_fields` list, and each nested `fields:` list, is in the order you want the form to show.
 - If a `:color` column stores other CSS color formats (names such as `red`, `rgb(...)`, or `#rrggbbaa`), the browser now blocks the form until the value is a `#rgb` or `#rrggbb` color. Use `type: :text` or a custom field type for those columns.
 - Update system specs that find the color picker by its `record[<field>]` name. The picker has no name now; set the color through the hex text input.
 
@@ -364,6 +367,9 @@ New keys in IronAdmin's `en.yml`:
 | `iron_admin.errors.back_to_dashboard` | "Back to dashboard" |
 | `iron_admin.alerts.dismiss` | "Dismiss" |
 | `iron_admin.resources.action.confirm` | "Are you sure?" |
+| `iron_admin.resources.action.not_completed` | "Action was not completed" |
+| `iron_admin.resources.action.not_completed_with_errors` | "Action was not completed: %{errors}" |
+| `iron_admin.resources.bulk_action.not_completed` | "Bulk action was not completed" |
 | `iron_admin.imports.preview.import_button` | `one`: "Import %{count} row", `other`: "Import %{count} rows" |
 | `iron_admin.imports.errors.file_too_large` | "The file is larger than %{size}. Split it into smaller files." |
 | `iron_admin.imports.errors.not_saved` | "The record could not be saved." |

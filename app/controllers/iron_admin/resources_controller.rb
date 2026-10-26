@@ -158,17 +158,14 @@ module IronAdmin
 
       collected = action_form_params(action)
 
-      adapter.transaction do
-        adapter.wrap_rollback do
-          result = call_action_block(action[:block], @record, collected)
-          raise IronAdmin::Rollback if result == false
+      completed = action_transaction_completed? do
+        result = call_action_block(action[:block], @record, collected)
+        raise IronAdmin::Rollback if result == false
 
-          emit_event_after_commit(params[:action_name], @record)
-        end
+        emit_event_after_commit(params[:action_name], @record)
       end
 
-      redirect_to resource_path(@resource_class.resource_name, @record),
-                  notice: I18n.t("iron_admin.resources.action.success")
+      redirect_to resource_path(@resource_class.resource_name, @record), member_action_flash(completed, @record)
     rescue IronAdmin::RecordNotFound
       render_not_found
     rescue StandardError => e
@@ -180,7 +177,8 @@ module IronAdmin
     # Executes a bulk action on multiple selected records.
     #
     # All records are processed within a database transaction.
-    # If the action block returns false, the transaction is rolled back.
+    # If the action block returns false, the transaction is rolled back
+    # and the index shows an alert instead of the success notice.
     #
     # @return [void]
     def execute_bulk_action
@@ -194,7 +192,9 @@ module IronAdmin
       return render_forbidden unless action_authorized?(action[:name])
       return redirect_bulk(:alert, inaccessible_bulk_message) unless records.count == requested.size
 
-      run_bulk_action_in_transaction(action, records)
+      return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.not_completed")) unless
+        run_bulk_action_in_transaction(action, records)
+
       redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"), state: bulk_return_state)
     rescue StandardError => e
       log_iron_admin_error(e)
@@ -266,23 +266,19 @@ module IronAdmin
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
-    # Audits each selected record once the block succeeds and the transaction
-    # commits. The records are loaded from a copy of the relation, so the block
-    # still receives an unloaded relation and reads current data, and records
-    # the block destroys keep their entry. When the block loaded the relation
-    # (for example by iterating it to save each record), its objects replace
-    # the copies, so their changes are recorded.
+    # Audits each selected record after the commit, from a copy loaded first:
+    # the block still gets an unloaded relation, destroyed records keep their
+    # entry, and objects the block loaded replace the copies. Returns false
+    # when the block rolled back.
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
-      adapter.transaction do
-        adapter.wrap_rollback do
-          selected = records.dup.to_a
-          result = call_action_block(action[:block], records, collected)
-          raise IronAdmin::Rollback if result == false
+      action_transaction_completed? do
+        selected = records.dup.to_a
+        result = call_action_block(action[:block], records, collected)
+        raise IronAdmin::Rollback if result == false
 
-          loaded = records.respond_to?(:loaded?) && records.loaded? ? records.index_by(&:id) : {}
-          selected.each { |record| emit_event_after_commit(action[:name], loaded.fetch(record.id, record)) }
-        end
+        loaded = records.respond_to?(:loaded?) && records.loaded? ? records.index_by(&:id) : {}
+        selected.each { |record| emit_event_after_commit(action[:name], loaded.fetch(record.id, record)) }
       end
     end
 

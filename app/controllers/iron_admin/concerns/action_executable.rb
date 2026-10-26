@@ -28,6 +28,38 @@ module IronAdmin
         end
       end
 
+      # Runs the block in the adapter's transaction. A flag reports the
+      # outcome, since adapters whose transaction just yields return nothing.
+      #
+      # @yield The action; raises IronAdmin::Rollback to roll back
+      # @return [Boolean] false when the block rolled back
+      def action_transaction_completed?
+        completed = false
+        adapter = @resource_class.adapter
+        adapter.transaction do
+          adapter.wrap_rollback do
+            yield
+            completed = true
+          end
+        end
+        completed
+      end
+
+      # A notice when the member action completed, otherwise an alert with
+      # the record's errors, if any.
+      #
+      # @param completed [Boolean]
+      # @param record [Object] The record the action ran on
+      # @return [Hash] +{ notice: String }+ or +{ alert: String }+
+      def member_action_flash(completed, record)
+        return { notice: I18n.t("iron_admin.resources.action.success") } if completed
+
+        errors = record.try(:errors).try(:full_messages).presence
+        return { alert: I18n.t("iron_admin.resources.action.not_completed") } unless errors
+
+        { alert: I18n.t("iron_admin.resources.action.not_completed_with_errors", errors: errors.to_sentence) }
+      end
+
       # Extracts and permits action form params based on declared form_fields.
       #
       # @param action [Hash] The action definition with :form_fields key

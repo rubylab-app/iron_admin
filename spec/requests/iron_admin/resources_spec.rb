@@ -1296,6 +1296,15 @@ RSpec.describe "IronAdmin::Resources", type: :request do
             false
           end
 
+          action :invalid_action do |license|
+            license.update(license_key: nil)
+          end
+
+          action :raising_rollback_action do |license|
+            license.update!(status: "revoked")
+            raise ActiveRecord::Rollback
+          end
+
           action :successful_action do |license|
             license.update!(status: "revoked")
           end
@@ -1330,6 +1339,59 @@ RSpec.describe "IronAdmin::Resources", type: :request do
       it "rolls back changes when action returns false" do
         post iron_admin.resource_action_path("transaction_licenses", license, "returning_false_action"), as: :html
         expect(license.reload.status).to eq("active")
+      end
+
+      it "shows the not completed alert when action returns false" do
+        post iron_admin.resource_action_path("transaction_licenses", license, "returning_false_action"), as: :html
+        expect(flash[:alert]).to eq("Action was not completed")
+      end
+
+      it "does not show the success notice when action returns false" do
+        post iron_admin.resource_action_path("transaction_licenses", license, "returning_false_action"), as: :html
+        expect(flash[:notice]).to be_nil
+      end
+
+      it "redirects to the record when action returns false" do
+        post iron_admin.resource_action_path("transaction_licenses", license, "returning_false_action"), as: :html
+        expect(response).to redirect_to(iron_admin.resource_path("transaction_licenses", license))
+      end
+
+      it "shows the record errors when action returns false after a failed validation" do
+        post iron_admin.resource_action_path("transaction_licenses", license, "invalid_action"), as: :html
+        expect(flash[:alert]).to eq("Action was not completed: License key can't be blank")
+      end
+
+      it "shows the not completed alert when action raises ActiveRecord::Rollback" do
+        post iron_admin.resource_action_path("transaction_licenses", license, "raising_rollback_action"), as: :html
+        expect(flash[:alert]).to eq("Action was not completed")
+      end
+
+      context "with an adapter whose transaction just yields" do
+        let(:yielding_adapter) do
+          Class.new(IronAdmin::Adapters::ActiveRecord) do
+            def transaction
+              yield
+            end
+
+            def wrap_rollback
+              yield
+            rescue IronAdmin::Rollback
+              nil
+            end
+          end
+        end
+
+        before { transaction_resource.adapter_class = yielding_adapter }
+
+        it "shows the not completed alert when action returns false" do
+          post iron_admin.resource_action_path("transaction_licenses", license, "returning_false_action"), as: :html
+          expect(flash[:alert]).to eq("Action was not completed")
+        end
+
+        it "shows the success notice when action completes" do
+          post iron_admin.resource_action_path("transaction_licenses", license, "successful_action"), as: :html
+          expect(flash[:notice]).to eq("Action completed")
+        end
       end
 
       it "persists changes when action succeeds" do
@@ -1444,6 +1506,59 @@ RSpec.describe "IronAdmin::Resources", type: :request do
              as: :html
         licenses.each do |license|
           expect(license.reload.status).to eq("active")
+        end
+      end
+
+      it "shows the not completed alert when bulk action returns false" do
+        post iron_admin.resource_bulk_action_path("bulk_transaction_licenses", "returning_false_bulk_action"),
+             params: { ids: licenses.map(&:id) },
+             as: :html
+        expect(flash[:alert]).to eq("Bulk action was not completed")
+      end
+
+      it "does not show the success notice when bulk action returns false" do
+        post iron_admin.resource_bulk_action_path("bulk_transaction_licenses", "returning_false_bulk_action"),
+             params: { ids: licenses.map(&:id) },
+             as: :html
+        expect(flash[:notice]).to be_nil
+      end
+
+      it "returns to the list it was run from when bulk action returns false" do
+        post iron_admin.resource_bulk_action_path("bulk_transaction_licenses", "returning_false_bulk_action"),
+             params: { ids: licenses.map(&:id), q: "key" },
+             as: :html
+        expect(response).to redirect_to(iron_admin.resources_path("bulk_transaction_licenses", q: "key"))
+      end
+
+      context "with an adapter whose transaction just yields" do
+        let(:yielding_adapter) do
+          Class.new(IronAdmin::Adapters::ActiveRecord) do
+            def transaction
+              yield
+            end
+
+            def wrap_rollback
+              yield
+            rescue IronAdmin::Rollback
+              nil
+            end
+          end
+        end
+
+        before { bulk_transaction_resource.adapter_class = yielding_adapter }
+
+        it "shows the not completed alert when bulk action returns false" do
+          post iron_admin.resource_bulk_action_path("bulk_transaction_licenses", "returning_false_bulk_action"),
+               params: { ids: licenses.map(&:id) },
+               as: :html
+          expect(flash[:alert]).to eq("Bulk action was not completed")
+        end
+
+        it "shows the success notice when bulk action completes" do
+          post iron_admin.resource_bulk_action_path("bulk_transaction_licenses", "successful_bulk_action"),
+               params: { ids: licenses.map(&:id) },
+               as: :html
+          expect(flash[:notice]).to eq("Bulk action completed")
         end
       end
 

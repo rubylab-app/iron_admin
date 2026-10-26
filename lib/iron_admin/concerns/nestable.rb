@@ -52,7 +52,8 @@ module IronAdmin
 
         def resolve_nested_fields(config, assoc_model, foreign_key)
           if config[:fields]
-            FieldInferrer.call(assoc_model).select { |f| config[:fields].include?(f.name) }
+            fields_by_name = FieldInferrer.call(assoc_model).index_by(&:name)
+            config[:fields].uniq.filter_map { |name| fields_by_name[name] }
           else
             skip = %i[id created_at updated_at] + [foreign_key.to_sym]
             FieldInferrer.call(assoc_model).reject { |f| skip.include?(f.name) }
