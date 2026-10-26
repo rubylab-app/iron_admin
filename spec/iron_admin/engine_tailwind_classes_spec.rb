@@ -41,6 +41,29 @@ RSpec.describe IronAdmin::Engine do
         expect(offenses).to be_empty
       end
     end
+
+    context "with an arbitrary value split across string literals" do
+      # Tailwind reads `bg-[url(...)]` only as one unbroken token; a value that
+      # continues in the next literal generates no CSS.
+      let(:pattern) { /[\w)]-\[[^\]"]*"\s*\\?$/ }
+
+      it "uses none of them" do
+        expect(offenses).to be_empty
+      end
+    end
+  end
+
+  describe "Inline SVG backgrounds in engine.css" do
+    let(:engine_css) { described_class.root.join("app/assets/tailwind/iron_admin/engine.css").read }
+
+    {
+      "cp-select-chevron" => /\.cp-select-chevron\s*\{[^}]*background-image:\s*url\("data:image.svg\+xml/,
+      "cp-checkbox-mark" => /\.cp-checkbox-mark:checked\s*\{[^}]*background-image:\s*url\("data:image.svg\+xml/,
+    }.each do |name, rule|
+      it "styles #{name}" do
+        expect(engine_css).to match(rule)
+      end
+    end
   end
 
   describe "Tailwind CSS source scanning in engine.css" do

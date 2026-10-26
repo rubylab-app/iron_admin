@@ -300,6 +300,10 @@ RSpec.describe "Form control accessible names", type: :request do
     it "names each row checkbox after its record" do
       expect(document.at_css("input[name='ids[]']")["aria-label"]).to eq("Select #{User.first.name}")
     end
+
+    it "names the actions column header" do
+      expect(document.css("thead th").last.text.strip).to eq("Actions")
+    end
   end
 
   describe "the import pages" do

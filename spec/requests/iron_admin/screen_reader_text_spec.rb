@@ -24,6 +24,12 @@ RSpec.describe "Screen reader text in tables", type: :request do
     let(:path) { iron_admin.resources_path("users") }
 
     it_behaves_like "screen reader text kept inside its cell"
+
+    context "without a sticky actions column" do
+      before { IronAdmin.configuration.sticky_actions_column = false }
+
+      it_behaves_like "screen reader text kept inside its cell"
+    end
   end
 
   describe "a dashboard recent table" do

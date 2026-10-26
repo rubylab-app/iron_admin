@@ -402,6 +402,8 @@ Every control of the built-in forms, filter panel, search box and bulk-select co
 - The search box has `aria-label` "Search <resource label>". `Filters::SearchComponent` accepts `resource_class:` (the `search` slot passes it when `initialize` declares it) and otherwise uses its placeholder as the name.
 - Bulk-select checkboxes have `aria-label` "Select all" and "Select <record label>".
 - The audit log filter controls and buttons carry `h-10.5`, and its date inputs use the same padding as the selects (`cp_input_class`).
+- `cp_select_class` and `cp_checkbox_class` draw the select chevron and the check mark with the `cp-select-chevron` and `cp-checkbox-mark` classes defined in `engine.css`, instead of `bg-[url(...)]` utilities that never compiled. They reach your build through the same `@import "../builds/tailwind/iron_admin"` line as the engine's `@source` directives.
+- The admin layout's `<html>` element has `lang` set to `I18n.locale`, and the index table's actions column header contains screen reader text ("Actions", `iron_admin.resources.show.actions_label`).
 
 **Action required:**
 

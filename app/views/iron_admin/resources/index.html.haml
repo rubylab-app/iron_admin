@@ -170,7 +170,9 @@
                         = heroicon(params[:direction] == "asc" ? "chevron-up" : "chevron-down", variant: :mini, options: { class: "h-3.5 w-3.5" })
                       - else
                         = heroicon "chevron-up-down", variant: :mini, options: { class: "h-3.5 w-3.5 opacity-0 group-hover:opacity-50 transition-opacity" }
-                %th{ class: "px-6 py-3 #{sticky_th} #{sticky_shadow}" }
+                -# sticky or relative keeps the absolutely positioned sr-only text inside the scrolling table.
+                %th{ class: "px-6 py-3 #{sticky ? sticky_th : 'relative'} #{sticky_shadow}" }
+                  %span.sr-only= I18n.t("iron_admin.resources.show.actions_label")
             %tbody{ class: "#{cp_table_border} divide-y" }
               - if @records.empty?
                 %tr

@@ -40,6 +40,10 @@ RSpec.describe "Engine layout", type: :request do
     it "renders the page content in the main landmark" do
       expect(Nokogiri::HTML(body).at_css("main#main-content h1")).to be_present
     end
+
+    it "declares the page language" do
+      expect(Nokogiri::HTML(body).at_css("html")["lang"]).to eq(I18n.locale.to_s)
+    end
   end
 
   # The sidebar brand is not a heading, so each page needs its own h1.
