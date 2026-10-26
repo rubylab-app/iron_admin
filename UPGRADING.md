@@ -336,11 +336,12 @@ The confirm step carries the file in a form field, which Base64 makes about 33% 
 ### 27. Forms: field order and color fields
 
 - New and edit forms render fields in the order given to `form_fields`. In 0.6.0 they came in database column order. Names that resolve to no field (for example a has_many such as `:comments`) are still ignored.
+- Nested form rows, existing and added with "Add row", render the fields in the order of the nested association's `fields:` option, each name once. In 0.6.0 they came in database column order.
 - A `:color` field renders a color picker without a `name` (id `record_<field>_picker`, `aria-label` "<Field> picker") and a hex text input, which is the only one submitted as `record[<field>]`. The text input only accepts `#rgb` or `#rrggbb` (pattern `#(?:[0-9a-fA-F]{3}){1,2}`) and shows `iron_admin.fields.color_invalid` otherwise. The new `cp-color-field` Stimulus controller keeps the two in sync. Without JavaScript the text input still works, and the picker only shows the color. In 0.6.0 both inputs were submitted and the text input always won, so a color picked with the swatch was lost.
 
 **Action required:**
 
-- Check that each `form_fields` list is in the order you want the form to show.
+- Check that each `form_fields` list, and each nested `fields:` list, is in the order you want the form to show.
 - If a `:color` column stores other CSS color formats (names such as `red`, `rgb(...)`, or `#rrggbbaa`), the browser now blocks the form until the value is a `#rgb` or `#rrggbb` color. Use `type: :text` or a custom field type for those columns.
 - Update system specs that find the color picker by its `record[<field>]` name. The picker has no name now; set the color through the hex text input.
 

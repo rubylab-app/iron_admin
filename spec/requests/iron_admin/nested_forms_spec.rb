@@ -200,6 +200,47 @@ RSpec.describe "Nested Forms", type: :request do
     end
   end
 
+  describe "GET edit with declared nested fields" do
+    let(:ordered_user_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "OrderedNestedUserResource"
+        end
+
+        def self.resource_name
+          "ordered_nested_users"
+        end
+
+        has_many :licenses, nested: true, fields: %i[max_devices status license_key status]
+      end
+    end
+    let(:user) { create(:user) }
+    let(:html) { Nokogiri::HTML5(response.body) }
+
+    # The child attribute names of the inputs in a nested row, in page order.
+    def nested_input_names(row)
+      row.css("[name^='record[licenses_attributes]']").map { |input| input["name"][/\[(\w+)\]\z/, 1] } - %w[id _destroy]
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(ordered_user_resource)
+      create(:license, user: user)
+      get iron_admin.edit_resource_path("ordered_nested_users", user), as: :html
+    end
+
+    it "renders the fields of an existing row in the declared order, once each" do
+      row = html.at_css("[data-cp-nested-form-target='rowsContainer'] [data-cp-nested-form-target='row']")
+      expect(nested_input_names(row)).to eq(%w[max_devices status license_key])
+    end
+
+    it "renders the fields of the Add row template in the declared order, once each" do
+      template = Nokogiri::HTML5.fragment(html.at_css("template#licenses-nested-template").inner_html)
+      expect(nested_input_names(template)).to eq(%w[max_devices status license_key])
+    end
+  end
+
   describe "nested permits security" do
     let(:user) { create(:user) }
 

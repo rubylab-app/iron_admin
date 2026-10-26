@@ -446,7 +446,7 @@ end
 |--------|---------|-------------|
 | `nested` | `false` | Enable inline nested form for the association |
 | `allow_destroy` | `true` | Allow removing child records from the form |
-| `fields` | auto-inferred | Explicit list of child fields to display (excludes `id`, timestamps, and FK by default) |
+| `fields` | auto-inferred | Explicit list of child fields to display, in that order and each once, in new and existing rows alike (excludes `id`, timestamps, and FK by default) |
 | `position_field` | `nil` | Column name for drag-and-drop reordering |
 
 Nested forms use the existing `create` and `update` endpoints -- no additional routes are
