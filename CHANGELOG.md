@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-10-25
+## [0.7.0] - 2026-10-26
 
 > **Upgrading from 0.6.0?** IronAdmin 0.7.0 requires **Ruby >= 3.3** and **Rails >= 8.0.4**, raises several dependency floors, and tightens authorization, so some requests that used to succeed now return `403` or `404`. Entries marked **Breaking** need attention, and UPGRADING.md lists every change that may need action, including the responsive layout markup changes (`p-8` padding, off-canvas sidebar, overlay classes). Read the [0.7.0 upgrade guide](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md) before upgrading.
 
