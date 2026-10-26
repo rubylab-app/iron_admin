@@ -19,6 +19,7 @@ module IronAdmin
 
     before_action :set_resource_class
     before_action :ensure_read_allowed
+    before_action :ensure_format_enabled
 
     # Exports resource data in the requested format.
     #
@@ -53,6 +54,13 @@ module IronAdmin
       return if performed? || @resource_class.nil?
 
       head(:forbidden) unless @resource_class.crud_allowed?(:read, iron_admin_current_user)
+    end
+
+    # Formats left out of the resource's `exports` call are not served.
+    def ensure_format_enabled
+      return if performed?
+
+      head(:not_found) unless @resource_class.export_formats.map(&:to_sym).include?(request.format.symbol)
     end
 
     def adapter

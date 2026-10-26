@@ -784,4 +784,62 @@ RSpec.describe "IronAdmin::Exports", type: :request do
       end
     end
   end
+
+  describe "enabled export formats" do
+    let(:csv_only_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "CsvOnlyExportUserResource"
+        end
+
+        def self.resource_name
+          "csv_only_export_users"
+        end
+
+        exports :csv
+      end
+    end
+
+    let(:no_export_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "NoExportUserResource"
+        end
+
+        def self.resource_name
+          "no_export_users"
+        end
+
+        exports
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(csv_only_resource)
+      IronAdmin::ResourceRegistry.register(no_export_resource)
+      create(:user, name: "Format User", email: "format@example.com")
+    end
+
+    it "serves an enabled format" do
+      get iron_admin.export_path("csv_only_export_users", format: :csv)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns not found for a format the resource does not enable" do
+      get iron_admin.export_path("csv_only_export_users", format: :json)
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns not found when the resource disables exports" do
+      get iron_admin.export_path("no_export_users", format: :csv)
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
