@@ -56,7 +56,11 @@ an array of objects, or an object with a `records` array.
    and the list of importable fields. The form posts the file to
    `POST /admin/:resource_name/import/preview` as a full-page request (`data-turbo="false"`).
 2. **Preview.** The preview page shows how the headers map to fields and the first
-   `preview_rows` rows, with their values as they will be saved. Each row is validated like the
+   `preview_rows` rows, with their values as they will be saved, formatted as the show page
+   displays each field: "Yes" or "No" for a boolean, the field's `format:` for a date or time,
+   the symbol and precision of a `:currency` field, the humanized value of a `:badge` or
+   `:radio` field, and a mask for `:password` and `:hidden` fields. The import saves the values
+   from the file, not these texts. Each row is validated like the
    real import: the `import_validate` block, and the model validations against the record an
    upsert would update, so a row that updates an existing record is not reported as "has
    already been taken". A file with more than `max_rows` rows is rejected here, with the alert
@@ -116,8 +120,11 @@ on:
   with `multipart: true` and the hidden fields `import_format` (`@import_format`) and
   `import_data` (`@import_data`). Without it the page has no Import button.
 - `@preview.cell_text(row, field_name)` returns the text of a preview cell: blank for missing
-  values, dates and times in the default formats of the show page ("Oct 20, 2026",
-  "Oct 20, 2026 at 10:00 AM"), whatever the locale, and JSON for hash and array values.
+  values, the field formatting described in step 2 (`@preview.fields` holds the field of each
+  mapped column), otherwise dates and times in the default formats of the show page
+  ("Oct 20, 2026", "Oct 20, 2026 at 10:00 AM"), whatever the locale, and JSON for hash and
+  array values. Boolean labels come from `iron_admin.fields.boolean_true` and
+  `iron_admin.fields.boolean_false`, as on the show page.
 
 The texts come from the `iron_admin.imports` translation keys. `iron_admin.imports.preview.summary`
 ("%{count} rows detected.") and `iron_admin.imports.preview.import_button`

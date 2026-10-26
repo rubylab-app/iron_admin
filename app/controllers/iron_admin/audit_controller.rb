@@ -24,9 +24,22 @@ module IronAdmin
       @action_options = action_options
       @resource_labels = resource_labels
       @resource_options = resource_options
+      @user_labels = user_labels
     end
 
     private
+
+    # Labels for the User column, looked up once for the whole page. If the
+    # lookup fails, the error is logged and the column shows identifiers.
+    #
+    # @api private
+    # @return [Hash{String => String}]
+    def user_labels
+      AuditLog.user_labels(@entries)
+    rescue StandardError => e
+      log_iron_admin_error(e)
+      {}
+    end
 
     # Actions offered by the Action filter: every action logged so far,
     # custom resource actions included, plus the one currently selected.

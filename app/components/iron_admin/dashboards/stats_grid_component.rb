@@ -14,14 +14,16 @@ module IronAdmin
         @columns = columns
       end
 
+      # Four columns start at the xl breakpoint, as in the dashboard's metric grid:
+      # from lg the static sidebar leaves the page about 700px, too narrow for four cards.
+      #
       # @api private
       # @return [String] Tailwind grid column classes based on columns count
       def grid_classes
         case columns
         when 2 then "grid-cols-1 sm:grid-cols-2"
         when 3 then "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-        when 4 then "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-        else "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        else "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
         end
       end
 

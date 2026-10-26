@@ -60,6 +60,10 @@ RSpec.describe IronAdmin::Configuration do
       expect(config.audit_enabled).to be false
     end
 
+    it "sets audit_user_labels_block to nil" do
+      expect(config.audit_user_labels_block).to be_nil
+    end
+
     it "sets tenant_scope_block to nil" do
       expect(config.tenant_scope_block).to be_nil
     end
@@ -140,6 +144,14 @@ RSpec.describe IronAdmin::Configuration do
       config.current_user { "the_user" }
 
       expect(config.current_user_block.call).to eq("the_user")
+    end
+  end
+
+  describe "#audit_user_labels" do
+    it "stores a callable block" do
+      config.audit_user_labels { |identifiers| identifiers.index_with { |identifier| "User #{identifier}" } }
+
+      expect(config.audit_user_labels_block.call(["7"])).to eq("7" => "User 7")
     end
   end
 
