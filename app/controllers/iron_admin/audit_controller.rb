@@ -21,9 +21,28 @@ module IronAdmin
       # Database queries are already ordered newest first; memory entries are in log order.
       @entries = entries.is_a?(Array) ? entries.reverse : entries
       @filters_applied = params.values_at(:resource, :action_filter, :from, :to).any?(&:present?)
+      @action_options = action_options
     end
 
     private
+
+    # Actions offered by the Action filter: every action logged so far,
+    # custom resource actions included, plus the one currently selected.
+    #
+    # @api private
+    # @return [Array<String>]
+    def action_options
+      (logged_actions + [params[:action_filter]].grep(String)).compact_blank.uniq.sort
+    end
+
+    # @api private
+    def logged_actions
+      if AuditLog.database_storage_available?
+        AuditEntry.distinct.pluck(:action)
+      else
+        AuditLog.entries.map { |entry| entry.action.to_s }
+      end
+    end
 
     # @api private
     def filtered_entries

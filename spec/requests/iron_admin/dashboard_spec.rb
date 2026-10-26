@@ -50,5 +50,72 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
         expect(response.body).to be_present
       end
     end
+
+    context "with metrics" do
+      subject(:grid_classes) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("#metric_total_users").parent[:class].split
+      end
+
+      before do
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) do
+          metric(:total_users, icon: "users", live: true) { 42 }
+        end
+      end
+
+      it "keeps two columns at the lg breakpoint, where the sidebar leaves too little room for four" do
+        expect(grid_classes).not_to include("lg:grid-cols-4")
+      end
+
+      it "switches to four columns at the xl breakpoint" do
+        expect(grid_classes).to include("xl:grid-cols-4")
+      end
+    end
+
+    context "with recent records" do
+      subject(:table) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("table")
+      end
+
+      before do
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::PostResource)
+        create(:post, title: "Older post", created_at: 2.days.ago)
+        create(:post, title: "Newest post", created_at: 1.hour.ago)
+        create(:post, title: "Oldest post", created_at: 1.week.ago)
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) { recent :posts, limit: 2 }
+      end
+
+      it "lists the newest records first" do
+        expect(table.css("tbody tr").map { |row| row.css("td")[1].text.strip }).to eq(["Newest post", "Older post"])
+      end
+
+      it "shows the label column instead of the first database columns" do
+        expect(table.css("th").map { |header| header.text.strip }).to eq(["Id", "Title", "Published", "Created at"])
+      end
+    end
+
+    context "with recent records that have a field hidden from the current user" do
+      subject(:column_headers) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.css("table th").map { |header| header.text.strip }
+      end
+
+      before do
+        IronAdmin.configure { |config| config.current_user { "viewer" } }
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.resource_name = "staff_members"
+
+          field :email, visible: ->(user) { user != "viewer" }
+        end)
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) { recent :staff_members }
+      end
+
+      it "leaves the field out" do
+        expect(column_headers).not_to include("Email")
+      end
+    end
   end
 end

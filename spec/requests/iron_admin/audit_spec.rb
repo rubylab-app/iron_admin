@@ -100,6 +100,22 @@ RSpec.describe "IronAdmin::Audit", type: :request do
 
         expect(response.body).to include("Create")
       end
+
+      context "with a custom action logged" do
+        subject(:action_options) do
+          get iron_admin.audit_path
+          response.parsed_body.css("select[name=action_filter] option").pluck(:value)
+        end
+
+        before do
+          IronAdmin::AuditLog.log(OpenStruct.new(user: nil, action: :deactivate, resource: "UserResource",
+                                                 record_id: 1, changes: {}, ip_address: "127.0.0.1"))
+        end
+
+        it "offers only the logged actions in the action filter" do
+          expect(action_options).to eq(["", "create", "deactivate", "update"])
+        end
+      end
     end
   end
 
@@ -160,6 +176,29 @@ RSpec.describe "IronAdmin::Audit", type: :request do
 
       it "keeps the filter form so the filters can be cleared" do
         expect(page.body).to include("Clear</a>")
+      end
+
+      it "keeps the selected action in the action filter" do
+        expect(page.parsed_body.at_css("select[name=action_filter] option[selected]")[:value]).to eq("destroy")
+      end
+    end
+
+    context "with a custom action logged" do
+      subject(:action_options) do
+        page.parsed_body.css("select[name=action_filter] option").to_h { |option| [option[:value], option.text] }
+      end
+
+      before do
+        IronAdmin::AuditEntry.create!(user_identifier: "7", action: "send_now", resource: "UserResource",
+                                      record_id: 1, ip_address: "127.0.0.1")
+      end
+
+      it "offers only the logged actions in the action filter" do
+        expect(action_options.keys).to eq(["", "create", "send_now", "update"])
+      end
+
+      it "labels each action in a readable way" do
+        expect(action_options["send_now"]).to eq("Send now")
       end
     end
 

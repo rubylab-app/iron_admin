@@ -1,6 +1,6 @@
 .bg-white.rounded-lg.shadow.p-6{ **(live? ? { id: live_target_id } : {}) }
-  .flex.items-center.justify-between
-    %div
+  .flex.items-center.justify-between.gap-4
+    .min-w-0.break-words
       %p.text-sm.font-medium.text-gray-500= label
       %p.mt-2.text-3xl.font-bold.text-gray-900= formatted_value
     - if icon
