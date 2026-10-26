@@ -393,6 +393,7 @@ Every control of the built-in forms, filter panel, search box and bulk-select co
 - Filter panel controls have ids: `filters_<name>` for select and boolean filters, `filters_<name>_op` for operator selects, and the existing `filters_<name>_value`, `_value_2`, `_from` and `_to` inputs. `Filters::SelectFilterComponent` gives its select `filters_<name>` and `Filters::DateRangeComponent` its inputs `filters_<name>_from` / `_to`. The hidden `q` and `scope` fields of the filter panel and `Filters::BarComponent`, and the hidden fields of `Filters::SearchComponent`, have no id any more.
 - The search box has `aria-label` "Search <resource label>". `Filters::SearchComponent` accepts `resource_class:` (the `search` slot passes it when `initialize` declares it) and otherwise uses its placeholder as the name.
 - Bulk-select checkboxes have `aria-label` "Select all" and "Select <record label>".
+- The audit log filter controls and buttons carry `h-10.5`, and its date inputs use the same padding as the selects (`cp_input_class`).
 
 **Action required:**
 
