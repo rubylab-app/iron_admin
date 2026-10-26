@@ -713,4 +713,75 @@ RSpec.describe "IronAdmin::Exports", type: :request do
       expect(csv_names).to eq(json_names)
     end
   end
+
+  describe "attachments" do
+    let(:document) { create(:document, title: "Attached Doc") }
+
+    before do
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource)
+    end
+
+    context "with a :file attachment" do
+      before do
+        document.cover_image.attach(io: StringIO.new("img"), filename: "cover.jpg", content_type: "image/jpeg")
+      end
+
+      it "exports the filename in CSV" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(CSV.parse(response.body, headers: true).first["Cover image"]).to eq("cover.jpg")
+      end
+
+      it "exports the filename in JSON" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["cover_image"]).to eq("cover.jpg")
+      end
+    end
+
+    context "with :files attachments" do
+      before do
+        document.attachments.attach(
+          [
+            { io: StringIO.new("one"), filename: "one.pdf", content_type: "application/pdf" },
+            { io: StringIO.new("two"), filename: "two.pdf", content_type: "application/pdf" },
+          ]
+        )
+      end
+
+      it "exports the filenames joined in CSV" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(CSV.parse(response.body, headers: true).first["Attachments"]).to eq("one.pdf, two.pdf")
+      end
+
+      it "exports the filenames as a list in JSON" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["attachments"]).to eq(%w[one.pdf two.pdf])
+      end
+    end
+
+    context "without attachments" do
+      before { document }
+
+      it "exports a blank :file value" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["cover_image"]).to eq("")
+      end
+
+      it "exports an empty :files list in JSON" do
+        get iron_admin.export_path("documents", format: :json)
+
+        expect(response.parsed_body.first["attachments"]).to eq([])
+      end
+
+      it "never exports an object inspect string" do
+        get iron_admin.export_path("documents", format: :csv)
+
+        expect(response.body).not_to include("#<ActiveStorage")
+      end
+    end
+  end
 end

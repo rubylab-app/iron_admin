@@ -101,6 +101,7 @@ module IronAdmin
 
     def format_for_export(value, field, format)
       return "" if value.nil?
+      return format_attachment(value, format) if value.respond_to?(:attached?)
       return value if format == :json && value.is_a?(Hash)
       return value if format == :json && value.is_a?(Array)
 
@@ -110,6 +111,21 @@ module IronAdmin
       when :belongs_to then format_belongs_to(value, field)
       else value.to_s
       end
+    end
+
+    # ActiveStorage proxies are never nil and would otherwise export their inspect string.
+    def format_attachment(value, format)
+      filenames = attachment_filenames(value)
+      return filenames.first.to_s unless value.is_a?(ActiveStorage::Attached::Many)
+
+      format == :json ? filenames : filenames.join(", ")
+    end
+
+    def attachment_filenames(value)
+      return [] unless value.attached?
+
+      attachments = value.is_a?(ActiveStorage::Attached::Many) ? value.attachments : [value]
+      attachments.map { |attachment| attachment.filename.to_s }
     end
 
     def format_belongs_to(associated_record, field)
