@@ -273,6 +273,37 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
     end
   end
 
+  describe "#after_commit" do
+    let(:ran) { [] }
+
+    context "when no transaction is open" do
+      it "runs the block at once" do
+        adapter.after_commit { ran << :callback }
+        expect(ran).to eq([:callback])
+      end
+    end
+
+    context "when the transaction commits" do
+      it "runs the block after the commit" do
+        adapter.transaction do
+          adapter.after_commit { ran << :callback }
+          ran << :inside
+        end
+        expect(ran).to eq(%i[inside callback])
+      end
+    end
+
+    context "when the transaction rolls back" do
+      it "does not run the block" do
+        adapter.transaction do
+          adapter.after_commit { ran << :callback }
+          raise ActiveRecord::Rollback
+        end
+        expect(ran).to be_empty
+      end
+    end
+  end
+
   describe "#search_column" do
     it "searches a column with LIKE" do
       create(:user, name: "Alice Smith")

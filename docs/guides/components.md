@@ -94,12 +94,13 @@ in the page Turbo renders after the redirect, and screen readers announce an ins
 `role="alert"` but not an inserted `role="status"`.
 
 A custom shell (`config.components.shell`) replaces the built-in one, so it has to render the
-component itself, before the page body:
+component itself, before the page body, and wrap both in a `<main>` landmark:
 
 ```haml
 -# app/components/admin_shell_component.html.haml
-= render IronAdmin::Layout::FlashComponent.new
-= content
+%main#main-content
+  = render IronAdmin::Layout::FlashComponent.new
+  = content
 ```
 
 `FlashComponent.new(flash: { notice: "Saved" })` renders the messages you pass instead of the
@@ -146,9 +147,10 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
 **Notes per slot:**
 
 - `shell`: a custom shell replaces the built-in shell completely, including the sidebar,
-  navbar and flash messages it renders. `navbar` and `sidebar` overrides only apply inside
-  the built-in shell. To keep the flash messages, render
-  `IronAdmin::Layout::FlashComponent` before the page body (see
+  navbar, flash messages, the `<main id="main-content">` landmark and the "Skip to content"
+  link it renders. `navbar` and `sidebar` overrides only apply inside the built-in shell.
+  Render the page body inside your own `<main>` landmark, and to keep the flash messages,
+  render `IronAdmin::Layout::FlashComponent` before the page body (see
   [Flash messages](#flash-messages)).
 - `navbar` / `sidebar`: the built-in shell keeps its mobile drawer (the `cp-sidebar`
   Stimulus controller). To keep the drawer working, give your sidebar

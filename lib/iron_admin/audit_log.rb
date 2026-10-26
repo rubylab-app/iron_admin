@@ -3,9 +3,9 @@
 module IronAdmin
   # Audit logging system for tracking admin panel actions.
   #
-  # The AuditLog provides built-in tracking of create, update, and delete
-  # operations performed through the admin panel. It supports two storage
-  # backends: in-memory (default) and database.
+  # The AuditLog provides built-in tracking of the creates, updates, destroys,
+  # member actions, bulk actions and imports performed through the admin
+  # panel. It supports two storage backends: in-memory (default) and database.
   #
   # == Enabling Audit Logging
   #
@@ -41,10 +41,10 @@ module IronAdmin
       # @return [Object] The user who performed the action
       attr_accessor :user
 
-      # @return [Symbol] The action type (:create, :update, :delete)
+      # @return [Symbol, String] The action (:create, :update, :destroy, or a custom action name)
       attr_accessor :action
 
-      # @return [String] The resource name (e.g., "users")
+      # @return [String] The resource class name (e.g., "IronAdmin::Resources::UserResource")
       attr_accessor :resource
 
       # @return [Integer, String] The ID of the affected record
@@ -63,8 +63,8 @@ module IronAdmin
       #
       # @param attrs [Hash] Entry attributes
       # @option attrs [Object] :user The user who performed the action
-      # @option attrs [Symbol] :action The action type
-      # @option attrs [String] :resource The resource name
+      # @option attrs [Symbol, String] :action The action (:create, :update, :destroy, or a custom action name)
+      # @option attrs [String] :resource The resource class name
       # @option attrs [Integer, String] :record_id The record ID
       # @option attrs [Hash] :changes The attribute changes
       # @option attrs [String] :ip_address The request IP
@@ -126,7 +126,7 @@ module IronAdmin
       # Queries audit entries with optional filters.
       #
       # @param filters [Hash] Filter criteria
-      # @option filters [String] :resource Filter by resource name
+      # @option filters [String] :resource Filter by resource class name
       # @option filters [Symbol, String] :action Filter by action type
       # @option filters [Integer, String] :record_id Filter by record ID
       # @option filters [Time, Date] :from Entries after this time

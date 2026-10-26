@@ -150,6 +150,12 @@ module IronAdmin
         ::ActiveRecord::Base.transaction(&)
       end
 
+      # Waits for every open transaction to commit, or runs the block at once
+      # when none is open.
+      def after_commit(&)
+        ::ActiveRecord.after_all_transactions_commit(&)
+      end
+
       # --- Batch ---
 
       # ActiveRecord's find_each drops ORDER BY and walks the primary key, so an

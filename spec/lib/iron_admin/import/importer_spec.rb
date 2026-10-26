@@ -198,21 +198,73 @@ RSpec.describe IronAdmin::Import::Importer do
     expect(result.errors.first.message).to include("Name")
   end
 
-  describe "#execute! with a block" do
-    subject(:saved) do
-      yielded = []
-      described_class.new(resource_class, file: csv, format: :csv).execute! do |action, record|
-        yielded << [action, record.email, record.saved_changes.key?("name")]
+  describe "#execute!" do
+    context "with a block" do
+      subject(:saved) do
+        yielded = []
+        described_class.new(resource_class, file: csv, format: :csv).execute! do |action, record|
+          yielded << [action, record.email, record.saved_changes.key?("name")]
+        end
+        yielded
       end
-      yielded
+
+      let(:csv) { StringIO.new("Name,Email\nNew,new@example.com\nRenamed,old@example.com\n,invalid@example.com\n") }
+
+      before { create(:user, name: "Old", email: "old@example.com") }
+
+      it "yields each saved row's action and record, with its changes, and skips failed rows" do
+        expect(saved).to eq([[:create, "new@example.com", true], [:update, "old@example.com", true]])
+      end
     end
 
-    let(:csv) { StringIO.new("Name,Email\nNew,new@example.com\nRenamed,old@example.com\n,invalid@example.com\n") }
+    context "when a callback aborts the save" do
+      subject(:result) do
+        described_class.new(aborting_resource, file: csv, format: :csv).execute! { |*row| yielded << row }
+      end
 
-    before { create(:user, name: "Old", email: "old@example.com") }
+      let(:yielded) { [] }
+      let(:csv) { StringIO.new("Name,Email\nNew,new@example.com\nRenamed,old@example.com\n") }
+      let(:aborting_resource) do
+        aborting_user = Class.new(User) do
+          def self.name
+            "User"
+          end
 
-    it "yields each saved row's action and record, with its changes, and skips failed rows" do
-      expect(saved).to eq([[:create, "new@example.com", true], [:update, "old@example.com", true]])
+          before_create { throw :abort }
+          before_update { throw :abort }
+        end
+
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = aborting_user
+
+          def self.name
+            "AbortingImportUserResource"
+          end
+
+          def self.resource_name
+            "aborting_import_users"
+          end
+
+          imports :csv
+          import_fields :name, :email
+          import_upsert_key :email
+        end
+      end
+
+      before { create(:user, name: "Old", email: "old@example.com") }
+
+      it "counts the created and the updated row as failed" do
+        expect(result.failed_count).to eq(2)
+      end
+
+      it "reports that the records could not be saved" do
+        expect(result.errors.map(&:message)).to eq(["The record could not be saved."] * 2)
+      end
+
+      it "does not yield the rows" do
+        result
+        expect(yielded).to be_empty
+      end
     end
   end
 end

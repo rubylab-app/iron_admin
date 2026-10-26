@@ -14,7 +14,7 @@ module IronAdmin
     serialize :record_changes, coder: JSON
 
     # @!method by_resource(resource)
-    #   @param resource [String] Resource name
+    #   @param resource [String] Resource class name (e.g., "IronAdmin::Resources::UserResource")
     #   @return [ActiveRecord::Relation]
     scope :by_resource, ->(resource) { where(resource: resource) }
 

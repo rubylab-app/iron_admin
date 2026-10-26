@@ -205,14 +205,24 @@ module IronAdmin
         end.first
       end
 
+      # A save can fail without errors, for example when a model callback
+      # throws :abort or an HTTP adapter cannot reach the API, so the save
+      # itself is checked too.
+      #
       # @return [Array(Object, Array<String>)] The saved record and its errors
       def persist_row(record, attributes)
         if record
-          [record, adapter.update_record(record, attributes) ? [] : record_error_messages(record)]
+          saved = adapter.update_record(record, attributes)
         else
-          new_record = adapter.create_record(attributes)
-          [new_record, record_error_messages(new_record)]
+          record = adapter.create_record(attributes)
+          saved = !record.respond_to?(:persisted?) || record.persisted?
         end
+        [record, saved ? [] : save_failure_messages(record)]
+      end
+
+      def save_failure_messages(record)
+        record_error_messages(record).presence ||
+          [I18n.t("iron_admin.imports.errors.not_saved", default: "The record could not be saved.")]
       end
 
       def record_error_messages(record)

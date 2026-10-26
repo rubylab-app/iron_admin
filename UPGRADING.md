@@ -207,13 +207,15 @@ In 0.6.0, `config.components` and `Resource.component` stored overrides that not
 
 **Action required:** None. Custom adapters can keep returning `:pagy` until 0.8.0.
 
-### 17. Audit entries and `on_action` events mask secrets
+### 17. Audit entries and `on_action` events: masked secrets, bulk actions and imports
 
 The changes IronAdmin records for a create, update or destroy replace the values of `:password` fields, and of every attribute matched by your app's `config.filter_parameters`, with `"[FILTERED]"`. This applies to new audit log entries and to the `changes` of the event passed to `config.on_action`. Entries recorded before the upgrade are not rewritten.
 
-Bulk actions and imports are now audited too. A bulk action logs one entry per selected record under the action's name once its block succeeds (a block that returns `false` or raises logs nothing), and an import logs `create` or `update` for each saved row. Both go through the same masking and call `on_action` once per record, from inside the bulk action's or the import's transaction. An import can therefore call `on_action` up to `import_options max_rows` times (5,000 by default).
+Bulk actions and imports are now audited too. A bulk action logs one entry per selected record under the action's name once its block succeeds (a block that returns `false` or raises logs nothing), and an import logs `create` or `update` for each saved row. Both go through the same masking and call `on_action` once per record. An import can therefore call `on_action` up to `import_options max_rows` times (5,000 by default).
 
-**Action required:** If an `on_action` callback needs a filtered value, read it from the record instead of `event.changes`. To keep a column visible in the audit log, remove it from `filter_parameters`. Review existing `iron_admin_audit_entries` rows for secrets stored by earlier versions. If an `on_action` callback sends mail or calls an API, make sure it can take one call per record of a bulk action or import. An error it raises there rolls the whole bulk action or import back.
+Member actions, bulk actions and imports emit their events once the transaction commits. A change that rolls back logs nothing and does not call `on_action`; in 0.6 a member action that returned `false` was rolled back but still logged and passed to `on_action`. An error raised by `on_action` no longer rolls the change back: the change is kept, the events after it are skipped, and the page shows the generic error message. IronAdmin waits for the commit through the adapter's new `after_commit` method, which `Adapters::Base` implements by running the block at once.
+
+**Action required:** If an `on_action` callback needs a filtered value, read it from the record instead of `event.changes`. To keep a column visible in the audit log, remove it from `filter_parameters`. Review existing `iron_admin_audit_entries` rows for secrets stored by earlier versions. If an `on_action` callback sends mail or calls an API, make sure it can take one call per record of a bulk action or import. Do not rely on an error raised by `on_action` to undo a change; reject it in the action or a model validation instead. A custom adapter whose `transaction` is atomic should override `after_commit` to run the block after the commit (see the custom adapters guide); otherwise its events are emitted inside the transaction.
 
 ### 18. Flash messages are rendered
 
@@ -318,6 +320,7 @@ Imports can now be completed from the UI:
 - `import_options max_rows:` (default 5,000) is also checked at the preview step: a larger file is rejected with "Import contains N rows, exceeding the M row limit".
 - The upload form lists the importable fields, and the preview shows its columns, in the order of `import_fields`. In 0.6.0 the list followed the table's column order and the preview followed the file's headers. `importable_fields` and `IronAdmin::Import::ColumnMapper#map_headers` return that order too.
 - The `file` param must be a multipart upload. A plain string is ignored; in 0.6.0 it was read as a path on the server.
+- A row whose save fails without validation errors (a model callback that throws `:abort`, or an HTTP adapter that cannot reach the API) is counted as failed with "The record could not be saved." (`iron_admin.imports.errors.not_saved`). In 0.6.0 it was counted as created or updated.
 
 The confirm step carries the file in a form field, which Base64 makes about 33% larger. Rack 3.1 and later count non-file multipart fields against `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT` (16 MiB by default), so the preview rejects files larger than 12 MB with "The file is larger than 12 MB. Split it into smaller files." (`iron_admin.imports.errors.file_too_large`) instead of showing an Import button that fails with a server error. The 12 MB limit does not follow the Rack variable.
 
@@ -362,6 +365,7 @@ New keys in IronAdmin's `en.yml`:
 | `iron_admin.resources.action.confirm` | "Are you sure?" |
 | `iron_admin.imports.preview.import_button` | `one`: "Import %{count} row", `other`: "Import %{count} rows" |
 | `iron_admin.imports.errors.file_too_large` | "The file is larger than %{size}. Split it into smaller files." |
+| `iron_admin.imports.errors.not_saved` | "The record could not be saved." |
 | `iron_admin.fields.boolean_true` / `boolean_false` | "Yes" / "No" |
 | `iron_admin.fields.color_picker_label` | "%{field} picker" |
 | `iron_admin.fields.color_invalid` | "Enter a hex color such as #1a2b3c or #abc." |

@@ -30,6 +30,17 @@ module IronAdmin
         IronAdmin.configuration.on_action_block&.call(event)
       end
 
+      # Emits the event once the resource's transaction commits, so a change
+      # that rolls back is neither logged nor passed to on_action. Without an
+      # open transaction, or with an adapter that has none, it emits at once.
+      #
+      # @param action [Symbol, String] The action performed
+      # @param record [Object] The affected record
+      # @return [void]
+      def emit_event_after_commit(action, record)
+        @resource_class.adapter.after_commit { emit_event(action, record) }
+      end
+
       # The record's saved changes, with password fields and the host app's
       # filter_parameters replaced by "[FILTERED]".
       #

@@ -43,10 +43,9 @@ module IronAdmin
     def create
       return redirect_missing_file unless import_content
 
-      # Each saved row is audited as it is saved, inside the import's
-      # transaction: no records are kept, and an import that rolls back
-      # takes its database audit entries with it.
-      result = importer.execute! { |action, record| emit_event(action, record) }
+      # Each saved row is audited once the import's transaction commits, so
+      # the rows of an import that rolls back are never logged.
+      result = importer.execute! { |action, record| emit_event_after_commit(action, record) }
       redirect_to resources_path(@resource_class.resource_name),
                   notice: I18n.t(
                     "iron_admin.imports.create.success",

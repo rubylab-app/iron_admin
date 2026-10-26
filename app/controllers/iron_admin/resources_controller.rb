@@ -161,8 +161,9 @@ module IronAdmin
       adapter.transaction do
         adapter.wrap_rollback do
           result = call_action_block(action[:block], @record, collected)
-          emit_event(params[:action_name], @record)
           raise IronAdmin::Rollback if result == false
+
+          emit_event_after_commit(params[:action_name], @record)
         end
       end
 
@@ -265,19 +266,22 @@ module IronAdmin
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
-    # Audits each selected record after the block succeeds, inside the
-    # transaction. Loading them first keeps records the block destroys, and
-    # gives a block that iterates the relation the same objects, so their
-    # changes are recorded.
+    # Audits each selected record once the block succeeds and the transaction
+    # commits. The records are loaded from a copy of the relation, so the block
+    # still receives an unloaded relation and reads current data, and records
+    # the block destroys keep their entry. When the block loaded the relation
+    # (for example by iterating it to save each record), its objects replace
+    # the copies, so their changes are recorded.
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
       adapter.transaction do
         adapter.wrap_rollback do
-          affected = records.to_a
+          selected = records.dup.to_a
           result = call_action_block(action[:block], records, collected)
           raise IronAdmin::Rollback if result == false
 
-          affected.each { |record| emit_event(action[:name], record) }
+          loaded = records.respond_to?(:loaded?) && records.loaded? ? records.index_by(&:id) : {}
+          selected.each { |record| emit_event_after_commit(action[:name], loaded.fetch(record.id, record)) }
         end
       end
     end

@@ -246,7 +246,8 @@ The built-in audit log:
 - Stores the last 1000 entries in memory (or unlimited in database)
 - Records user, action, resource, record ID, changes, and IP address
 - Logs one entry per record for create, update, destroy, member actions, bulk actions (under the
-  action's name, once the block succeeds) and imports (`create` or `update` per saved row)
+  action's name) and imports (`create` or `update` per saved row), once the change commits. An
+  action that returns `false` or raises, and an import that rolls back, log nothing
 - Works without any database table (graceful fallback)
 - Is 100% optional - no configuration required if not needed
 

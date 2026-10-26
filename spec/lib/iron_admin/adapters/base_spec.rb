@@ -125,6 +125,14 @@ RSpec.describe IronAdmin::Adapters::Base do
     end
   end
 
+  describe "#after_commit" do
+    it "runs the block at once" do
+      ran = false
+      adapter.after_commit { ran = true }
+      expect(ran).to be(true)
+    end
+  end
+
   describe "scope manipulation" do
     it "raises NotImplementedError for #unscope_column" do
       expect { adapter.unscope_column(nil, :deleted_at) }.to raise_error(NotImplementedError)

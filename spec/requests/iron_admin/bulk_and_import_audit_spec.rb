@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Audit events for bulk actions and imports", type: :request do
+RSpec.describe "Audit events for member actions, bulk actions and imports", type: :request do
   let(:events) { [] }
 
   before do
@@ -10,6 +10,73 @@ RSpec.describe "Audit events for bulk actions and imports", type: :request do
       config.audit_enabled = true
       config.audit_storage = :database
       config.on_action { |event| events << event }
+    end
+  end
+
+  describe "POST /:resource_name/:id/actions/:action_name" do
+    subject(:run_action) { post iron_admin.resource_action_path("audited_member_licenses", license, action_name) }
+
+    let(:license) { create(:license, status: :active) }
+    let(:audit_entries) { IronAdmin::AuditEntry.where(resource: "AuditedMemberLicenseResource") }
+    let(:resource_class) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "AuditedMemberLicenseResource"
+        end
+
+        def self.resource_name
+          "audited_member_licenses"
+        end
+
+        belongs_to :user, display: :email
+
+        action :revoke do |license|
+          license.update!(status: :revoked)
+        end
+
+        action :refuse do |license|
+          license.update!(status: :revoked)
+          false
+        end
+      end
+    end
+
+    before { IronAdmin::ResourceRegistry.register(resource_class) }
+
+    context "when the action succeeds" do
+      let(:action_name) { "revoke" }
+
+      it "logs one entry under the action name" do
+        run_action
+        expect(audit_entries.pluck(:action, :record_id)).to eq([["revoke", license.id]])
+      end
+    end
+
+    context "when the action returns false" do
+      let(:action_name) { "refuse" }
+
+      it "logs nothing" do
+        run_action
+        expect(audit_entries).to be_empty
+      end
+
+      it "does not call on_action" do
+        run_action
+        expect(events).to be_empty
+      end
+    end
+
+    context "when on_action raises" do
+      let(:action_name) { "revoke" }
+
+      before { IronAdmin.configure { |config| config.on_action { raise StandardError, "Callback failed" } } }
+
+      it "keeps the change" do
+        run_action
+        expect(license.reload.status).to eq("revoked")
+      end
     end
   end
 
@@ -54,6 +121,16 @@ RSpec.describe "Audit events for bulk actions and imports", type: :request do
         bulk_action :explode do |records|
           records.update_all(status: :revoked)
           raise StandardError, "Bulk operation failed"
+        end
+
+        bulk_action :revoke_by_ids do |records|
+          License.where(id: records.ids).update_all(status: "revoked")
+          records.all? { |license| license.status == "revoked" }
+        end
+
+        bulk_action :drop_first_and_revoke do |records|
+          License.where(id: records.ids.min).delete_all
+          records.each { |license| license.update!(status: :revoked) }
         end
       end
     end
@@ -121,14 +198,54 @@ RSpec.describe "Audit events for bulk actions and imports", type: :request do
       end
     end
 
+    context "when the block writes through another query and reads the records" do
+      let(:action_name) { "revoke_by_ids" }
+
+      it "gives the block the current records" do
+        run_bulk_action
+        expect(License.where(id: licenses.map(&:id)).pluck(:status)).to eq(%w[revoked revoked])
+      end
+    end
+
+    context "when the block removes a selected record before loading the others" do
+      let(:action_name) { "drop_first_and_revoke" }
+
+      it "logs one entry per selected record" do
+        run_bulk_action
+        expect(audit_entries.pluck(:record_id)).to match_array(licenses.map(&:id))
+      end
+    end
+
     context "when on_action raises" do
       let(:action_name) { "revoke_each" }
 
       before { IronAdmin.configure { |config| config.on_action { raise StandardError, "Callback failed" } } }
 
-      it "rolls the action back" do
+      it "keeps the changes" do
         run_bulk_action
-        expect(License.where(id: licenses.map(&:id)).pluck(:status)).to eq(%w[active active])
+        expect(License.where(id: licenses.map(&:id)).pluck(:status)).to eq(%w[revoked revoked])
+      end
+
+      it "shows the generic error" do
+        run_bulk_action
+        expect(flash[:alert]).to eq(I18n.t("iron_admin.errors.unexpected"))
+      end
+    end
+
+    context "with memory storage, when on_action raises on the second record" do
+      let(:action_name) { "revoke_each" }
+
+      before do
+        IronAdmin.configure do |config|
+          config.audit_storage = :memory
+          config.on_action { |event| raise StandardError, "Callback failed" if (events << event).size == 2 }
+        end
+      end
+
+      it "logs only changes that were kept" do
+        run_bulk_action
+        logged = IronAdmin::AuditLog.entries.map(&:record_id)
+        expect(License.where(id: logged).pluck(:status)).to eq(%w[revoked revoked])
       end
     end
 
@@ -176,9 +293,11 @@ RSpec.describe "Audit events for bulk actions and imports", type: :request do
     let(:csv) { "Name,Email\nNew,new@example.com\nRenamed,old@example.com\n" }
     let!(:existing_user) { create(:user, name: "Old", email: "old@example.com") }
     let(:audit_entries) { IronAdmin::AuditEntry.where(resource: "AuditedImportUserResource") }
+    let(:import_model) { User }
     let(:resource_class) do
+      model = import_model
       Class.new(IronAdmin::Resource) do
-        self.model_class_override = User
+        self.model_class_override = model
 
         def self.name
           "AuditedImportUserResource"
@@ -230,6 +349,29 @@ RSpec.describe "Audit events for bulk actions and imports", type: :request do
       end
     end
 
+    context "when a callback aborts the save" do
+      let(:import_model) do
+        Class.new(User) do
+          def self.name
+            "User"
+          end
+
+          before_create { throw :abort }
+          before_update { throw :abort }
+        end
+      end
+
+      it "logs nothing" do
+        run_import
+        expect(audit_entries).to be_empty
+      end
+
+      it "does not call on_action" do
+        run_import
+        expect(events).to be_empty
+      end
+    end
+
     context "when the import fails part-way and rolls back" do
       let(:csv) { "Name,Email\nNew,new@example.com\nBoom,boom@example.com\n" }
 
@@ -237,13 +379,49 @@ RSpec.describe "Audit events for bulk actions and imports", type: :request do
         run_import
         expect(audit_entries).to be_empty
       end
+
+      it "does not call on_action" do
+        run_import
+        expect(events).to be_empty
+      end
+
+      context "with memory storage" do
+        before { IronAdmin.configuration.audit_storage = :memory }
+
+        it "logs nothing" do
+          run_import
+          expect(IronAdmin::AuditLog.entries).to be_empty
+        end
+      end
+
+      context "with an adapter without transactions" do
+        let(:adapter_without_transactions) do
+          Class.new(IronAdmin::Adapters::ActiveRecord) do
+            def transaction
+              yield
+            end
+          end
+        end
+
+        before { resource_class.adapter_class = adapter_without_transactions }
+
+        it "logs the rows saved before the failing row" do
+          run_import
+          expect(audit_entries.pluck(:action, :record_id)).to eq([["create", User.find_by(email: "new@example.com").id]])
+        end
+      end
     end
 
     context "when on_action raises" do
       before { IronAdmin.configure { |config| config.on_action { raise StandardError, "Callback failed" } } }
 
-      it "rolls the import back" do
-        expect { run_import }.not_to change(User, :count)
+      it "keeps the imported rows" do
+        expect { run_import }.to change(User, :count).by(1)
+      end
+
+      it "shows the generic error" do
+        run_import
+        expect(flash[:alert]).to eq(I18n.t("iron_admin.errors.unexpected"))
       end
     end
 

@@ -295,7 +295,7 @@ Updates a record's attributes. Returns `true` on success, `false` on validation 
 
 Permanently deletes a record. Should raise on failure (bang method).
 
-### Transactions (1 method)
+### Transactions (2 methods)
 
 #### `transaction(&block)` → `Object`
 
@@ -306,6 +306,10 @@ def transaction
   yield
 end
 ```
+
+#### `after_commit(&block)` → `void`
+
+Runs the block once the current transaction commits, and never if it rolls back. IronAdmin writes audit entries and calls `on_action` through it, so a member action, bulk action or import that rolls back records nothing. `Adapters::Base` runs the block at once, which is right for a data source without transactions, where each write is kept as soon as it is made. If your `transaction` is atomic, override it to run the block after the commit. The ActiveRecord adapter uses `ActiveRecord.after_all_transactions_commit`.
 
 ### Scope Manipulation (1 method)
 
@@ -589,6 +593,7 @@ Use this checklist when building a new adapter:
 
 ### Transactions & Scope
 - [ ] `transaction(&block)` — atomic or yield
+- [ ] `after_commit(&block)` — optional; override when `transaction` is atomic
 - [ ] `unscope_column(scope, column)` — removes condition
 - [ ] `find_each(scope, &block)` — batched or `.each`, in the scope's order
 

@@ -75,6 +75,7 @@ en:
       errors:
         missing_file: "Choose a file to import."
         file_too_large: "The file is larger than %{size}. Split it into smaller files."
+        not_saved: "The record could not be saved."
     fields:
       select_placeholder: "Select..."
       boolean_enable: "Enable %{field}"

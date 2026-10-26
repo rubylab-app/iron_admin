@@ -64,10 +64,11 @@ an array of objects, or an object with a `records` array.
 3. **Import.** The "Import N rows" button posts the previewed file back to
    `POST /admin/:resource_name/import`, so the file is not uploaded twice, and imports every row
    of the file, not only the previewed ones. The browser returns to the index with a summary
-   such as "Import finished: 12 created, 3 updated, 1 failed." Rows that fail validation are
-   counted as failed and the other rows are saved. Each saved row is recorded in the audit log
-   (when it is enabled) as `create` or `update` and passed to `on_action`, inside the import's
-   transaction.
+   such as "Import finished: 12 created, 3 updated, 1 failed." Rows that fail validation, or
+   whose save a model callback stops with `throw :abort`, are counted as failed and the other
+   rows are saved. Each saved row is recorded in the audit log (when it is enabled) as `create`
+   or `update` and passed to `on_action` once the import commits. An import that raises and
+   rolls back records nothing.
 
 Only a real file upload is accepted as the `file` parameter.
 
