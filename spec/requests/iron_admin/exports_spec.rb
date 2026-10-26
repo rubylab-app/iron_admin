@@ -683,4 +683,34 @@ RSpec.describe "IronAdmin::Exports", type: :request do
       expect(response.parsed_body.first.keys).to eq(%w[email name id])
     end
   end
+
+  describe "CSV row order" do
+    let(:csv_names) { CSV.parse(response.body, headers: true).pluck("Name") }
+
+    before do
+      create(:user, name: "Zulu User", email: "zulu@example.com", created_at: 2.days.ago)
+      create(:user, name: "Alpha User", email: "alpha@example.com", created_at: 3.days.ago)
+      create(:user, name: "Mike User", email: "mike@example.com", created_at: 1.day.ago)
+    end
+
+    it "applies the requested sort" do
+      get iron_admin.export_path("users", format: :csv), params: { sort: "name", direction: "asc" }
+
+      expect(csv_names).to eq(["Alpha User", "Mike User", "Zulu User"])
+    end
+
+    it "applies the default sort" do
+      get iron_admin.export_path("users", format: :csv)
+
+      expect(csv_names).to eq(["Mike User", "Zulu User", "Alpha User"])
+    end
+
+    it "matches the JSON order" do
+      get iron_admin.export_path("users", format: :json), params: { sort: "email", direction: "desc" }
+      json_names = response.parsed_body.pluck("name")
+      get iron_admin.export_path("users", format: :csv), params: { sort: "email", direction: "desc" }
+
+      expect(csv_names).to eq(json_names)
+    end
+  end
 end
