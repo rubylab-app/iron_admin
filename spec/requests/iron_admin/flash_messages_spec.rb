@@ -87,6 +87,16 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
 
       expect(messages_after_redirect("alert")).to eq(["Some records are not accessible"])
     end
+
+    # The form sits inside turbo-frame#records. Submitted to that frame, Turbo
+    # would keep only the frame of the page the redirect leads to and drop the
+    # message the shell renders outside it.
+    it "submits the bulk form to the whole page" do
+      license
+      get iron_admin.resources_path("licenses")
+
+      expect(Nokogiri::HTML(response.body).at_css("form#bulk-actions-form")["data-turbo-frame"]).to eq("_top")
+    end
   end
 
   describe "import messages" do

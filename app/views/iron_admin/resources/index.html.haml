@@ -117,7 +117,8 @@
 
   - has_bulk_actions = @resource_class.defined_bulk_actions.any?
   = turbo_frame_tag "records", data: { turbo_action: "advance" } do
-    = form_tag "#", method: :post, id: "bulk-actions-form", data: (has_bulk_actions ? { controller: "cp-bulk-select" } : {}) do
+    -# Submitted to the whole page, so the shell shows the redirect's flash message.
+    = form_tag "#", method: :post, id: "bulk-actions-form", data: { turbo_frame: "_top", **(has_bulk_actions ? { controller: "cp-bulk-select" } : {}) } do
       - if has_bulk_actions
         - iron_admin_hidden_params(iron_admin_index_state).each do |name, value|
           = hidden_field_tag name, value, id: nil
