@@ -103,6 +103,20 @@ RSpec.describe IronAdmin::Resources::DataTableComponent, type: :component do
     end
   end
 
+  describe "sort links" do
+    subject(:sort_links) { rendered.css("thead a") }
+
+    let(:rendered) do
+      render_inline(described_class.new(records: User.none, fields: fields,
+                                        resource_class: IronAdmin::Resources::UserResource, base_url: "/admin/users?"))
+    end
+
+    # Forms outside the records frame (search, filters) must pick up the new sort.
+    it "navigate the whole page" do
+      expect(sort_links.pluck("data-turbo-frame")).to eq(%w[_top _top _top])
+    end
+  end
+
   describe "#sorted?" do
     it "returns true when field matches current_sort" do
       component = described_class.new(

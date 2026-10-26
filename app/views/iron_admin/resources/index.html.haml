@@ -24,28 +24,12 @@
               resources_path(@resource_class.resource_name, scope: scope[:name], q: params[:q]),
               class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap #{active ? cp_scope_active : cp_scope_inactive}"
 
-      - if @resource_class.searchable_columns.any? && (search_component = iron_admin_search_component(@resource_class, filters: filters, scope: @current_scope))
+      - if @resource_class.searchable_columns.any? && (search_component = iron_admin_search_component(@resource_class, scope: @current_scope))
         = render search_component
       - elsif @resource_class.searchable_columns.any?
         = form_tag resources_path(@resource_class.resource_name), method: :get, class: "flex ml-auto" do
-          = hidden_field_tag :scope, @current_scope
-          - filters.each do |filter|
-            - if filter[:type].in?(%i[string number])
-              - sub = iron_admin_filter_param(filter[:name].to_s)
-              - if sub.is_a?(ActionController::Parameters) && sub["value"].present?
-                = hidden_field_tag "filters[#{filter[:name]}][op]", sub["op"]
-                = hidden_field_tag "filters[#{filter[:name]}][value]", sub["value"]
-                - if sub["value_2"].present?
-                  = hidden_field_tag "filters[#{filter[:name]}][value_2]", sub["value_2"]
-            - elsif filter[:type] == :date_range
-              - %w[from to].each do |suffix|
-                - range_value = iron_admin_filter_param("#{filter[:name]}_#{suffix}")
-                - if range_value.present?
-                  = hidden_field_tag "filters[#{filter[:name]}_#{suffix}]", range_value
-            - else
-              - value = iron_admin_filter_param(filter[:name])
-              - if value.present?
-                = hidden_field_tag "filters[#{filter[:name]}]", value
+          - iron_admin_search_hidden_params(@current_scope).each do |name, value|
+            = hidden_field_tag name, value, id: nil
           .relative
             .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center{ class: "pl-3.5" }
               = heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }
@@ -72,6 +56,8 @@
           = form_tag resources_path(@resource_class.resource_name), method: :get, class: "p-4" do
             = hidden_field_tag :scope, @current_scope
             = hidden_field_tag :q, params[:q]
+            - iron_admin_index_state.slice("sort", "direction").each do |name, value|
+              = hidden_field_tag name, value, id: nil
             .space-y-3
               - filters.each do |filter|
                 .space-y-1
@@ -125,13 +111,16 @@
                           class: cp_filter_input_class, step: "any"
             .flex.items-center.gap-3.mt-4.pt-3.border-t.border-gray-100
               %button{ type: "submit", class: cp_btn_filter_apply }= I18n.t("iron_admin.resources.index.apply_button")
-              = link_to I18n.t("iron_admin.resources.index.clear_button"), resources_path(@resource_class.resource_name, scope: @current_scope, q: params[:q]),
+              = link_to I18n.t("iron_admin.resources.index.clear_button"),
+                resources_path(@resource_class.resource_name, scope: @current_scope, q: params[:q], **iron_admin_index_state.slice("sort", "direction").symbolize_keys),
                 class: "text-sm #{cp_link_muted}"
 
   - has_bulk_actions = @resource_class.defined_bulk_actions.any?
-  = turbo_frame_tag "records" do
+  = turbo_frame_tag "records", data: { turbo_action: "advance" } do
     = form_tag "#", method: :post, id: "bulk-actions-form", data: (has_bulk_actions ? { controller: "cp-bulk-select" } : {}) do
       - if has_bulk_actions
+        - iron_admin_hidden_params(iron_admin_index_state).each do |name, value|
+          = hidden_field_tag name, value, id: nil
         .hidden.items-center.gap-3.mb-4.px-4.py-3.border{ data: { cp_bulk_select_target: "bar" }, class: "#{t.border_radius} #{t.card_border} #{t.card_bg} #{t.card_shadow}" }
           %span.text-sm.font-medium{ class: cp_muted_text }
             %span{ data: { cp_bulk_select_target: "count" } } 0
@@ -163,8 +152,9 @@
                   - sorted = params[:sort] == field.name.to_s
                   - next_dir = sorted && params[:direction] == "asc" ? "desc" : "asc"
                   %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text }
-                    = link_to resources_path(@resource_class.resource_name, sort: field.name, direction: next_dir, scope: @current_scope, q: params[:q]),
-                      class: "inline-flex items-center gap-1 group" do
+                    -# A whole-page visit, so the search and filter forms outside the frame get the new sort.
+                    = link_to iron_admin_sort_path(@resource_class, @current_scope, field.name, next_dir),
+                      class: "inline-flex items-center gap-1 group", data: { turbo_frame: "_top" } do
                       = field.name.to_s.humanize
                       - if sorted
                         = heroicon(params[:direction] == "asc" ? "chevron-up" : "chevron-down", variant: :mini, options: { class: "h-3.5 w-3.5" })

@@ -22,6 +22,7 @@ module IronAdmin
     include Concerns::Authorizable
     include Concerns::EventEmittable
     include Concerns::Filterable
+    include Concerns::IndexStatePreservable
     include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
     include Concerns::Scopeable
@@ -261,8 +262,9 @@ module IronAdmin
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
+    # Back to the index the bulk action was run from, with its scope, search, filters, sort and page.
     def redirect_bulk(type, message)
-      redirect_to resources_path(@resource_class.resource_name), type => message
+      redirect_to resources_path(@resource_class.resource_name, **iron_admin_index_state.symbolize_keys), type => message
     end
 
     def run_bulk_action_in_transaction(action, records)
