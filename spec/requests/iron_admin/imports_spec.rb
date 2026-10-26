@@ -115,6 +115,16 @@ RSpec.describe "IronAdmin::Imports", type: :request do
         expect(User.find_by(email: "jose@example.com").name).to eq("José\nPérez")
       end
     end
+
+    context "when the preview labels a boolean column" do
+      let(:csv) { "Name,Email,Active\nJohn,john@example.com,0\n" }
+
+      it "imports the value the file holds, not the label" do
+        submit_import_form
+
+        expect(User.find_by(email: "john@example.com").active).to be(false)
+      end
+    end
   end
 
   describe "POST /:resource_name/import/preview display" do
@@ -145,6 +155,12 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       preview_csv("Name,Email,Active\nJane,jane@example.com,\n")
 
       expect(preview_cells.first[2]).to eq("")
+    end
+
+    it "labels boolean values as the show page does, instead of true and false" do
+      preview_csv("Name,Email,Active\nJane,jane@example.com,true\nJohn,john@example.com,0\n")
+
+      expect(preview_cells.pluck(2)).to eq(%w[Yes No])
     end
 
     it "renders JSON values as JSON" do

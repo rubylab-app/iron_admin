@@ -59,6 +59,22 @@ RSpec.describe IronAdmin::Import::Importer do
   describe "#preview" do
     subject(:preview) { described_class.new(resource_class, file: csv, format: :csv).preview }
 
+    context "with mapped columns" do
+      let(:csv) { StringIO.new("Email,Active,Unknown\njane@example.com,0,x\n") }
+
+      it "carries the field of each mapped column, so the page can format its cells" do
+        expect(preview.fields.transform_values(&:type)).to eq(email: :email, active: :boolean)
+      end
+
+      it "keeps the type-cast value the import saves" do
+        expect(preview.rows.first.attributes[:active]).to be(false)
+      end
+
+      it "formats the cell as the show page labels the field" do
+        expect(preview.cell_text(preview.rows.first, :active)).to eq("No")
+      end
+    end
+
     context "when a row matches an existing record on the upsert key" do
       let(:csv) { StringIO.new("Name,Email\nJane,jane@example.com\n") }
 
