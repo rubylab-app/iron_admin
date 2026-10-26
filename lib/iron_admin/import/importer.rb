@@ -121,7 +121,9 @@ module IronAdmin
         attributes = build_attributes(raw_row, mapping)
         attributes = apply_transform(attributes)
         validation_errors = custom_validation_errors(attributes)
-        validation_errors += validate_record(nil, attributes) if validate_model
+        # Validate against the record an upsert would update, as execute! does,
+        # so a matching row is not reported as a uniqueness failure.
+        validation_errors += validate_record(find_existing_record(attributes), attributes) if validate_model
         row_errors = validation_errors.map { |message| Error.new(row_number: row_number, message: message) }
 
         Row.new(number: row_number, attributes: attributes, errors: row_errors)

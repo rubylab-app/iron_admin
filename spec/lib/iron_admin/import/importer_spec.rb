@@ -56,6 +56,53 @@ RSpec.describe IronAdmin::Import::Importer do
     )
   end
 
+  describe "#preview" do
+    subject(:preview) { described_class.new(resource_class, file: csv, format: :csv).preview }
+
+    context "when a row matches an existing record on the upsert key" do
+      let(:csv) { StringIO.new("Name,Email\nJane,jane@example.com\n") }
+
+      before { create(:user, name: "Old", email: "jane@example.com") }
+
+      it "validates the row against the existing record" do
+        expect(preview.rows.first.errors).to be_empty
+      end
+
+      it "leaves the existing record unchanged" do
+        preview
+
+        expect(User.find_by(email: "jane@example.com").name).to eq("Old")
+      end
+    end
+
+    context "when a new row reuses a unique value of another record" do
+      let(:resource_class) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "NameKeyedImportUserResource"
+          end
+
+          def self.resource_name
+            "name_keyed_import_users"
+          end
+
+          imports :csv
+          import_fields :name, :email
+          import_upsert_key :name
+        end
+      end
+      let(:csv) { StringIO.new("Name,Email\nNew Jane,jane@example.com\n") }
+
+      before { create(:user, name: "Jane", email: "jane@example.com") }
+
+      it "still reports the uniqueness error" do
+        expect(preview.rows.first.errors.map(&:message)).to include("Email has already been taken")
+      end
+    end
+  end
+
   it "creates records from CSV rows" do
     csv = StringIO.new(%(Name,Email,Active\nJane,jane@example.com,true\n))
 

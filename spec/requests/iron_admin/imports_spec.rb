@@ -52,6 +52,83 @@ RSpec.describe "IronAdmin::Imports", type: :request do
     end
   end
 
+  describe "POST /:resource_name/import/preview display" do
+    def preview_csv(contents)
+      post iron_admin.resource_import_preview_path("request_import_users"),
+           params: { file: upload(contents, "users.csv", "text/csv") }
+    end
+
+    def preview_cells
+      html.css("tbody tr").map { |row| row.css("td").map { |cell| cell.text.strip } }
+    end
+
+    it "renders text values without Ruby inspect quotes" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(preview_cells.first.first(2)).to eq(["Jane", "jane@example.com"])
+    end
+
+    it "renders missing values as empty cells" do
+      preview_csv("Name,Email,Active\nJane,jane@example.com,\n")
+
+      expect(preview_cells.first[2]).to eq("")
+    end
+
+    it "renders JSON values as JSON" do
+      preview_csv(%(Name,Email,Preferences\nJane,jane@example.com,"{""tier"":""gold""}"\n))
+
+      expect(preview_cells.first[2]).to eq(%({"tier":"gold"}))
+    end
+
+    it "uses the singular summary for a single row" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(html.at_css("h1 + p").text).to eq("1 row detected.")
+    end
+
+    it "uses the plural summary for several rows" do
+      preview_csv("Name,Email\nJane,jane@example.com\nJohn,john@example.com\n")
+
+      expect(html.at_css("h1 + p").text).to eq("2 rows detected.")
+    end
+
+    it "marks a row matching an existing record on the upsert key as valid" do
+      create(:user, name: "Old", email: "jane@example.com")
+
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(preview_cells.first.last).to eq("Valid")
+    end
+
+    context "with a datetime field" do
+      let(:license_import_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "RequestImportLicenseResource"
+          end
+
+          def self.resource_name
+            "request_import_licenses"
+          end
+
+          imports :csv
+          import_fields :license_key, :expires_at
+        end
+      end
+
+      before { IronAdmin::ResourceRegistry.register(license_import_resource) }
+
+      it "renders the localized time instead of the TimeWithZone inspect output" do
+        post iron_admin.resource_import_preview_path("request_import_licenses"),
+             params: { file: upload("License key,Expires at\nKEY-1,2026-10-20 10:00:00\n", "licenses.csv", "text/csv") }
+
+        expect(preview_cells.first[1]).to eq(I18n.l(Time.zone.parse("2026-10-20 10:00:00")))
+      end
+    end
+  end
+
   describe "POST /:resource_name/import/preview" do
     it "previews CSV uploads" do
       post iron_admin.resource_import_preview_path("request_import_users"),
@@ -142,5 +219,9 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
   def upload(contents, filename, content_type)
     Rack::Test::UploadedFile.new(StringIO.new(contents), content_type, true, original_filename: filename)
+  end
+
+  def html
+    Nokogiri::HTML(response.body)
   end
 end
