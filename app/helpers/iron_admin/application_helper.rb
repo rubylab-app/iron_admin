@@ -156,8 +156,9 @@ module IronAdmin
         resource_class.adapter.distinct_values(column_name).map { |value| [value.to_s.humanize, value] }
     end
 
-    # The records a belongs_to select offers on the form, when +column_name+ is
-    # the foreign key of a (non-polymorphic) belongs_to association; nil otherwise.
+    # Labelled options for the associated records some row refers to, when
+    # +column_name+ is the foreign key of a (non-polymorphic) belongs_to
+    # association; nil otherwise.
     def belongs_to_filter_options(resource_class, column_name)
       association = resource_class.adapter.associations(:belongs_to).find do |candidate|
         !candidate.polymorphic? && candidate.foreign_key.to_s == column_name
@@ -168,11 +169,18 @@ module IronAdmin
       field = belongs_to_filter_field(resource_class, column_name)
       return unless labels_foreign_key_filter?(field)
 
-      scope = association_class.all
+      value_key = foreign_key_target(association)
+      scope = referenced_records(association_class, value_key, resource_class.adapter.distinct_values(column_name))
       tenant_scope = IronAdmin.configuration.tenant_scope_block
       scope = tenant_scope.call(scope) if tenant_scope
-      value_key = foreign_key_target(association)
-      scope.map { |record| [display_record_label(record, field&.options&.dig(:display)), record.public_send(value_key)] }
+      scope.map { |record| [display_record_label(record, field.options[:display]), record.public_send(value_key)] }
+    end
+
+    # The associated records whose +value_key+ is one of +values+: only the
+    # records some row refers to, whose labels the index already shows.
+    def referenced_records(association_class, value_key, values)
+      scope = association_class.all
+      scope.respond_to?(:in) ? scope.in(value_key => values) : scope.where(value_key => values)
     end
 
     def belongs_to_filter_field(resource_class, column_name)
@@ -181,11 +189,11 @@ module IronAdmin
       end
     end
 
-    # Whether a foreign key filter lists the associated records. It keeps the
-    # column's distinct values, as in 0.7.0, when the viewer cannot see the
-    # belongs_to field, or when the field is +autocomplete+ (a table too large to list).
+    # Labels need a belongs_to field the viewer can see; an +autocomplete+ field
+    # marks a table too large to list. Otherwise the filter keeps the column's
+    # distinct values, as in 0.7.0.
     def labels_foreign_key_filter?(field)
-      return true unless field
+      return false unless field
 
       field.visible?(filter_options_viewer) && !field.options[:autocomplete]
     end

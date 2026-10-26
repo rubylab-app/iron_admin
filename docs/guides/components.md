@@ -204,7 +204,7 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   choices of a `:select` or `:boolean` filter with
   `helpers.filter_options_for(resource_class, filter)`, which returns `[label, value]` pairs:
   a filter's `:options` can be a callable, and a foreign key filter without options offers
-  the associated records.
+  the associated records that some row refers to.
 - `search`: submit `q` to `form_url` with a GET request, and add every `hidden_params`
   entry as a hidden field, so the current scope, filters and sort are kept. `hidden_params`
   carries `scope`, the active filters and, when they are set, `sort` and `direction`. Its

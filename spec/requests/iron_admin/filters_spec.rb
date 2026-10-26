@@ -233,6 +233,13 @@ RSpec.describe "IronAdmin index filters", type: :request do
         .to eq([["All", ""], ["Ada", ada.id.to_s], ["Grace", grace.id.to_s]])
     end
 
+    it "leaves out associated records no row refers to" do
+      create(:user, name: "Unreferenced")
+      get iron_admin.resources_path("foreign_key_filter_licenses"), as: :html
+
+      expect(options.map { |option| option.text.strip }).not_to include("Unreferenced")
+    end
+
     it "selects the chosen record" do
       get iron_admin.resources_path("foreign_key_filter_licenses"), params: { filters: { user_id: grace.id } }, as: :html
 
@@ -284,8 +291,8 @@ RSpec.describe "IronAdmin index filters", type: :request do
     context "when the viewer can see the field" do
       let(:viewer_role) { "admin" }
 
-      it "labels the associated records" do
-        expect(option_labels).to eq(["All", "Ada", "Secret Person"])
+      it "labels only the associated records a row refers to" do
+        expect(option_labels).to eq(%w[All Ada])
       end
     end
   end

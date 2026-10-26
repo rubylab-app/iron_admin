@@ -141,14 +141,15 @@ is an enum, and the column's distinct values otherwise, so `filter :role, type: 
 enum is enough.
 
 On the foreign key of a `belongs_to` association, a `:select` filter without `options` offers
-the associated records, labelled like the form's belongs_to select (the association's
-`display:` option, else `name`, `title`, `email`, `label` or `slug`) and limited by
+the associated records that some row refers to, labelled like the form's belongs_to select (the
+association's `display:` option, else `name`, `title`, `email`, `label` or `slug`) and limited by
 `tenant_scope`, so `filter :category_id, type: :select` lists category names, not ids. Each
 option's value is the key the foreign key stores: the association's `primary_key:`, else the
 associated record's primary key. The filter keeps offering the column's distinct values when
-the `belongs_to` field is not visible to the current user, so it never shows the labels of an
-association the resource hides, and when the association is declared `autocomplete: true`, so it
-never loads a table too large for the form to list (give that filter `options:` to label it).
+the resource has no `belongs_to` field for the column or that field is not visible to the
+current user, so it never shows the labels of an association the resource hides, and when the
+association is declared `autocomplete: true`, so it never loads a table too large for the form to
+list (give that filter `options:` to label it).
 
 `options` takes `[label, value]` pairs or bare values, which are labelled by humanizing them.
 It can also be a callable that takes no arguments: IronAdmin calls it each time the index

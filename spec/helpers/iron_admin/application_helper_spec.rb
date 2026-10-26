@@ -581,8 +581,8 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       let(:grace) { create(:user, name: "Grace", email: "grace@example.com") }
 
       before do
-        ada
-        grace
+        create(:license, user: ada)
+        create(:license, user: grace)
       end
 
       # LicenseResource declares `belongs_to :user, display: :email`.
@@ -590,6 +590,36 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         options = helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)
 
         expect(options).to eq([["ada@example.com", ada.id], ["grace@example.com", grace.id]])
+      end
+
+      context "with an associated record no row refers to" do
+        before { create(:user, name: "Unreferenced", email: "unreferenced@example.com") }
+
+        it "leaves it out" do
+          options = helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)
+
+          expect(options.map(&:first)).not_to include("unreferenced@example.com")
+        end
+      end
+
+      context "when the resource resolves no belongs_to field for the column" do
+        let(:resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = License
+
+            def self.name
+              "UnfieldedOwnerHelperLicenseResource"
+            end
+
+            def self.resolved_fields
+              super.reject { |field| field.type == :belongs_to }
+            end
+          end
+        end
+
+        it "returns the distinct ids" do
+          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id], [grace.id.to_s, grace.id]])
+        end
       end
 
       context "with a tenant scope" do
@@ -625,11 +655,9 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
           end
         end
 
-        before { create(:license, user: ada) }
-
         # The helper renders without an IronAdmin controller, so there is no current user.
         it "returns the distinct ids" do
-          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id]])
+          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id], [grace.id.to_s, grace.id]])
         end
       end
 
@@ -646,10 +674,8 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
           end
         end
 
-        before { create(:license, user: ada) }
-
         it "returns the distinct ids" do
-          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id]])
+          expect(helper.filter_options_for(resource, filter)).to eq([[ada.id.to_s, ada.id], [grace.id.to_s, grace.id]])
         end
       end
     end
