@@ -119,6 +119,68 @@ RSpec.describe "IronAdmin::Audit", type: :request do
     end
   end
 
+  describe "GET /audit resource labels" do
+    let(:document) do
+      get iron_admin.audit_path(filters)
+      response.parsed_body
+    end
+    let(:filters) { {} }
+    let(:resource_cells) { document.css("tbody tr").map { |row| row.css("td")[3].text.strip } }
+    let(:resource_options) do
+      document.css("select[name=resource] option").to_h { |option| [option[:value], option.text.strip] }
+    end
+
+    before do
+      IronAdmin.configure { |c| c.audit_enabled = true }
+      [IronAdmin::Resources::UserResource.name, "Legacy::ArchivedResource"].each do |resource|
+        IronAdmin::AuditLog.log(OpenStruct.new(user: nil, action: :create, resource: resource, record_id: 1,
+                                               changes: {}, ip_address: "127.0.0.1"))
+      end
+    end
+
+    it "shows the label of a registered resource in the Resource column" do
+      expect(resource_cells).to include("Users")
+    end
+
+    it "shows the stored value of a resource that is not registered" do
+      expect(resource_cells).to include("Legacy::ArchivedResource")
+    end
+
+    it "labels registered resources in the Resource filter" do
+      expect(resource_options[IronAdmin::Resources::UserResource.name]).to eq("Users")
+    end
+
+    it "offers a logged resource that is not registered under its stored value" do
+      expect(resource_options["Legacy::ArchivedResource"]).to eq("Legacy::ArchivedResource")
+    end
+
+    context "when filtering by a resource that is not registered" do
+      let(:filters) { { resource: "Legacy::ArchivedResource" } }
+
+      it "keeps it selected in the Resource filter" do
+        expect(document.at_css("select[name=resource] option[selected]")[:value]).to eq("Legacy::ArchivedResource")
+      end
+    end
+  end
+
+  describe "GET /audit filter labels" do
+    subject(:labelled_controls) do
+      get iron_admin.audit_path
+      form = response.parsed_body.at_css("form")
+      form.css("label").to_h { |label| [label.text.strip, label[:for] && form.at_css("[id='#{label[:for]}']")&.[](:name)] }
+    end
+
+    before do
+      IronAdmin.configure { |c| c.audit_enabled = true }
+      IronAdmin::AuditLog.log(OpenStruct.new(user: nil, action: :create, resource: "UserResource", record_id: 1,
+                                             changes: {}, ip_address: "127.0.0.1"))
+    end
+
+    it "associates each label with its control" do
+      expect(labelled_controls).to eq("Resource" => "resource", "Action" => "action_filter", "From" => "from", "To" => "to")
+    end
+  end
+
   describe "GET /audit with database storage" do
     subject(:page) do
       get iron_admin.audit_path(filters)
@@ -199,6 +261,14 @@ RSpec.describe "IronAdmin::Audit", type: :request do
 
       it "labels each action in a readable way" do
         expect(action_options["send_now"]).to eq("Send now")
+      end
+    end
+
+    context "with a resource that is not registered" do
+      subject(:resource_options) { page.parsed_body.css("select[name=resource] option").pluck(:value) }
+
+      it "offers its stored value in the resource filter" do
+        expect(resource_options).to include("UserResource")
       end
     end
 

@@ -16,22 +16,22 @@
     .mb-4
       = form_tag audit_path, method: :get, class: "flex flex-col gap-4 sm:flex-row sm:items-end" do
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ class: cp_muted_text } Resource
-          %select{ name: "resource", class: cp_select_class }
+          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "resource", class: cp_muted_text } Resource
+          %select#resource{ name: "resource", class: cp_select_class }
             %option{ value: "" } All Resources
-            - IronAdmin::ResourceRegistry.all.each do |resource|
-              %option{ value: resource.name, selected: params[:resource] == resource.name }= resource.label
+            - @resource_options.each do |value, label|
+              %option{ value: value, selected: params[:resource] == value }= label
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ class: cp_muted_text } Action
-          %select{ name: "action_filter", class: cp_select_class }
+          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "action_filter", class: cp_muted_text } Action
+          %select#action_filter{ name: "action_filter", class: cp_select_class }
             %option{ value: "" } All Actions
             - @action_options.each do |action|
               %option{ value: action, selected: params[:action_filter] == action }= action.humanize
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ class: cp_muted_text } From
+          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "from", class: cp_muted_text } From
           = date_field_tag :from, params[:from], class: cp_filter_input_class
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ class: cp_muted_text } To
+          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "to", class: cp_muted_text } To
           = date_field_tag :to, params[:to], class: cp_filter_input_class
         .flex.gap-2
           %button{ type: "submit", class: cp_btn_primary } Filter
@@ -69,7 +69,7 @@
                 %span{ class: "inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-#{color}-100 text-#{color}-800" }
                   = entry.action.to_s.humanize
               %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-                = entry.resource
+                = @resource_labels.fetch(entry.resource.to_s, entry.resource)
               %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
                 = entry.record_id
               %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_muted_text }

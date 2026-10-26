@@ -51,6 +51,17 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    context "with the upload form labels" do
+      subject(:labelled_controls) do
+        get iron_admin.resource_import_path("request_import_users"), as: :html
+        html.css("form label").to_h { |label| [label.text.strip, label[:for] && html.at_css("[id='#{label[:for]}']")&.[](:name)] }
+      end
+
+      it "associates each label with its control" do
+        expect(labelled_controls).to eq("File" => "file", "Format" => "import_format")
+      end
+    end
+
     it "submits the upload form outside Turbo Drive so the preview page can render" do
       get iron_admin.resource_import_path("request_import_users"), as: :html
 

@@ -9,10 +9,10 @@
     = form_tag resource_import_preview_path(@resource_class.resource_name),
       multipart: true, class: "space-y-5", data: { turbo: false } do
       .space-y-2
-        %label.block.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.file_label")
+        = label_tag :file, I18n.t("iron_admin.imports.new.file_label"), class: "block text-sm font-medium #{cp_label_text}"
         = file_field_tag :file, required: true, class: "block w-full text-sm #{cp_body_text}"
       .space-y-2
-        %label.block.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.format_label")
+        = label_tag :import_format, I18n.t("iron_admin.imports.new.format_label"), class: "block text-sm font-medium #{cp_label_text}"
         = select_tag :import_format,
           options_for_select(@formats.map { |format| [format.to_s.upcase, format] }),
           class: "block w-full border px-3 py-2 text-sm #{t.border_radius} #{t.input_border} #{t.card_bg} #{cp_body_text} #{cp_focus}"
