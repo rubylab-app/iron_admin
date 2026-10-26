@@ -180,6 +180,9 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
+Switching tabs keeps the search, the active filters and the sort, and starts back at the first
+page.
+
 ## Soft Delete Support
 
 IronAdmin auto-detects models with a `deleted_at` column and provides:

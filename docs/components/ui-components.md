@@ -260,9 +260,14 @@ IronAdmin::Ui::ScopesComponent.new(
   scopes: scopes,           # Required: array of scope hashes
   current_scope: "all",     # Required: currently active scope
   base_path: "/admin/users", # Required: base URL
-  params: {}                # Optional: additional URL params
+  params: {}                # Optional: query params the tabs keep
 )
 ```
+
+Each tab links to `base_path` with `params` and its own `scope`. The `scope` and `page` in
+`params` are dropped, so a tab starts back at the first page. Pass `iron_admin_index_state`
+(available in IronAdmin's views and components through `helpers`) to keep the search,
+filters and sort, as the built-in index page does.
 
 **Example:**
 
@@ -278,7 +283,8 @@ scopes = [
 = render IronAdmin::Ui::ScopesComponent.new(
   scopes: scopes,
   current_scope: params[:scope] || "all",
-  base_path: request.path
+  base_path: request.path,
+  params: iron_admin_index_state
 )
 ```
 
