@@ -50,5 +50,26 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
         expect(response.body).to be_present
       end
     end
+
+    context "with metrics" do
+      subject(:grid_classes) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("#metric_total_users").parent[:class].split
+      end
+
+      before do
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) do
+          metric(:total_users, icon: "users", live: true) { 42 }
+        end
+      end
+
+      it "keeps two columns at the lg breakpoint, where the sidebar leaves too little room for four" do
+        expect(grid_classes).not_to include("lg:grid-cols-4")
+      end
+
+      it "switches to four columns at the xl breakpoint" do
+        expect(grid_classes).to include("xl:grid-cols-4")
+      end
+    end
   end
 end

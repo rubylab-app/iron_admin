@@ -42,4 +42,18 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
 
     expect(result.css("[id]").map(&:name)).to be_empty
   end
+
+  context "with an icon next to the label" do
+    subject(:label_column) do
+      render_inline(described_class.new(name: :pending_comments, value: 3, icon: "chat-bubble-left")).at_css("p").parent
+    end
+
+    it "lets the label wrap instead of pushing against the icon" do
+      expect(label_column[:class].to_s.split).to include("min-w-0")
+    end
+
+    it "keeps a gap between the label and the icon" do
+      expect(label_column.parent[:class].to_s.split).to include(a_string_matching(/\Agap-\d+\z/))
+    end
+  end
 end
