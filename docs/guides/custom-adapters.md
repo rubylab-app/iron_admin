@@ -325,13 +325,15 @@ end
 
 #### `find_each(scope, &block)` → `void`
 
-Iterates all records in memory-efficient batches. Used by CSV export. If your data source doesn't support batching, fall back to `.each`:
+Iterates all records in memory-efficient batches. Used by CSV export, which passes the index scope already sorted (`sort`/`direction`, or `config.default_sort`). Yield the records **in the scope's order**, or CSV rows will not follow the sort that the index page and the JSON export use. If your data source doesn't support batching, fall back to `.each`:
 
 ```ruby
 def find_each(scope, &block)
   scope.each(&block)
 end
 ```
+
+ActiveRecord's own `find_each` ignores `ORDER BY` and walks the primary key, so the built-in ActiveRecord adapter only uses it for unordered scopes. An ordered scope is paged with `LIMIT`/`OFFSET` and the primary key added as a tiebreak, which keeps the pages stable.
 
 ### Adapter-Agnostic Interface (5 methods)
 
@@ -588,7 +590,7 @@ Use this checklist when building a new adapter:
 ### Transactions & Scope
 - [ ] `transaction(&block)` — atomic or yield
 - [ ] `unscope_column(scope, column)` — removes condition
-- [ ] `find_each(scope, &block)` — batched or `.each`
+- [ ] `find_each(scope, &block)` — batched or `.each`, in the scope's order
 
 ### Adapter-Agnostic
 - [ ] `record_changes(record)` — returns changes hash

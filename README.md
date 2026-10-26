@@ -116,7 +116,7 @@ module IronAdmin
 
       searchable :name, :email
 
-      filter :role, type: :select, choices: User.roles.keys
+      filter :role, type: :select, options: User.roles.keys
       filter :created_at, type: :date_range
 
       scope :admins, -> { where(role: :admin) }

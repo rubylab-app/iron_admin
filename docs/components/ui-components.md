@@ -95,15 +95,24 @@ IronAdmin::Ui::CardComponent.new(
 
 ## AlertComponent
 
-Flash messages and notifications.
+Alert boxes and notifications. `IronAdmin::Layout::FlashComponent` renders each flash
+message with it (see [Flash Messages](../guides/components.md#flash-messages)).
 
 ```ruby
 IronAdmin::Ui::AlertComponent.new(
-  message: "Success!",   # Required: alert message
-  type: :success,        # Optional: :success, :error, :warning, :info
-  dismissible: true      # Optional: show close button
+  message: "Success!",   # Optional: alert message (or pass a block as content)
+  type: :success,        # Optional: :success, :error, :warning, :info (default: :info)
+  dismissible: true      # Optional: show close button (default: true)
 )
 ```
+
+- `:error` and `:warning` alerts have `role="alert"`, so screen readers announce them right
+  away. `:success` and `:info` alerts have `role="status"` and are announced politely.
+- The border radius comes from `theme.border_radius`.
+- With `dismissible: true`, the alert uses the `cp-alert` Stimulus controller
+  (`data-controller="cp-alert"`), and its close button calls `cp-alert#dismiss`, which
+  removes the alert. The button's accessible label is `iron_admin.alerts.dismiss`
+  ("Dismiss").
 
 **Example:**
 

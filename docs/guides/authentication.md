@@ -144,6 +144,9 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
+The show page only shows the buttons of member actions the current user may run. An action
+the policy denies is hidden, and running it anyway returns `403`.
+
 ### CRUD Restrictions
 
 For simple cases:
@@ -155,6 +158,37 @@ end
 ```
 
 `deny_actions` uses the same aliases as policies: `:delete` blocks destroy, `:new` blocks create (and imports), `:edit` blocks update, and `:index` or `:show` blocks every read of the resource, which also hides it from the sidebar and global search.
+
+### Forbidden and Not Found Pages
+
+When a browser request ends in `403 Forbidden` (a policy or `deny_actions` denial, or a
+failing action `condition`) or `404 Not Found` (a missing or soft-deleted record, an unknown
+resource, action or tool, or an import or export format the resource does not enable),
+IronAdmin renders a page inside the admin layout. It shows a title, a message, and a link
+back to the resource index when the user may read the resource, or to the dashboard
+otherwise. Turbo form submissions also accept HTML and get the page. JSON and CSV requests,
+and requests that accept only Turbo Streams, get the bare status code with an empty body.
+
+To change the page, add your own template to the host app:
+
+```haml
+-# app/views/iron_admin/shared/error.html.haml (or error.html.erb)
+%h1= error == :forbidden ? "Access denied" : "Not found"
+= link_to "Dashboard", root_path
+```
+
+The template receives the local `error` (`:forbidden` or `:not_found`), and `@resource_class`
+is set when the URL named a registered resource. The texts of the built-in page come from
+these translation keys:
+
+| Key | Default |
+|-----|---------|
+| `iron_admin.errors.forbidden.title` | "Not authorized" |
+| `iron_admin.errors.forbidden.message` | "You don't have permission to view this page or perform this action." |
+| `iron_admin.errors.not_found.title` | "Page not found" |
+| `iron_admin.errors.not_found.message` | "This page doesn't exist, or the record was removed." |
+| `iron_admin.errors.back_to_resource` | "Back to %{resource}" |
+| `iron_admin.errors.back_to_dashboard` | "Back to dashboard" |
 
 ## Field-Level Authorization
 
@@ -172,8 +206,10 @@ Field visibility is enforced across:
 - Index table columns
 - Show page fields
 - Form fields
-- CSV/JSON exports
+- CSV/JSON exports (`:password` values are never exported, for any user; see [Export](export.md))
 - Search queries
+- Index filters (a field declared `visible: false`, `type: :password` or `type: :hidden` gets no inferred filter)
+- Dashboard recent tables
 
 ## Audit Logging
 
@@ -199,11 +235,12 @@ config.audit_storage = :database
 Then run the migration:
 
 ```bash
-rails generate iron_admin:audit_migration
+rails generate iron_admin:install_audit
 rails db:migrate
 ```
 
-View audit logs at `/admin/audit`.
+View audit logs at `/admin/audit`. The page filters entries by resource, action and date. The
+Action filter lists the actions logged so far, custom resource actions included.
 
 The built-in audit log:
 - Stores the last 1000 entries in memory (or unlimited in database)

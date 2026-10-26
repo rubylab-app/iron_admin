@@ -9,6 +9,9 @@ Mount: `mount IronAdmin::Engine => "/admin"`
 | GET | `/admin` | `dashboard#index` | Dashboard |
 | GET | `/admin/search?q=...` | `search#index` | Global search |
 | GET | `/admin/:resource/export` | `exports#show` | Export |
+| GET | `/admin/:resource/import` | `imports#new` | Import upload form |
+| POST | `/admin/:resource/import/preview` | `imports#preview` | Import preview |
+| POST | `/admin/:resource/import` | `imports#create` | Import the previewed file |
 | GET | `/admin/:resource` | `resources#index` | List |
 | GET | `/admin/:resource/new` | `resources#new` | New form |
 | GET | `/admin/:resource/:id` | `resources#show` | Show |
@@ -38,4 +41,10 @@ Mount: `mount IronAdmin::Engine => "/admin"`
 | `sort` | `?sort=name` |
 | `direction` | `?direction=asc` |
 | `page` | `?page=2` |
-| `filter[column]` | `?filter[role]=admin` |
+| `filters[column]` | `?filters[role]=admin` (select and boolean filters) |
+| `filters[column][op]`, `filters[column][value]`, `filters[column][value_2]` | `?filters[name][op]=contains&filters[name][value]=ann` (string and number filters) |
+| `filters[column_from]`, `filters[column_to]` | `?filters[created_at_from]=2026-01-01` (date range filters) |
+
+Sorting keeps the scope, search query and filters, and starts again at page 1. Searching and
+filtering keep the sort. HTML requests that end in `403` or `404` render an error page inside
+the admin layout; other formats get the bare status.

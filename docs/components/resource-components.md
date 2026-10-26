@@ -30,6 +30,12 @@ IronAdmin::Resources::DataTableComponent.new(
 )
 ```
 
+The component appends `sort=<column>&direction=<asc|desc>` to `base_url`. Its sort links have
+`data-turbo-frame="_top"`, so a click loads the whole page and the search and filter forms
+outside the `records` Turbo frame pick up the new sort. When IronAdmin renders it in the
+`table` slot, the `base_url` it passes already keeps the scope, the search query and the
+active filters (see [Components](../guides/components.md#slots)).
+
 ---
 
 ## ShowFieldComponent
@@ -75,17 +81,26 @@ IronAdmin::Resources::ActionsComponent.new(
   name: :archive,
   label: "Archive",
   icon: "archive-box",
-  confirm: true
+  confirm: true,
+  confirm_message: "Archive this user?"   # Optional: text of the confirmation dialog
 }
 ```
+
+With `confirm: true`, the button asks for confirmation with the action's `confirm_message`,
+or with `iron_admin.resources.action.confirm` ("Are you sure?") when it has none.
+
+The component renders every action it is given. On the show page, IronAdmin sets
+`@member_actions` to the actions it would run for that record: allowed by the resource
+policy, able to load the record (a soft-deleted record only offers `restore`), and with a
+passing `condition`. Pass that list instead of `defined_actions` in a custom show view.
 
 **Example:**
 
 ```haml
 = render IronAdmin::Resources::ActionsComponent.new(
-  actions: UserResource.defined_actions,
-  record: @user,
-  resource_class: UserResource
+  actions: @member_actions,
+  record: @record,
+  resource_class: @resource_class
 )
 ```
 
@@ -142,13 +157,15 @@ IronAdmin::Resources::BulkActionsComponent.new(
 
 ## RelatedListComponent
 
-Display has_many associations.
+Display has_many associations. Show pages render one per `has_many` association of the
+resource.
 
 ```ruby
 IronAdmin::Resources::RelatedListComponent.new(
   association: association,      # Required: association hash
   records: @user.posts,          # Required: related records
-  limit: 20                      # Optional: max records to show
+  limit: 20,                     # Optional: max records to show
+  parent: @user                  # Optional: record that owns the association
 )
 ```
 
@@ -158,16 +175,35 @@ IronAdmin::Resources::RelatedListComponent.new(
 {
   name: :posts,
   resource: PostResource,
-  display: :title
+  display: :title,
+  reflection: User.reflect_on_association(:posts)  # Optional: used with parent: for "View all"
 }
 ```
+
+`Resource.has_many_associations` returns hashes in this shape, `reflection:` included.
+
+The list renders nothing when there are no records. The card has no border, rows are divided
+with `theme.table_border`, the table scrolls horizontally inside an `overflow-x-auto`
+container, and the "View all" label comes from `iron_admin.resources.show.view_all`.
+
+**"View all" link:** by default it opens the associated resource's index. With `parent:` and
+a `reflection:`, it opens the index filtered by the parent's foreign key, but only when the
+associated resource has a filter on that column (for example `filter :user_id, type: :select`
+in `PostResource`; integer `_id` columns get no inferred filter). A `:select` filter (or a
+custom filter type) gets the parent's id (`filters[user_id]=42`), and a `:string` or
+`:number` filter gets `op: equals` with the id. Through associations, polymorphic (`as:`)
+associations, `:boolean` and `:date_range` filters, and resources without such a filter keep
+the plain index link.
 
 **Example:**
 
 ```haml
+-# In a show view: @resource_class is OrderResource and @record the order
+- association = @resource_class.has_many_associations.find { |assoc| assoc[:name] == :line_items }
 = render IronAdmin::Resources::RelatedListComponent.new(
-  association: { name: :orders, resource: OrderResource, display: :number },
-  records: @user.orders,
-  limit: 10
+  association: association,
+  records: @record.line_items,
+  limit: 10,
+  parent: @record
 )
 ```

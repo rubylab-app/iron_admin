@@ -54,10 +54,14 @@ end
 ```ruby
 class UserResource < IronAdmin::Resource
   index_fields :id, :name, :email, :role, :created_at
-  form_fields :name, :email, :role
+  form_fields :role, :name, :email
   export_fields :id, :name, :email, :role
 end
 ```
+
+Each list sets both the fields and their order. Here the form shows Role first, then Name and
+Email, even though the table defines `name`, `email` and `role` in that order. Names that do
+not resolve to a field (for example a has_many such as `:comments`) are ignored.
 
 ## Search
 
@@ -93,17 +97,27 @@ Search respects field visibility - users cannot search fields they don't have pe
 
 ```ruby
 class UserResource < IronAdmin::Resource
-  filter :role, type: :select, choices: User.roles.keys
+  filter :role, type: :select, options: User.roles.keys
   filter :created_at, type: :date_range
   filter :email_verified, type: :boolean
 end
 ```
 
-Remove auto-inferred filters:
+A declared `filter` replaces the auto-inferred filter of the same name, so a column never gets
+two filters. The index shows the inferred filters first, then the declared ones in the order
+they are declared. A `:select` filter without `options` offers the enum values when the column
+is an enum, and the column's distinct values otherwise, so `filter :role, type: :select` on an
+enum is enough.
+
+Remove a filter, whether declared or auto-inferred:
 
 ```ruby
 remove_filter :some_column
 ```
+
+Fields declared `type: :password`, `type: :hidden` or `visible: false` never get an inferred
+filter, so their values cannot be probed with filter queries. To filter on one of them anyway,
+declare the filter explicitly.
 
 ### Filter Types
 
@@ -126,7 +140,7 @@ class ProductResource < IronAdmin::Resource
 end
 ```
 
-**Auto-inference:** String and text columns automatically infer as `:string` filters. Integer, float, and decimal columns automatically infer as `:number` filters. You only need explicit declarations to override defaults or add filters for columns that aren't auto-detected.
+**Auto-inference:** String and text columns automatically infer as `:string` filters. Integer, float, and decimal columns automatically infer as `:number` filters, except integer columns ending in `_id`. You only need explicit declarations to override defaults or add filters for columns that aren't auto-detected.
 
 ### Auto-Generated Enum Filters
 
@@ -144,6 +158,8 @@ end
 ```
 
 The filter will display with humanized labels (Pending, Processing, Shipped, Delivered).
+Declaring `filter :status, type: :select` as well is harmless: it replaces the inferred filter
+and takes the enum values when it has no `options`.
 
 ## Scopes
 
@@ -189,8 +205,20 @@ class UserResource < IronAdmin::Resource
   action :send_reset, icon: "envelope" do |record|
     AuthMailer.password_reset(record).deliver_later
   end
+
+  action :purge_sessions, confirm: true, confirm_message: "Sign this user out everywhere?" do |record|
+    record.sessions.delete_all
+  end
 end
 ```
+
+With `confirm: true`, the button asks for confirmation first. The dialog shows the action's
+`confirm_message`, or `iron_admin.resources.action.confirm` ("Are you sure?") when it has none.
+
+The show page lists the actions the current user can run on that record: the ones the policy
+allows (see [Custom Action Authorization](authentication.md#custom-action-authorization)),
+whose `condition` passes, and that can load the record. On a soft-deleted record hidden by a
+default scope, only `restore` is offered.
 
 Actions are wrapped in database transactions. Return `false` to rollback:
 
@@ -229,7 +257,8 @@ ActionField options:
 | `default` | Object | Default value for the input |
 | `choices` | Array | Options for `:select` type |
 
-Action forms work with both record actions and bulk actions.
+Action forms work with both record actions and bulk actions. After Execute, the browser goes to
+the record (or, for a bulk action, back to the index) and shows the result as a flash message.
 
 ### Bulk Actions
 
@@ -245,7 +274,7 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
-Bulk actions validate that all selected records are accessible to the current user (respecting tenant scope).
+Bulk actions validate that all selected records are accessible to the current user (respecting tenant scope). After a bulk action, the index comes back with the scope, search, filters, sort and page it was run from.
 
 ## CRUD Restrictions
 
@@ -270,6 +299,19 @@ class UserResource < IronAdmin::Resource
   has_one :profile
 end
 ```
+
+The show page lists the first 20 records of each `has_many` association, with a "View all"
+link to the associated resource's index. To make that link open the index filtered to the
+parent's records, declare a filter on the foreign key in the associated resource:
+
+```ruby
+class LicenseResource < IronAdmin::Resource
+  filter :user_id, type: :select
+end
+```
+
+Without such a filter, and for `through:` and polymorphic (`as:`) associations, "View all"
+opens the unfiltered index.
 
 ### Polymorphic Associations
 
@@ -374,6 +416,24 @@ Exports respect:
 - Tenant scoping (if configured)
 - Field visibility (users only see fields they have permission to view)
 - Current filters and search query
+- The index sort order (`sort`/`direction`, or `config.default_sort`), for CSV and JSON alike
+
+Columns follow the order of `export_fields`. Without `export_fields`, every visible field except
+`:password` fields is exported. A `:password` field listed in `export_fields` is exported as
+`[FILTERED]`. `exports :csv` limits the formats, and a bare `exports` turns exports off; a
+format that is not enabled returns `404`. See [Export](export.md).
+
+## Imports
+
+```ruby
+class UserResource < IronAdmin::Resource
+  imports :csv, :json
+  import_upsert_key :email
+end
+```
+
+Imports are off by default. See [Imports](imports.md) for the upload, preview and import flow
+and the other import options.
 
 ## Policies
 

@@ -166,16 +166,28 @@ Table showing recent records from a resource.
 ```ruby
 IronAdmin::Dashboards::RecentTableComponent.new(
   resource_name: :user,       # Required: resource name (singular)
-  records: @recent_users      # Required: records to display
+  records: @recent_users,     # Required: records to display
+  current_user: current_user  # Optional: user whose field visibility applies
 )
 ```
+
+- **Order:** a relation without an `order` is listed newest first (`created_at` descending,
+  then primary key descending; primary key alone when there is no `created_at`). A relation
+  with its own `order(...)`, or an Array, keeps its order.
+- **Columns:** the resource's `index_fields` when it declares them. Otherwise up to four
+  columns: the id, the label column (`name`, `title`, `email`, `label` or `slug`), other short
+  columns, and `created_at`. Long or sensitive types (textarea, rich_text, markdown, code,
+  json, key_value, boolean_group, file, files, password, hidden) are skipped.
+- **Visibility:** fields with `visible:` are checked for `current_user:`. Without it, a
+  `visible:` proc receives `nil`.
 
 **Example:**
 
 ```haml
 = render IronAdmin::Dashboards::RecentTableComponent.new(
   resource_name: :order,
-  records: Order.order(created_at: :desc).limit(5)
+  records: Order.limit(5),
+  current_user: iron_admin_current_user
 )
 ```
 

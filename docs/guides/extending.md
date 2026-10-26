@@ -132,6 +132,19 @@ app/views/iron_admin/
 
 Rails uses your app's views over the engine's views automatically.
 
+An override replaces the engine's markup, so copy it from the IronAdmin version you run and
+keep what the controllers rely on:
+
+- `iron_admin/shared/error.html.haml` is the page for HTML `403` and `404` responses. It
+  receives the local `error` (`:forbidden` or `:not_found`); `@resource_class` is set when
+  the URL named a registered resource.
+- `iron_admin/resources/show.html.haml`: loop over `@member_actions` (the member actions the
+  controller would run for this record) rather than `@resource_class.defined_actions`, and
+  show the Edit button only when `@record_reachable` is true.
+- `iron_admin/imports/new.html.haml`: the upload form needs `data: { turbo: false }`.
+- `iron_admin/imports/preview.html.haml`: keep the import form that posts `import_format`
+  and `import_data` back to `resource_import_path`. See the [imports guide](imports.md).
+
 ## Extending the Resource Class
 
 ```ruby
@@ -292,10 +305,15 @@ end
 **ToolContext** is injected into 1-arg methods and provides:
 - `ctx.params` — raw request params
 - `ctx.current_user` — the current admin user
-- `ctx.flash` — flash messages
+- `ctx.flash` — flash messages, shown at the top of the page after the redirect
 - `ctx.action_params(:key1, :key2)` — safe param extraction (strong params)
 
-**Authorization:** The `condition:` proc receives the current user. If it returns false, the action returns 403 and is hidden from the UI.
+**Flash messages:** the admin shell shows `ctx.flash[:notice]` and `ctx.flash[:success]` as
+success alerts, `ctx.flash[:alert]` and `ctx.flash[:error]` as error alerts, and
+`ctx.flash[:warning]` and `ctx.flash[:info]` as warning and info alerts. Other keys are not
+shown. See [Flash Messages](components.md#flash-messages).
+
+**Authorization:** The `condition:` proc receives the current user. If it returns false, the action returns 403 (an error page for browser requests) and is hidden from the UI.
 
 **Form fields:** Actions with `form_fields:` render a form page before execution. Supported types: `:text`, `:textarea`, `:number`, `:boolean`, `:date`, `:datetime`, `:select`.
 
@@ -364,6 +382,30 @@ en:
       "true": "Yes"
       "false": "No"
 ```
+
+Some keys are pluralized hashes with `one` and `other` forms, such as
+`imports.preview.summary` ("%{count} rows detected.") and `imports.preview.import_button`
+("Import %{count} rows"). Give every plural form your locale needs.
+
+### Keys Added in 0.7.0
+
+If you ship your own IronAdmin translations, add these keys, all under `iron_admin.`:
+
+| Key | Used for |
+|-----|----------|
+| `errors.forbidden.title`, `errors.forbidden.message` | The 403 page ("Not authorized") |
+| `errors.not_found.title`, `errors.not_found.message` | The 404 page ("Page not found") |
+| `errors.back_to_resource` | Error page link to the index ("Back to %{resource}") |
+| `errors.back_to_dashboard` | Error page link to the dashboard ("Back to dashboard") |
+| `alerts.dismiss` | Accessible label of the alert close button ("Dismiss") |
+| `resources.action.confirm` | Confirmation of actions without `confirm_message` ("Are you sure?") |
+| `imports.preview.import_button` | Import button on the preview page (`one`/`other`) |
+| `fields.boolean_true`, `fields.boolean_false` | Screen reader text of boolean icons ("Yes", "No") |
+| `fields.color_picker_label` | Accessible label of the color picker ("%{field} picker") |
+| `fields.color_invalid` | Hint for a color that is not a hex color |
+
+`imports.preview.summary` became a plural hash in 0.7.0. A plain string still works but is
+not pluralized.
 
 ### Adding Translations
 

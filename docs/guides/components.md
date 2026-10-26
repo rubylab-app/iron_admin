@@ -13,6 +13,7 @@ For the complete component reference, see the [Components Library](../components
 | `IronAdmin::Layout::ShellComponent` | Main layout wrapper |
 | `IronAdmin::Layout::NavbarComponent` | Top navigation bar |
 | `IronAdmin::Layout::SidebarComponent` | Left sidebar navigation |
+| `IronAdmin::Layout::FlashComponent` | The request's flash messages, rendered by the shell above the page content |
 
 ### UI Components
 
@@ -21,7 +22,7 @@ For the complete component reference, see the [Components Library](../components
 | `IronAdmin::Ui::BadgeComponent` | Status badges |
 | `IronAdmin::Ui::ButtonComponent` | Styled buttons |
 | `IronAdmin::Ui::CardComponent` | Card containers |
-| `IronAdmin::Ui::AlertComponent` | Flash messages |
+| `IronAdmin::Ui::AlertComponent` | Alert boxes (success, error, warning, info), including each flash message |
 | `IronAdmin::Ui::ModalComponent` | Dialog overlays |
 | `IronAdmin::Ui::DropdownComponent` | Dropdown menus |
 | `IronAdmin::Ui::TooltipComponent` | Hover tooltips |
@@ -72,6 +73,34 @@ For the complete component reference, see the [Components Library](../components
 | `IronAdmin::Dashboards::MetricCardComponent` | Single metric card |
 | `IronAdmin::Dashboards::RecentTableComponent` | Recent records table |
 
+## Flash Messages
+
+The built-in shell renders `IronAdmin::Layout::FlashComponent` above the page content. It
+shows the request's flash as `IronAdmin::Ui::AlertComponent`s, in flash order:
+
+| Flash key | Alert type |
+|-----------|------------|
+| `notice`, `success` | `:success` |
+| `alert`, `error` | `:error` |
+| `warning` | `:warning` |
+| `info` | `:info` |
+
+Other keys, and values that are not strings (such as Devise's `timedout`), are not shown.
+This covers the messages IronAdmin sets after create, update, destroy, actions, bulk actions
+and imports, and the ones tools set with `ctx.flash`.
+
+A custom shell (`config.components.shell`) replaces the built-in one, so it has to render the
+component itself, before the page body:
+
+```haml
+-# app/components/admin_shell_component.html.haml
+= render IronAdmin::Layout::FlashComponent.new
+= content
+```
+
+`FlashComponent.new(flash: { notice: "Saved" })` renders the messages you pass instead of the
+request's flash.
+
 ## Overriding Components
 
 You can replace parts of the admin UI with your own ViewComponents. Each override fills a
@@ -112,23 +141,33 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
 
 **Notes per slot:**
 
-- `shell`: a custom shell replaces the built-in shell completely, including the sidebar and
-  navbar it renders. `navbar` and `sidebar` overrides only apply inside the built-in shell.
+- `shell`: a custom shell replaces the built-in shell completely, including the sidebar,
+  navbar and flash messages it renders. `navbar` and `sidebar` overrides only apply inside
+  the built-in shell. To keep the flash messages, render
+  `IronAdmin::Layout::FlashComponent` before the page body (see
+  [Flash messages](#flash-messages)).
 - `navbar` / `sidebar`: the built-in shell keeps its mobile drawer (the `cp-sidebar`
   Stimulus controller). To keep the drawer working, give your sidebar
   `data-cp-sidebar-target="panel"` and your navbar a button with
   `data-action="cp-sidebar#toggle"`, as the built-in components do.
 - `table`: IronAdmin still renders the scope tabs, search, filters, bulk-action bar and
-  pagination around it, inside the `records` Turbo frame. If the resource has bulk actions,
+  pagination around it. Only the bulk-action bar, the table and the pagination are inside
+  the `records` Turbo frame; the scope tabs, search and filters sit outside it. The frame
+  has `data-turbo-action="advance"`, so a link or form inside it that does not target
+  `_top` updates the address bar and the browser history. If the resource has bulk actions,
   render a checkbox per row named `ids[]` with
   `data-cp-bulk-select-target="checkbox"` and `data-action="change->cp-bulk-select#toggle"`.
-  `base_url` already includes the scope and search query, so append `sort=` and
-  `direction=` to it. The bundled `IronAdmin::Resources::DataTableComponent` fits this slot
-  as is.
+  `base_url` already includes the scope, the search query and the active filters, but never
+  `sort`, `direction` or `page`, so append `sort=` and `direction=` to it. Give sort links
+  `data-turbo-frame="_top"`, as the built-in table and `DataTableComponent` do: a
+  whole-page visit lets the search and filter forms outside the frame pick up the new sort.
+  The bundled `IronAdmin::Resources::DataTableComponent` fits this slot as is.
 - `form`: submit to `url`, with the record's attributes under `record`
   (`form_with model: record, url: url, scope: :record`).
-- `search`: submit `q` to `form_url` with a GET request, and add `hidden_params` as hidden
-  fields so the current scope and filters are kept.
+- `search`: submit `q` to `form_url` with a GET request, and add every `hidden_params`
+  entry as a hidden field, so the current scope, filters and sort are kept. `hidden_params`
+  carries `scope`, the active filters and, when they are set, `sort` and `direction`. Its
+  keys are flat field names such as `filters[title][op]`.
 
 ### Global overrides
 

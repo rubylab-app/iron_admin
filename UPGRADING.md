@@ -118,9 +118,9 @@ Fields declared with `readonly: true`, or with a `readonly:` proc that returns t
 
 For models whose default scope hides soft-deleted rows (for example `default_scope { where(deleted_at: nil) }`, as paranoia sets up), a soft-deleted record now returns `404` from edit, update, and every custom member action and its action form, except `restore`. Show, destroy, and `restore` still find it. IronAdmin does not filter `deleted_at` itself, so models with a `deleted_at` column but no such default scope are unaffected.
 
-For those models, the show page no longer renders an Edit button for a soft-deleted record.
+For those models, the show page of a soft-deleted record only offers Restore and Delete. It no longer renders the Edit button or the buttons of other custom member actions, which could only answer `404`.
 
-**Action required:** Restore a record before editing it. If a custom action has to work on soft-deleted rows, run it after `restore`.
+**Action required:** Restore a record before editing it. If a custom action has to work on soft-deleted rows, run it after `restore`. Update system specs that expect the Edit button or a custom action button on the show page of a soft-deleted record.
 
 ### 9. Malformed JSON fields re-render the form
 
@@ -153,7 +153,7 @@ end
 
 ### 11. Unexpected errors show a generic message
 
-When a custom action, bulk action, or import raises an unexpected exception, admins now see "Something went wrong. Please try again." (`iron_admin.errors.unexpected`) instead of the exception message. The exception is logged as `[IronAdmin] <class>: <message>`. Import validation errors (`ArgumentError`) still show their message.
+When a custom action, bulk action, or import raises an unexpected exception, admins now see "Something went wrong. Please try again." (`iron_admin.errors.unexpected`) instead of the exception message, as an error alert above the page (flash messages are now rendered, see section 18). The exception is logged as `[IronAdmin] <class>: <message>`. Import validation errors (`ArgumentError`) still show their message.
 
 **Action required:** If you customized the `iron_admin.resources.action.failure` or `iron_admin.resources.bulk_action.failure` translations, move the text to `iron_admin.errors.unexpected`; the old keys are no longer used. Specs that assert on the exception text in the flash need updating. Action blocks that raise on purpose to show a message to admins will now show the generic text.
 
@@ -170,6 +170,11 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 - `:rich_text` values are passed through Rails' `sanitize`. Markup outside Rails' default allowlist (for example `<iframe>`, `<script>`, or `style` attributes) is stripped.
 - On show pages, a polymorphic `belongs_to` whose stored type is not in the field's allowed types (declared with `types:`, or inferred from `has_many`/`has_one ... as:`) is shown as plain `Type#id` text instead of a link.
 - HTTP adapter: a record id that is empty or contains `/`, `\`, or `..` raises `IronAdmin::RecordNotFound` (`404`). Other ids are URL-escaped with `CGI.escape` before they go into the request path.
+- Global search results are labelled like the rest of the UI (`display_record_label`): the record's `name`, `title`, `email`, `label` or `slug`, or `<Model> #<id>` when it has none. Before, a record without `name` or `email` showed `#<id>`.
+- Boolean values on index and show pages are wrapped in `<span class="inline-flex">` with visually hidden "Yes" or "No" text (`<span class="sr-only">`) next to the icon. Specs that compare the exact icon markup, or the full text of a row, now see the wrapper and the text.
+- The audit log's Action filter lists the actions that were logged, custom actions included, and action names are shown with `humanize` ("Send now") instead of `capitalize` ("Send_now").
+
+**Action required:** Update system specs that expect `#<id>` in global search results, the old boolean markup, or the fixed create/update/destroy options of the audit Action filter.
 
 ### 14. Layout markup changed (responsive UI)
 
@@ -178,6 +183,7 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 - Wide tables are wrapped in `overflow-x-auto`, and show-page detail rows stack vertically below `sm`.
 - Overlays use Tailwind v4 opacity modifiers (`bg-gray-900/50`, `bg-gray-500/75`) instead of `bg-opacity-*`, which Tailwind v4 removed. On Tailwind v4 the modal overlay rendered solid gray; it is translucent now.
 - With haml 6 or later, index rows and dashboard metric cards no longer render an empty `id=""` when live updates are off.
+- The dashboard metrics grid keeps two columns until the `xl` breakpoint (`md:grid-cols-2 xl:grid-cols-4`, was `lg:grid-cols-4`), so metric labels do not touch their icons.
 
 **Action required:** Update host CSS or system specs that select `.p-8` or assume the sidebar is always visible. Run browser system specs with a window at least 1024px wide (Rails' default `screen_size: [1400, 1400]` is fine), or click "Open menu" before using sidebar links.
 
@@ -202,9 +208,158 @@ The changes IronAdmin records for a create, update or destroy replace the values
 
 **Action required:** If an `on_action` callback needs a filtered value, read it from the record instead of `event.changes`. To keep a column visible in the audit log, remove it from `filter_parameters`. Review existing `iron_admin_audit_entries` rows for secrets stored by earlier versions.
 
+### 18. Flash messages are rendered
+
+In 0.6.0 the admin layout never rendered the flash, so every notice and alert set by create, update, destroy, member and bulk actions, imports and tools (`ctx.flash`) was lost after the redirect. The built-in shell now renders `IronAdmin::Layout::FlashComponent` above the page content. It shows `notice` and `success` as success alerts, `alert` and `error` as error alerts, and `warning` and `info` as their own types. Other flash keys and non-string values (such as Devise's `timedout`) are ignored.
+
+Each message is an `IronAdmin::Ui::AlertComponent`. That component now uses `role="status"` for `:success` and `:info` and `role="alert"` for `:error` and `:warning`, takes its border radius from `theme.border_radius` instead of `rounded-lg`, and its dismiss button works through the new `cp-alert` Stimulus controller (it pointed at a missing `alert` controller).
+
+**Action required:**
+
+- If you set `config.components.shell`, render the flash in your shell, before the page content. The component also accepts `flash:` to pass messages explicitly.
+
+  ```haml
+  = render IronAdmin::Layout::FlashComponent.new
+  = content
+  ```
+
+- If your app already rendered the flash on admin pages (for example in a custom navbar or sidebar), remove that markup, or each message shows twice.
+- System specs now find the flash text in the page, and an `AlertComponent` with type `:success` or `:info` no longer has `role="alert"`. Update specs that count alerts or assert on `role`.
+
+### 19. 403 and 404 responses render a page
+
+HTML requests that end in `403` or `404` (a policy denial, a missing or soft-deleted record, an unknown resource, action or tool, or an import or export format that is not enabled) now render the `iron_admin/shared/error` template inside the admin layout, with a message and a link back to the resource index (when the user may read it) or to the dashboard. In 0.6.0 the body was empty, and the browser showed its own error page. Turbo form submissions also accept HTML, so they get the page too. The status codes did not change, and JSON and CSV requests, and requests that accept only Turbo Streams, still get an empty body.
+
+**Action required:**
+
+- Update request specs that expect an empty body from an HTML request that returns `403` or `404`.
+- To customize the page, add your own `app/views/iron_admin/shared/error.html.haml` (or `.html.erb`). It receives the local `error` (`:forbidden` or `:not_found`); `@resource_class` is set when the URL named a registered resource.
+- If you ship your own translations, add the error page keys (section 29).
+
+### 20. Secret fields: no inferred filters, and passwords left out of exports
+
+Filters are no longer inferred for fields declared `type: :password`, `type: :hidden` or `visible: false`. In 0.6.0 a string password column got a `:string` filter, so any user who could read the resource could recover the value one character at a time with `starts_with`. A field whose `visible:` is a proc keeps its inferred filter, which is only offered to users who can see the field.
+
+CSV and JSON exports now leave `:password` fields out. A `:password` field listed in `export_fields` is exported as `[FILTERED]`, never as its value.
+
+**Action required:**
+
+- To filter on one of those fields anyway, declare the filter with `filter`. A declared filter is still honoured.
+- If a system that reads your exports expects a password or token column, export that value from your own code.
+
+### 21. Exports honour the `exports` DSL
+
+In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource served both CSV and JSON. Now a format the resource does not enable returns `404`, and a bare `exports` turns exports off.
+
+**Action required:** If a resource declares `exports` and something downloads a format it does not list, add that format (for example `exports :csv, :json`).
+
+### 22. Export columns and rows
+
+- Columns follow the order of `export_fields`. In 0.6.0 they followed the table's column order.
+- CSV rows follow the index sort (`sort`/`direction`, or `config.default_sort`), as JSON already did. ActiveRecord's `find_each` dropped the `ORDER BY`, so CSV rows came out in primary-key order. The ActiveRecord adapter now pages an ordered scope with `LIMIT`/`OFFSET` plus a primary-key tiebreak.
+- `:file` and `:files` fields export filenames (for `:files`, a JSON array or a comma-separated CSV cell), and are blank when nothing is attached. In 0.6.0 they exported an object inspect string.
+
+**Action required:** Update consumers that read export columns by position. A custom adapter's `find_each(scope)` must keep the scope's order, or CSV exports from that adapter ignore the sort (see `find_each` in the [custom adapters guide](docs/guides/custom-adapters.md)).
+
+### 23. Declared and inferred filters
+
+- A filter declared with `filter` replaces the auto-inferred filter of the same name. In 0.6.0, `filter :status, type: :select` on an enum column rendered two Status selects, and the first one, the inferred filter, did nothing. The declared filter now renders at its declared position, after the inferred filters, instead of the inferred one at the front of the list. A declared `:select` without `options` offers the enum values.
+- `remove_filter :name` also removes an auto-inferred filter. In 0.6.0 it only removed declared filters.
+
+**Action required:** Update system specs that pick the first of two filters with the same label, or that depend on the position of a declared enum filter. Check `remove_filter` calls: the inferred filter they name now disappears.
+
+### 24. Index page: URL, sort, filters and bulk actions
+
+- The `records` Turbo frame has `data-turbo-action="advance"`, so links and forms inside it that do not target `_top`, such as pagination, update the address bar and push a history entry.
+- Column-header sort links keep the active filters, go back to page 1, and load the whole page (`data-turbo-frame="_top"`).
+- The `base_url` passed to a `table` override now includes the active filters, besides the scope and search query. It never includes `sort`, `direction` or `page`.
+- The `hidden_params` passed to a `search` override now include `sort` and `direction` when they are set. The built-in search form, filter form and Clear link keep the sort too.
+- The bulk-actions form has hidden fields `scope`, `q`, `sort`, `direction`, `page` and `filters[...]`, and submits to the whole page (`data-turbo-frame="_top"`). After a bulk action, the redirect returns to that index state. Bulk action blocks still receive only the records and the form params.
+
+**Action required:**
+
+- In a custom `table` component, keep appending `sort=` and `direction=` to `base_url`, and give sort links `data-turbo-frame="_top"`, as the built-in table and `DataTableComponent` do. Otherwise the search and filter forms, which sit outside the `records` frame, keep the old sort.
+- In a custom `search` component, render every `hidden_params` entry as a hidden field. The keys are flat field names such as `filters[title][op]`.
+- Update specs that expect a sort click to drop the filters, or a bulk action to redirect to the bare index URL.
+
+### 25. Show page: member actions, related lists and confirmations
+
+- The Actions card lists only the member actions `execute_action` would run: allowed by the resource policy, able to load the record (see section 8), and with a passing `condition`. The card is not rendered when no action is left. Before, actions the policy denied were shown and answered `403`.
+- has_many related lists are rendered by `IronAdmin::Resources::RelatedListComponent`. The table sits in an `overflow-x-auto` container, the card has no border, rows are divided with `theme.table_border`, and "View all" is localized (`iron_admin.resources.show.view_all`). "View all" opens the associated index filtered by the parent's foreign key when the associated resource has a filter on that column.
+- A resource action's `confirm_message` is used in its confirmation dialog. Without one, the dialog shows `iron_admin.resources.action.confirm`; `iron_admin.resources.show.delete_confirm` is only used for Delete.
+- Action forms and bulk action forms submit with `data-turbo-frame="_top"`, so after Execute the browser lands on the redirect target and shows its flash message.
+
+**Action required:**
+
+- If you override `app/views/iron_admin/resources/show.html.haml`, loop over `@member_actions` instead of `@resource_class.defined_actions` to get the same filtering, and use `@record_reachable` for the Edit button (it is false for a soft-deleted record that edit cannot load). An override copied from 0.6.0 still renders, without the filtering. `@edit_reachable` only existed in unreleased 0.7.0 code and is gone.
+- To make "View all" open a filtered list, declare a filter on the foreign key in the associated resource, for example `filter :user_id, type: :select` in `LicenseResource`.
+- If you translated `iron_admin.resources.show.delete_confirm` to change the text of custom action dialogs, move that text to `iron_admin.resources.action.confirm` or to each action's `confirm_message`.
+- Update system specs that expect a button for an action the policy denies.
+
+### 26. Imports
+
+Imports can now be completed from the UI:
+
+- The upload form posts with `data-turbo="false"`. The preview is rendered in reply to that POST, and Turbo Drive discarded it ("Form responses must redirect to another location").
+- The preview page has an "Import N rows" button. It posts the previewed file back to `POST /admin/:resource_name/import` (multipart) in the hidden fields `import_format` and `import_data` (Base64), so the file is not uploaded again.
+- The preview validates a row that matches an existing record on `import_upsert_key` against that record, as the import does, shows plain cell values (`IronAdmin::Import::ImportPreview#cell_text`), and pluralizes the row count.
+- `import_options max_rows:` (default 5,000) is also checked at the preview step: a larger file is rejected with "Import contains N rows, exceeding the M row limit".
+- The `file` param must be a multipart upload. A plain string is ignored; in 0.6.0 it was read as a path on the server.
+
+The confirm step carries the file in a form field, which Base64 makes about 33% larger. Rack 3.1 and later count non-file multipart fields against `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT` (16 MB by default), so the Import button works for files up to about 12 MB.
+
+**Action required:**
+
+- If you override `app/views/iron_admin/imports/new.html.haml`, add `data: { turbo: false }` to the upload `form_tag`, or Turbo Drive discards the preview again.
+- If you override `app/views/iron_admin/imports/preview.html.haml`, add a form that POSTs to `resource_import_path(@resource_class.resource_name)` with `multipart: true` and the hidden fields `import_format` (`@import_format`) and `import_data` (`@import_data`), or the page has no Import button. `@preview.cell_text(row, field_name)` returns the text of a cell.
+- If you translate `iron_admin.imports.preview.summary`, give it `one` and `other` forms, and add `iron_admin.imports.preview.import_button` ("Import %{count} row" / "Import %{count} rows"). A plain string `summary` keeps working but does not pluralize.
+- To import larger files from the UI, raise `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT`, or run `IronAdmin::Import::Importer` from Ruby (see the [imports guide](docs/guides/imports.md)).
+
+### 27. Forms: field order and color fields
+
+- New and edit forms render fields in the order given to `form_fields`. In 0.6.0 they came in database column order. Names that resolve to no field (for example a has_many such as `:comments`) are still ignored.
+- A `:color` field renders a color picker without a `name` (id `record_<field>_picker`, `aria-label` "<Field> picker") and a hex text input, which is the only one submitted as `record[<field>]`. The text input only accepts `#rgb` or `#rrggbb` (pattern `#(?:[0-9a-fA-F]{3}){1,2}`) and shows `iron_admin.fields.color_invalid` otherwise. The new `cp-color-field` Stimulus controller keeps the two in sync. Without JavaScript the text input still works, and the picker only shows the color. In 0.6.0 both inputs were submitted and the text input always won, so a color picked with the swatch was lost.
+
+**Action required:**
+
+- Check that each `form_fields` list is in the order you want the form to show.
+- If a `:color` column stores other CSS color formats (names such as `red`, `rgb(...)`, or `#rrggbbaa`), the browser now blocks the form until the value is a `#rgb` or `#rrggbb` color. Use `type: :text` or a custom field type for those columns.
+- Update system specs that find the color picker by its `record[<field>]` name. The picker has no name now; set the color through the hex text input.
+
+### 28. Dashboard recent tables
+
+- A `recent` table whose `scope:` has no `order` (or that has no `scope:`) lists the newest records first: `created_at` descending, then the primary key descending, or the primary key alone when there is no `created_at`. A scope with its own `order(...)` keeps its order.
+- The columns are the resource's `index_fields` when it declares them. Otherwise they are the id, the label column (`name`, `title`, `email`, `label` or `slug`), other short columns, and `created_at`, four at most, instead of the first four database columns. Long or sensitive types (textarea, rich_text, markdown, json, password, ...) are skipped, and fields hidden from the current user are left out.
+- `IronAdmin::Dashboards::RecentTableComponent.new` takes an optional `current_user:`. The dashboard passes it.
+
+**Action required:** Declare `index_fields` on a resource to choose its dashboard columns. If you render `RecentTableComponent` yourself, pass `current_user:`; without it, `visible:` procs receive `nil`.
+
+### 29. Translations and import map entries
+
+New keys in IronAdmin's `en.yml`:
+
+| Key | English text |
+|-----|--------------|
+| `iron_admin.errors.forbidden.title` / `.message` | "Not authorized" / "You don't have permission to view this page or perform this action." |
+| `iron_admin.errors.not_found.title` / `.message` | "Page not found" / "This page doesn't exist, or the record was removed." |
+| `iron_admin.errors.back_to_resource` | "Back to %{resource}" |
+| `iron_admin.errors.back_to_dashboard` | "Back to dashboard" |
+| `iron_admin.alerts.dismiss` | "Dismiss" |
+| `iron_admin.resources.action.confirm` | "Are you sure?" |
+| `iron_admin.imports.preview.import_button` | `one`: "Import %{count} row", `other`: "Import %{count} rows" |
+| `iron_admin.fields.boolean_true` / `boolean_false` | "Yes" / "No" |
+| `iron_admin.fields.color_picker_label` | "%{field} picker" |
+| `iron_admin.fields.color_invalid` | "Enter a hex color such as #1a2b3c or #abc." |
+
+`iron_admin.imports.preview.summary` is now a plural hash (`one`: "%{count} row detected.", `other`: "%{count} rows detected.").
+
+The engine import map pins two new Stimulus controllers, `iron_admin/controllers/cp_alert_controller` and `iron_admin/controllers/cp_color_field_controller`, and `iron_admin/index.js` registers them as `cp-alert` and `cp-color-field`.
+
+**Action required:** If your app ships its own IronAdmin translations (another locale, or overrides of the English texts), add the new keys and the plural forms of `summary`. If you pin IronAdmin's JavaScript in your own import map, or register its Stimulus controllers yourself instead of importing `iron_admin`, add both controllers. The engine layout's `import "iron_admin"` already registers them.
+
 ## What does NOT change
 
-- **Resource, dashboard, tool, and policy DSL** — No DSL method was removed or renamed. `Resource.component` now validates its slot (section 15).
+- **Resource, dashboard, tool, and policy DSL** — No DSL method was removed or renamed. `Resource.component` now validates its slot (section 15), `exports` is enforced (section 21), and `remove_filter` also removes inferred filters (section 23).
 - **Configuration** — `IronAdmin.configure` blocks work as before. Component overrides are now validated and rendered (section 15).
 - **Routes and URLs** — Unchanged.
 - **Database** — No new migrations. `rails generate iron_admin:install_audit` now stamps newly generated migrations with your Rails version (for example `ActiveRecord::Migration[8.1]`) instead of `[7.1]`; existing migrations need no change.
