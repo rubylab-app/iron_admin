@@ -61,7 +61,8 @@ module IronAdmin
 
     def export_fields
       fields = if @resource_class.export_field_names
-                 @resource_class.resolved_fields.select { |f| f.name.in?(@resource_class.export_field_names) }
+                 fields_by_name = @resource_class.resolved_fields.index_by(&:name)
+                 @resource_class.export_field_names.filter_map { |name| fields_by_name[name.to_sym] }
                else
                  @resource_class.resolved_fields.reject { |f| f.type == :password }
                end

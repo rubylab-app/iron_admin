@@ -648,4 +648,39 @@ RSpec.describe "IronAdmin::Exports", type: :request do
       end
     end
   end
+
+  describe "declared export_fields order" do
+    let(:ordered_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "OrderedExportUserResource"
+        end
+
+        def self.resource_name
+          "ordered_export_users"
+        end
+
+        export_fields :email, :name, :id
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(ordered_resource)
+      create(:user, name: "Ordered", email: "ordered@example.com")
+    end
+
+    it "orders the CSV columns as declared" do
+      get iron_admin.export_path("ordered_export_users", format: :csv)
+
+      expect(response.body.lines.first.chomp).to eq("Email,Name,Id")
+    end
+
+    it "orders the JSON keys as declared" do
+      get iron_admin.export_path("ordered_export_users", format: :json)
+
+      expect(response.parsed_body.first.keys).to eq(%w[email name id])
+    end
+  end
 end
