@@ -74,11 +74,16 @@
           = f.email_field field.name, placeholder: I18n.t("iron_admin.fields.email_placeholder"),
             class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
         - when :color
-          .flex.items-center.gap-3
-            = f.color_field field.name, class: "h-10 w-14 rounded border border-gray-300 cursor-pointer p-0.5"
+          -# Only the hex input has a name, so the form submits one value; cp-color-field keeps the picker in sync.
+          .flex.items-center.gap-3{ data: { controller: "cp-color-field" } }
+            = f.color_field field.name, name: nil, id: "#{f.field_id(field.name)}_picker",
+              "aria-label": I18n.t("iron_admin.fields.color_picker_label", field: field.name.to_s.humanize),
+              class: "h-10 w-14 rounded border border-gray-300 cursor-pointer p-0.5",
+              data: { cp_color_field_target: "picker", action: "input->cp-color-field#fromPicker" }
             = f.text_field field.name, placeholder: I18n.t("iron_admin.fields.color_placeholder"),
+              pattern: "#(?:[0-9a-fA-F]{3}){1,2}", title: I18n.t("iron_admin.fields.color_invalid"),
               class: [cp_input_class, "flex-1 font-mono text-sm", (error_input_class if has_error)].compact.join(" "),
-              data: { color_text: true }
+              data: { cp_color_field_target: "text", action: "input->cp-color-field#fromText" }
         - when :currency
           .relative
             %span.pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3.text-gray-500.text-sm
