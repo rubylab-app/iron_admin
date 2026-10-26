@@ -103,10 +103,15 @@ module IronAdmin
 
       def apply_sorting(scope)
         sort_col = params[:sort].to_s
-        sort_col = IronAdmin.configuration.default_sort.to_s unless adapter.has_column?(sort_col)
+        sort_col = IronAdmin.configuration.default_sort.to_s unless sortable_column?(sort_col)
         valid_dir = %w[asc desc].include?(params[:direction].to_s.downcase)
         sort_dir = valid_dir ? params[:direction] : IronAdmin.configuration.default_sort_direction
         adapter.order_by(scope, sort_col, sort_dir)
+      end
+
+      # Sorting by a secret field would leak the relative order of its values.
+      def sortable_column?(name)
+        adapter.has_column?(name) && @resource_class.resolved_fields.none? { |f| f.name.to_s == name && f.secret? }
       end
 
       def apply_preloading(scope)

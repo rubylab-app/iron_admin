@@ -46,5 +46,6 @@ Mount: `mount IronAdmin::Engine => "/admin"`
 | `filters[column_from]`, `filters[column_to]` | `?filters[created_at_from]=2026-01-01` (date range filters) |
 
 Sorting keeps the scope, search query and filters, and starts again at page 1. Searching and
-filtering keep the sort. HTML requests that end in `403` or `404` render an error page inside
+filtering keep the sort. A `page` past the last page redirects to the last page, keeping the
+other params. `sort` on a `:password` or `:hidden` column falls back to the default order. HTML requests that end in `403` or `404` render an error page inside
 the admin layout; other formats get the bare status.

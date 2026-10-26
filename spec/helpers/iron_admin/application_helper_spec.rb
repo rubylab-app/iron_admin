@@ -457,6 +457,14 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       end
     end
 
+    context "with select filter on enum column with options of its own" do
+      let(:filter) { { name: :status, type: :select, options: %w[active] } }
+
+      it "returns only those options" do
+        expect(helper.filter_options_for(IronAdmin::Resources::LicenseResource, filter)).to eq([%w[Active active]])
+      end
+    end
+
     context "with select filter with custom options" do
       let(:filter) { { name: :role, type: :select, options: [%w[Admin admin], %w[User user]] } }
 

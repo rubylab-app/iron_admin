@@ -1,8 +1,8 @@
+-# The value sits on its own full-width row and never wraps: a narrow xl card would split a number in two.
 .bg-white.rounded-lg.shadow.p-6{ **(live? ? { id: live_target_id } : {}) }
-  .flex.items-center.justify-between.gap-4
-    .min-w-0.break-words
-      %p.text-sm.font-medium.text-gray-500= label
-      %p.mt-2.text-3xl.font-bold.text-gray-900= formatted_value
+  .flex.items-start.justify-between.gap-4
+    %p.min-w-0.break-words.text-sm.font-medium.text-gray-500= label
     - if icon
       .shrink-0.p-3.bg-indigo-50.rounded-lg
         = heroicon icon, variant: :outline, options: { class: "h-6 w-6 text-indigo-600" }
+  %p.mt-2.text-3xl.font-bold.text-gray-900{ class: "xl:text-2xl 2xl:text-3xl" }= formatted_value

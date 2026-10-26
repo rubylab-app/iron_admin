@@ -74,6 +74,7 @@ en:
         success: "Import finished: %{created} created, %{updated} updated, %{failed} failed."
       errors:
         missing_file: "Choose a file to import."
+        file_too_large: "The file is larger than %{size}. Split it into smaller files."
     fields:
       select_placeholder: "Select..."
       boolean_enable: "Enable %{field}"

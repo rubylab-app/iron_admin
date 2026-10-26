@@ -60,6 +60,7 @@ Until 0.6.0, the `:read` permission from `policy` or `deny_actions` was only che
 - `belongs_to` autocomplete against that resource (`403`)
 - global search (the resource is left out of the results)
 - the sidebar (the link is hidden)
+- dashboard `recent` tables (the table is not rendered)
 
 Once a resource has a `policy` block, every CRUD action must be allowed explicitly. In 0.6.0, a policy that never allowed `:read` still left the index page reachable. In 0.7.0 it returns `403` and the resource disappears from the sidebar.
 
@@ -184,6 +185,7 @@ CSV cells whose text starts with `=`, `+`, `-`, `@`, a tab, or a carriage return
 - Overlays use Tailwind v4 opacity modifiers (`bg-gray-900/50`, `bg-gray-500/75`) instead of `bg-opacity-*`, which Tailwind v4 removed. On Tailwind v4 the modal overlay rendered solid gray; it is translucent now.
 - With haml 6 or later, index rows and dashboard metric cards no longer render an empty `id=""` when live updates are off.
 - The dashboard metrics grid keeps two columns until the `xl` breakpoint (`md:grid-cols-2 xl:grid-cols-4`, was `lg:grid-cols-4`), so metric labels do not touch their icons.
+- In a dashboard metric card, the label and the icon share the top row, and the value sits on its own row below them (`text-3xl`, `xl:text-2xl 2xl:text-3xl`), so a long value such as `$123,456.78` is never split across two lines.
 
 **Action required:** Update host CSS or system specs that select `.p-8` or assume the sidebar is always visible. Run browser system specs with a window at least 1024px wide (Rails' default `screen_size: [1400, 1400]` is fine), or click "Open menu" before using sidebar links.
 
@@ -212,7 +214,7 @@ The changes IronAdmin records for a create, update or destroy replace the values
 
 In 0.6.0 the admin layout never rendered the flash, so every notice and alert set by create, update, destroy, member and bulk actions, imports and tools (`ctx.flash`) was lost after the redirect. The built-in shell now renders `IronAdmin::Layout::FlashComponent` above the page content. It shows `notice` and `success` as success alerts, `alert` and `error` as error alerts, and `warning` and `info` as their own types. Other flash keys and non-string values (such as Devise's `timedout`) are ignored.
 
-Each message is an `IronAdmin::Ui::AlertComponent`. That component now uses `role="status"` for `:success` and `:info` and `role="alert"` for `:error` and `:warning`, takes its border radius from `theme.border_radius` instead of `rounded-lg`, and its dismiss button works through the new `cp-alert` Stimulus controller (it pointed at a missing `alert` controller).
+Each message is an `IronAdmin::Ui::AlertComponent` with `role="alert"`, whatever its type: the message arrives already written in a new page, and screen readers do not announce an inserted `role="status"`. On its own, `AlertComponent` now uses `role="status"` for `:success` and `:info` and `role="alert"` for `:error` and `:warning`, and takes a `role:` argument that overrides it. It takes its border radius from `theme.border_radius` instead of `rounded-lg`, and its dismiss button works through the new `cp-alert` Stimulus controller (it pointed at a missing `alert` controller).
 
 **Action required:**
 
@@ -224,7 +226,7 @@ Each message is an `IronAdmin::Ui::AlertComponent`. That component now uses `rol
   ```
 
 - If your app already rendered the flash on admin pages (for example in a custom navbar or sidebar), remove that markup, or each message shows twice.
-- System specs now find the flash text in the page, and an `AlertComponent` with type `:success` or `:info` no longer has `role="alert"`. Update specs that count alerts or assert on `role`.
+- System specs now find the flash text in the page, with `role="alert"`, and an `AlertComponent` you render yourself with type `:success` or `:info` has `role="status"` unless you pass `role:`. Update specs that count alerts or assert on `role`.
 
 ### 19. 403 and 404 responses render a page
 
@@ -236,16 +238,19 @@ HTML requests that end in `403` or `404` (a policy denial, a missing or soft-del
 - To customize the page, add your own `app/views/iron_admin/shared/error.html.haml` (or `.html.erb`). It receives the local `error` (`:forbidden` or `:not_found`); `@resource_class` is set when the URL named a registered resource.
 - If you ship your own translations, add the error page keys (section 29).
 
-### 20. Secret fields: no inferred filters, and passwords left out of exports
+### 20. Secret fields: no inferred filters, no search or sort, and left out of exports
 
 Filters are no longer inferred for fields declared `type: :password`, `type: :hidden` or `visible: false`. In 0.6.0 a string password column got a `:string` filter, so any user who could read the resource could recover the value one character at a time with `starts_with`. A field whose `visible:` is a proc keeps its inferred filter, which is only offered to users who can see the field.
 
-CSV and JSON exports now leave `:password` fields out. A `:password` field listed in `export_fields` is exported as `[FILTERED]`, never as its value.
+The same probe worked through search, so fields declared `type: :password` or `type: :hidden` are no longer searched by the index search box (including `field:value` queries such as `?q=api_token:mk_`), global search, autocomplete or exports, even when `searchable` lists them. A `field:value` query on such a field leaves the list unfiltered, and `sort` on such a column falls back to `config.default_sort`.
+
+CSV and JSON exports now leave `:password` and `:hidden` fields out. A `:hidden` field listed in `export_fields` is exported with its value. A `:password` field listed there is exported as `[FILTERED]`, never as its value.
 
 **Action required:**
 
-- To filter on one of those fields anyway, declare the filter with `filter`. A declared filter is still honoured.
-- If a system that reads your exports expects a password or token column, export that value from your own code.
+- To filter on a `type: :password` or `type: :hidden` field anyway, declare the filter with `filter`; a declared filter on those types is still honoured. A field declared `visible: false` is hidden from every user, and filters follow field visibility, so a filter on it is never offered or applied. Use a `visible:` proc instead if some users need to filter on it.
+- If users search or sort by a column you declared `type: :password` or `type: :hidden`, give it another type, or search it from your own code. Listing it in `searchable` no longer makes it searchable.
+- If a system that reads your exports expects a password or token column, export that value from your own code. If it expects a `:hidden` column, list that column in `export_fields`.
 
 ### 21. Exports honour the `exports` DSL
 
@@ -263,7 +268,7 @@ In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource serv
 
 ### 23. Declared and inferred filters
 
-- A filter declared with `filter` replaces the auto-inferred filter of the same name. In 0.6.0, `filter :status, type: :select` on an enum column rendered two Status selects, and the first one, the inferred filter, did nothing. The declared filter now renders at its declared position, after the inferred filters, instead of the inferred one at the front of the list. A declared `:select` without `options` offers the enum values.
+- A filter declared with `filter` replaces the auto-inferred filter of the same name. In 0.6.0, `filter :status, type: :select` on an enum column rendered two Status selects, and the first one, the inferred filter, did nothing. The declared filter now renders at its declared position, after the inferred filters, instead of the inferred one at the front of the list. A declared `:select` without `options` offers the enum values, and one with `options` offers only those (in 0.6.0 an enum column always listed every enum value).
 - `remove_filter :name` also removes an auto-inferred filter. In 0.6.0 it only removed declared filters.
 
 **Action required:** Update system specs that pick the first of two filters with the same label, or that depend on the position of a declared enum filter. Check `remove_filter` calls: the inferred filter they name now disappears.
@@ -274,13 +279,14 @@ In 0.6.0, `exports :csv` and a bare `exports` had no effect: every resource serv
 - Column-header sort links keep the active filters, go back to page 1, and load the whole page (`data-turbo-frame="_top"`).
 - The `base_url` passed to a `table` override now includes the active filters, besides the scope and search query. It never includes `sort`, `direction` or `page`.
 - The `hidden_params` passed to a `search` override now include `sort` and `direction` when they are set. The built-in search form, filter form and Clear link keep the sort too.
-- The bulk-actions form has hidden fields `scope`, `q`, `sort`, `direction`, `page` and `filters[...]`, and submits to the whole page (`data-turbo-frame="_top"`). After a bulk action, the redirect returns to that index state. Bulk action blocks still receive only the records and the form params.
+- The bulk-actions form has hidden fields `scope`, `q`, `sort`, `direction`, `page` and `filters[...]`, and submits to the whole page (`data-turbo-frame="_top"`). After a bulk action, the redirect returns to that index state, with the page capped at the list's new last page when the action emptied the page it ran from. Bulk action blocks still receive only the records and the form params.
+- An index request whose `page` is past the last page now answers with a `302` to the last page, keeping `scope`, `q`, `sort`, `direction` and `filters`. Before, it rendered `200` with an empty list and no pagination.
 
 **Action required:**
 
 - In a custom `table` component, keep appending `sort=` and `direction=` to `base_url`, and give sort links `data-turbo-frame="_top"`, as the built-in table and `DataTableComponent` do. Otherwise the search and filter forms, which sit outside the `records` frame, keep the old sort.
 - In a custom `search` component, render every `hidden_params` entry as a hidden field. The keys are flat field names such as `filters[title][op]`.
-- Update specs that expect a sort click to drop the filters, or a bulk action to redirect to the bare index URL.
+- Update specs that expect a sort click to drop the filters, a bulk action to redirect to the bare index URL, or a page past the last one to answer `200`.
 
 ### 25. Show page: member actions, related lists and confirmations
 
@@ -302,18 +308,18 @@ Imports can now be completed from the UI:
 
 - The upload form posts with `data-turbo="false"`. The preview is rendered in reply to that POST, and Turbo Drive discarded it ("Form responses must redirect to another location").
 - The preview page has an "Import N rows" button. It posts the previewed file back to `POST /admin/:resource_name/import` (multipart) in the hidden fields `import_format` and `import_data` (Base64), so the file is not uploaded again.
-- The preview validates a row that matches an existing record on `import_upsert_key` against that record, as the import does, shows plain cell values (`IronAdmin::Import::ImportPreview#cell_text`), and pluralizes the row count.
+- The preview validates a row that matches an existing record on `import_upsert_key` against that record, as the import does, shows plain cell values (`IronAdmin::Import::ImportPreview#cell_text`; dates and times use the show page's default formats, with no locale lookup), and pluralizes the row count.
 - `import_options max_rows:` (default 5,000) is also checked at the preview step: a larger file is rejected with "Import contains N rows, exceeding the M row limit".
 - The `file` param must be a multipart upload. A plain string is ignored; in 0.6.0 it was read as a path on the server.
 
-The confirm step carries the file in a form field, which Base64 makes about 33% larger. Rack 3.1 and later count non-file multipart fields against `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT` (16 MB by default), so the Import button works for files up to about 12 MB.
+The confirm step carries the file in a form field, which Base64 makes about 33% larger. Rack 3.1 and later count non-file multipart fields against `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT` (16 MiB by default), so the preview rejects files larger than 12 MB with "The file is larger than 12 MB. Split it into smaller files." (`iron_admin.imports.errors.file_too_large`) instead of showing an Import button that fails with a server error. The 12 MB limit does not follow the Rack variable.
 
 **Action required:**
 
 - If you override `app/views/iron_admin/imports/new.html.haml`, add `data: { turbo: false }` to the upload `form_tag`, or Turbo Drive discards the preview again.
 - If you override `app/views/iron_admin/imports/preview.html.haml`, add a form that POSTs to `resource_import_path(@resource_class.resource_name)` with `multipart: true` and the hidden fields `import_format` (`@import_format`) and `import_data` (`@import_data`), or the page has no Import button. `@preview.cell_text(row, field_name)` returns the text of a cell.
 - If you translate `iron_admin.imports.preview.summary`, give it `one` and `other` forms, and add `iron_admin.imports.preview.import_button` ("Import %{count} row" / "Import %{count} rows"). A plain string `summary` keeps working but does not pluralize.
-- To import larger files from the UI, raise `RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT`, or run `IronAdmin::Import::Importer` from Ruby (see the [imports guide](docs/guides/imports.md)).
+- To import a file larger than 12 MB, split it, or run `IronAdmin::Import::Importer` from Ruby (see the [imports guide](docs/guides/imports.md)).
 
 ### 27. Forms: field order and color fields
 
@@ -331,8 +337,9 @@ The confirm step carries the file in a form field, which Base64 makes about 33% 
 - A `recent` table whose `scope:` has no `order` (or that has no `scope:`) lists the newest records first: `created_at` descending, then the primary key descending, or the primary key alone when there is no `created_at`. A scope with its own `order(...)` keeps its order.
 - The columns are the resource's `index_fields` when it declares them. Otherwise they are the id, the label column (`name`, `title`, `email`, `label` or `slug`), other short columns, and `created_at`, four at most, instead of the first four database columns. Long or sensitive types (textarea, rich_text, markdown, json, password, ...) are skipped, and fields hidden from the current user are left out.
 - `IronAdmin::Dashboards::RecentTableComponent.new` takes an optional `current_user:`. The dashboard passes it.
+- A `recent` table is not rendered when the current user may not read the resource (`deny :read`, a conditional `allow :read`, or `deny_actions :read`), and `config.tenant_scope` applies to it after its `scope:`. Before, the dashboard listed the newest records of a resource the user could not read, across tenants.
 
-**Action required:** Declare `index_fields` on a resource to choose its dashboard columns. If you render `RecentTableComponent` yourself, pass `current_user:`; without it, `visible:` procs receive `nil`.
+**Action required:** Declare `index_fields` on a resource to choose its dashboard columns. If you render `RecentTableComponent` yourself, pass `current_user:`; without it, `visible:` procs receive `nil`. Check that each role sees the dashboard tables it should: a table for a resource the role cannot read is gone.
 
 ### 29. Translations and import map entries
 
@@ -347,6 +354,7 @@ New keys in IronAdmin's `en.yml`:
 | `iron_admin.alerts.dismiss` | "Dismiss" |
 | `iron_admin.resources.action.confirm` | "Are you sure?" |
 | `iron_admin.imports.preview.import_button` | `one`: "Import %{count} row", `other`: "Import %{count} rows" |
+| `iron_admin.imports.errors.file_too_large` | "The file is larger than %{size}. Split it into smaller files." |
 | `iron_admin.fields.boolean_true` / `boolean_false` | "Yes" / "No" |
 | `iron_admin.fields.color_picker_label` | "%{field} picker" |
 | `iron_admin.fields.color_invalid` | "Enter a hex color such as #1a2b3c or #abc." |

@@ -183,6 +183,20 @@ RSpec.describe "Error pages", type: :request do
     end
   end
 
+  describe "a Turbo Stream request for a missing record" do
+    before do
+      get iron_admin.resource_path("users", 999_999), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+
+    it "keeps the not found status" do
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "keeps the empty body" do
+      expect(response.body).to be_empty
+    end
+  end
+
   describe "a CSV export the policy forbids" do
     before { get iron_admin.export_path("read_denied_users", format: :csv) }
 

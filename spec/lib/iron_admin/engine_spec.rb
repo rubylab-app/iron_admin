@@ -46,4 +46,23 @@ RSpec.describe IronAdmin::Engine do
       expect(Rails.application.importmap.packages.keys).to include(*pinned_modules)
     end
   end
+
+  describe "app/javascript/iron_admin/index.js" do
+    subject(:registrations) do
+      described_class.root.join("app/javascript/iron_admin/index.js").read
+        .scan(/^application\.register\("([\w-]+)", (\w+)\)$/).to_h
+    end
+
+    # cp_color_field_controller.js => "cp-color-field" => CpColorFieldController
+    let(:controllers) do
+      described_class.root.glob("app/javascript/iron_admin/controllers/*_controller.js").to_h do |file|
+        name = file.basename(".js").to_s
+        [name.delete_suffix("_controller").dasherize, name.camelize]
+      end
+    end
+
+    it "registers every shipped Stimulus controller under its file-name identifier" do
+      expect(registrations).to include(controllers)
+    end
+  end
 end

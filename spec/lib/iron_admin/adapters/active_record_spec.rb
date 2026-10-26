@@ -363,6 +363,15 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
       it "yields every record exactly once" do
         expect(emails).to match_array(User.pluck(:email))
       end
+
+      # SQLite returns ties in rowid order anyway; PostgreSQL and MySQL do not.
+      it "adds the primary key to the batch order" do
+        queries = []
+        callback = ->(*, payload) { queries << payload[:sql] }
+        ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { emails }
+
+        expect(queries).to include(a_string_matching(/ORDER BY "users"\."role" ASC, "users"\."id" ASC LIMIT/))
+      end
     end
 
     context "when the model has no primary key" do

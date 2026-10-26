@@ -31,8 +31,10 @@
       .space-y-6
         - @dashboard.defined_recents.each do |recent|
           - resource_class = IronAdmin::ResourceRegistry.find(recent[:resource_name].to_s.pluralize)
-          - if resource_class
+          -# Like the index page: the read policy decides, and tenant_scope applies after the recent scope.
+          - if resource_class&.crud_allowed?(:read, iron_admin_current_user)
             - scope = recent[:scope] ? resource_class.model.instance_exec(&recent[:scope]) : resource_class.model.all
+            - scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
             - records = scope.limit(recent[:limit])
             = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: recent[:resource_name], records: records, current_user: iron_admin_current_user)
 

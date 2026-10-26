@@ -71,6 +71,40 @@ RSpec.describe "Resource show page", type: :request do
     it "does not offer an action the policy denies" do
       expect(action_button(:purge)).to be_nil
     end
+
+    context "when iron_admin.resources.action.confirm is translated" do
+      before do
+        allow(I18n).to receive(:t).and_call_original
+        allow(I18n).to receive(:t).with("iron_admin.resources.action.confirm").and_return("Run this action?")
+        get iron_admin.resource_path("show_actions_licenses", license), as: :html
+      end
+
+      it "asks with that text instead of the delete confirmation" do
+        expect(action_button(:expire)["data-turbo-confirm"]).to eq("Run this action?")
+      end
+    end
+
+    context "when no member action is offered" do
+      let(:show_actions_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.name
+            "NoOfferedActionsLicenseResource"
+          end
+
+          def self.resource_name
+            "show_actions_licenses"
+          end
+
+          action(:renew, condition: ->(_license) { false }) { |license| license.update!(status: :active) }
+        end
+      end
+
+      it "does not render the Actions card" do
+        expect(response.parsed_body.css("h2").map { |heading| heading.text.strip }).not_to include("Actions")
+      end
+    end
   end
 
   describe "has_many related list" do

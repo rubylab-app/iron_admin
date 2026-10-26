@@ -3,8 +3,9 @@
 module IronAdmin
   # Controller for exporting resource data to CSV and JSON formats.
   #
-  # Exports respect field visibility settings and tenant scoping. Password
-  # fields are left out unless export_fields lists them, and then masked.
+  # Exports respect field visibility settings and tenant scoping. Secret
+  # fields (:password and :hidden) are left out unless export_fields lists
+  # them; a listed :password field is masked, a listed :hidden one is not.
   # Access via /admin/:resource_name/export.csv or .json
   #
   # @see IronAdmin::Resource#exports
@@ -72,7 +73,7 @@ module IronAdmin
                  fields_by_name = @resource_class.resolved_fields.index_by(&:name)
                  @resource_class.export_field_names.filter_map { |name| fields_by_name[name.to_sym] }
                else
-                 @resource_class.resolved_fields.reject { |f| f.type == :password }
+                 @resource_class.resolved_fields.reject(&:secret?)
                end
 
       # Security: Filter out fields not visible to the current user

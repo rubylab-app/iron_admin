@@ -17,8 +17,9 @@ module IronAdmin
     #   )
     #
     # Errors and warnings use +role="alert"+ and the other types +role="status"+,
-    # so screen readers announce them assertively or politely. The dismiss button
-    # uses the +cp-alert+ Stimulus controller.
+    # so screen readers announce them assertively or politely; +role:+ overrides
+    # that. {IronAdmin::Layout::FlashComponent} always passes "alert". The dismiss
+    # button uses the +cp-alert+ Stimulus controller.
     class AlertComponent < ViewComponent::Base
       # @return [String, nil] The alert message
       attr_reader :message
@@ -65,10 +66,12 @@ module IronAdmin
       # @param message [String, nil] Alert message
       # @param type [Symbol] Alert type (default: :info)
       # @param dismissible [Boolean] Can be dismissed (default: true)
-      def initialize(message: nil, type: :info, dismissible: true)
+      # @param role [String, nil] ARIA role; overrides the role of the type
+      def initialize(message: nil, type: :info, dismissible: true, role: nil)
         @message = message
         @type = type.to_sym
         @dismissible = dismissible
+        @role = role
       end
 
       # @api private
@@ -84,9 +87,10 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String] ARIA role: "alert" for errors and warnings, "status" otherwise
+      # @return [String] ARIA role: the +role:+ given, else "alert" for errors
+      #   and warnings and "status" otherwise
       def role
-        ASSERTIVE_TYPES.include?(type) ? "alert" : "status"
+        @role || (ASSERTIVE_TYPES.include?(type) ? "alert" : "status")
       end
 
       # @api private

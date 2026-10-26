@@ -5,6 +5,9 @@ module IronAdmin
     # Renders the request's flash messages as dismissible {IronAdmin::Ui::AlertComponent}s.
     # {ShellComponent} renders it above the page content; a custom shell can too.
     #
+    # Every message uses +role="alert"+: it arrives already written in a new
+    # page, and screen readers do not announce an inserted +role="status"+.
+    #
     # @example In a custom shell template
     #   = render IronAdmin::Layout::FlashComponent.new
     #   = content

@@ -22,6 +22,7 @@ module IronAdmin
     include Concerns::Authorizable
     include Concerns::EventEmittable
     include Concerns::Filterable
+    include Concerns::IndexReturnable
     include Concerns::IndexStatePreservable
     include Concerns::JsonParamsCoercion
     include Concerns::NestedPermittable
@@ -36,6 +37,8 @@ module IronAdmin
     # @return [void]
     def index
       @pagy, @records = pagy(collection_scope, limit: IronAdmin.configuration.per_page)
+      return redirect_to_last_page if @pagy.page > @pagy.last
+
       @fields = index_fields
       @current_scope = current_scope_name
     end
@@ -191,7 +194,7 @@ module IronAdmin
       return redirect_bulk(:alert, inaccessible_bulk_message) unless records.count == requested.size
 
       run_bulk_action_in_transaction(action, records)
-      redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"))
+      redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"), state: bulk_return_state)
     rescue StandardError => e
       log_iron_admin_error(e)
       redirect_bulk(:alert, I18n.t("iron_admin.errors.unexpected"))
@@ -262,11 +265,6 @@ module IronAdmin
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
 
-    # Back to the index the bulk action was run from, with its scope, search, filters, sort and page.
-    def redirect_bulk(type, message)
-      redirect_to resources_path(@resource_class.resource_name, **iron_admin_index_state.symbolize_keys), type => message
-    end
-
     def run_bulk_action_in_transaction(action, records)
       collected = action_form_params(action)
       adapter.transaction do
@@ -278,7 +276,7 @@ module IronAdmin
     end
 
     def searchable_display_attribute
-      @resource_class.searchable_columns.find { |column| adapter.has_column?(column) }
+      @resource_class.visible_searchable_columns(iron_admin_current_user).find { |column| adapter.has_column?(column) }
     end
 
     def action_condition_met?(action, record)

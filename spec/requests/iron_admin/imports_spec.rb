@@ -166,11 +166,28 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
       before { IronAdmin::ResourceRegistry.register(license_import_resource) }
 
-      it "renders the localized time instead of the TimeWithZone inspect output" do
+      it "renders the time as the show page does instead of the TimeWithZone inspect output" do
         post iron_admin.resource_import_preview_path("request_import_licenses"),
              params: { file: upload("License key,Expires at\nKEY-1,2026-10-20 10:00:00\n", "licenses.csv", "text/csv") }
 
-        expect(preview_cells.first[1]).to eq(I18n.l(Time.zone.parse("2026-10-20 10:00:00")))
+        expect(preview_cells.first[1]).to eq("Oct 20, 2026 at 10:00 AM")
+      end
+
+      context "when the active locale has no time formats" do
+        around do |example|
+          original = I18n.available_locales
+          I18n.available_locales = original + [:xx]
+          I18n.with_locale(:xx) { example.run }
+        ensure
+          I18n.available_locales = original
+        end
+
+        it "still renders the preview" do
+          post iron_admin.resource_import_preview_path("request_import_licenses"),
+               params: { file: upload("License key,Expires at\nKEY-1,2026-10-20 10:00:00\n", "licenses.csv", "text/csv") }
+
+          expect(response).to have_http_status(:ok)
+        end
       end
     end
   end
@@ -226,6 +243,35 @@ RSpec.describe "IronAdmin::Imports", type: :request do
            params: { file: upload("Name,Email\nJane,jane@example.com\nJohn,john@example.com\n", "users.csv", "text/csv") }
 
       expect(flash[:alert]).to include("exceeding the 1 row limit")
+    end
+
+    # The preview page carries the file back Base64-encoded in a form field,
+    # and Rack buffers at most 16 MiB of such fields.
+    context "when the file is larger than 12 MB" do
+      before do
+        allow(IronAdmin::Import::Importer).to receive(:new).and_call_original
+        preview_upload_of(12_000_001)
+      end
+
+      it "redirects to the upload form" do
+        expect(response).to redirect_to(iron_admin.resource_import_path("request_import_users"))
+      end
+
+      it "asks for smaller files" do
+        expect(flash[:alert]).to eq("The file is larger than 12 MB. Split it into smaller files.")
+      end
+
+      it "does not parse the file" do
+        expect(IronAdmin::Import::Importer).not_to have_received(:new)
+      end
+    end
+
+    context "when the file is exactly 12 MB" do
+      before { preview_upload_of(12_000_000) }
+
+      it "renders the preview" do
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     context "when the file param is a plain string instead of an upload" do
@@ -315,6 +361,15 @@ RSpec.describe "IronAdmin::Imports", type: :request do
         end.not_to change(User, :count)
       end
     end
+  end
+
+  # Previews a one-row CSV padded to the given size in bytes.
+  def preview_upload_of(bytes)
+    head = "Name,Email\n"
+    tail = ",big@example.com\n"
+    csv = head + ("J" * (bytes - head.bytesize - tail.bytesize)) + tail
+    post iron_admin.resource_import_preview_path("request_import_users"),
+         params: { file: upload(csv, "users.csv", "text/csv") }
   end
 
   def upload(contents, filename, content_type)

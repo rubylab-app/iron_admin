@@ -61,6 +61,33 @@ RSpec.describe "IronAdmin index filters", type: :request do
     end
   end
 
+  describe "a declared filter on an enum column with options of its own" do
+    let(:resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "DeclaredOptionsEnumFilterLicenseResource"
+        end
+
+        def self.resource_name
+          "declared_options_enum_filter_licenses"
+        end
+
+        filter :status, type: :select, options: %w[active]
+        index_fields :license_key, :status
+      end
+    end
+
+    before { IronAdmin::ResourceRegistry.register(resource) }
+
+    it "offers only the declared options" do
+      get iron_admin.resources_path("declared_options_enum_filter_licenses"), as: :html
+
+      expect(response.parsed_body.css("select[name='filters[status]'] option").pluck("value")).to eq(["", "active"])
+    end
+  end
+
   describe "a :password field" do
     let(:resource) do
       Class.new(IronAdmin::Resource) do
@@ -95,6 +122,51 @@ RSpec.describe "IronAdmin index filters", type: :request do
       get iron_admin.resources_path("password_filter_documents"),
           params: { filters: { password_hash: { op: "starts_with", value: "tok_" } } },
           as: :html
+
+      expect(response.body).to include("Matching Doc", "Other Doc")
+    end
+
+    context "when the resource declares a filter on it" do
+      before { resource.filter :password_hash, type: :string }
+
+      it "applies the declared filter" do
+        get iron_admin.resources_path("password_filter_documents"),
+            params: { filters: { password_hash: { op: "equals", value: "tok_abc123" } } }, as: :html
+
+        expect(response.body).not_to include("Other Doc")
+      end
+    end
+  end
+
+  # Filters follow field visibility, and a visible: false field is hidden from every user.
+  describe "a declared filter on a visible: false field" do
+    let(:resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = Document
+
+        def self.name
+          "InvisibleFilterDocumentResource"
+        end
+
+        def self.resource_name
+          "invisible_filter_documents"
+        end
+
+        field :password_hash, visible: false
+        filter :password_hash, type: :string
+        index_fields :id, :title
+      end
+    end
+
+    before do
+      IronAdmin::ResourceRegistry.register(resource)
+      create(:document, title: "Matching Doc", password_hash: "tok_abc123")
+      create(:document, title: "Other Doc", password_hash: "zzz_999")
+    end
+
+    it "ignores the declared filter" do
+      get iron_admin.resources_path("invisible_filter_documents"),
+          params: { filters: { password_hash: { op: "equals", value: "tok_abc123" } } }, as: :html
 
       expect(response.body).to include("Matching Doc", "Other Doc")
     end

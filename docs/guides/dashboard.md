@@ -99,6 +99,10 @@ recent :resource_name, limit: 5, scope: -> { custom_scope }
 
 The `resource_name` must match a registered resource's name (model's plural form).
 
+**Access:** like the index page, the table is only rendered when the current user may read the
+resource (`policy` and `deny_actions`), and `config.tenant_scope` applies to it, after the
+`scope:`.
+
 **Order:** records are listed newest first: by `created_at` descending, then by primary key
 descending (by primary key alone when the model has no `created_at`). A `scope:` that calls
 `order(...)` keeps its own order, for example `scope: -> { order(total: :desc) }`.

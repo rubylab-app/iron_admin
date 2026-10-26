@@ -119,7 +119,10 @@ created_at:..2025-06-30              # Records before July 2025
 ```
 
 Search respects field visibility - users cannot search fields they don't have permission
-to see.
+to see. Fields declared `type: :password` or `type: :hidden` are never searched, by the search
+box, a `field:value` query, global search or autocomplete, even when `searchable` lists them,
+and `sort` on such a column falls back to the default order. Otherwise their values could be
+probed one character at a time.
 
 ## Filters
 
@@ -144,8 +147,10 @@ remove_filter :some_column
 ```
 
 Fields declared `type: :password`, `type: :hidden` or `visible: false` never get an inferred
-filter, so their values cannot be probed with filter queries. To filter on one of them anyway,
-declare the filter explicitly.
+filter, so their values cannot be probed with filter queries. To filter on a `:password` or
+`:hidden` field anyway, declare the filter explicitly. Filters follow field visibility: a filter
+on a field the current user cannot see is neither shown nor applied, so a filter declared on a
+`visible: false` field never takes effect.
 
 ### Filter Types
 
@@ -462,8 +467,8 @@ Exports respect:
 - The index sort order (`sort`/`direction`, or `config.default_sort`), for CSV and JSON alike
 
 Columns follow the order of `export_fields`. Without `export_fields`, every visible field except
-`:password` fields is exported. A `:password` field listed in `export_fields` is exported as
-`[FILTERED]`. `exports :csv` limits the formats, and a bare `exports` turns exports off; a
+`:password` and `:hidden` fields is exported. A `:hidden` field listed in `export_fields` is
+exported with its value; a `:password` field listed there is exported as `[FILTERED]`. `exports :csv` limits the formats, and a bare `exports` turns exports off; a
 format that is not enabled returns `404`.
 
 See [Imports & Exports]({% link imports-exports.md %}) for more.

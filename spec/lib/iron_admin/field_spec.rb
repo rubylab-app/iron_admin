@@ -34,6 +34,20 @@ RSpec.describe IronAdmin::Field do
     end
   end
 
+  describe "#secret?" do
+    it "is true for a :password field" do
+      expect(described_class.new(:api_token, type: :password).secret?).to be(true)
+    end
+
+    it "is true for a :hidden field" do
+      expect(described_class.new(:secret_token, type: :hidden).secret?).to be(true)
+    end
+
+    it "is false for other types" do
+      expect(described_class.new(:name, type: :string).secret?).to be(false)
+    end
+  end
+
   describe "#readonly?" do
     it "evaluates proc with user" do
       field = described_class.new(:name, readonly: ->(user) { user != :admin })

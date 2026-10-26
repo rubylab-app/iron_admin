@@ -102,12 +102,16 @@ message with it (see [Flash Messages](../guides/components.md#flash-messages)).
 IronAdmin::Ui::AlertComponent.new(
   message: "Success!",   # Optional: alert message (or pass a block as content)
   type: :success,        # Optional: :success, :error, :warning, :info (default: :info)
-  dismissible: true      # Optional: show close button (default: true)
+  dismissible: true,     # Optional: show close button (default: true)
+  role: nil              # Optional: ARIA role, overrides the role of the type
 )
 ```
 
 - `:error` and `:warning` alerts have `role="alert"`, so screen readers announce them right
-  away. `:success` and `:info` alerts have `role="status"` and are announced politely.
+  away. `:success` and `:info` alerts have `role="status"` and are announced politely. Pass
+  `role:` to override it. `IronAdmin::Layout::FlashComponent` passes `role: "alert"` for every
+  flash message, because a message that arrives already written in a new page is not
+  announced as a `status`.
 - The border radius comes from `theme.border_radius`.
 - With `dismissible: true`, the alert uses the `cp-alert` Stimulus controller
   (`data-controller="cp-alert"`), and its close button calls `cp-alert#dismiss`, which

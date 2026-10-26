@@ -30,19 +30,19 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
     it "shows the created notice" do
       post iron_admin.resources_path("users"), params: { record: { name: "Ana", email: "ana@example.com" } }
 
-      expect(messages_after_redirect("status")).to eq(["User created."])
+      expect(messages_after_redirect("alert")).to eq(["User created."])
     end
 
     it "shows the updated notice" do
       patch iron_admin.resource_path("users", user), params: { record: { name: "Ana Updated" } }
 
-      expect(messages_after_redirect("status")).to eq(["User updated."])
+      expect(messages_after_redirect("alert")).to eq(["User updated."])
     end
 
     it "shows the deleted notice" do
       delete iron_admin.resource_path("users", user)
 
-      expect(messages_after_redirect("status")).to eq(["User deleted."])
+      expect(messages_after_redirect("alert")).to eq(["User deleted."])
     end
   end
 
@@ -62,7 +62,7 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
     it "shows the action completed notice" do
       post iron_admin.resource_action_path("licenses", license, "revoke")
 
-      expect(messages_after_redirect("status")).to eq(["Action completed"])
+      expect(messages_after_redirect("alert")).to eq(["Action completed"])
     end
 
     it "shows the generic error alert when the action raises" do
@@ -79,7 +79,7 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
     it "shows the success notice" do
       post iron_admin.resource_bulk_action_path("licenses", "export"), params: { ids: [license.id] }
 
-      expect(messages_after_redirect("status")).to eq(["Bulk action completed"])
+      expect(messages_after_redirect("alert")).to eq(["Bulk action completed"])
     end
 
     it "shows the inaccessible records alert" do
@@ -118,7 +118,7 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
       post iron_admin.resource_import_path("flash_import_users"),
            params: { file: upload("name,email\nJane,jane@example.com\n", "users.csv", "text/csv") }
 
-      expect(messages_after_redirect("status")).to eq(["Import finished: 1 created, 0 updated, 0 failed."])
+      expect(messages_after_redirect("alert")).to eq(["Import finished: 1 created, 0 updated, 0 failed."])
     end
 
     it "shows the missing file alert" do
@@ -148,7 +148,7 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
     it "shows the notice the tool sets" do
       post iron_admin.tool_action_path("flash_cache", "clear_cache")
 
-      expect(messages_after_redirect("status")).to eq(["Cache cleared!"])
+      expect(messages_after_redirect("alert")).to eq(["Cache cleared!"])
     end
   end
 end

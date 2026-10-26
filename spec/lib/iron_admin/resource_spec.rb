@@ -124,6 +124,47 @@ RSpec.describe IronAdmin::Resource do
     end
   end
 
+  describe ".visible_searchable_columns" do
+    subject(:columns) { resource.visible_searchable_columns(nil) }
+
+    context "with a :password field" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.name
+            "PasswordSearchDocumentResource"
+          end
+
+          field :password_hash, type: :password
+        end
+      end
+
+      it "leaves it out" do
+        expect(columns).to eq([:title])
+      end
+    end
+
+    context "with a :hidden field" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Widget
+
+          def self.name
+            "HiddenSearchWidgetResource"
+          end
+
+          field :secret_token, type: :hidden
+          searchable :name, :secret_token
+        end
+      end
+
+      it "leaves it out even when searchable lists it" do
+        expect(columns).to eq([:name])
+      end
+    end
+  end
+
   describe "unsearchable" do
     let(:resource_with_unsearchable) do
       Class.new(IronAdmin::Resource) do
@@ -847,6 +888,24 @@ RSpec.describe IronAdmin::Resource do
 
       it "does not infer a filter for it" do
         expect(resource.auto_inferred_filters.pluck(:name)).not_to include(:email)
+      end
+    end
+
+    context "when a field's visibility depends on the user" do
+      let(:resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.name
+            "ConditionalFilterUserResource"
+          end
+
+          field :email, visible: ->(current_user) { current_user.present? }
+        end
+      end
+
+      it "still infers its filter" do
+        expect(resource.auto_inferred_filters.pluck(:name)).to include(:email)
       end
     end
 

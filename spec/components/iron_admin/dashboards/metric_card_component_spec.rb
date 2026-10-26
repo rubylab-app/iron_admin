@@ -44,16 +44,30 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
   end
 
   context "with an icon next to the label" do
-    subject(:label_column) do
-      render_inline(described_class.new(name: :pending_comments, value: 3, icon: "chat-bubble-left")).at_css("p").parent
+    subject(:card) do
+      render_inline(described_class.new(name: :monthly_revenue, value: 123_456.78, format: :currency, icon: "banknotes"))
     end
 
+    let(:label) { card.css("p").find { |paragraph| paragraph.text.strip == "Monthly revenue" } }
+    let(:value) { card.css("p").find { |paragraph| paragraph.text.strip == "$123,456.78" } }
+
     it "lets the label wrap instead of pushing against the icon" do
-      expect(label_column[:class].to_s.split).to include("min-w-0")
+      expect(label[:class].to_s.split).to include("min-w-0")
     end
 
     it "keeps a gap between the label and the icon" do
-      expect(label_column.parent[:class].to_s.split).to include(a_string_matching(/\Agap-\d+\z/))
+      expect(label.parent[:class].to_s.split).to include(a_string_matching(/\Agap-\d+\z/))
+    end
+
+    # A narrow card would otherwise split "$123,456.78" across two lines.
+    it "never breaks the value inside the number" do
+      classes = [value, *value.ancestors("[class]")].flat_map { |node| node[:class].split }
+
+      expect(classes).not_to include("break-words")
+    end
+
+    it "puts the value on its own row, below the label and the icon" do
+      expect(label.parent.css("p")).not_to include(value)
     end
   end
 end

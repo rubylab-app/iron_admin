@@ -27,6 +27,10 @@ RSpec.describe "Index state", type: :request do
         licenses.pluck(:license_key)
       end
 
+      bulk_action :revoke do |licenses|
+        licenses.update_all(status: License.statuses[:revoked])
+      end
+
       index_fields :license_key, :status, :expires_at
     end
   end
@@ -69,6 +73,26 @@ RSpec.describe "Index state", type: :request do
   end
 
   describe "GET /:resource_name" do
+    # The state above asks for page 2, so two matching licenses on one-row pages make that page real.
+    before do
+      IronAdmin.configuration.per_page = 1
+      create_list(:license, 2, status: :expired)
+    end
+
+    context "with a page past the last page" do
+      subject(:redirect_query) { query_of(response.location) }
+
+      before { get iron_admin.resources_path("index_state_licenses", state.merge("page" => "9")), as: :html }
+
+      it "redirects to the last page" do
+        expect(redirect_query["page"]).to eq("2")
+      end
+
+      it "keeps the scope, search, filters and sort" do
+        expect(redirect_query.except("page")).to eq(state.except("page"))
+      end
+    end
+
     describe "records frame" do
       subject(:frame) { document.at_css("turbo-frame#records") }
 
@@ -251,6 +275,8 @@ RSpec.describe "Index state", type: :request do
 
     context "with the index state it was run from" do
       before do
+        # The two licenses match the whole state, so one-row pages make page 2 real.
+        IronAdmin.configuration.per_page = 1
         post iron_admin.resource_bulk_action_path("index_state_licenses", "export"),
              params: state.merge("ids" => licenses.map(&:id)), as: :html
       end
@@ -271,6 +297,44 @@ RSpec.describe "Index state", type: :request do
 
       it "keeps the index state" do
         expect(query_of(response.location)).to eq(state)
+      end
+    end
+
+    context "when the action empties the page it was run from" do
+      let(:licenses) { create_list(:license, 3, status: :expired) }
+
+      before do
+        IronAdmin.configuration.per_page = 2
+        post iron_admin.resource_bulk_action_path("index_state_licenses", "revoke"),
+             params: { "scope" => "expired", "page" => "2", "ids" => [licenses.last.id] }, as: :html
+      end
+
+      it "returns to the last page left" do
+        expect(query_of(response.location)).to eq("scope" => "expired", "page" => "1")
+      end
+
+      it "shows the rows left on that page" do
+        follow_redirect!
+
+        expect(document.css("turbo-frame#records input[name='ids[]']").size).to eq(2)
+      end
+    end
+
+    context "when the list cannot be counted after the action" do
+      let(:licenses) { create_list(:license, 3, status: :expired) }
+
+      before do
+        allow(IronAdmin.configuration).to receive(:per_page).and_raise(ActiveRecord::ConnectionNotEstablished)
+        post iron_admin.resource_bulk_action_path("index_state_licenses", "revoke"),
+             params: { "scope" => "expired", "page" => "2", "ids" => [licenses.last.id] }, as: :html
+      end
+
+      it "keeps the page" do
+        expect(query_of(response.location)).to eq("scope" => "expired", "page" => "2")
+      end
+
+      it "still reports the action as done" do
+        expect(flash[:notice]).to eq(I18n.t("iron_admin.resources.bulk_action.success"))
       end
     end
 

@@ -50,10 +50,11 @@ RSpec.describe IronAdmin::Resources::ActionsComponent, type: :component do
       expect(button["data-turbo-confirm"]).to eq("Suspend this user?")
     end
 
-    it "asks with the default message when the action has no confirm_message" do
-      button = rendered_button({ name: :suspend, confirm: true })
+    it "asks with iron_admin.resources.action.confirm when the action has no confirm_message" do
+      allow(I18n).to receive(:t).and_call_original
+      allow(I18n).to receive(:t).with("iron_admin.resources.action.confirm").and_return("Run this action?")
 
-      expect(button["data-turbo-confirm"]).to eq("Are you sure?")
+      expect(rendered_button({ name: :suspend, confirm: true })["data-turbo-confirm"]).to eq("Run this action?")
     end
 
     it "does not ask when the action does not request confirmation" do

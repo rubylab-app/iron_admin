@@ -10,7 +10,7 @@
         = form_tag resource_import_path(@resource_class.resource_name), multipart: true do
           = hidden_field_tag :import_format, @import_format, id: nil
           = hidden_field_tag :import_data, @import_data, id: nil
-          %button{ type: "submit", class: cp_btn_primary }
+          %button{ type: "submit", class: "#{cp_btn_primary_lg} gap-2" }
             = heroicon "arrow-up-tray", variant: :mini, options: { class: "h-4 w-4" }
             %span= I18n.t("iron_admin.imports.preview.import_button", count: @preview.total_rows)
 

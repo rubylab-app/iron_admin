@@ -84,6 +84,31 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
       end
     end
 
+    context "when a short column is a password field" do
+      let(:resource_name) { :credential }
+
+      before do
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = Post
+
+          def self.resource_name = "credentials"
+
+          def self.resolved_fields
+            [
+              IronAdmin::Field.new(:id, type: :number),
+              IronAdmin::Field.new(:api_token, type: :password),
+              IronAdmin::Field.new(:title, type: :text),
+              IronAdmin::Field.new(:created_at, type: :datetime),
+            ]
+          end
+        end)
+      end
+
+      it "leaves the password field out" do
+        expect(field_names).to eq(%i[id title created_at])
+      end
+    end
+
     context "when a field is hidden from the current user" do
       subject(:field_names) do
         described_class.new(resource_name: :staff_member, records: [], current_user: :viewer).fields.map(&:name)

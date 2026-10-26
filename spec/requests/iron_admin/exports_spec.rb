@@ -649,6 +649,53 @@ RSpec.describe "IronAdmin::Exports", type: :request do
     end
   end
 
+  describe "hidden fields" do
+    before { create(:widget, name: "W1", secret_token: "sk_live_widget_secret") }
+
+    context "when export_fields is not declared" do
+      before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::WidgetResource) }
+
+      it "leaves the field out of the CSV" do
+        get iron_admin.export_path("widgets", format: :csv)
+
+        expect(response.body).not_to include("sk_live_widget_secret")
+      end
+
+      it "leaves the field out of the JSON" do
+        get iron_admin.export_path("widgets", format: :json)
+
+        expect(response.parsed_body.first.keys).not_to include("secret_token")
+      end
+    end
+
+    context "when export_fields lists the field" do
+      let(:hidden_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = Widget
+
+          def self.name
+            "ListedHiddenExportWidgetResource"
+          end
+
+          def self.resource_name
+            "hidden_export_widgets"
+          end
+
+          field :secret_token, type: :hidden
+          export_fields :name, :secret_token
+        end
+      end
+
+      before { IronAdmin::ResourceRegistry.register(hidden_resource) }
+
+      it "exports the value" do
+        get iron_admin.export_path("hidden_export_widgets", format: :json)
+
+        expect(response.parsed_body.first["secret_token"]).to eq("sk_live_widget_secret")
+      end
+    end
+  end
+
   describe "declared export_fields order" do
     let(:ordered_resource) do
       Class.new(IronAdmin::Resource) do

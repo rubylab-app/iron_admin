@@ -443,12 +443,13 @@ module IronAdmin
         policy.allowed?(action, user)
       end
 
-      # Searchable columns the user is allowed to see.
+      # Searchable columns the user is allowed to see. Secret fields
+      # ({Field::SECRET_TYPES}) are left out, even when {.searchable} lists them.
       #
       # @param user [Object, nil]
       # @return [Array<Symbol>]
       def visible_searchable_columns(user)
-        visible_names = resolved_fields.select { |field| field.visible?(user) }.map(&:name)
+        visible_names = resolved_fields.select { |field| field.visible?(user) && !field.secret? }.map(&:name)
         searchable_columns.select { |column| visible_names.include?(column.to_sym) }
       end
 
@@ -472,8 +473,9 @@ module IronAdmin
 
       # Specifies which fields appear in exports.
       #
-      # By default, exports include all visible fields except :password ones.
-      # A :password field listed here exports as "[FILTERED]".
+      # By default, exports include all visible fields except :password and
+      # :hidden ones. A :hidden field listed here exports its value; a
+      # :password field listed here exports as "[FILTERED]".
       #
       # @param fields [Array<Symbol>] Field names to export
       #

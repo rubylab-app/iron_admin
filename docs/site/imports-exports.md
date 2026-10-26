@@ -14,6 +14,7 @@ permalink: /imports-exports/
 > **TODO:** copy the body, add front matter, fix links.
 
 CSV and JSON export out of the box, respecting tenant scope, field visibility, and the
-current filters, search and sort. `:password` fields are never exported with their value.
+current filters, search and sort. `:password` fields are never exported with their value, and
+`:hidden` fields are only exported when `export_fields` lists them.
 Resources can also opt in to CSV and JSON imports (`imports :csv, :json`) with an upload,
 a validated preview, and an import step.

@@ -89,6 +89,10 @@ Other keys, and values that are not strings (such as Devise's `timedout`), are n
 This covers the messages IronAdmin sets after create, update, destroy, actions, bulk actions
 and imports, and the ones tools set with `ctx.flash`.
 
+Every flash message has `role="alert"`, whatever its type. The message arrives already written
+in the page Turbo renders after the redirect, and screen readers announce an inserted
+`role="alert"` but not an inserted `role="status"`.
+
 A custom shell (`config.components.shell`) replaces the built-in one, so it has to render the
 component itself, before the page body:
 

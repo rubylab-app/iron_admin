@@ -14,8 +14,18 @@ module IronAdmin
         case value
         when nil then ""
         when Hash, Array then value.to_json
-        else value.respond_to?(:strftime) ? I18n.l(value) : value.to_s
+        else value.respond_to?(:strftime) ? preview_time_text(value) : value.to_s
         end
+      end
+
+      private
+
+      # The default formats of the show and index pages
+      # (FieldDisplayHelper#display_date and #display_datetime), with no locale lookup.
+      def preview_time_text(value)
+        return value.strftime("%b %d, %Y") unless value.respond_to?(:hour)
+
+        value.strftime("%b %d, %Y at %l:%M %p").squish
       end
     end
   end

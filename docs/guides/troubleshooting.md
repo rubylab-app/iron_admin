@@ -231,8 +231,9 @@ The proc receives the current user, not the record.
    ```ruby
    field :secret, visible: ->(user) { user.admin? }
    ```
-3. `:password` fields are left out of exports unless `export_fields` lists them, and then they
-   are exported as `[FILTERED]`.
+3. `:password` and `:hidden` fields are left out of exports unless `export_fields` lists them.
+   A listed `:hidden` field is exported with its value, and a listed `:password` field as
+   `[FILTERED]`.
 
 ### Export returning 404
 

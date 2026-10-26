@@ -118,8 +118,8 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
 
       let(:html) { rendered.to_html }
 
-      it "renders it as a status message" do
-        expect(rendered.at_css("[role='status']").text.squish).to eq("User created.")
+      it "renders it as an alert" do
+        expect(rendered.at_css("[role='alert']").text.squish).to eq("User created.")
       end
 
       it "renders it above the page content" do

@@ -39,10 +39,20 @@ RSpec.describe "IronAdmin pagination", type: :request do
       "10**30, far past the database OFFSET range" => (10**30).to_s,
     }.each do |description, value|
       context "when the page param is #{description}" do
-        it "responds with success" do
+        it "does not fail" do
           get iron_admin.resources_path("users"), params: { page: value }, as: :html
+          follow_redirect! if response.redirect?
+
           expect(response).to have_http_status(:ok)
         end
+      end
+    end
+
+    context "with a page past the last page" do
+      before { get iron_admin.resources_path("users"), params: { page: 9 }, as: :html }
+
+      it "redirects to the last page" do
+        expect(response).to redirect_to(iron_admin.resources_path("users", page: 3))
       end
     end
   end

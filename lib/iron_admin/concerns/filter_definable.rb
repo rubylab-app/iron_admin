@@ -10,10 +10,7 @@ module IronAdmin
 
       # Columns that never get an inferred filter.
       SKIP_FILTER_COLUMNS = %w[id created_at updated_at].freeze
-
-      # Field types the UI never shows; a filter on one would let readers probe the value.
-      SENSITIVE_FIELD_TYPES = %i[password hidden].freeze
-      private_constant :SKIP_FILTER_COLUMNS, :SENSITIVE_FIELD_TYPES
+      private_constant :SKIP_FILTER_COLUMNS
 
       module FilterDsl
         # Defines an index filter. It replaces the auto-inferred filter of the same name.
@@ -64,7 +61,7 @@ module IronAdmin
 
         def sensitive_field_names
           field_overrides.filter_map do |name, options|
-            name.to_sym if SENSITIVE_FIELD_TYPES.include?(options[:type]) || options[:visible] == false
+            name.to_sym if Field::SECRET_TYPES.include?(options[:type]) || options[:visible] == false
           end
         end
 

@@ -91,6 +91,14 @@ RSpec.describe IronAdmin::Ui::AlertComponent, type: :component do
       end
     end
 
+    context "with an explicit role" do
+      let(:component) { described_class.new(message: "Saved", type: :success, role: "alert") }
+
+      it "uses it instead of the role of the type" do
+        expect(alert[:role]).to eq("alert")
+      end
+    end
+
     context "when dismissible" do
       let(:dismiss_button) { rendered.at_css("button") }
 

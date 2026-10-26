@@ -9,6 +9,11 @@ module IronAdmin
     before_action :ensure_import_enabled
     before_action :ensure_create_allowed
 
+    # Rack buffers at most 16 MiB of non-file multipart fields
+    # (RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT) and Base64 adds a third,
+    # so a larger upload could be previewed but never imported from the preview page.
+    MAX_CARRIED_IMPORT_BYTES = 12_000_000
+
     def new
       @formats = @resource_class.import_formats
       @fields = @resource_class.importable_fields(iron_admin_current_user)
@@ -16,6 +21,7 @@ module IronAdmin
 
     def preview
       return redirect_missing_file unless import_content
+      return redirect_file_too_large if import_content.bytesize > MAX_CARRIED_IMPORT_BYTES
 
       @preview = importer.preview
       @resource_name = @resource_class.resource_name
@@ -115,6 +121,11 @@ module IronAdmin
 
     def redirect_missing_file
       redirect_to resource_import_path(@resource_class.resource_name), alert: I18n.t("iron_admin.imports.errors.missing_file")
+    end
+
+    def redirect_file_too_large
+      redirect_to resource_import_path(@resource_class.resource_name),
+                  alert: I18n.t("iron_admin.imports.errors.file_too_large", size: "12 MB")
     end
   end
 end

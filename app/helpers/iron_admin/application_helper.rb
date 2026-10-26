@@ -111,10 +111,10 @@ module IronAdmin
       case filter[:type]
       when :select
         enums = resource_adapter.enums
-        if enums.key?(column_name)
-          enums[column_name].keys.map { |k| [k.humanize, k] }
-        elsif filter[:options]
+        if filter[:options]
           normalize_filter_options(filter[:options])
+        elsif enums.key?(column_name)
+          enums[column_name].keys.map { |k| [k.humanize, k] }
         else
           resource_adapter.distinct_values(column_name).map { |v| [v.to_s.humanize, v] }
         end

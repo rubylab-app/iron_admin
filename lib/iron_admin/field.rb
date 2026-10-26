@@ -20,6 +20,11 @@ module IronAdmin
   # @see IronAdmin::Resource.field For the DSL to configure fields
   # @see IronAdmin::FieldInferrer For automatic field inference
   class Field
+    # Types whose value the UI never shows. Search, sort, inferred filters and
+    # default exports leave such fields out, so readers cannot probe the value.
+    # @return [Array<Symbol>]
+    SECRET_TYPES = %i[password hidden].freeze
+
     # @return [Symbol] The field/column name
     attr_reader :name
 
@@ -86,6 +91,13 @@ module IronAdmin
     #   field.readonly?(current_user)  #=> false
     def readonly?(user)
       evaluate(@readonly, user)
+    end
+
+    # Whether the field's type is one of {SECRET_TYPES}.
+    #
+    # @return [Boolean]
+    def secret?
+      SECRET_TYPES.include?(type)
     end
 
     private

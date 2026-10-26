@@ -39,8 +39,9 @@ end
 ```
 
 Columns follow the order of `export_fields`. Without `export_fields`, every field is exported
-except `:password` fields. A `:password` field listed in `export_fields` is exported as
-`[FILTERED]`, never with its value. Fields hidden from the current user are always left out.
+except `:password` and `:hidden` fields. A `:hidden` field listed in `export_fields` is exported
+with its value. A `:password` field listed there is exported as `[FILTERED]`, never with its
+value. Fields hidden from the current user are always left out.
 
 ## Export URL
 

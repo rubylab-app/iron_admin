@@ -74,9 +74,14 @@ Only a real file upload is accepted as the `file` parameter.
 The preview page carries the previewed file in a hidden form field, Base64-encoded, which
 makes it about 33% larger than the file. The browser posts it as a multipart form field.
 Rack 3.1 and later count non-file multipart fields against
-`RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT`, which is 16 MB by default, so the Import
-button works for files up to about 12 MB. For larger files, raise that environment variable,
-or import from Ruby.
+`RACK_MULTIPART_BUFFERED_UPLOAD_BYTESIZE_LIMIT`, which is 16 MiB by default, so a larger file
+could be previewed but never imported. The preview therefore rejects files larger than 12 MB
+(12,000,000 bytes) with the alert "The file is larger than 12 MB. Split it into smaller
+files." (`iron_admin.imports.errors.file_too_large`). Split larger files, or import them from
+Ruby.
+
+The 12 MB limit is fixed: raising the Rack variable does not raise it. If you lower the Rack
+variable below 16 MiB, files that pass the preview can fail on the Import button again.
 
 ## Importing from Ruby
 
@@ -106,7 +111,8 @@ on:
   with `multipart: true` and the hidden fields `import_format` (`@import_format`) and
   `import_data` (`@import_data`). Without it the page has no Import button.
 - `@preview.cell_text(row, field_name)` returns the text of a preview cell: blank for missing
-  values, localized dates and times, and JSON for hash and array values.
+  values, dates and times in the default formats of the show page ("Oct 20, 2026",
+  "Oct 20, 2026 at 10:00 AM"), whatever the locale, and JSON for hash and array values.
 
 The texts come from the `iron_admin.imports` translation keys. `iron_admin.imports.preview.summary`
 ("%{count} rows detected.") and `iron_admin.imports.preview.import_button`

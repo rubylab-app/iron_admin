@@ -196,7 +196,7 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
-Renders a password input with masking on forms. Leaving it blank on an edit form keeps the stored value. The value is never displayed on show or index pages, and never exported: CSV and JSON exports leave `:password` fields out, and a `:password` field listed in `export_fields` is exported as `[FILTERED]`. A `:password` field also gets no inferred index filter.
+Renders a password input with masking on forms. Leaving it blank on an edit form keeps the stored value. The value is never displayed on show or index pages, and never exported: CSV and JSON exports leave `:password` fields out, and a `:password` field listed in `export_fields` is exported as `[FILTERED]`. A `:password` field also gets no inferred index filter, is never searched (search box, `field:value` queries, global search, autocomplete), and cannot be sorted on.
 
 ## Tags Field
 

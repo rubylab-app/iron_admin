@@ -117,5 +117,98 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
         expect(column_headers).not_to include("Email")
       end
     end
+
+    context "with recent records of a resource the current user cannot read" do
+      subject(:body) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.body
+      end
+
+      let(:members_resource) do
+        Class.new(IronAdmin::Resource) do
+          self.model_class_override = User
+
+          def self.resource_name = "dashboard_members"
+
+          policy { deny :read }
+        end
+      end
+
+      before do
+        IronAdmin.configure { |config| config.current_user { "viewer" } }
+        IronAdmin::ResourceRegistry.register(members_resource)
+        create(:user, name: "Secret Dash User", email: "secret-dash@example.com")
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) { recent :dashboard_members }
+      end
+
+      it "does not list them" do
+        expect(body).not_to include("secret-dash@example.com")
+      end
+
+      context "when the policy lets only other users read" do
+        let(:members_resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = User
+
+            def self.resource_name = "dashboard_members"
+
+            policy { allow :read, if: ->(user) { user == "admin" } }
+          end
+        end
+
+        it "does not list them" do
+          expect(body).not_to include("secret-dash@example.com")
+        end
+      end
+
+      context "when deny_actions disables reading" do
+        let(:members_resource) do
+          Class.new(IronAdmin::Resource) do
+            self.model_class_override = User
+
+            def self.resource_name = "dashboard_members"
+
+            deny_actions :read
+          end
+        end
+
+        it "does not list them" do
+          expect(body).not_to include("secret-dash@example.com")
+        end
+      end
+    end
+
+    context "with recent records and a tenant scope" do
+      subject(:body) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.body
+      end
+
+      let(:recent_scope) { nil }
+
+      before do
+        IronAdmin.configure { |config| config.tenant_scope { |scope| scope.where(active: true) } }
+        create(:user, name: "Tenant User", email: "tenant@example.com", active: true)
+        create(:user, name: "Other Tenant User", email: "other-tenant@example.com", active: false)
+        scope = recent_scope
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) { recent :users, scope: scope }
+      end
+
+      it "lists the records of the tenant" do
+        expect(body).to include("tenant@example.com")
+      end
+
+      it "leaves out the records of other tenants" do
+        expect(body).not_to include("other-tenant@example.com")
+      end
+
+      context "when the recent table has its own scope" do
+        let(:recent_scope) { -> { order(id: :desc) } }
+
+        it "still leaves out the records of other tenants" do
+          expect(body).not_to include("other-tenant@example.com")
+        end
+      end
+    end
   end
 end

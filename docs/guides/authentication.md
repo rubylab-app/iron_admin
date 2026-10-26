@@ -206,9 +206,9 @@ Field visibility is enforced across:
 - Index table columns
 - Show page fields
 - Form fields
-- CSV/JSON exports (`:password` values are never exported, for any user; see [Export](export.md))
-- Search queries
-- Index filters (a field declared `visible: false`, `type: :password` or `type: :hidden` gets no inferred filter)
+- CSV/JSON exports (`:password` values are never exported, for any user, and `:hidden` fields only when `export_fields` lists them; see [Export](export.md))
+- Search queries and sorting (`:password` and `:hidden` fields are never searched or sorted on, for any user)
+- Index filters (a field declared `visible: false`, `type: :password` or `type: :hidden` gets no inferred filter, and a declared filter on a field the user cannot see is neither shown nor applied)
 - Dashboard recent tables
 
 ## Audit Logging

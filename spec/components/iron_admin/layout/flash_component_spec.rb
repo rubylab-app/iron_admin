@@ -9,15 +9,25 @@ RSpec.describe IronAdmin::Layout::FlashComponent, type: :component do
     rendered.css("[role='#{role}']").map { |alert| alert.text.squish }
   end
 
+  # A flash message arrives already written in a new page, and screen readers
+  # announce an inserted role="alert" but not an inserted role="status".
   context "with a notice" do
     let(:messages) { { notice: "User created." } }
 
-    it "shows it as a status message" do
-      expect(texts("status")).to eq(["User created."])
+    it "announces it as an alert" do
+      expect(texts("alert")).to eq(["User created."])
     end
 
     it "styles it as a success" do
-      expect(rendered.at_css("[role='status']")[:class]).to include("bg-green-50")
+      expect(rendered.at_css("[role='alert']")[:class]).to include("bg-green-50")
+    end
+  end
+
+  context "with an info message" do
+    let(:messages) { { info: "Heads up" } }
+
+    it "announces it as an alert" do
+      expect(texts("alert")).to eq(["Heads up"])
     end
   end
 
@@ -45,7 +55,7 @@ RSpec.describe IronAdmin::Layout::FlashComponent, type: :component do
     let(:messages) { { "notice" => "Tag deleted." } }
 
     it "shows the message" do
-      expect(texts("status")).to eq(["Tag deleted."])
+      expect(texts("alert")).to eq(["Tag deleted."])
     end
   end
 
@@ -87,7 +97,7 @@ RSpec.describe IronAdmin::Layout::FlashComponent, type: :component do
     before { vc_test_controller.flash[:notice] = "From the request" }
 
     it "shows the request's flash" do
-      expect(rendered.at_css("[role='status']").text.squish).to eq("From the request")
+      expect(rendered.at_css("[role='alert']").text.squish).to eq("From the request")
     end
   end
 end

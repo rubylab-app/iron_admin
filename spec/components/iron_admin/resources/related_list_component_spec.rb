@@ -148,6 +148,28 @@ RSpec.describe IronAdmin::Resources::RelatedListComponent, type: :component do
       end
     end
 
+    context "when the associated resource has a boolean filter on the foreign key" do
+      let(:license_resource) { license_resource_with_filter(:boolean) }
+
+      it "links View all to the unfiltered index" do
+        expect(view_all_href(parent: user)).to eq(resources_path("licenses"))
+      end
+    end
+
+    context "with a through association" do
+      let(:license_resource) { license_resource_with_filter(:select) }
+      let(:through_association) do
+        licenses_association.merge(
+          reflection: instance_double(ActiveRecord::Reflection::ThroughReflection,
+                                      through_reflection?: true, foreign_key: "user_id", active_record_primary_key: "id")
+        )
+      end
+
+      it "links View all to the unfiltered index, since the foreign key belongs to the source association" do
+        expect(view_all_href(through_association, parent: user)).to eq(resources_path("licenses"))
+      end
+    end
+
     context "with a polymorphic association" do
       let(:note_resource) do
         Class.new(IronAdmin::Resource) do
