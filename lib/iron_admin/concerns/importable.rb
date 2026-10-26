@@ -42,10 +42,13 @@ module IronAdmin
 
         private
 
+        # A declared list sets both the fields and their order, as index_fields,
+        # form_fields and export_fields do.
         def import_base_fields
-          return resolved_fields.select { |field| field.name.in?(import_field_names) } if import_field_names
+          return resolved_fields.reject { |field| field.name.in?(%i[id created_at updated_at]) } unless import_field_names
 
-          resolved_fields.reject { |field| field.name.in?(%i[id created_at updated_at]) }
+          fields_by_name = resolved_fields.index_by(&:name)
+          import_field_names.filter_map { |name| fields_by_name[name] }
         end
 
         def import_excluded_field_type?(field_type)

@@ -39,7 +39,7 @@ end
 | Method | Description |
 |--------|-------------|
 | `imports :csv, :json` | Formats the upload form accepts |
-| `import_fields` | Fields a file can set. By default, every field except `id`, `created_at` and `updated_at`. Fields hidden from or readonly for the current user, associations, `:file`, `:files` and `:rich_text` fields are never imported. |
+| `import_fields` | Fields a file can set, in the order the upload form and the preview list them. By default, every field except `id`, `created_at` and `updated_at`, in column order. Fields hidden from or readonly for the current user, associations, `:file`, `:files` and `:rich_text` fields are never imported. |
 | `import_upsert_key` | Fields that identify an existing record. A row whose values match a record (within the tenant scope) updates it; other rows create records. |
 | `import_transform` | Block that receives the row's attributes (and, with two parameters, a context with `current_user` and `controller`) and returns the attributes to save |
 | `import_validate` | Block that returns an error message, or an array of them, for an invalid row |

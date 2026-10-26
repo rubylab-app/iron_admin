@@ -31,6 +31,20 @@ RSpec.describe IronAdmin::Import::ColumnMapper do
     )
   end
 
+  it "orders the mapping as import_fields does" do
+    mapping = described_class.new(resource_class).map_headers(%w[Preferences Email Name Active])
+
+    expect(mapping.to_a).to eq(
+      [["Name", :name], ["Email", :email], ["Active", :active], ["Preferences", :preferences]]
+    )
+  end
+
+  it "keeps the file order of headers that map to the same field" do
+    mapping = described_class.new(resource_class).map_headers(%w[E-mail Name email])
+
+    expect(mapping.keys).to eq(%w[Name E-mail email])
+  end
+
   it "does not map headers for fields excluded from the import allowlist" do
     mapping = described_class.new(resource_class).map_headers(["Name", "Role", "Created at"])
 
