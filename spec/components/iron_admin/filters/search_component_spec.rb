@@ -25,14 +25,36 @@ RSpec.describe IronAdmin::Filters::SearchComponent, type: :component do
   end
 
   describe "#input_classes" do
-    it "includes border class" do
-      component = described_class.new(form_url: "/search")
-      expect(component.input_classes).to include("border")
+    subject(:input_classes) { described_class.new(form_url: "/search").input_classes.split }
+
+    it "uses the theme's border width" do
+      expect(input_classes).to include("border")
     end
 
     it "includes left padding for icon" do
-      component = described_class.new(form_url: "/search")
-      expect(component.input_classes).to include("pl-10")
+      expect(input_classes).to include("pl-9")
+    end
+
+    it "is a 36px filter input" do
+      expect(input_classes).to include("h-9", "bg-white", "rounded-md")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.card_bg = "bg-zinc-900" }
+      end
+
+      it "uses that theme's surface" do
+        expect(input_classes).to include("bg-zinc-900")
+      end
+    end
+  end
+
+  describe "search icon" do
+    subject(:icon) { render_inline(described_class.new(form_url: "/search")).at_css("svg") }
+
+    it "uses the theme's decorative icon color" do
+      expect(icon[:class].split).to include("text-zinc-400")
     end
   end
 

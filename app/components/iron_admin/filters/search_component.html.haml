@@ -1,7 +1,7 @@
 = form_tag form_url, method: :get, class: "flex" do
   - hidden_params.each do |key, val|
     = hidden_field_tag key, val, id: nil
-  .relative
-    .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center{ class: "pl-3.5" }
-      = heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{theme.muted_text}" }
+  .relative.w-full.sm:w-64
+    .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3
+      = heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{theme.icon_muted}" }
     = text_field_tag :q, value, placeholder: placeholder, "aria-label": label, class: input_classes
