@@ -51,10 +51,10 @@ module IronAdmin
       # Variant style mappings (uses theme configuration).
       # @return [Hash{Symbol => Proc}]
       VARIANTS = {
-        primary: -> { IronAdmin.configuration.theme.btn_primary },
-        secondary: -> { IronAdmin.configuration.theme.btn_secondary },
-        danger: -> { IronAdmin.configuration.theme.btn_danger },
-        ghost: -> { IronAdmin.configuration.theme.btn_ghost },
+        primary: -> { IronAdmin.current_theme.btn_primary },
+        secondary: -> { IronAdmin.current_theme.btn_secondary },
+        danger: -> { IronAdmin.current_theme.btn_danger },
+        ghost: -> { IronAdmin.current_theme.btn_ghost },
       }.freeze
 
       # Size class mappings.

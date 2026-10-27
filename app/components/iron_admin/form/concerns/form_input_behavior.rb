@@ -40,7 +40,7 @@ module IronAdmin
         #
         # @return [IronAdmin::Configuration::Theme]
         def theme
-          IronAdmin.configuration.theme
+          IronAdmin.current_theme
         end
       end
     end

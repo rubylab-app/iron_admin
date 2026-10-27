@@ -46,6 +46,91 @@ RSpec.describe "Engine layout", type: :request do
     end
   end
 
+  describe "theme" do
+    subject(:document) do
+      get iron_admin.resources_path("users"), as: :html
+      response.parsed_body
+    end
+
+    let(:font_url) { "https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" }
+    let(:body_classes) { document.at_css("body")[:class].split }
+
+    context "with the default theme" do
+      it "sets the light color scheme class on the html element" do
+        expect(document.at_css("html")[:class].split).to include("scheme-light")
+      end
+
+      it "declares the light color scheme" do
+        expect(document.at_css("meta[name='color-scheme']")[:content]).to eq("light")
+      end
+
+      it "links the theme's font stylesheet" do
+        expect(document.css("head link[rel='stylesheet']").pluck(:href)).to include(font_url)
+      end
+
+      it "preconnects to the Google Fonts hosts" do
+        expect(document.css("head link[rel='preconnect']").pluck(:href))
+          .to eq(["https://fonts.googleapis.com", "https://fonts.gstatic.com"])
+      end
+
+      it "allows the font files host to serve fonts across origins" do
+        expect(document.at_css("head link[href='https://fonts.gstatic.com']").key?("crossorigin")).to be(true)
+      end
+
+      it "styles the body with the theme's background, text color and font" do
+        expect(body_classes).to include("antialiased", "bg-zinc-50", "text-zinc-900",
+                                        "font-[family-name:Inter,ui-sans-serif,system-ui,sans-serif]")
+      end
+    end
+
+    context "with a dark theme picked by the theme cookie" do
+      before do
+        IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.color_scheme = "dark"
+          t.main_bg = "bg-zinc-950"
+          t.body_text = "text-zinc-100"
+        end
+        cookies["iron_admin_theme"] = "midnight"
+      end
+
+      it "sets the dark color scheme class on the html element" do
+        expect(document.at_css("html")[:class].split).to include("scheme-dark")
+      end
+
+      it "declares the dark color scheme" do
+        expect(document.at_css("meta[name='color-scheme']")[:content]).to eq("dark")
+      end
+
+      it "styles the body with that theme" do
+        expect(body_classes).to include("bg-zinc-950", "text-zinc-100")
+      end
+
+      it "does not keep the default theme's body colors" do
+        expect(body_classes).not_to include("bg-zinc-50", "text-zinc-900")
+      end
+    end
+
+    context "with a font stylesheet off Google Fonts" do
+      before { IronAdmin.configuration.theme.font_stylesheet_url = "https://cdn.example.com/fonts.css" }
+
+      it "links it" do
+        expect(document.css("head link[rel='stylesheet']").pluck(:href)).to include("https://cdn.example.com/fonts.css")
+      end
+
+      it "preconnects to no font host" do
+        expect(document.css("head link[rel='preconnect']")).to be_empty
+      end
+    end
+
+    context "without a font stylesheet" do
+      before { IronAdmin.configuration.theme.font_stylesheet_url = nil }
+
+      it "links no font stylesheet" do
+        expect(document.css("head link[rel='preconnect'], head link[href*='fonts']")).to be_empty
+      end
+    end
+  end
+
   describe "favicon" do
     subject(:icon_links) do
       get iron_admin.resources_path("users"), as: :html

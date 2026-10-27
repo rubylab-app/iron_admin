@@ -33,9 +33,9 @@ module IronAdmin
         @current_user = current_user
       end
 
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @return [String] Human-readable title for the section header

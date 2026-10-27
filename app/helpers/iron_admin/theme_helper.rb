@@ -6,10 +6,18 @@ module IronAdmin
   # Provides convenience methods for generating Tailwind class strings
   # based on the current theme configuration.
   module ThemeHelper
-    # Returns the current theme configuration.
+    # Returns the theme of the current request (the default theme outside a request).
     # @return [IronAdmin::Configuration::Theme]
     def t
-      IronAdmin.configuration.theme
+      IronAdmin.current_theme
+    end
+
+    # @return [Boolean] Whether the theme's font stylesheet is on Google Fonts, whose
+    #   hosts the layout preconnects to
+    def cp_google_fonts?
+      URI.parse(t.font_stylesheet_url.to_s).host == "fonts.googleapis.com"
+    rescue URI::InvalidURIError
+      false
     end
 
     # @return [String] Primary button classes

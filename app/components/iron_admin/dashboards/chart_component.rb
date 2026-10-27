@@ -45,6 +45,14 @@ module IronAdmin
       # @return [Array<Symbol>]
       LEGEND_TYPES = %i[pie doughnut polar_area].freeze
 
+      # Types drawn on x and y axes.
+      # @return [Array<Symbol>]
+      CARTESIAN_TYPES = %i[line area bar horizontal_bar].freeze
+
+      # Types drawn on a radial scale.
+      # @return [Array<Symbol>]
+      RADIAL_TYPES = %i[radar polar_area].freeze
+
       # @param title [String] Chart title
       # @param type [Symbol] Chart type (default: :line)
       # @param data [Array] Chart data
@@ -61,9 +69,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
@@ -88,14 +96,7 @@ module IronAdmin
               tension: 0.3,
             }],
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: index_axis,
-            plugins: {
-              legend: { display: legend? },
-            },
-          },
+          options: chart_options,
         }.to_json
       end
 
@@ -131,6 +132,35 @@ module IronAdmin
       end
 
       private
+
+      # Grid, tick and legend colors come from the theme, so dark themes get readable charts.
+      # @return [Hash] Chart.js options
+      def chart_options
+        options = {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: index_axis,
+          plugins: {
+            legend: { display: legend?, labels: { color: theme.chart_text_color } },
+          },
+        }
+        scales = scale_options
+        scales ? options.merge(scales: scales) : options
+      end
+
+      # Pie and doughnut charts get no scales: Chart.js would draw axes for them.
+      # @return [Hash, nil] Chart.js scale options in the theme's colors
+      def scale_options
+        grid = theme.chart_grid_color
+        text = theme.chart_text_color
+        if CARTESIAN_TYPES.include?(type)
+          axis = { grid: { color: grid }, border: { color: grid }, ticks: { color: text } }
+          { x: axis, y: axis }
+        elsif RADIAL_TYPES.include?(type)
+          ticks = { color: text, backdropColor: "transparent" }
+          { r: { grid: { color: grid }, angleLines: { color: grid }, pointLabels: { color: text }, ticks: ticks } }
+        end
+      end
 
       # Resolves the dataset background: a single semi-transparent fill for
       # single-series charts, or the full color palette for multi-slice charts.

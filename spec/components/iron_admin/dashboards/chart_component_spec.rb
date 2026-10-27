@@ -158,6 +158,80 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
     end
   end
 
+  describe "scheme colors in #chart_config" do
+    subject(:options) { JSON.parse(described_class.new(title: "Chart", type: type, data: [1], labels: ["A"]).chart_config)["options"] }
+
+    let(:grid) { "rgba(228, 228, 231, 1)" }
+    let(:text) { "rgb(113, 113, 122)" }
+
+    context "with a cartesian chart" do
+      let(:type) { :bar }
+
+      it "colors the grid lines of both axes" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["grid"]["color"] }).to eq([grid, grid])
+      end
+
+      it "colors the axis borders" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["border"]["color"] }).to eq([grid, grid])
+      end
+
+      it "colors the ticks of both axes" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["ticks"]["color"] }).to eq([text, text])
+      end
+
+      it "colors the legend labels" do
+        expect(options["plugins"]["legend"]["labels"]["color"]).to eq(text)
+      end
+    end
+
+    context "with a radial chart" do
+      let(:type) { :radar }
+
+      it "colors the grid and angle lines" do
+        expect(options["scales"]["r"].values_at("grid", "angleLines").pluck("color")).to eq([grid, grid])
+      end
+
+      it "colors the point labels and ticks" do
+        expect([options["scales"]["r"]["pointLabels"]["color"], options["scales"]["r"]["ticks"]["color"]]).to eq([text, text])
+      end
+
+      it "draws the ticks without a backdrop, which would stay white in dark themes" do
+        expect(options["scales"]["r"]["ticks"]["backdropColor"]).to eq("transparent")
+      end
+    end
+
+    context "with a pie chart" do
+      let(:type) { :pie }
+
+      it "adds no scales, which would draw axes" do
+        expect(options).not_to have_key("scales")
+      end
+
+      it "colors the legend labels" do
+        expect(options["plugins"]["legend"]["labels"]["color"]).to eq(text)
+      end
+    end
+
+    context "with a dark theme for the request" do
+      let(:type) { :line }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.chart_grid_color = "rgba(63, 63, 70, 1)"
+          t.chart_text_color = "rgb(161, 161, 170)"
+        end
+      end
+
+      it "uses that theme's grid color" do
+        expect(options["scales"]["x"]["grid"]["color"]).to eq("rgba(63, 63, 70, 1)")
+      end
+
+      it "uses that theme's text color" do
+        expect(options["scales"]["y"]["ticks"]["color"]).to eq("rgb(161, 161, 170)")
+      end
+    end
+  end
+
   describe "#chart_colors" do
     it "returns theme colors by default" do
       component = described_class.new(title: "Revenue")

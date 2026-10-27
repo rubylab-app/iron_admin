@@ -15,9 +15,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
@@ -68,9 +68,9 @@ module IronAdmin
         end
 
         # @api private
-        # @return [IronAdmin::Configuration::Theme] Theme configuration
+        # @return [IronAdmin::Configuration::Theme] Theme of the current request
         def theme
-          IronAdmin.configuration.theme
+          IronAdmin.current_theme
         end
 
         # @api private
