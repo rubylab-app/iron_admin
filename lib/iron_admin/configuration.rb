@@ -121,9 +121,10 @@ module IronAdmin
     # @see #audit_user_labels
     attr_reader :audit_user_labels_block
 
-    # @return [IronAdmin::Configuration::Theme] Theme configuration
-    # @see #theme
-    attr_reader :theme_config
+    # @return [Symbol] Name of the theme used when the request resolves no registered theme
+    #   (default: :neutral)
+    # @see #theme_resolver
+    attr_reader :default_theme
 
     # @return [IronAdmin::Configuration::Components] Component overrides
     attr_reader :components
@@ -131,6 +132,18 @@ module IronAdmin
     # @return [Proc, nil] Tenant scope block
     # @see #tenant_scope
     attr_reader :tenant_scope_block
+
+    # Name of the built-in theme, registered by every Configuration.
+    # @return [Symbol]
+    NEUTRAL_THEME = :neutral
+
+    # Cookie that stores the theme picked in the theme switcher.
+    # @return [String]
+    THEME_COOKIE = "iron_admin_theme"
+
+    # Resolver used until {#theme_resolver} is given a block: the theme cookie.
+    # @return [Proc]
+    DEFAULT_THEME_RESOLVER = ->(request) { request.cookies[THEME_COOKIE] }
 
     # Maps color names to Tailwind CSS classes for badges.
     # @return [Hash{Symbol => String}]
@@ -195,7 +208,9 @@ module IronAdmin
       @default_sort_direction = :desc
       @search_engine = :default
       @badge_colors = DEFAULT_BADGE_COLORS.dup
-      @theme_config = Theme.new
+      @themes = { NEUTRAL_THEME => Theme.new(name: NEUTRAL_THEME) }
+      @default_theme = NEUTRAL_THEME
+      @theme_resolver = DEFAULT_THEME_RESOLVER
       @components = Components.new
       @audit_enabled = false
       @audit_storage = :memory
@@ -308,23 +323,84 @@ module IronAdmin
       @on_action_block = block
     end
 
-    # Configures the admin panel theme.
+    # Configures the default theme: the one {#default_theme} names, else Neutral.
     #
-    # @yield [theme] Block to configure theme options
-    # @yieldparam theme [IronAdmin::Configuration::Theme] The theme config
-    # @return [IronAdmin::Configuration::Theme] The theme configuration
+    # @yieldparam theme [IronAdmin::Configuration::Theme] The default theme
+    # @return [IronAdmin::Configuration::Theme] The default theme
     #
     # @example
-    #   config.theme do |t|
-    #     t.primary_color = "#4F46E5"
-    #     t.sidebar_bg = "#1F2937"
-    #     t.font_family = "Inter, sans-serif"
-    #   end
-    #
-    # @see IronAdmin::Configuration::Theme
+    #   config.theme { |t| t.btn_primary = "bg-blue-600 text-white" }
     def theme
-      yield @theme_config if block_given?
-      @theme_config
+      default = find_theme(default_theme) || @themes.fetch(NEUTRAL_THEME)
+      yield default if block_given?
+      default
+    end
+
+    # @return [IronAdmin::Configuration::Theme] The default theme, as {#theme} returns it
+    def theme_config
+      theme
+    end
+
+    # Registers a theme that starts from the Neutral values and yields it.
+    # Registering a name again replaces it; a blank name raises ArgumentError.
+    #
+    # @param name [Symbol, String] Cookie value
+    # @param label [String] Switcher text
+    # @return [IronAdmin::Configuration::Theme]
+    def register_theme(name, label: name.to_s.titleize)
+      name = theme_name!(name)
+      registered = Theme.new(name: name, label: label)
+      yield registered if block_given?
+      @themes[name] = registered
+    end
+
+    # @return [Hash{Symbol => IronAdmin::Configuration::Theme}] Registered themes by name: the
+    #   default theme first, then the others in registration order
+    def themes
+      default = find_theme(default_theme)
+      default ? { default.name => default }.merge(@themes) : @themes.dup
+    end
+
+    # @param name [Symbol, String] Name of the theme used when no registered theme resolves
+    # @return [void]
+    # @raise [ArgumentError] If the name is blank
+    def default_theme=(name)
+      @default_theme = theme_name!(name)
+    end
+
+    # Sets the block that names each request's theme, which by default is the
+    # {THEME_COOKIE} cookie, and returns the resolver.
+    #
+    # @yieldparam request [ActionDispatch::Request] The current request
+    # @yieldreturn [Symbol, String, nil] Name of a registered theme
+    # @return [Proc] The resolver
+    def theme_resolver(&block)
+      @theme_resolver = block if block
+      @theme_resolver
+    end
+
+    # @param request [ActionDispatch::Request] The current request
+    # @return [IronAdmin::Configuration::Theme] The theme {#theme_resolver} names, else the
+    #   default theme (also when the resolver raises, which is logged)
+    def resolve_theme(request)
+      theme_for(theme_resolver.call(request))
+    rescue StandardError => e
+      log_theme_resolver_error(e)
+      theme
+    end
+
+    # @param name [Symbol, String, nil] Name of a theme
+    # @return [IronAdmin::Configuration::Theme] The theme registered under the name, else the default theme
+    def theme_for(name)
+      find_theme(name) || theme
+    end
+
+    # @param name [Symbol, String, nil] Name of a theme
+    # @return [IronAdmin::Configuration::Theme, nil] The theme registered under the name, if any
+    def find_theme(name)
+      key = name.to_s
+      @themes.each { |theme_name, registered| return registered if theme_name.name == key }
+      nil
     end
 
     # Defines a tenant scope for multi-tenant applications.
@@ -353,6 +429,20 @@ module IronAdmin
     # @return [void]
     def tenant_scope(&block)
       @tenant_scope_block = block
+    end
+
+    private
+
+    def theme_name!(name)
+      raise ArgumentError, "IronAdmin theme name must not be blank, got #{name.inspect}" if name.to_s.strip.empty?
+
+      name.to_sym
+    end
+
+    def log_theme_resolver_error(error)
+      return unless defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+
+      Rails.logger.warn("[IronAdmin] theme_resolver raised #{error.class}: #{error.message}; using the default theme")
     end
   end
 end

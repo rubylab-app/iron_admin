@@ -321,6 +321,45 @@ RSpec.describe IronAdmin do
 
       expect(described_class.dashboard_class).to be_nil
     end
+
+    it "removes registered themes" do
+      described_class.configuration.register_theme(:midnight)
+      described_class.reset_configuration!
+
+      expect(described_class.configuration.themes.keys).to eq([:neutral])
+    end
+
+    it "restores the default theme resolver" do
+      described_class.configuration.theme_resolver { |_request| :midnight }
+      described_class.reset_configuration!
+
+      expect(described_class.configuration.theme_resolver).to equal(IronAdmin::Configuration::DEFAULT_THEME_RESOLVER)
+    end
+
+    it "clears the theme of the current request" do
+      IronAdmin::Current.theme = IronAdmin::Configuration::Theme.new(name: :midnight)
+      described_class.reset_configuration!
+
+      expect(IronAdmin::Current.theme).to be_nil
+    end
+  end
+
+  describe ".current_theme" do
+    context "outside a request" do
+      it "returns the default theme" do
+        expect(described_class.current_theme).to equal(described_class.configuration.theme)
+      end
+    end
+
+    context "when the request resolved a theme" do
+      let(:midnight) { described_class.configuration.register_theme(:midnight) }
+
+      before { IronAdmin::Current.theme = midnight }
+
+      it "returns that theme" do
+        expect(described_class.current_theme).to equal(midnight)
+      end
+    end
   end
 
   describe ".dashboard_class" do
