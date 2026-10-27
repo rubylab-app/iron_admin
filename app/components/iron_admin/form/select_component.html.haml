@@ -1,4 +1,4 @@
-%select{ name: name, id: name, class: select_classes, disabled: effectively_disabled?, style: chevron_style }
+%select{ name: name, id: name, class: select_classes, disabled: effectively_disabled? }
   - if include_blank
     %option{ value: "" }= include_blank.is_a?(String) ? include_blank : "Select..."
   - options.each do |option|

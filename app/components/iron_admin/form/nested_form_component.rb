@@ -43,6 +43,16 @@ module IronAdmin
         name.to_s.humanize
       end
 
+      # @return [String] Classes of the section title (h2)
+      def title_classes
+        "#{theme.card_title} #{theme.heading_font}".squish
+      end
+
+      # @return [String] Classes of the "Add row" button
+      def add_button_classes
+        ControlClasses.button(theme, :secondary)
+      end
+
       # @return [Boolean] Whether to show the "Add" button (has_many only)
       def show_add_button?
         kind == :has_many

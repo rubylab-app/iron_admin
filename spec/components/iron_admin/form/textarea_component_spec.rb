@@ -60,9 +60,19 @@ RSpec.describe IronAdmin::Form::TextareaComponent, type: :component do
       expect(component.textarea_classes).to include("resize-y")
     end
 
-    it "includes error classes when has_error" do
+    it "uses the theme's input_error when has_error" do
       component = described_class.new(name: :description, has_error: true)
-      expect(component.textarea_classes).to include("border-red-400")
+      expect(component.textarea_classes.split).to include(*IronAdmin.current_theme.input_error.split)
+    end
+
+    it "drops the theme's input_border when has_error" do
+      component = described_class.new(name: :description, has_error: true)
+      expect(component.textarea_classes.split).not_to include(*IronAdmin.current_theme.input_border.split)
+    end
+
+    it "uses the theme's surface_muted when readonly" do
+      component = described_class.new(name: :description, readonly: true)
+      expect(component.textarea_classes.split).to include(IronAdmin.current_theme.surface_muted)
     end
 
     it "includes disabled classes when disabled" do
@@ -150,6 +160,19 @@ RSpec.describe IronAdmin::Form::TextareaComponent, type: :component do
         result = render_inline(described_class.new(name: :description, disabled: false))
         expect(result.css("textarea[disabled]")).not_to be_present
       end
+    end
+  end
+
+  context "with a registered theme active" do
+    before do
+      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+        theme.control_radius = "rounded-none"
+        theme.checkbox_radius = "rounded-none"
+      end
+    end
+
+    it "renders the textarea with that theme's radius" do
+      expect(render_inline(described_class.new(name: :description)).at_css("textarea")[:class].split).to include("rounded-none")
     end
   end
 end

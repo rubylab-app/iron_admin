@@ -59,6 +59,9 @@ RSpec.describe IronAdmin::Engine do
     {
       "cp-select-chevron" => /\.cp-select-chevron\s*\{[^}]*background-image:\s*url\("data:image.svg\+xml/,
       "cp-checkbox-mark" => /\.cp-checkbox-mark:checked\s*\{[^}]*background-image:\s*url\("data:image.svg\+xml/,
+      "cp-radio-mark" => /\.cp-radio-mark:checked\s*\{[^}]*background-image:\s*url\("data:image.svg\+xml/,
+      "cp-select-chevron under a dark color scheme" =>
+        /\.scheme-dark \.cp-select-chevron\s*\{[^}]*background-image:\s*url\("data:image.svg\+xml/,
     }.each do |name, rule|
       it "styles #{name}" do
         expect(engine_css).to match(rule)

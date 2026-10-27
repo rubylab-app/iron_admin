@@ -1,17 +1,18 @@
 - t = IronAdmin.current_theme
+- controls = IronAdmin::Form::ControlClasses
 
-%div.relative.border.rounded-lg.p-4.mb-3{ class: "#{t.card_border} #{t.card_bg}", data: { "cp-nested-form-target": "row" } }
+%div.relative.p-4.mb-3{ class: "#{t.border_width} #{t.border_radius} #{t.card_border} #{t.surface_muted}", data: { "cp-nested-form-target": "row" } }
 
   -# Drag handle (only when sortable)
   - if nested_association.position_field
-    .absolute.top-2.left-2.cursor-grab.text-gray-400{ data: { "cp-nested-form-target": "dragHandle" } }
+    .absolute.top-2.left-2.cursor-grab{ class: t.icon_muted, data: { "cp-nested-form-target": "dragHandle" } }
       = heroicon "bars-3", variant: :mini, options: { class: "h-5 w-5" }
     = child_f.hidden_field nested_association.position_field, data: { "cp-nested-form-target": "positionField" }
 
   -# Remove button (only when allow_destroy)
   - if nested_association.allow_destroy
     .absolute.top-2.right-2
-      %button.text-gray-400.transition.cursor-pointer{ type: "button", class: "hover:text-red-500", aria: { label: I18n.t("iron_admin.nested_form.remove_button", default: "Remove") }, data: { action: "cp-nested-form#removeRow" } }
+      %button.transition.cursor-pointer{ type: "button", class: "#{t.control_radius} #{t.link_muted} #{t.focus_ring}", aria: { label: I18n.t("iron_admin.nested_form.remove_button", default: "Remove") }, data: { action: "cp-nested-form#removeRow" } }
         = heroicon "x-mark", variant: :mini, options: { class: "h-5 w-5" }
     = child_f.hidden_field :_destroy, value: "0", data: { "cp-nested-form-target": "destroyField" }
 
@@ -25,31 +26,32 @@
       - next unless field.visible?(current_user)
       - next if field.readonly?(current_user)
       - has_error = child.errors[field.name].any?
-      - input_class = "block w-full px-3 py-2 text-sm border #{t.input_border} #{t.border_radius} shadow-sm outline-none transition duration-150 ease-in-out #{t.input_focus}"
-      - input_class += " !border-red-400" if has_error
+      - input_class = controls.input(t, error: has_error)
+      - select_class = controls.select(t, error: has_error)
+      - textarea_class = controls.textarea(t, error: has_error)
       %div
         = child_f.label(field.type == :belongs_to ? field.options[:foreign_key] : field.name, field.name.to_s.humanize,
-          class: "block text-xs font-medium text-gray-500 mb-1")
+          class: "block text-xs font-medium mb-1 #{t.label_text}")
         - case field.type
         - when :belongs_to
           - fk = field.options[:foreign_key]
           - assoc_class = field.options[:association_class]
           - if assoc_class
-            = child_f.select fk, options_from_collection_for_select(assoc_class.all, :id, :name, child.public_send(fk)), { include_blank: true }, class: input_class
+            = child_f.select fk, options_from_collection_for_select(assoc_class.all, :id, :name, child.public_send(fk)), { include_blank: true }, class: select_class
           - else
             = child_f.number_field fk, placeholder: field.name.to_s.humanize, class: input_class
         - when :textarea
-          = child_f.text_area field.name, rows: 2, class: input_class
+          = child_f.text_area field.name, rows: 2, class: textarea_class
         - when :json
           - raw_json_value = child.public_send(field.name)
           - json_str = raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value)
           = child_f.text_area field.name, value: json_str, rows: field.options[:rows] || 4,
-            placeholder: "{}", class: "#{input_class} font-mono"
+            placeholder: "{}", class: "#{textarea_class} font-mono"
         - when :number
           = child_f.number_field field.name, class: input_class
         - when :boolean
           .flex.items-center.gap-2
-            = child_f.check_box field.name, class: "rounded border-gray-300"
+            = child_f.check_box field.name, class: controls.checkbox(t)
         - when :datetime, :date
           = child_f.datetime_local_field field.name, class: input_class
         - when :select, :badge
@@ -62,9 +64,9 @@
               - choices = child.class.defined_enums[field.name.to_s]&.keys&.map { |c| [c.humanize, c] } || []
           - elsif field.options[:choices]
             - choices = field.options[:choices].map { |c| [c.humanize, c] }
-          = child_f.select field.name, choices, { include_blank: true }, class: input_class
+          = child_f.select field.name, choices, { include_blank: true }, class: select_class
         - else
           = child_f.text_field field.name, placeholder: field.name.to_s.humanize, class: input_class
 
         - if has_error
-          %p.text-xs.text-red-600.mt-1= child.errors[field.name].join(", ")
+          %p.text-xs.mt-1{ class: t.error_text }= child.errors[field.name].join(", ")
