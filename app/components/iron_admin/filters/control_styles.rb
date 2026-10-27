@@ -3,8 +3,9 @@
 module IronAdmin
   module Filters
     # Classes of the filter controls, shared by the filter components, the index page's
-    # built-in filter bar and the audit log filters. Colors, borders, radii and shadows
-    # come from the theme.
+    # built-in filter bar and the audit log filters. Inputs, selects and buttons are the
+    # form controls of {IronAdmin::Form::ControlClasses}; colors, borders, radii and
+    # shadows come from the theme.
     module ControlStyles
       module_function
 
@@ -17,28 +18,25 @@ module IronAdmin
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] Text, number and date inputs
       def input(theme)
-        "block w-full h-9 px-3 text-sm outline-none transition duration-150 ease-in-out #{field(theme)}"
+        Form::ControlClasses.input(theme)
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] Selects, with the engine's chevron (see engine.css)
       def select(theme)
-        "block w-full h-9 pl-3 pr-9 text-sm appearance-none outline-none transition duration-150 ease-in-out " \
-          "cp-select-chevron #{field(theme)}"
+        Form::ControlClasses.select(theme)
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] The search input, with room for the magnifying glass on its left
       def search_input(theme)
-        "block w-full h-9 pl-9 pr-3 text-sm outline-none transition duration-150 ease-in-out #{field(theme)}"
+        Form::ControlClasses.input(theme, padding: "pl-9 pr-3")
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] The +<summary>+ that opens the filter panel, styled as a secondary button
       def trigger(theme)
-        "inline-flex items-center gap-2 h-9 px-3.5 text-sm font-medium cursor-pointer select-none " \
-          "transition duration-150 ease-in-out [&::-webkit-details-marker]:hidden " \
-          "#{theme.control_radius} #{theme.btn_secondary} #{theme.focus_ring}"
+        "#{Form::ControlClasses.button(theme, :secondary)} select-none [&::-webkit-details-marker]:hidden"
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
@@ -64,15 +62,7 @@ module IronAdmin
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] The Apply button
       def apply_button(theme)
-        "inline-flex items-center justify-center h-9 px-3.5 text-sm font-medium cursor-pointer " \
-          "transition duration-150 ease-in-out #{theme.control_radius} #{theme.btn_primary}"
-      end
-
-      # @param theme [IronAdmin::Configuration::Theme]
-      # @return [String] Border, surface, text and focus classes of inputs and selects
-      def field(theme)
-        "#{theme.border_width} #{theme.control_radius} #{theme.input_border} #{theme.card_bg} " \
-          "#{theme.body_text} #{theme.placeholder_text} #{theme.input_focus}"
+        Form::ControlClasses.button(theme, :primary)
       end
     end
   end

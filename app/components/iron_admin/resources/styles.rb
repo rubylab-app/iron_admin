@@ -13,11 +13,6 @@ module IronAdmin
       # @return [String]
       DETAIL_ROW = "flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center"
 
-      # Layout of the 36px buttons; the theme adds colors, radius and focus ring.
-      # @return [String]
-      BUTTON = "inline-flex items-center justify-center gap-1.5 h-9 px-3.5 text-sm font-medium " \
-               "whitespace-nowrap cursor-pointer transition duration-150 ease-in-out"
-
       module_function
 
       # @param theme [IronAdmin::Configuration::Theme]
@@ -103,15 +98,15 @@ module IronAdmin
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
-      # @return [String] A secondary button, such as a bulk or member action
+      # @return [String] A secondary button, such as a bulk or member action, like the form buttons
       def secondary_button(theme)
-        "#{BUTTON} #{theme.control_radius} #{theme.btn_secondary} #{theme.focus_ring}"
+        Form::ControlClasses.button(theme, :secondary)
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
-      # @return [String] A ghost button, such as the audit log's Clear link
+      # @return [String] A ghost button, such as the audit log's Clear link, like the form buttons
       def ghost_button(theme)
-        "#{BUTTON} #{theme.control_radius} #{theme.btn_ghost} #{theme.focus_ring}"
+        Form::ControlClasses.button(theme, :ghost)
       end
     end
   end

@@ -134,6 +134,14 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
         expect(search_input).to include("placeholder:text-zinc-500", "focus:ring-indigo-500/15")
       end
 
+      it "casts the theme's control shadow, like every input" do
+        expect(search_input).to include("shadow-xs")
+      end
+
+      it "hides the search outline only where the focus ring shows, keeping it in forced-colors mode" do
+        expect(search_input).to include("outline-hidden")
+      end
+
       it "mutes the search icon" do
         expect(search_icon).to include("text-zinc-400")
       end

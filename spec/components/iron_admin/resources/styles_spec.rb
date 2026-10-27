@@ -178,4 +178,24 @@ RSpec.describe IronAdmin::Resources::Styles do
       end
     end
   end
+
+  describe ".secondary_button" do
+    it "matches the secondary buttons of the forms" do
+      expect(described_class.secondary_button(theme)).to eq(IronAdmin::Form::ControlClasses.button(theme, :secondary))
+    end
+
+    it "casts the theme's control shadow" do
+      expect(described_class.secondary_button(theme).split).to include("shadow-xs")
+    end
+  end
+
+  describe ".ghost_button" do
+    it "matches the ghost buttons of the forms" do
+      expect(described_class.ghost_button(theme)).to eq(IronAdmin::Form::ControlClasses.button(theme, :ghost))
+    end
+
+    it "stays flat, like every ghost button" do
+      expect(described_class.ghost_button(theme).split).not_to include("shadow-xs")
+    end
+  end
 end

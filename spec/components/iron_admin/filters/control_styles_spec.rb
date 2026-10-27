@@ -53,8 +53,16 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
       expect(classes).to include("bg-white", "text-zinc-900", "placeholder:text-zinc-500", "focus:ring-3")
     end
 
-    it "sets no shadow, which belongs to the theme" do
-      expect(classes.grep(/\Ashadow/)).to be_empty
+    it "takes its shadow from the theme's control shadow" do
+      expect(classes.grep(/\Ashadow/)).to eq(["shadow-xs"])
+    end
+
+    it "hides the focus outline only where the ring shows, keeping it in forced-colors mode" do
+      expect(classes).to include("outline-hidden")
+    end
+
+    it "matches the inputs of the forms" do
+      expect(classes).to eq(IronAdmin::Form::ControlClasses.input(theme).split)
     end
 
     context "with another theme" do
@@ -80,6 +88,10 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
     it "is 36px high with the theme's input classes" do
       expect(classes).to include("h-9", "border", "border-zinc-200", "rounded-md", "bg-white")
     end
+
+    it "matches the selects of the forms" do
+      expect(classes).to eq(IronAdmin::Form::ControlClasses.select(theme).split)
+    end
   end
 
   describe ".search_input" do
@@ -91,6 +103,10 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
 
     it "is 36px high with the theme's input classes" do
       expect(classes).to include("h-9", "border", "border-zinc-200", "rounded-md", "bg-white", "placeholder:text-zinc-500")
+    end
+
+    it "matches the inputs of the forms" do
+      expect(classes).to eq(IronAdmin::Form::ControlClasses.input(theme, padding: "pl-9 pr-3").split)
     end
   end
 
@@ -107,6 +123,10 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
 
     it "hides the disclosure marker of the summary" do
       expect(classes).to include("[&::-webkit-details-marker]:hidden")
+    end
+
+    it "looks like the secondary buttons of the forms" do
+      expect(classes).to include(*IronAdmin::Form::ControlClasses.button(theme, :secondary).split)
     end
 
     context "with another theme" do
@@ -171,6 +191,10 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
 
     it "uses the theme's primary button" do
       expect(classes).to include("bg-zinc-900", "text-white")
+    end
+
+    it "matches the primary buttons of the forms" do
+      expect(classes).to eq(IronAdmin::Form::ControlClasses.button(theme, :primary).split)
     end
 
     context "with another theme" do

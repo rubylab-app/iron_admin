@@ -94,6 +94,28 @@ RSpec.describe IronAdmin::Ui::ButtonComponent, type: :component do
       end
     end
 
+    context "with the theme's control_shadow" do
+      before { IronAdmin.configuration.theme { |t| t.control_shadow = "shadow-sm" } }
+
+      %i[primary secondary danger].each do |raised|
+        context "with the #{raised} variant" do
+          let(:variant) { raised }
+
+          it "casts the control shadow, like the form buttons" do
+            expect(classes).to include("shadow-sm")
+          end
+        end
+      end
+
+      context "with the ghost variant" do
+        let(:variant) { :ghost }
+
+        it "stays flat" do
+          expect(classes).not_to include("shadow-sm")
+        end
+      end
+    end
+
     context "with the primary variant, whose btn_primary carries its own focus outline" do
       let(:variant) { :primary }
 

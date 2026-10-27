@@ -70,6 +70,10 @@ module IronAdmin
       # @return [Array<Symbol>]
       OWN_FOCUS_VARIANTS = %i[primary].freeze
 
+      # Variants drawn without the theme's +control_shadow+, like the ghost form buttons.
+      # @return [Array<Symbol>]
+      FLAT_VARIANTS = %i[ghost].freeze
+
       # @param text [String, nil] Button text
       # @param variant [Symbol] Style variant (default: :primary)
       # @param size [Symbol] Size variant (default: :md)
@@ -115,14 +119,19 @@ module IronAdmin
       # @api private
       # @return [String] The theme's +focus_ring+, unless the variant's classes carry their own
       def focus_classes
-        variant = VARIANTS.key?(@variant) ? @variant : :primary
-        OWN_FOCUS_VARIANTS.include?(variant) ? "" : IronAdmin.current_theme.focus_ring
+        OWN_FOCUS_VARIANTS.include?(known_variant) ? "" : IronAdmin.current_theme.focus_ring
+      end
+
+      # @api private
+      # @return [String] The theme's +control_shadow+, except for flat (ghost) buttons
+      def shadow_classes
+        FLAT_VARIANTS.include?(known_variant) ? "" : IronAdmin.current_theme.control_shadow
       end
 
       # @api private
       # @return [String] Combined CSS classes for button
       def button_classes
-        [base_classes, variant_classes, focus_classes, size_classes].compact_blank.join(" ")
+        [base_classes, variant_classes, focus_classes, shadow_classes, size_classes].compact_blank.join(" ")
       end
 
       # @api private
@@ -149,6 +158,11 @@ module IronAdmin
       end
 
       private
+
+      # An unknown variant renders as primary (see #variant_classes).
+      def known_variant
+        VARIANTS.key?(@variant) ? @variant : :primary
+      end
 
       def button_content
         safe_join([icon_element, text_element].compact)
