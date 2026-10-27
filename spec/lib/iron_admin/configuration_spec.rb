@@ -28,6 +28,10 @@ RSpec.describe IronAdmin::Configuration do
       expect(config.logo).to be_nil
     end
 
+    it "sets favicon to nil, so the layout links no icon" do
+      expect(config.favicon).to be_nil
+    end
+
     it "sets badge_colors to match DEFAULT_BADGE_COLORS" do
       expect(config.badge_colors).to eq(described_class::DEFAULT_BADGE_COLORS)
     end
@@ -54,6 +58,10 @@ RSpec.describe IronAdmin::Configuration do
 
     it "sets audit_enabled to false" do
       expect(config.audit_enabled).to be false
+    end
+
+    it "sets audit_user_labels_block to nil" do
+      expect(config.audit_user_labels_block).to be_nil
     end
 
     it "sets tenant_scope_block to nil" do
@@ -136,6 +144,14 @@ RSpec.describe IronAdmin::Configuration do
       config.current_user { "the_user" }
 
       expect(config.current_user_block.call).to eq("the_user")
+    end
+  end
+
+  describe "#audit_user_labels" do
+    it "stores a callable block" do
+      config.audit_user_labels { |identifiers| identifiers.index_with { |identifier| "User #{identifier}" } }
+
+      expect(config.audit_user_labels_block.call(["7"])).to eq("7" => "User 7")
     end
   end
 
@@ -229,6 +245,12 @@ RSpec.describe IronAdmin::Configuration do
       config.logo = "/images/logo.png"
 
       expect(config.logo).to eq("/images/logo.png")
+    end
+
+    it "allows setting favicon" do
+      config.favicon = "/favicon.svg"
+
+      expect(config.favicon).to eq("/favicon.svg")
     end
 
     it "allows setting audit_enabled" do

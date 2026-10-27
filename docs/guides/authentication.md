@@ -242,6 +242,28 @@ rails db:migrate
 View audit logs at `/admin/audit`. The page filters entries by resource, action and date. The
 Action filter lists the actions logged so far, custom resource actions included.
 
+#### User Labels
+
+Database storage keeps each user as an identifier, the user's id as a string, so by default
+the User column shows ids such as `1`. (Memory storage keeps the user object and shows its
+`email` or `name`.) To show a label instead, with either storage, configure `audit_user_labels`:
+
+```ruby
+IronAdmin.configure do |config|
+  config.audit_user_labels do |identifiers|
+    User.where(id: identifiers).pluck(:id, :email).to_h
+  end
+end
+```
+
+The block receives the distinct identifiers of every entry on the page and is called once per
+page, so a single query labels all of them. It returns a hash of labels keyed by identifier
+(string or integer keys). With memory storage, a label from the block replaces the user's
+`email` or `name`. A user missing from the hash, such as a deleted user, and a blank label keep
+the default: the identifier with database storage, the `email` or `name` with memory storage.
+If the block raises, the error is logged as `[IronAdmin] ...` and the page shows those
+defaults, so the audit log stays readable. An entry logged without a user shows "Unknown".
+
 The built-in audit log:
 - Stores the last 1000 entries in memory (or unlimited in database)
 - Records user, action, resource, record ID, changes, and IP address

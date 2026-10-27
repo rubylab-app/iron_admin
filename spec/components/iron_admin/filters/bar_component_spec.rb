@@ -98,4 +98,43 @@ RSpec.describe IronAdmin::Filters::BarComponent, type: :component do
       expect(hidden_ids).to be_empty
     end
   end
+
+  describe "sort" do
+    subject(:rendered) { render_inline(component) }
+
+    let(:hidden_fields) do
+      rendered.css("input[type=hidden]").to_h { |input| [input[:name], input[:value]] }
+    end
+
+    context "with the current sort and direction" do
+      let(:component) do
+        described_class.new(form_url: "/admin/users", scope: "active", query: "ada",
+                            current_sort: "name", current_direction: "desc")
+      end
+
+      it "keeps them as hidden fields when the filters are applied" do
+        expect(hidden_fields).to include("sort" => "name", "direction" => "desc")
+      end
+
+      it "keeps the scope, search and sort when the filters are cleared" do
+        clear_link = rendered.css("a").find { |link| link.text.squish == "Clear" }
+
+        expect(Rack::Utils.parse_nested_query(URI.parse(clear_link[:href]).query)).to eq(
+          "scope" => "active", "q" => "ada", "sort" => "name", "direction" => "desc"
+        )
+      end
+    end
+
+    context "without a sort" do
+      let(:component) { described_class.new(form_url: "/admin/users") }
+
+      it "adds no sort fields" do
+        expect(hidden_fields.keys).not_to include("sort", "direction")
+      end
+
+      it "clears the filters to the form URL" do
+        expect(rendered.css("a").find { |link| link.text.squish == "Clear" }[:href]).to eq("/admin/users")
+      end
+    end
+  end
 end

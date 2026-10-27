@@ -93,13 +93,22 @@ Every flash message has `role="alert"`, whatever its type. The message arrives a
 in the page Turbo renders after the redirect, and screen readers announce an inserted
 `role="alert"` but not an inserted `role="status"`.
 
+To show flash messages your own way, override the `flash` slot (see
+[Overriding Components](#overriding-components)):
+
+```ruby
+config.components.flash = "AdminFlashComponent"
+```
+
 A custom shell (`config.components.shell`) replaces the built-in one, so it has to render the
-component itself, before the page body, and wrap both in a `<main>` landmark:
+`flash` slot itself, before the page body, and wrap both in a `<main>` landmark.
+`iron_admin_component(:flash, ...)` builds the `flash` override, or `FlashComponent` when there
+is none:
 
 ```haml
 -# app/components/admin_shell_component.html.haml
 %main#main-content
-  = render IronAdmin::Layout::FlashComponent.new
+  = render helpers.iron_admin_component(:flash, flash: helpers.flash, current_user: @current_user)
   = content
 ```
 
@@ -124,9 +133,10 @@ Pages without overrides render exactly as before.
 | `shell` | The page shell around every admin page. Render `content` for the page body. | `current_user` | Global |
 | `navbar` | The top bar inside the built-in shell | `current_user`, `title` | Global |
 | `sidebar` | The navigation inside the built-in shell | `current_user` | Global |
+| `flash` | The flash messages above the page content inside the built-in shell | `flash`, `current_user` | Global |
 | `table` | The records table on index pages | `records`, `fields`, `resource_class`, `current_user`, `current_sort`, `current_direction`, `scope`, `query`, `base_url` | Global or per resource |
 | `form` | The form on new and edit pages | `record`, `fields`, `resource_class`, `url`, `current_user` | Global or per resource |
-| `filter_bar` | The filters dropdown on index pages (only rendered when the resource has filters) | `filters`, `resource_class`, `form_url`, `scope`, `query`, `active_count`, `current_user` | Global or per resource |
+| `filter_bar` | The filters dropdown on index pages (only rendered when the resource has filters) | `filters`, `resource_class`, `form_url`, `scope`, `query`, `active_count`, `current_user`, `current_sort`, `current_direction` | Global or per resource |
 | `search` | The search box on index pages (only rendered when the resource has searchable columns) | `resource_class`, `form_url`, `value`, `placeholder`, `hidden_params`, `current_user` | Global or per resource |
 
 The same list is available in code as `IronAdmin::Configuration::Components::SLOTS`.
@@ -150,8 +160,13 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   navbar, flash messages, the `<main id="main-content">` landmark and the "Skip to content"
   link it renders. `navbar` and `sidebar` overrides only apply inside the built-in shell.
   Render the page body inside your own `<main>` landmark, and to keep the flash messages,
-  render `IronAdmin::Layout::FlashComponent` before the page body (see
-  [Flash messages](#flash-messages)).
+  render the `flash` slot before the page body (see [Flash messages](#flash-messages)).
+- `flash`: `flash` is the request's flash (`ActionDispatch::Flash::FlashHash`). The component
+  renders every message, so it decides which keys to show; the built-in one shows `notice`,
+  `success`, `alert`, `error`, `warning` and `info` (see [Flash Messages](#flash-messages)).
+  The shell renders the slot on every page, so return `false` from `render?` when there is no
+  message. Give each message `role="alert"`, as the built-in one does, so screen readers
+  announce it.
 - `navbar` / `sidebar`: the built-in shell keeps its mobile drawer (the `cp-sidebar`
   Stimulus controller). To keep the drawer working, give your sidebar
   `data-cp-sidebar-target="panel"` and your navbar a button with
@@ -180,6 +195,16 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   The bundled `IronAdmin::Resources::DataTableComponent` fits this slot as is.
 - `form`: submit to `url`, with the record's attributes under `record`
   (`form_with model: record, url: url, scope: :record`).
+- `filter_bar`: submit the filters to `form_url` with a GET request, and add hidden fields
+  for `scope`, `query` (as `q`) and, when they are set, `current_sort` (as `sort`) and
+  `current_direction` (as `direction`), so applying filters keeps the scope, search and sort.
+  Render those hidden fields without an `id`, as for `search`. `active_count` is the number
+  of filters with a value. `IronAdmin::Filters::BarComponent` takes the same `scope:`,
+  `query:`, `active_count:`, `current_sort:` and `current_direction:` keywords. Build the
+  choices of a `:select` or `:boolean` filter with
+  `helpers.filter_options_for(resource_class, filter)`, which returns `[label, value]` pairs:
+  a filter's `:options` can be a callable, and a foreign key filter without options offers
+  the associated records that some row refers to.
 - `search`: submit `q` to `form_url` with a GET request, and add every `hidden_params`
   entry as a hidden field, so the current scope, filters and sort are kept. `hidden_params`
   carries `scope`, the active filters and, when they are set, `sort` and `direction`. Its
@@ -201,6 +226,7 @@ IronAdmin.configure do |config|
   config.components.navbar = "AdminNavbarComponent"
   config.components.sidebar = "AdminSidebarComponent"
   config.components.shell = "AdminShellComponent"
+  config.components.flash = "AdminFlashComponent"
   config.components.table = "AdminTableComponent"
   config.components.form = "AdminFormComponent"
   config.components.filter_bar = "AdminFilterBarComponent"
@@ -226,7 +252,7 @@ module IronAdmin
 end
 ```
 
-`component :navbar`, `:sidebar` and `:shell` raise `ArgumentError`, because those slots
+`component :navbar`, `:sidebar`, `:flash` and `:shell` raise `ArgumentError`, because those slots
 apply to every page; set them in `config.components`. Any other name, such as `:index`,
 `:show` or `:row`, also raises `ArgumentError` and lists the valid slots.
 

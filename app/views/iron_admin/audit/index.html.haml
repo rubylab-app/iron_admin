@@ -57,11 +57,14 @@
               %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
                 = entry.timestamp.strftime("%Y-%m-%d %H:%M:%S")
               %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
-                - if entry.user.respond_to?(:email)
+                - user_label = @user_labels[IronAdmin::AuditLog.user_identifier(entry.user)]
+                - if user_label
+                  = user_label
+                - elsif entry.user.respond_to?(:email)
                   = entry.user.email
                 - elsif entry.user.respond_to?(:name)
                   = entry.user.name
-                - elsif entry.user
+                - elsif entry.user.present?
                   = entry.user.to_s
                 - else
                   %span{ class: cp_muted_text } Unknown

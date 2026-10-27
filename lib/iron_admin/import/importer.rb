@@ -31,7 +31,8 @@ module IronAdmin
           headers: headers,
           mapping: mapping,
           rows: rows,
-          errors: rows.flat_map(&:errors)
+          errors: rows.flat_map(&:errors),
+          fields: @resource_class.importable_fields(current_user).index_by(&:name).slice(*mapping.values)
         )
       end
 

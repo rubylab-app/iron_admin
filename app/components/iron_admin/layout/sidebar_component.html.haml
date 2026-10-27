@@ -9,8 +9,7 @@
       .text-xl.font-bold= title
 
   .flex-1.px-3
-    = link_to helpers.iron_admin.root_path,
-      class: "flex items-center gap-3 px-3 py-2 rounded-lg #{cp_sidebar_link} mb-1" do
+    = link_to helpers.iron_admin.root_path, **link_options(dashboard_active?, "mb-1") do
       = helpers.heroicon "home", variant: :outline, options: { class: "h-5 w-5" }
       = I18n.t("iron_admin.navigation.dashboard")
 
@@ -19,8 +18,7 @@
         %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
         .mt-2.space-y-1
           - resources.sort_by { |r| r.menu_options[:priority] || 999 }.each do |resource|
-            = link_to helpers.iron_admin.resources_path(resource.resource_name),
-              class: "flex items-center gap-3 px-3 py-2 rounded-lg #{cp_sidebar_link}" do
+            = link_to helpers.iron_admin.resources_path(resource.resource_name), **link_options(resource_active?(resource)) do
               - if resource.menu_options[:icon]
                 = helpers.heroicon resource.menu_options[:icon], variant: :outline, options: { class: "h-5 w-5" }
               = resource.label
@@ -30,8 +28,7 @@
         %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
         .mt-2.space-y-1
           - tools_list.sort_by { |tool| tool.menu_options[:priority] || 999 }.each do |tool|
-            = link_to helpers.iron_admin.tool_path(tool.tool_name),
-              class: "flex items-center gap-3 px-3 py-2 rounded-lg #{cp_sidebar_link}" do
+            = link_to helpers.iron_admin.tool_path(tool.tool_name), **link_options(tool_active?(tool)) do
               - if tool.menu_options[:icon]
                 = helpers.heroicon tool.menu_options[:icon], variant: :outline, options: { class: "h-5 w-5" }
               = tool.label
@@ -41,8 +38,7 @@
         %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
         .mt-2.space-y-1
           - items.each do |item|
-            = link_to item.path,
-              class: "flex items-center gap-3 px-3 py-2 rounded-lg #{cp_sidebar_link}" do
+            = link_to item.path, **link_options(menu_item_active?(item)) do
               - if item.icon
                 = helpers.heroicon item.icon, variant: :outline, options: { class: "h-5 w-5" }
               = item.label

@@ -2,6 +2,11 @@
 
 Convention-over-configuration admin panel engine for Ruby on Rails.
 
+**[Live demo](https://demo.ironadmin.rubylab.app/)** · [Demo source](https://github.com/rubylab-app/meridian_magazine)
+
+The demo is Meridian Magazine, a Rails 8 app built with IronAdmin: sign in by picking an
+admin, an editor or an author (no password).
+
 ## Table of Contents
 
 ### Getting Started
@@ -49,6 +54,7 @@ Comprehensive documentation for all built-in ViewComponents:
 
 | Task | Documentation |
 |------|---------------|
+| See a working app | [Live demo](https://demo.ironadmin.rubylab.app/) ([source](https://github.com/rubylab-app/meridian_magazine)) |
 | Install IronAdmin | [Installation Guide](getting-started/installation.md) |
 | Create first resource | [Quick Start](getting-started/quick-start.md) |
 | Customize appearance | [Theming Guide](guides/theming.md) |

@@ -35,6 +35,9 @@ module IronAdmin
   #   IronAdmin.configure do |config|
   #     config.audit_enabled = true
   #     config.audit_storage = :database  # or :memory
+  #     config.audit_user_labels do |identifiers|
+  #       User.where(id: identifiers).pluck(:id, :email).to_h
+  #     end
   #   end
   #
   # @example Theme configuration
@@ -55,6 +58,12 @@ module IronAdmin
 
     # @return [String, nil] Path to a custom logo image
     attr_accessor :logo
+
+    # @return [String, nil] Icon the admin layout links with +<link rel="icon">+: a path, a URL or
+    #   an asset name, resolved like {#logo} (default: nil, no icon link, so browsers request /favicon.ico)
+    # @example
+    #   config.favicon = "/icon.svg"
+    attr_accessor :favicon
 
     # @return [Integer] Number of records per page (default: 25)
     attr_accessor :per_page
@@ -107,6 +116,10 @@ module IronAdmin
     # @return [Proc, nil] Action callback block
     # @see #on_action
     attr_reader :on_action_block
+
+    # @return [Proc, nil] Block that labels the users of the audit log page
+    # @see #audit_user_labels
+    attr_reader :audit_user_labels_block
 
     # @return [IronAdmin::Configuration::Theme] Theme configuration
     # @see #theme
@@ -176,6 +189,7 @@ module IronAdmin
     # Creates a new Configuration with default values.
     def initialize
       @title = "Admin"
+      @favicon = nil
       @per_page = 25
       @default_sort = :created_at
       @default_sort_direction = :desc
@@ -240,6 +254,33 @@ module IronAdmin
     # @return [void]
     def current_user(&block)
       @current_user_block = block
+    end
+
+    # Labels the users of the audit log page. Called once per page with the
+    # id (as a String) of every user on it, so one query loads them all. With
+    # database storage the page only has that id; with memory storage the
+    # label replaces the user's email or name. Users it does not label
+    # (deleted ones), and all users when it raises, keep the default: the id
+    # with database storage, the email or name with memory storage.
+    #
+    # @yield [identifiers] Block that returns the label of each user
+    # @yieldparam identifiers [Array<String>] Distinct, non-blank user identifiers
+    # @yieldreturn [Hash{String, Integer => String}] Label by user identifier
+    #
+    # @example Label users by email
+    #   config.audit_user_labels do |identifiers|
+    #     User.where(id: identifiers).pluck(:id, :email).to_h
+    #   end
+    #
+    # @example Label users with a display method
+    #   config.audit_user_labels do |identifiers|
+    #     AdminUser.where(id: identifiers).to_h { |user| [user.id, user.display_name] }
+    #   end
+    #
+    # @return [void]
+    # @see IronAdmin::AuditLog.user_labels
+    def audit_user_labels(&block)
+      @audit_user_labels_block = block
     end
 
     # Defines a callback executed after any CRUD action.

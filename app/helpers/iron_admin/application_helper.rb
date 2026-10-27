@@ -65,14 +65,17 @@ module IronAdmin
       end
     end
 
-    # Displays a field value for index pages with text truncation.
+    # Displays a field value for index pages with text truncation. Rich text
+    # shows as truncated plain text, never as HTML.
     #
     # @param record [ActiveRecord::Base] The record
     # @param field [IronAdmin::Field] Field configuration
-    # @return [String, nil] Formatted value (truncated for text fields)
+    # @return [String, nil] Formatted value (truncated for text and rich text fields)
     def display_index_field_value(record, field)
       if TRUNCATABLE_TYPES.include?(field.type)
         display_truncated_index_value(record, field)
+      elsif field.type == :rich_text
+        display_index_rich_text(record, field)
       elsif INDEX_COMPACT_TYPES.include?(field.type)
         display_compact_field_value(record, field)
       elsif (custom = IronAdmin::FieldTypeRegistry.find(field.type))
@@ -99,25 +102,23 @@ module IronAdmin
       "#{record.class.model_name.human} ##{record.id}"
     end
 
-    # Returns options for a filter select dropdown.
+    # Returns options for a filter select dropdown, evaluated when the page renders.
+    #
+    # A +:select+ filter offers, in order of precedence: its +options+ (an Array,
+    # or a callable that takes no arguments and returns one), the enum values of
+    # its column, the records of the +belongs_to+ association whose foreign key
+    # it filters (labelled and scoped like the form's belongs_to select, valued by
+    # the key the foreign key stores), or the column's distinct values. A foreign
+    # key filter keeps the column's distinct values when the +belongs_to+ field
+    # is not visible to the current user or is declared +autocomplete: true+.
     #
     # @param resource_class [Class] The resource class
     # @param filter [Hash] Filter configuration
-    # @return [Array<Array(String, String)>] Options for select tag
+    # @return [Array<Array(String, Object)>] [label, value] pairs for the select tag
     def filter_options_for(resource_class, filter)
-      resource_adapter = resource_class.adapter
-      column_name = filter[:name].to_s
-
       case filter[:type]
       when :select
-        enums = resource_adapter.enums
-        if filter[:options]
-          normalize_filter_options(filter[:options])
-        elsif enums.key?(column_name)
-          enums[column_name].keys.map { |k| [k.humanize, k] }
-        else
-          resource_adapter.distinct_values(column_name).map { |v| [v.to_s.humanize, v] }
-        end
+        select_filter_options(resource_class, filter)
       when :boolean
         [[I18n.t("iron_admin.filters.true"), "true"], [I18n.t("iron_admin.filters.false"), "false"]]
       else
@@ -125,8 +126,10 @@ module IronAdmin
       end
     end
 
+    # @param options [Array, nil] Labels with values, or bare values labelled by humanizing them
+    # @return [Array<Array(String, Object)>] [label, value] pairs
     def normalize_filter_options(options)
-      options.map do |option|
+      Array(options).map do |option|
         option.is_a?(Array) ? option : [option.to_s.humanize, option]
       end
     end
@@ -137,6 +140,76 @@ module IronAdmin
       return resource if resource
 
       IronAdmin::ResourceRegistry.find(association_class.model_name.plural)
+    end
+
+    private
+
+    def select_filter_options(resource_class, filter)
+      options = filter[:options]
+      return normalize_filter_options(options.respond_to?(:call) ? options.call : options) if options
+
+      column_name = filter[:name].to_s
+      enum_values = resource_class.adapter.enums[column_name]
+      return enum_values.keys.map { |key| [key.humanize, key] } if enum_values
+
+      belongs_to_filter_options(resource_class, column_name) ||
+        resource_class.adapter.distinct_values(column_name).map { |value| [value.to_s.humanize, value] }
+    end
+
+    # Labelled options for the associated records some row refers to, when
+    # +column_name+ is the foreign key of a (non-polymorphic) belongs_to
+    # association; nil otherwise.
+    def belongs_to_filter_options(resource_class, column_name)
+      association = resource_class.adapter.associations(:belongs_to).find do |candidate|
+        !candidate.polymorphic? && candidate.foreign_key.to_s == column_name
+      end
+      association_class = association&.klass
+      return unless association_class
+
+      field = belongs_to_filter_field(resource_class, column_name)
+      return unless labels_foreign_key_filter?(field)
+
+      value_key = foreign_key_target(association)
+      scope = referenced_records(association_class, value_key, resource_class.adapter.distinct_values(column_name))
+      tenant_scope = IronAdmin.configuration.tenant_scope_block
+      scope = tenant_scope.call(scope) if tenant_scope
+      scope.map { |record| [display_record_label(record, field.options[:display]), record.public_send(value_key)] }
+    end
+
+    # The associated records whose +value_key+ is one of +values+: only the
+    # records some row refers to, whose labels the index already shows.
+    def referenced_records(association_class, value_key, values)
+      scope = association_class.all
+      scope.respond_to?(:in) ? scope.in(value_key => values) : scope.where(value_key => values)
+    end
+
+    def belongs_to_filter_field(resource_class, column_name)
+      resource_class.resolved_fields.find do |candidate|
+        candidate.type == :belongs_to && candidate.options[:foreign_key].to_s == column_name
+      end
+    end
+
+    # Labels need a belongs_to field the viewer can see; an +autocomplete+ field
+    # marks a table too large to list. Otherwise the filter keeps the column's
+    # distinct values, as in 0.7.0.
+    def labels_foreign_key_filter?(field)
+      return false unless field
+
+      field.visible?(filter_options_viewer) && !field.options[:autocomplete]
+    end
+
+    # The current admin user, or nil where the view has no IronAdmin controller
+    # behind it (such as a component or helper rendered in isolation).
+    def filter_options_viewer
+      iron_admin_current_user if respond_to?(:iron_admin_current_user)
+    end
+
+    # The attribute of the associated record that the foreign key stores: the
+    # belongs_to +primary_key:+ option or the associated model's primary key,
+    # falling back to +id+ (Mongoid, or a composite key).
+    def foreign_key_target(association)
+      key = association.try(:association_primary_key)
+      key.is_a?(String) || key.is_a?(Symbol) ? key : :id
     end
   end
 end

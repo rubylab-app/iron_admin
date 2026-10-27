@@ -147,6 +147,31 @@ module IronAdmin
         end
       end
 
+      # The identifier database storage keeps for a user: its id, or the value
+      # itself (a stored identifier). Blank without a user.
+      #
+      # @param user [Object, nil] A user, or a stored identifier
+      # @return [String]
+      def user_identifier(user)
+        user.respond_to?(:id) ? user.id.to_s : user.to_s
+      end
+
+      # Labels for the users of the given entries, from one call to the
+      # {Configuration#audit_user_labels} block.
+      #
+      # @param entries [Enumerable<Entry, AuditEntry>]
+      # @return [Hash{String => String}] Label by user identifier; empty without
+      #   the block. Users the block gives no label are left out.
+      def user_labels(entries)
+        block = IronAdmin.configuration.audit_user_labels_block
+        return {} unless block
+
+        identifiers = entries.map { |entry| user_identifier(entry.user) }.compact_blank.uniq
+        return {} if identifiers.empty?
+
+        block.call(identifiers).to_h.to_h { |identifier, label| [identifier.to_s, label.to_s] }.compact_blank
+      end
+
       # Clears all audit entries.
       #
       # @api private
@@ -185,7 +210,7 @@ module IronAdmin
 
       def log_to_database(event)
         AuditEntry.create!(
-          user_identifier: event.user.respond_to?(:id) ? event.user.id.to_s : event.user.to_s,
+          user_identifier: user_identifier(event.user),
           action: event.action.to_s,
           resource: event.resource.to_s,
           record_id: event.record_id,

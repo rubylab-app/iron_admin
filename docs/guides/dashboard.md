@@ -132,7 +132,9 @@ user; without it, the procs receive `nil`. An unordered relation is listed newes
 
 ## Stats Grid
 
-Display multiple metrics in a responsive grid:
+Display multiple metrics in a responsive grid. With `columns: 4` (the default), the grid keeps two
+columns until the `xl` breakpoint, like the metric cards, because the sidebar leaves too little room
+for four at `lg`:
 
 ```haml
 = render IronAdmin::Dashboards::StatsGridComponent.new(columns: 4) do |grid|

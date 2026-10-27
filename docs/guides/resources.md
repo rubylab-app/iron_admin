@@ -113,6 +113,26 @@ they are declared. A `:select` filter without `options` offers the enum values w
 is an enum, and the column's distinct values otherwise, so `filter :role, type: :select` on an
 enum is enough.
 
+On the foreign key of a `belongs_to` association, a `:select` filter without `options` offers
+the associated records that some row refers to, labelled like the form's belongs_to select (the
+association's `display:` option, else `name`, `title`, `email`, `label` or `slug`) and limited by
+`tenant_scope`, so `filter :category_id, type: :select` lists category names, not ids. Each
+option's value is the key the foreign key stores: the association's `primary_key:`, else the
+associated record's primary key. The filter keeps offering the column's distinct values when
+the resource has no `belongs_to` field for the column or that field is not visible to the
+current user, so it never shows the labels of an association the resource hides, and when the
+association is declared `autocomplete: true`, so it never loads a table too large for the form to
+list (give that filter `options:` to label it).
+
+`options` takes `[label, value]` pairs or bare values, which are labelled by humanizing them.
+It can also be a callable that takes no arguments: IronAdmin calls it each time the index
+renders, so the choices can come from the database without querying when the resource loads.
+Use one to limit the choices of a foreign key filter on a large table:
+
+```ruby
+filter :category_id, type: :select, options: -> { Category.where(active: true).order(:name).pluck(:name, :id) }
+```
+
 Remove a filter, whether declared or auto-inferred:
 
 ```ruby
@@ -179,6 +199,9 @@ class UserResource < IronAdmin::Resource
   scope :locked, -> { where.not(locked_at: nil) }
 end
 ```
+
+Switching tabs keeps the search, the active filters and the sort, and starts back at the first
+page.
 
 ## Soft Delete Support
 

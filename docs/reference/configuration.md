@@ -7,6 +7,7 @@ IronAdmin.configure do |config|
   # --- General ---
   config.title = "Admin"
   config.logo = nil
+  config.favicon = nil # e.g. "/icon.svg"
   config.per_page = 25
   config.default_sort = :created_at
   config.default_sort_direction = :desc
@@ -40,6 +41,7 @@ IronAdmin.configure do |config|
   # --- Audit Logging ---
   config.audit_enabled = true
   config.audit_storage = :memory  # or :database
+  config.audit_user_labels { |identifiers| User.where(id: identifiers).pluck(:id, :email).to_h }
 
   config.on_action do |event|
   end
@@ -68,6 +70,7 @@ end
 |--------|------|---------|-------------|
 | `title` | String | `"Admin"` | Title shown in navbar |
 | `logo` | String | `nil` | Path to logo image |
+| `favicon` | String | `nil` | Icon linked from every admin page with `<link rel="icon">`: a path (`"/icon.svg"`), a URL or an asset name, resolved like `logo`. With `nil`, the admin layout links no icon and browsers request `/favicon.ico` |
 | `per_page` | Integer | `25` | Records per page |
 | `default_sort` | Symbol | `:created_at` | Default sort column |
 | `default_sort_direction` | Symbol | `:desc` | Default sort direction (`:asc` or `:desc`) |
@@ -94,6 +97,7 @@ The tenant scope is applied to:
 |--------|------|---------|-------------|
 | `audit_enabled` | Boolean | `false` | Enable built-in audit logging |
 | `audit_storage` | Symbol | `:memory` | Storage backend (`:memory` or `:database`) |
+| `audit_user_labels` | Block | `nil` | Labels the audit log's users: receives the user identifiers on the page, returns `{ identifier => label }`. See [User Labels](../guides/authentication.md#user-labels) |
 
 When `audit_storage: :database`, run the migration:
 
@@ -130,6 +134,7 @@ slot passes.
 | `search` | Search box on index pages |
 | `navbar` | Top bar inside the built-in shell |
 | `sidebar` | Navigation inside the built-in shell |
+| `flash` | Flash messages above the page content inside the built-in shell |
 | `shell` | Shell around every admin page |
 | `fields[:type]` | Form input for every field of that type (form only; display is unchanged) |
 

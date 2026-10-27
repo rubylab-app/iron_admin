@@ -189,4 +189,16 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       end
     end
   end
+
+  # The dashboard page title is the h1, so a widget title is an h2.
+  describe "widget title" do
+    subject(:headings) do
+      render_inline(described_class.new(title: "Revenue", data: [1], labels: ["Jan"]))
+        .css("h1, h2, h3, h4, h5, h6")
+    end
+
+    it "is an h2, one level below the page title" do
+      expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([%w[h2 Revenue]])
+    end
+  end
 end

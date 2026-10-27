@@ -209,5 +209,46 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
 
       expect(result.to_html).to include("Users")
     end
+
+    context "when the index fields include a rich text field" do
+      subject(:cell) do
+        render_inline(described_class.new(resource_name: :rich_document, records: [document])).at_css("tbody td:last-child")
+      end
+
+      let(:document) { create(:document, content: "<h2>Agenda</h2><p>Plan the <strong>launch</strong></p>") }
+
+      before do
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = Document
+
+          def self.resource_name = "rich_documents"
+
+          field :content, type: :rich_text
+          index_fields :title, :content
+        end)
+      end
+
+      it "shows its plain text without the content's markup" do
+        expect(cell.inner_html.strip).to eq("Agenda Plan the launch")
+      end
+    end
+  end
+
+  # The dashboard page title is the h1, so a widget title is an h2.
+  describe "widget title" do
+    subject(:headings) do
+      render_inline(described_class.new(resource_name: :user, records: []))
+        .css("h1, h2, h3, h4, h5, h6")
+    end
+
+    before do
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    it "is an h2, one level below the page title" do
+      expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([["h2", "Recent Users"]])
+    end
   end
 end

@@ -46,6 +46,39 @@ RSpec.describe "Engine layout", type: :request do
     end
   end
 
+  describe "favicon" do
+    subject(:icon_links) do
+      get iron_admin.resources_path("users"), as: :html
+      response.parsed_body.css("head link[rel~='icon']")
+    end
+
+    context "without config.favicon" do
+      it "links no icon, as before" do
+        expect(icon_links).to be_empty
+      end
+    end
+
+    context "with config.favicon set to a path" do
+      before { IronAdmin.configuration.favicon = "/brand/icon.svg" }
+
+      it "links that icon" do
+        expect(icon_links.pluck(:href)).to eq(["/brand/icon.svg"])
+      end
+
+      it "does not claim an image/x-icon type for it" do
+        expect(icon_links.first[:type]).to be_nil
+      end
+    end
+
+    context "with config.favicon set to a URL" do
+      before { IronAdmin.configuration.favicon = "https://cdn.example.com/favicon.ico" }
+
+      it "links that URL" do
+        expect(icon_links.pluck(:href)).to eq(["https://cdn.example.com/favicon.ico"])
+      end
+    end
+  end
+
   # The sidebar brand is not a heading, so each page needs its own h1.
   describe "action form pages" do
     subject(:document) do
@@ -115,6 +148,36 @@ RSpec.describe "Engine layout", type: :request do
       let(:path) { iron_admin.resource_bulk_action_form_path("form_title_licenses", "bulk_revoke_with_note") }
 
       it_behaves_like "a page titled by its only h1", "Bulk revoke with note"
+    end
+  end
+
+  describe "sidebar link for the current page" do
+    subject(:current_links) { response.parsed_body.css("#cp-sidebar-panel a[aria-current='page']").pluck(:href) }
+
+    before { IronAdmin::ResourceRegistry.register(IronAdmin::Resources::LicenseResource) }
+
+    context "with GET /" do
+      before { get iron_admin.root_path, as: :html }
+
+      it "is the dashboard link" do
+        expect(current_links).to eq([iron_admin.root_path])
+      end
+    end
+
+    context "with GET /:resource_name/:id/edit" do
+      before { get iron_admin.edit_resource_path("users", create(:user)), as: :html }
+
+      it "is the resource's link" do
+        expect(current_links).to eq([iron_admin.resources_path("users")])
+      end
+    end
+
+    context "with a create that fails validation and renders the form again" do
+      before { post iron_admin.resources_path("users"), params: { record: { name: "", email: "" } }, as: :html }
+
+      it "is still the resource's link" do
+        expect(current_links).to eq([iron_admin.resources_path("users")])
+      end
     end
   end
 

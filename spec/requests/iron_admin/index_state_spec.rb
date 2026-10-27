@@ -63,6 +63,10 @@ RSpec.describe "Index state", type: :request do
     document.css("turbo-frame#records thead a").find { |link| link.text.squish == column }
   end
 
+  def scope_tab(label)
+    document.css("a").find { |link| link.text.squish == label }
+  end
+
   def hidden_fields(form)
     form.css("input[type=hidden]").reject { |input| input[:name] == "authenticity_token" }
       .to_h { |input| [input[:name], input[:value]] }
@@ -167,6 +171,28 @@ RSpec.describe "Index state", type: :request do
         it "goes back to the first page" do
           expect(sort_query).not_to have_key("page")
         end
+      end
+    end
+
+    describe "scope tabs" do
+      subject(:tab_query) { query_of(scope_tab("Active")[:href]) }
+
+      before { get iron_admin.resources_path("index_state_licenses", state), as: :html }
+
+      it "switches to the tab's scope" do
+        expect(tab_query["scope"]).to eq("active")
+      end
+
+      it "keeps the filters" do
+        expect(tab_query["filters"]).to eq(filters)
+      end
+
+      it "keeps the search, sort and direction" do
+        expect(tab_query).to include("q" => "KEY", "sort" => "expires_at", "direction" => "asc")
+      end
+
+      it "goes back to the first page" do
+        expect(tab_query).not_to have_key("page")
       end
     end
 

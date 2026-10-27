@@ -4,6 +4,9 @@
     %meta{ charset: "utf-8" }
     %meta{ name: "viewport", content: "width=device-width, initial-scale=1" }
     %title= IronAdmin.configuration.title
+    - if IronAdmin.configuration.favicon.present?
+      -# type: nil, because favicon_link_tag would claim image/x-icon for any file.
+      = favicon_link_tag IronAdmin.configuration.favicon, type: nil
     = csrf_meta_tags
     = csp_meta_tag
     = stylesheet_link_tag "tailwind", "data-turbo-track": "reload"

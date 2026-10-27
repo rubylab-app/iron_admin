@@ -49,6 +49,32 @@ RSpec.describe IronAdmin::Ui::ScopesComponent, type: :component do
       expect(url).to include("q=test")
       expect(url).to include("scope=active")
     end
+
+    # The index page's state, as iron_admin_index_state returns it: String keys, the current scope and page included.
+    context "with the index state as params" do
+      subject(:query) { Rack::Utils.parse_nested_query(URI.parse(component.scope_url(:active)).query) }
+
+      let(:index_state) do
+        { "scope" => "inactive", "q" => "test", "sort" => "name", "direction" => "asc", "page" => "3",
+          "filters" => { "role" => "admin" }, }
+      end
+      let(:component) do
+        described_class.new(scopes: scopes, current_scope: "inactive", base_path: "/admin/users", params: index_state)
+      end
+
+      it "links to the tab's scope" do
+        expect(query["scope"]).to eq("active")
+      end
+
+      it "keeps the search, sort, direction and filters" do
+        expect(query).to include("q" => "test", "sort" => "name", "direction" => "asc",
+                                 "filters" => { "role" => "admin" })
+      end
+
+      it "goes back to the first page" do
+        expect(query).not_to have_key("page")
+      end
+    end
   end
 
   describe "#active?" do

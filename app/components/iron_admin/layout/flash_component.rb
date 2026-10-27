@@ -3,13 +3,14 @@
 module IronAdmin
   module Layout
     # Renders the request's flash messages as dismissible {IronAdmin::Ui::AlertComponent}s.
-    # {ShellComponent} renders it above the page content; a custom shell can too.
+    # It is the built-in component of the +flash+ slot, which {ShellComponent}
+    # renders above the page content; a custom shell can render the slot too.
     #
     # Every message uses +role="alert"+: it arrives already written in a new
     # page, and screen readers do not announce an inserted +role="status"+.
     #
-    # @example In a custom shell template
-    #   = render IronAdmin::Layout::FlashComponent.new
+    # @example In a custom shell template (renders the +flash+ slot's override, if any)
+    #   = render helpers.iron_admin_component(:flash, flash: helpers.flash, current_user: @current_user)
     #   = content
     class FlashComponent < ViewComponent::Base
       # Flash keys that are shown, with the alert type of each. Other keys and

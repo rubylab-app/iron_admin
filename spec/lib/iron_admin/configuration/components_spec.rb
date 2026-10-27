@@ -66,6 +66,43 @@ RSpec.describe IronAdmin::Configuration::Components do
 
       expect(components.shell).to eq("CustomShellComponent")
     end
+
+    it "allows setting flash" do
+      components.flash = "CustomFlashComponent"
+
+      expect(components.flash).to eq("CustomFlashComponent")
+    end
+  end
+
+  describe "flash slot" do
+    it "passes the request's flash and the current user" do
+      expect(described_class::SLOTS[:flash]).to eq(%i[flash current_user])
+    end
+
+    it "renders IronAdmin::Layout::FlashComponent without an override" do
+      expect(components.resolve(:flash)).to eq(IronAdmin::Layout::FlashComponent)
+    end
+
+    it "is global only" do
+      expect(described_class::RESOURCE_SLOTS).not_to include(:flash)
+    end
+
+    context "with a component that requires a keyword the slot does not pass" do
+      let(:toast_component) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(messages:)
+            super()
+            @messages = messages
+          end
+        end
+        stub_const("ToastComponent", component)
+      end
+
+      it "raises ArgumentError naming the missing keyword" do
+        expect { components.flash = toast_component }
+          .to raise_error(ArgumentError, /ToastComponent cannot render :flash: its initialize requires :messages/)
+      end
+    end
   end
 
   describe "slot writers" do

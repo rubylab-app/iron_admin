@@ -15,10 +15,21 @@ module IronAdmin
       module FilterDsl
         # Defines an index filter. It replaces the auto-inferred filter of the same name.
         #
+        # A +:select+ filter without +options+ offers the enum values of its column,
+        # the associated records when the column is a +belongs_to+ foreign key, or
+        # else the column's distinct values. A foreign key filter keeps the column's
+        # distinct values when the +belongs_to+ field is not visible to the current
+        # user, or is declared +autocomplete: true+ (give it +options+ to label them).
+        #
         # @param name [Symbol] The column or attribute to filter by
         # @param options [Hash] :type, :options, :label
+        # @option options [Array, #call] :options The choices of a +:select+ filter:
+        #   [label, value] pairs or bare values (labelled by humanizing them), or a
+        #   callable that takes no arguments and returns them when the index renders
         # @example
         #   filter :status, type: :select, options: %w[pending active]
+        # @example Choices read when the page renders, not when the resource loads
+        #   filter :category_id, type: :select, options: -> { Category.order(:name).pluck(:name, :id) }
         # @return [void]
         def filter(name, **options)
           self.defined_filters = defined_filters + [{ name: name, **options }]

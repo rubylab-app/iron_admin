@@ -4,6 +4,7 @@ layout: home
 nav_order: 1
 description: "IronAdmin — convention-over-configuration admin panel engine for Ruby on Rails."
 permalink: /
+image: /assets/images/demo-dashboard.png
 ---
 
 # IronAdmin
@@ -14,7 +15,19 @@ interfaces with minimal code.
 {: .fs-6 .fw-300 }
 
 [Get started now](getting-started/){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Try the live demo](https://demo.ironadmin.rubylab.app/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/rubylab-app/iron_admin){: .btn .fs-5 .mb-4 .mb-md-0 }
+
+[![The IronAdmin dashboard of the Meridian Magazine demo, with metric cards, a bar chart of articles published per month and a pie chart of articles by category]({{ '/assets/images/demo-dashboard.png' | relative_url }})](https://demo.ironadmin.rubylab.app/)
+
+The [live demo](https://demo.ironadmin.rubylab.app/) is Meridian Magazine, a Rails 8 app
+built with IronAdmin. Sign in as one of three users (an admin, an editor or an author; no
+password needed) and see how resource policies change what each role can do. Its
+[source on GitHub](https://github.com/rubylab-app/meridian_magazine) has the resources,
+dashboard, policies and theme behind it.
+
+For what changed in 0.7.0 and how it was tested, read
+[IronAdmin 0.7: The Whole Roadmap Shipped, Then I Tried to Break It](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-7-the-whole-roadmap-shipped-then-i-tried-to-break-it-6be683936023).
 
 ---
 

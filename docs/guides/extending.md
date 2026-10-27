@@ -6,7 +6,7 @@ IronAdmin is designed to be extended at every level.
 
 1. **Configuration blocks** - Authentication, current user, audit logging
 2. **Resource DSL** - Fields, filters, scopes, actions, policies
-3. **Component overrides** - Replace the shell, navbar, sidebar, index table, form, filter bar, search box or a field type's form input with your own ViewComponent (see [Components](components.md#overriding-components))
+3. **Component overrides** - Replace the shell, navbar, sidebar, flash messages, index table, form, filter bar, search box or a field type's form input with your own ViewComponent (see [Components](components.md#overriding-components))
 4. **Custom field types** - Register new field renderers
 5. **Dashboard customization** - Metrics, charts, recent records
 6. **Theme system** - 40+ CSS class properties

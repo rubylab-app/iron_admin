@@ -119,6 +119,47 @@ RSpec.describe "IronAdmin::Audit", type: :request do
     end
   end
 
+  describe "GET /audit user labels with memory storage" do
+    subject(:user_cell) do
+      get iron_admin.audit_path
+      response.parsed_body.at_css("tbody tr td:nth-child(2)").text.strip
+    end
+
+    before do
+      IronAdmin.configure { |c| c.audit_enabled = true }
+      IronAdmin::AuditLog.log(OpenStruct.new(user: OpenStruct.new(id: 5, email: "admin@example.com"), action: :create,
+                                             resource: "UserResource", record_id: 1, changes: {}, ip_address: "127.0.0.1"))
+    end
+
+    it "shows the user's email without audit_user_labels" do
+      expect(user_cell).to eq("admin@example.com")
+    end
+
+    context "with audit_user_labels configured" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { |identifiers| identifiers.index_with { "Admin Five" } } } }
+
+      it "shows the configured label" do
+        expect(user_cell).to eq("Admin Five")
+      end
+    end
+
+    context "when audit_user_labels does not label the user" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { |_identifiers| {} } } }
+
+      it "shows the user's email" do
+        expect(user_cell).to eq("admin@example.com")
+      end
+    end
+
+    context "when the audit_user_labels block raises" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { |_identifiers| raise "boom" } } }
+
+      it "shows the user's email" do
+        expect(user_cell).to eq("admin@example.com")
+      end
+    end
+  end
+
   describe "GET /audit resource labels" do
     let(:document) do
       get iron_admin.audit_path(filters)
@@ -238,6 +279,66 @@ RSpec.describe "IronAdmin::Audit", type: :request do
 
     it "shows the stored user identifier" do
       expect(page.body).to match(%r{<td[^>]*>\s*7\s*</td>})
+    end
+
+    context "with audit_user_labels configured" do
+      subject(:user_cells) { page.parsed_body.css("tbody tr").map { |row| row.css("td")[1].text.strip } }
+
+      let(:lookups) { [] }
+      let!(:jane) { create(:user, name: "Jane Doe") }
+
+      before do
+        IronAdmin::AuditEntry.update_all(user_identifier: jane.id.to_s)
+        IronAdmin::AuditEntry.create!(user_identifier: "999999", action: "destroy", resource: "UserResource",
+                                      record_id: 2, ip_address: "127.0.0.1", created_at: Time.zone.parse("2026-10-23 08:00"))
+        IronAdmin.configure do |c|
+          c.audit_user_labels do |identifiers|
+            lookups << identifiers
+            User.where(id: identifiers).pluck(:id, :name).to_h
+          end
+        end
+      end
+
+      it "shows each user's label" do
+        expect(user_cells.first(2)).to eq(["Jane Doe", "Jane Doe"])
+      end
+
+      it "shows the identifier of a user that no longer exists" do
+        expect(user_cells.last).to eq("999999")
+      end
+
+      it "looks up every user on the page in one call" do
+        page
+
+        expect(lookups).to eq([[jane.id.to_s, "999999"]])
+      end
+    end
+
+    context "when the audit_user_labels block raises" do
+      before { IronAdmin.configure { |c| c.audit_user_labels { |_identifiers| raise "users table is gone" } } }
+
+      it "still renders the entries" do
+        expect(page).to have_http_status(:ok)
+      end
+
+      it "shows the stored user identifier" do
+        expect(page.body).to match(%r{<td[^>]*>\s*7\s*</td>})
+      end
+
+      it "logs the error" do
+        allow(Rails.logger).to receive(:error)
+        page
+
+        expect(Rails.logger).to have_received(:error).with("[IronAdmin] RuntimeError: users table is gone")
+      end
+    end
+
+    context "with an entry logged without a user" do
+      before { IronAdmin::AuditEntry.update_all(user_identifier: "") }
+
+      it "shows Unknown instead of an empty cell" do
+        expect(page.parsed_body.css("tbody tr").map { |row| row.css("td")[1].text.strip }.uniq).to eq(["Unknown"])
+      end
     end
 
     it "shows the recorded changes" do

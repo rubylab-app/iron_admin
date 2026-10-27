@@ -183,6 +183,41 @@ RSpec.describe "Component overrides", type: :request do
       end
     end
 
+    context "with a filter bar override and a sorted index" do
+      before do
+        IronAdmin.configuration.components.filter_bar =
+          probe_component("custom-filter-bar", :current_sort, :current_direction, :scope, :query)
+        get iron_admin.resources_path("users", sort: "name", direction: "desc", q: "Ada")
+      end
+
+      it "passes the sort and direction, so the filter form can keep them" do
+        expect(probe_payload("custom-filter-bar")).to include("current_sort" => "name", "current_direction" => "desc")
+      end
+
+      it "passes the search query" do
+        expect(probe_payload("custom-filter-bar")).to include("query" => "Ada")
+      end
+    end
+
+    context "with a filter bar override whose initialize does not take the sort" do
+      before do
+        legacy_bar = Class.new(ViewComponent::Base) do
+          def initialize(form_url:, scope: nil, query: nil)
+            super()
+            @state = { form_url: form_url, scope: scope, query: query }
+          end
+
+          def call = tag.div(@state.to_json, id: "legacy-filter-bar")
+        end
+        IronAdmin.configuration.components.filter_bar = named_component("LegacyFilterBar", legacy_bar)
+        get iron_admin.resources_path("users", sort: "name", direction: "desc", q: "Ada")
+      end
+
+      it "still renders it with the keywords it declares" do
+        expect(probe_payload("legacy-filter-bar")).to eq("form_url" => "/admin/users", "scope" => nil, "query" => "Ada")
+      end
+    end
+
     context "with a filter bar override on a resource without filters" do
       it "renders nothing in its place" do
         allow(user_resource).to receive(:all_filters).and_return([])
@@ -458,6 +493,68 @@ RSpec.describe "Component overrides", type: :request do
         get iron_admin.resources_path("users")
 
         expect(response.body).to include('id="custom-navbar"')
+      end
+    end
+
+    context "with a flash override from a plugin" do
+      let(:custom_flash) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(flash:)
+            super()
+            @flash = flash
+          end
+
+          def call
+            tag.div(@flash[:notice], id: "custom-flash")
+          end
+        end
+        named_component("Flash", component)
+      end
+
+      before do
+        flash_component = custom_flash
+        plugin = Class.new(IronAdmin::Plugin) do
+          plugin_name "component_overrides_flash_spec"
+          setup { |admin| admin.component :flash, flash_component }
+        end
+        IronAdmin.register_plugin(plugin)
+        patch iron_admin.resource_path("users", create(:user)), params: { record: { name: "Renamed" } }
+        follow_redirect!
+      end
+
+      it "shows the redirect's flash message with the plugin's component" do
+        expect(response.parsed_body.at_css("main#main-content #custom-flash")&.text).to eq("User updated.")
+      end
+
+      it "drops the built-in flash alert" do
+        expect(response.parsed_body.css("main#main-content [role='alert']")).to be_empty
+      end
+    end
+
+    context "with a shell override that renders the flash slot" do
+      let(:flash_shell) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(current_user: nil)
+            super()
+            @current_user = current_user
+          end
+
+          def call
+            flash_messages = helpers.iron_admin_component(:flash, flash: helpers.flash, current_user: @current_user)
+            tag.main(safe_join([render(flash_messages), content]), id: "main-content")
+          end
+        end
+        named_component("FlashShell", component)
+      end
+
+      before do
+        IronAdmin.configuration.components.shell = flash_shell
+        patch iron_admin.resource_path("users", create(:user)), params: { record: { name: "Renamed" } }
+        follow_redirect!
+      end
+
+      it "shows the redirect's flash message as an alert" do
+        expect(response.parsed_body.at_css("main#main-content [role='alert']")&.text&.squish).to eq("User updated.")
       end
     end
   end
