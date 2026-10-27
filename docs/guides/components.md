@@ -14,6 +14,7 @@ For the complete component reference, see the [Components Library](../components
 | `IronAdmin::Layout::NavbarComponent` | Top navigation bar |
 | `IronAdmin::Layout::SidebarComponent` | Left sidebar navigation |
 | `IronAdmin::Layout::FlashComponent` | The request's flash messages, rendered by the shell above the page content |
+| `IronAdmin::Layout::ThemeSwitcherComponent` | The theme switcher in the navbar, rendered when two or more themes are registered |
 
 ### UI Components
 
@@ -134,6 +135,7 @@ Pages without overrides render exactly as before.
 | `navbar` | The top bar inside the built-in shell | `current_user`, `title` | Global |
 | `sidebar` | The navigation inside the built-in shell | `current_user` | Global |
 | `flash` | The flash messages above the page content inside the built-in shell | `flash`, `current_user` | Global |
+| `theme_switcher` | The theme switcher inside the built-in navbar (only rendered when two or more themes are registered) | `themes`, `current_theme`, `current_user` | Global |
 | `table` | The records table on index pages | `records`, `fields`, `resource_class`, `current_user`, `current_sort`, `current_direction`, `scope`, `query`, `base_url` | Global or per resource |
 | `form` | The form on new and edit pages | `record`, `fields`, `resource_class`, `url`, `current_user` | Global or per resource |
 | `filter_bar` | The filters dropdown on index pages (only rendered when the resource has filters) | `filters`, `resource_class`, `form_url`, `scope`, `query`, `active_count`, `current_user`, `current_sort`, `current_direction` | Global or per resource |
@@ -179,6 +181,13 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   is closed, and the rest of the shell `inert` while it is open. Opening the drawer moves
   focus to the sidebar element with `data-cp-sidebar-target="closeButton"` (or else to the
   panel's first link or button), and closing it moves focus back to the toggle.
+- `theme_switcher`: `themes` is an Array of `IronAdmin::Configuration::Theme`, the default
+  theme first, and `current_theme` is the theme of the request. Submit the choice to
+  `helpers.iron_admin.theme_path` with a POST request and the `theme` and `return_to` params,
+  as the built-in switcher does, or to a controller of yours. A custom `navbar` renders the
+  slot itself, with `helpers.iron_admin_component(:theme_switcher, themes: ..., current_theme:
+  IronAdmin.current_theme, current_user: @current_user)`. See
+  [The theme switcher](theming.md#the-theme-switcher-and-its-cookie).
 - `table`: IronAdmin still renders the scope tabs, search, filters, bulk-action bar and
   pagination around it. Only the bulk-action bar, the table and the pagination are inside
   the `records` Turbo frame; the scope tabs, search and filters sit outside it. The frame
@@ -227,6 +236,7 @@ IronAdmin.configure do |config|
   config.components.sidebar = "AdminSidebarComponent"
   config.components.shell = "AdminShellComponent"
   config.components.flash = "AdminFlashComponent"
+  config.components.theme_switcher = "AdminThemeSwitcherComponent"
   config.components.table = "AdminTableComponent"
   config.components.form = "AdminFormComponent"
   config.components.filter_bar = "AdminFilterBarComponent"
@@ -325,8 +335,9 @@ class AdminNavbarComponent < ViewComponent::Base
     @current_user = current_user
   end
 
+  # The theme of the current request (the default theme outside a request).
   def theme
-    IronAdmin.configuration.theme
+    IronAdmin.current_theme
   end
 end
 ```
@@ -341,13 +352,20 @@ end
 
 ## Theme Integration
 
-Access theme properties in components via the `theme` method:
+Read theme properties from `IronAdmin.current_theme`, as the `theme` method above does. It
+returns the theme of the current request, so your component follows the theme switcher.
+`IronAdmin.configuration.theme` always returns the default theme; don't render with it.
 
 ```ruby
 def card_classes
-  "#{theme.card_bg} #{theme.card_border} #{theme.border_radius} #{theme.card_shadow}"
+  "#{theme.card_bg} #{theme.border_width} #{theme.card_border} #{theme.border_radius} #{theme.card_shadow}"
 end
 ```
+
+A border needs `border_width` as well as the `card_border` color. To match the built-in
+controls, build them with `IronAdmin::Form::ControlClasses`, for example
+`IronAdmin::Form::ControlClasses.button(theme, :secondary)`. See
+[Using the theme in your own components](theming.md#using-the-theme-in-your-own-components).
 
 ## Component Documentation
 

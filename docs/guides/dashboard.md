@@ -89,6 +89,22 @@ Charts render using `IronAdmin::Dashboards::ChartComponent`:
 )
 ```
 
+### Chart Colors
+
+Charts take their colors from the current theme: `chart_colors` for slices and bars,
+`chart_border_color` for lines, and `chart_grid_color` and `chart_text_color` for grid lines,
+ticks and legends. These are CSS colors, not Tailwind classes, because Chart.js draws on a
+canvas. A chart's own colors win over the theme:
+
+```ruby
+chart :revenue, type: :bar, colors: ["#0ea5e9", "#6366f1"] do
+  # ...
+end
+```
+
+The first color is also the line color of line, area and radar charts. Charts draw their text
+in the page's font. See [Color scheme, dark themes and charts](theming.md#color-scheme-dark-themes-and-charts).
+
 ## Recent Records
 
 Show recent records from any resource:

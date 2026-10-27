@@ -1,3 +1,239 @@
+# Upgrading to IronAdmin 0.8.0 (themes and the Neutral look)
+
+Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
+
+## What changed
+
+### 1. The default look is Neutral
+
+Every page is restyled:
+
+- **Colors:** zinc grays instead of gray, a light `zinc-50` sidebar with a thin border instead of the `gray-900` sidebar, a black primary button, and indigo only as the accent (links, focus outlines, the current sidebar link, charts).
+- **Type:** Inter, loaded from Google Fonts (see section 5). Page titles are `text-xl font-semibold` (they were `text-2xl` in the heading weight, `font-bold`), and card titles `text-sm font-semibold` (they were `text-lg`).
+- **Sizes:** buttons, inputs and selects are 36px high (`h-9`), the navbar is 56px (`h-14`) and its search box shows a ⌘K hint, and sidebar icons are 16px.
+- **Surfaces:** cards and panels have a 1px `zinc-200` border, `rounded-lg` corners and `shadow-xs`; buttons and inputs have `rounded-md` corners.
+- **Tables:** header cells are sentence case (no `uppercase tracking-wider`), cells are `px-4 py-2.5` (they were `px-6 py-4`), and number and currency columns use tabular digits.
+- **Badges:** tinted, `rounded-md`, with a colored dot, in every place a badge appears (`:badge` fields, the audit log, `BadgeComponent`). The default badge size is `px-2 py-0.5 text-xs` (it was `px-2.5 py-0.5 text-sm`).
+- **Dashboard:** metric cards put the label on top, the figure below and the icon in a small tile. Pie and doughnut slices are outlined in their own colors, and charts draw their text in the page font.
+- **Page padding:** every page, the dashboard, error, new and edit pages included, uses `px-4 sm:px-6 lg:px-8 py-6` (it was `p-4 sm:p-6 lg:p-8`). The flash messages start at `pt-6`.
+- **Other details:** a false boolean shows a muted x icon instead of a red one, the navbar search placeholder reads "Search…" (its `aria-label`, "Search across all resources", did not change), and the bulk-action, member-action and filter controls are secondary buttons.
+
+**Action required:**
+
+- Rebuild your Tailwind CSS after upgrading (`bin/rails tailwindcss:build`). The new look uses classes that only a fresh build contains. If you commit `app/assets/builds/tailwind.css`, commit the rebuilt file too.
+- Update screenshots, visual regression baselines, and system specs or host CSS that select the old classes (`.p-8`, `.p-4`, `.text-2xl` titles, `.uppercase` headers, `rounded-full` badges, `bg-gray-900` in the sidebar) or the old search placeholder.
+- To keep the 0.7 look, see section 4.
+
+### 2. The theme values you set are kept
+
+`config.theme` still configures the default theme, and every property you set keeps your value. The properties you did not set take their Neutral values. Most apps that customized a few properties get a mix: for example, an app that only set `sidebar_bg = "bg-slate-900"` now gets Neutral's dark `zinc-900` text on its dark sidebar.
+
+**Action required:** Look at the admin panel after upgrading. For each group you customized, set the whole group (see [Change whole groups](docs/guides/theming.md#change-whole-groups)):
+
+- sidebar: `sidebar_bg`, `sidebar_border`, `sidebar_title`, `sidebar_link`, `sidebar_link_hover`, `sidebar_link_active` and `sidebar_group_label`. The current page's link uses `sidebar_link_active` instead of `sidebar_link` and `sidebar_link_hover`, so give it a text color;
+- navbar: `navbar_bg`, `navbar_border`, `navbar_search_bg`, `navbar_search_focus_bg` and `navbar_text`;
+- buttons and focus: `btn_*`, `focus_ring` and `control_radius`;
+- cards and tables: `card_*`, `table_*` and `main_bg`.
+
+### 3. Typography, border width and radius moved into theme properties
+
+In 0.7, templates hard-coded part of each element's style and the theme added colors. In 0.8 the theme owns the colors and also the typography, border width, radii and shadows. If you set one of the 0.7 properties in this table to change more than its color, set its 0.8 property too:
+
+| Element | 0.7 | 0.8 |
+|---------|-----|-----|
+| Page titles (h1) | `text-2xl` in the template, plus `heading_weight` and `font_family` | `page_title` (size, weight, tracking, color) and `heading_font`. `heading_weight` now only styles the sidebar brand and `cp_heading` |
+| Card and section titles (h2) | `text-lg font-semibold` in the template | `card_title` and `heading_font` |
+| Radius of buttons, inputs, selects, checkboxes and dropdown items | `border_radius` | `control_radius` (`rounded-md`) and `checkbox_radius`. `border_radius` keeps cards, panels, alerts, dropdowns and modals |
+| Border width | `border` in the templates | `border_width` |
+| Table header cells | `px-6 py-3 text-xs font-medium uppercase tracking-wider` plus `muted_text` | `table_cell_padding`, `table_header_text` and `label_transform` |
+| Table body cells | `px-6 py-4` | `table_cell_padding` |
+| Sidebar group labels | `text-xs font-semibold uppercase tracking-wider` | `text-xs font-medium`, `label_transform` and `sidebar_group_label` |
+| Metric cards | `text-sm font-medium text-gray-500` label, `text-3xl font-bold` figure, indigo icon tile | `metric_label`, `metric_value` and `metric_icon` |
+| Shadow of dropdowns, the filter panel and modals | `card_shadow` with `-lg` or `-xl` appended | `popover_shadow` |
+| Shadow of inputs and buttons | `shadow-sm` | `control_shadow` |
+| Badges | `BadgeComponent::COLORS`, `Configuration::BADGE_COLOR_CLASSES`, `rounded-full font-medium` | `badge_palette`, `badge_dot_palette` and `badge_shape` |
+| Alerts and flash messages | the colors in `AlertComponent::TYPES` | `alert_palette` |
+| Placeholders, errors, icons and secondary surfaces | gray, red and green classes in the templates | `placeholder_text`, `input_error`, `error_text`, `success_text`, `icon_muted`, `surface_muted`, `item_hover`, `chip` and others |
+| Focus | `focus_ring` was defined but never rendered; `ButtonComponent` added `focus:ring-2` | `focus_ring` draws the keyboard focus outline of everything but text inputs and primary buttons; `btn_primary` carries the primary button's own outline |
+
+The `cp_` helpers changed with them:
+
+- `cp_btn_primary`, `cp_btn_secondary`, `cp_btn_danger` and `cp_btn_ghost` return complete 36px buttons (height, padding, radius, colors, shadow and focus), and `cp_btn_primary_lg` returns the same as `cp_btn_primary`.
+- `cp_input_class`, `cp_select_class`, `cp_textarea_class` and `cp_file_input_class` take `error: true` for an invalid value, and `cp_input_class` takes `padding:` for an input with an icon. There is a new `cp_radio_class`.
+- `cp_card` includes the border (`border_width` and `card_border`), and `cp_heading` uses `heading_font` when the theme sets one.
+
+**Action required:**
+
+- If you set `heading_weight` (or `font_family`) to style page titles, set `page_title` (and `heading_font` for a title font).
+- If you set `border_radius` for square or round buttons and inputs, also set `control_radius` (and `checkbox_radius`).
+- If you set `card_shadow`, also set `popover_shadow` for floating surfaces.
+- If you set `focus_ring`, check that it draws a visible outline with `focus-visible:` variants, since 0.8 renders it on buttons, links and menu items. If you set `btn_primary`, include its `focus-visible:` outline classes.
+- If you want uppercase table headers back, set `label_transform = "uppercase tracking-wider"`.
+- In views you override (`app/views/iron_admin/...`), remove the padding, height or radius classes you combine with `cp_btn_*` and `cp_input_class`: the helpers set them now, and two classes for the same CSS property have no reliable winner in Tailwind v4.
+- Code that reads `AlertComponent::TYPES[type][:bg]` (or `:border`, `:text`) gets `nil`: `TYPES` now holds only the icon of each type. Read `IronAdmin.current_theme.alert_palette` instead. `BadgeComponent::COLORS` now holds the Neutral badge classes, and `Configuration::BADGE_COLOR_CLASSES` keeps the 0.7 classes but IronAdmin no longer reads it.
+
+### 4. Restoring the 0.7 look
+
+This initializer brings back the 0.7 colors, type, borders and radii: the first part sets the 0.7 default values of the properties 0.7 had, and the second sets new properties to what 0.7 hard-coded. The structure stays Neutral: control heights, the navbar height, spacing and the layout of metric cards don't go back.
+
+```ruby
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.theme do |t|
+    # The 0.7 default values
+    t.btn_primary = "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-1"
+    t.btn_secondary = "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+    t.btn_danger = "bg-red-600 text-white hover:bg-red-700"
+    t.btn_ghost = "bg-gray-100 text-gray-700 hover:bg-gray-200"
+    t.link = "text-indigo-600 hover:text-indigo-900"
+    t.link_muted = "text-gray-500 hover:text-gray-700"
+    t.input_border = "border-gray-300 hover:border-gray-400"
+    t.input_focus = "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+    t.checkbox_checked = "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
+    t.scope_active = "border-indigo-600 text-indigo-600"
+    t.scope_inactive = "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+    t.badge_count = "bg-indigo-600 text-white"
+    t.sidebar_bg = "bg-gray-900"
+    t.sidebar_title = "text-white"
+    t.sidebar_link = "text-gray-300"
+    t.sidebar_link_hover = "hover:bg-gray-800 hover:text-white"
+    t.sidebar_link_active = "bg-gray-800 text-white"
+    t.sidebar_group_label = "text-gray-400"
+    t.navbar_bg = "bg-white"
+    t.navbar_border = "border-gray-200"
+    t.navbar_search_bg = "bg-gray-50"
+    t.navbar_search_focus_bg = "focus:bg-white"
+    t.table_header_bg = "bg-gray-50"
+    t.table_row_hover = "hover:bg-gray-50"
+    t.table_border = "divide-gray-200"
+    t.card_bg = "bg-white"
+    t.card_border = "border-gray-200"
+    t.card_shadow = "shadow"
+    t.font_family = ""
+    t.heading_weight = "font-bold"
+    t.body_text = "text-gray-900"
+    t.muted_text = "text-gray-500"
+    t.label_text = "text-gray-700"
+    t.main_bg = "bg-gray-50"
+    t.border_radius = "rounded-lg"
+    t.chart_colors = %w[
+      rgba(99,102,241,0.8) rgba(59,130,246,0.8) rgba(16,185,129,0.8)
+      rgba(245,158,11,0.8) rgba(239,68,68,0.8) rgba(139,92,246,0.8)
+    ]
+    t.chart_border_color = "rgb(99, 102, 241)"
+    # 0.7 never rendered its focus_ring ("focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20").
+    # 0.8 draws the keyboard focus of buttons, links and menu items with it, so keep a visible outline.
+    t.focus_ring = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+
+    # New properties, set to what 0.7 hard-coded
+    t.font_stylesheet_url = nil
+    t.page_title = "text-2xl font-bold text-gray-900"
+    t.card_title = "text-lg font-semibold text-gray-900"
+    t.label_transform = "uppercase tracking-wider"
+    t.table_header_text = "text-xs font-medium text-gray-500"
+    t.table_cell_padding = "px-6 py-4"
+    t.control_radius = "rounded-lg"
+    t.control_shadow = "shadow-sm"
+    t.checkbox_border = "border-gray-300"
+    t.checkbox_radius = "rounded"
+    t.input_error = "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+    t.placeholder_text = "placeholder:text-gray-400"
+    t.disabled_text = "text-gray-300"
+    t.sidebar_border = ""
+    t.navbar_text = "text-gray-600"
+    t.kbd = "border-gray-200 bg-white text-gray-500"
+    t.skip_link = "focus:bg-white focus:text-gray-900 focus:shadow-lg focus:ring-2 focus:ring-indigo-500"
+    t.popover_shadow = "shadow-lg"
+    t.surface_muted = "bg-gray-50"
+    t.item_hover = "hover:bg-gray-50"
+    t.item_active = "bg-gray-100"
+    t.icon_muted = "text-gray-400"
+    t.overlay_bg = "bg-gray-900/50"
+    t.error_text = "text-red-600"
+    t.success_text = "text-green-600"
+    t.alert_palette = {
+      success: "bg-green-50 border-green-200 text-green-800",
+      error: "bg-red-50 border-red-200 text-red-800",
+      warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      info: "bg-blue-50 border-blue-200 text-blue-800",
+    }
+    t.badge_palette = IronAdmin::Configuration::BADGE_COLOR_CLASSES.dup
+    t.badge_dot_palette = {}
+    t.badge_shape = "rounded-full font-medium"
+    t.chip = "bg-indigo-50 text-indigo-700"
+    t.danger_item = "text-red-600 hover:bg-red-50"
+    t.tooltip = "bg-gray-900 text-white"
+    t.code_block = "bg-gray-900 text-gray-100"
+    t.progress_track = "bg-gray-200"
+    t.pagination_active = "bg-indigo-50 border-indigo-500 text-indigo-600"
+    t.metric_label = "text-sm font-medium text-gray-500"
+    t.metric_value = "text-3xl font-bold text-gray-900"
+    t.metric_icon = "bg-indigo-50 text-indigo-600"
+    t.chart_grid_color = "rgba(0, 0, 0, 0.1)" # Chart.js's own defaults
+    t.chart_text_color = "#666"
+  end
+end
+```
+
+`Configuration::BADGE_COLOR_CLASSES` still holds the 0.7 badge classes, and the engine's Tailwind sources include it, so those classes compile.
+
+### 5. Inter is loaded from Google Fonts
+
+Neutral sets `font_stylesheet_url` to Inter on Google Fonts (`display=swap`, so text shows in a fallback font until Inter arrives), and the layout links it with preconnect tags. Every admin page view therefore makes the visitor's browser contact `fonts.googleapis.com` and `fonts.gstatic.com`, which sends Google the visitor's IP address and user agent. In 0.7 the admin panel made no third-party request.
+
+**Action required:**
+
+- If your app sends a Content Security Policy, allow `https://fonts.googleapis.com` in `style-src` and `https://fonts.gstatic.com` in `font-src`, or the browser blocks the font (the page still works, in the fallback font).
+- If your privacy policy or the law that applies to you does not allow the request, turn it off for every theme. Pages then use Inter where it is installed, and the system UI font elsewhere:
+
+  ```ruby
+  IronAdmin.configure do |config|
+    # ... config.theme and config.register_theme blocks ...
+    config.themes.each_value { |theme| theme.font_stylesheet_url = nil }
+  end
+  ```
+
+  To keep Inter without Google, host the font and point `font_stylesheet_url` at your own stylesheet (see [Fonts](docs/guides/theming.md#fonts)).
+
+### 6. Read `IronAdmin.current_theme` in custom components
+
+Each request now has a theme, resolved before authentication. `IronAdmin.current_theme` returns it (and the default theme outside a request). `IronAdmin.configuration.theme` still exists and returns the default theme, so a custom component that reads it keeps the default look while the rest of the page shows another theme.
+
+**Action required:** In your components, overridden views and helpers, replace `IronAdmin.configuration.theme` with `IronAdmin.current_theme`. Views that use `IronAdmin::ThemeHelper#t` already get the request's theme. To find the reads: `grep -rn "configuration.theme" app/`. If you register no theme, both return the same theme, but switching now keeps your components ready for themes. A card built from theme properties also needs `border_width` with `card_border` to draw its border.
+
+### 7. Named themes, the theme switcher and its route
+
+None of this changes an app that registers no theme: with a single theme, the navbar shows no switcher. When you register one (`config.register_theme`), the navbar shows a theme switcher that posts to the new route `POST /admin/theme` (`themes#update`) and stores the choice in the `iron_admin_theme` cookie. `config.default_theme` and `config.theme_resolver` choose which theme a request gets. See the [theming guide](docs/guides/theming.md#registering-more-themes).
+
+**Action required:**
+
+- `/admin/theme` is now an engine path, like `/admin/search` and `/admin/audit`. A resource whose `resource_name` is `theme` would lose its `POST` route to it; resources named after a plural model (`themes`) are not affected.
+- If your app ships its own IronAdmin translations, add `iron_admin.theme_switcher.button_label` ("Theme: %{theme}"), `iron_admin.theme_switcher.menu_label` ("Themes"), `iron_admin.theme_switcher.unknown` ("That theme is not available.") and `iron_admin.fields.tags_remove` ("Remove %{tag}").
+- If you replaced the engine's JavaScript entry point or import map pins, register and pin the new Stimulus controllers `cp-disclosure` (`iron_admin/controllers/cp_disclosure_controller`) and `cp-search-shortcut` (`iron_admin/controllers/cp_search_shortcut_controller`).
+- If your custom navbar (`config.components.navbar`) should offer the switcher, render the new `theme_switcher` slot (see [Replacing or hiding the switcher](docs/guides/theming.md#replacing-or-hiding-the-switcher)).
+
+### 8. Other changes since 0.7.0
+
+0.8.0 also ships the fixes and additions listed in the [CHANGELOG](CHANGELOG.md). These can affect host code or specs:
+
+- The titles of the dashboard widgets (`ChartComponent`, `ProgressComponent`, `RecentTableComponent`, `ActivityFeedComponent`, `QuickLinksComponent`) and of `NestedFormComponent` are `h2` instead of `h3`.
+- A blank resource or tool name in the URL, such as `/admin/%20`, returns a bare `400 Bad Request` instead of the not found page.
+- A `:select` filter without `options` on the foreign key of a `belongs_to` association offers the associated records by label instead of the raw ids.
+- Scope tabs keep the search, the filters and the sort, and go back to the first page.
+- The import preview formats each cell as the show page does ("Yes"/"No", dates, currency, masked secrets).
+- With database storage, audit entries without a user show "Unknown" in the User column.
+
+**Action required:** Update host CSS and system specs that select these titles as `h3`, expect a `404` for a blank name, or expect raw ids in foreign key filters or raw values in the import preview.
+
+## What does NOT change
+
+- **Requirements** — Ruby >= 3.3, Rails >= 8.0.4 and the same dependency floors as 0.7.0.
+- **Configuration** — `IronAdmin.configure` blocks work as before. `config.theme` still yields and returns the default theme, and the 38 theme properties of 0.7 keep their names and meaning.
+- **DSLs and routes** — No DSL method was removed or renamed. The only new route is `POST /admin/theme`.
+- **Database** — No new migrations.
+
+---
+
 # Upgrading to IronAdmin 0.7.0 (Ruby 3.3+ / Rails 8.0.4+)
 
 Version 0.7.0 raises the minimum Ruby and Rails versions and declares dependency floors that match the APIs IronAdmin actually uses. It also closes several authorization and data-handling gaps, and makes component overrides take effect. The resource, dashboard, tool and policy DSLs keep their methods, but some requests that used to succeed now return `403` or `404`, and some markup changed. Read every section before upgrading.

@@ -18,4 +18,5 @@ Complete reference material:
 
 - **Configuration** — every `IronAdmin.configure` option.
 - **Routes** — the routes the engine mounts.
-- **Theme Properties** — the full list of themeable Tailwind class properties.
+- **Theme Reference** — the theme methods, constants and helpers, and the names of every theme
+  property.

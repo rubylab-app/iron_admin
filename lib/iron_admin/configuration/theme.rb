@@ -242,7 +242,8 @@ module IronAdmin
       # @return [String] Border width used with every border color property
       attr_accessor :border_width
 
-      # @return [String] "light" or "dark": the CSS color scheme of browser UI, scrollbars and charts
+      # @return [String] "light" or "dark": the CSS color scheme of browser UI and scrollbars
+      #   (charts take {#chart_grid_color} and {#chart_text_color})
       attr_accessor :color_scheme
 
       # @return [String] Classes of this theme's swatch in the theme switcher

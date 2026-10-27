@@ -4,12 +4,15 @@ Core UI elements for building admin interfaces.
 
 ## BadgeComponent
 
-Displays status indicators with colored backgrounds.
+Displays a status in the current theme's colors: the `badge_palette` classes of its color, a
+dot from `badge_dot_palette` (none when that Hash is empty) and the `badge_shape` radius and
+weight. An unknown color uses `:gray`, and a color with classes in `config.badge_colors` uses
+them, without a dot (see [Badges, alerts and chips](../guides/theming.md#badges-alerts-and-chips)).
 
 ```ruby
 IronAdmin::Ui::BadgeComponent.new(
   text: "Active",      # Required: display text
-  color: :green,       # Optional: :gray, :green, :red, :yellow, :blue, :indigo, :purple, :pink, :orange, :teal
+  color: :green,       # Optional: a badge_palette key: :gray (default), :green, :red, :yellow, :blue, :indigo, :purple, :pink, :orange, :teal
   size: :md            # Optional: :sm, :md, :lg
 )
 ```
@@ -112,7 +115,8 @@ IronAdmin::Ui::AlertComponent.new(
   `role:` to override it. `IronAdmin::Layout::FlashComponent` passes `role: "alert"` for every
   flash message, because a message that arrives already written in a new page is not
   announced as a `status`.
-- The border radius comes from `theme.border_radius`.
+- The colors come from the theme's `alert_palette` entry for the type (the `:info` entry for
+  an unknown type), and the border width and radius from `border_width` and `border_radius`.
 - With `dismissible: true`, the alert uses the `cp-alert` Stimulus controller
   (`data-controller="cp-alert"`), and its close button calls `cp-alert#dismiss`, which
   removes the alert. The button's accessible label is `iron_admin.alerts.dismiss`

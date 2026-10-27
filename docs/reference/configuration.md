@@ -17,19 +17,8 @@ IronAdmin.configure do |config|
     scope.where(organization_id: Current.organization.id)
   end
 
-  # --- Badge Colors ---
-  config.badge_colors = {
-    green: "bg-green-100 text-green-800",
-    red: "bg-red-100 text-red-800",
-    yellow: "bg-yellow-100 text-yellow-800",
-    blue: "bg-blue-100 text-blue-800",
-    indigo: "bg-indigo-100 text-indigo-800",
-    purple: "bg-purple-100 text-purple-800",
-    pink: "bg-pink-100 text-pink-800",
-    orange: "bg-orange-100 text-orange-800",
-    teal: "bg-teal-100 text-teal-800",
-    gray: "bg-gray-100 text-gray-800"
-  }
+  # --- Badge Colors (status value => color name; add entries, don't replace the Hash) ---
+  config.badge_colors["on_hold"] = "orange"
 
   # --- Authentication ---
   config.authenticate do |controller|
@@ -46,8 +35,16 @@ IronAdmin.configure do |config|
   config.on_action do |event|
   end
 
-  # --- Theme ---
-  config.theme do |t|
+  # --- Themes ---
+  config.theme do |t|            # the default theme (Neutral unless default_theme names another)
+    t.link = "text-indigo-600 hover:text-indigo-500"
+  end
+  config.register_theme(:midnight, label: "Midnight") do |t|
+    t.color_scheme = "dark"
+  end
+  config.default_theme = :neutral
+  config.theme_resolver do |request| # default: the theme switcher's cookie
+    request.cookies[IronAdmin::Configuration::THEME_COOKIE]
   end
 
   # --- Components (a ViewComponent class or its class name; nil = built-in) ---
@@ -58,6 +55,8 @@ IronAdmin.configure do |config|
   config.components.navbar = nil
   config.components.sidebar = nil
   config.components.shell = nil
+  config.components.flash = nil
+  config.components.theme_switcher = nil
   config.components.fields[:type] = nil
 end
 ```
@@ -110,13 +109,37 @@ View audit logs at `/admin/audit`.
 
 For custom audit logging, use the `on_action` callback instead.
 
+### Themes
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `theme` | Block | Neutral | Yields and returns the default theme, to change its properties |
+| `register_theme(name, label:)` | Method with a block | none | Registers a named theme that starts from the Neutral values. With two or more themes, the navbar shows a theme switcher |
+| `default_theme` | Symbol | `:neutral` | The theme used when a request resolves no registered theme |
+| `theme_resolver` | Block | reads the `iron_admin_theme` cookie | Receives the request and returns the name of its theme. Unknown names and errors fall back to `default_theme` |
+
+Read the request's theme with `IronAdmin.current_theme`. See the
+[Theming guide](../guides/theming.md) and the [Theme reference](theme-properties.md).
+
 ### Badge Colors
 
-Default color palette for badge fields. Add custom colors:
+`badge_colors` maps status values to badge color names, such as `"active" => "green"` (see
+[Badge Colors](../guides/fields.md#badge-colors) for the defaults). Add or change entries;
+assigning a new Hash replaces the default mapping:
+
+```ruby
+config.badge_colors["on_hold"] = "orange"
+```
+
+The classes of each color come from the theme's `badge_palette`. An entry that maps a color
+name Symbol to classes sets that color's classes in every theme, and those badges have no dot:
 
 ```ruby
 config.badge_colors[:cyan] = "bg-cyan-100 text-cyan-800"
 ```
+
+To add a color that follows the theme, add it to the theme's `badge_palette` and
+`badge_dot_palette` instead (see [Badges, alerts and chips](../guides/theming.md#badges-alerts-and-chips)).
 
 ### Components
 
@@ -135,6 +158,7 @@ slot passes.
 | `navbar` | Top bar inside the built-in shell |
 | `sidebar` | Navigation inside the built-in shell |
 | `flash` | Flash messages above the page content inside the built-in shell |
+| `theme_switcher` | Theme switcher in the built-in navbar, rendered when two or more themes are registered |
 | `shell` | Shell around every admin page |
 | `fields[:type]` | Form input for every field of that type (form only; display is unchanged) |
 

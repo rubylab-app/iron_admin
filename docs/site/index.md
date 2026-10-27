@@ -53,7 +53,8 @@ rails generate iron_admin:install
 - **Zero-configuration CRUD** — forms and tables inferred from your database schema.
 - **Resource DSL** — customize fields, filters, scopes, and actions in clean Ruby.
 - **Dashboard builder** — metrics, charts, and recent-record widgets.
-- **Theme system** — every UI element is a configurable Tailwind class.
+- **Themes** — a minimal default look (Neutral), named themes such as a dark one, and a theme
+  switcher in the navbar; every color, font, radius and shadow is a configurable Tailwind class.
 - **Authorization** — a built-in policy DSL for fine-grained access control.
 - **Adapters** — pluggable data-layer support (ActiveRecord, Mongoid, and custom).
 - **Search & export** — global search and CSV/JSON export out of the box.

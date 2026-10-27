@@ -43,9 +43,10 @@ module IronAdmin
   # @example Theme configuration
   #   IronAdmin.configure do |config|
   #     config.theme do |t|
-  #       t.primary_color = "#4F46E5"
-  #       t.sidebar_bg = "#1F2937"
+  #       t.font_stylesheet_url = nil
+  #       t.label_transform = "uppercase tracking-wider"
   #     end
+  #     config.register_theme(:midnight, label: "Midnight") { |t| t.color_scheme = "dark" }
   #   end
   #
   # @see IronAdmin.configure

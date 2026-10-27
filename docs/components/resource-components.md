@@ -182,7 +182,8 @@ IronAdmin::Resources::RelatedListComponent.new(
 
 `Resource.has_many_associations` returns hashes in this shape, `reflection:` included.
 
-The list renders nothing when there are no records. The card has no border, rows are divided
+The list renders nothing when there are no records. The card is a panel like the show page's
+(`card_bg`, `border_width`, `card_border`, `border_radius` and `card_shadow`), rows are divided
 with `theme.table_border`, the table scrolls horizontally inside an `overflow-x-auto`
 container, and the "View all" label comes from `iron_admin.resources.show.view_all`.
 

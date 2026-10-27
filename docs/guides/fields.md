@@ -58,30 +58,26 @@ Visibility and readonly rules are enforced across:
 
 ## Badge Colors
 
-Available keys: `:green`, `:red`, `:yellow`, `:blue`, `:indigo`, `:purple`, `:pink`, `:orange`, `:teal`, `:gray`
-
-Add custom colors:
-
-```ruby
-IronAdmin.configure do |config|
-  config.badge_colors[:cyan] = "bg-cyan-100 text-cyan-800"
-end
-```
+A `:badge` field shows its value as a badge. The color of a value comes from, in this order:
+the field's `colors:` option, `config.badge_colors`, and else `:gray`. The classes of each color
+come from the current theme's `badge_palette`, with a dot from `badge_dot_palette` (see
+[Badges, alerts and chips](theming.md#badges-alerts-and-chips)). Its color names are `:green`,
+`:red`, `:yellow`, `:blue`, `:indigo`, `:purple`, `:pink`, `:orange`, `:teal` and `:gray`.
 
 ### Default Badge Colors for Common Status Values
 
-IronAdmin automatically assigns colors to common status values without configuration:
+IronAdmin assigns colors to common status values without configuration
+(`IronAdmin::Configuration::DEFAULT_BADGE_COLORS`):
 
 | Status Value | Color |
 |--------------|-------|
-| `active`, `published`, `enabled`, `approved`, `success` | Green |
-| `pending`, `draft`, `waiting`, `processing` | Yellow |
-| `completed`, `done`, `finished` | Blue |
-| `failed`, `error`, `rejected`, `cancelled`, `disabled` | Red |
-| `inactive`, `archived`, `suspended` | Gray |
-| `admin`, `superuser`, `owner` | Purple |
-| `user`, `member`, `subscriber` | Blue |
-| `guest`, `visitor` | Gray |
+| `active`, `enabled`, `completed`, `done`, `success`, `approved`, `accepted`, `published` | Green |
+| `pending` | Yellow |
+| `processing`, `in_progress` | Blue |
+| `failed`, `error`, `cancelled`, `canceled`, `rejected`, `declined`, `expired`, `suspended`, `blocked` | Red |
+| `inactive`, `disabled`, `unpublished`, `draft`, `archived` | Gray |
+| `true`, `"true"`, `"yes"` | Green |
+| `false`, `"false"`, `"no"` | Red |
 
 Example:
 
@@ -92,7 +88,7 @@ class OrderResource < IronAdmin::Resource
 end
 
 # Order with status "pending" will show a yellow badge
-# Order with status "completed" will show a blue badge
+# Order with status "completed" will show a green badge
 ```
 
 Override auto-detected colors by providing explicit colors:
@@ -100,9 +96,35 @@ Override auto-detected colors by providing explicit colors:
 ```ruby
 field :status, type: :badge, colors: {
   pending: :orange,    # Override default yellow
-  completed: :green    # Override default blue
+  completed: :blue     # Override default green
 }
 ```
+
+Map more values for every badge field with `config.badge_colors` (add entries; assigning a new
+Hash replaces the defaults):
+
+```ruby
+IronAdmin.configure do |config|
+  config.badge_colors["on_hold"] = "orange"
+end
+```
+
+To add a color, such as `field :tier, type: :badge, colors: { vip: :cyan }`, add it to the
+theme's `badge_palette` and `badge_dot_palette`. Each theme has its own palettes, so a dark
+theme can give the color its own classes:
+
+```ruby
+IronAdmin.configure do |config|
+  config.theme do |t|
+    t.badge_palette[:cyan] = "bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-600/20"
+    t.badge_dot_palette[:cyan] = "bg-cyan-500"
+  end
+end
+```
+
+An entry in `config.badge_colors` that maps a color name Symbol to classes, such as
+`config.badge_colors[:cyan] = "bg-cyan-100 text-cyan-800"`, also defines a color. It wins over
+the palettes, uses the same classes in every theme, and its badges have no dot.
 
 ## Name-Convention Fields
 
