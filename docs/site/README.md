@@ -65,6 +65,8 @@ docs/site/
 ├── _config.yml            # Jekyll + just-the-docs configuration
 ├── Gemfile                # jekyll + just-the-docs (pinned)
 ├── index.md               # Landing page
+├── assets/images/
+│   └── demo-dashboard.png # Demo screenshot, also shown by the repository README.md
 ├── getting-started/
 │   ├── index.md           # Section landing
 │   ├── installation.md    # ✅ migrated (real content)
