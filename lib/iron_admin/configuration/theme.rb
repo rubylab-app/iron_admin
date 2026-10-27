@@ -313,25 +313,40 @@ module IronAdmin
       # @!endgroup
 
       # --- forms additions ---
+      # Each reader falls back to its Neutral value, so this block needs no line in #initialize.
+
       # @!group Form Control Styles
 
       # @return [String] Shadow of inputs, selects, textareas and buttons other than ghost ones (empty = none)
-      attr_accessor :control_shadow
+      def control_shadow
+        defined?(@control_shadow) ? @control_shadow : "shadow-xs"
+      end
 
       # @return [String] Border color of unchecked checkboxes and radio buttons
-      attr_accessor :checkbox_border
+      def checkbox_border
+        defined?(@checkbox_border) ? @checkbox_border : "border-zinc-300"
+      end
 
       # @return [String] Radius of checkboxes (radio buttons are always round)
-      attr_accessor :checkbox_radius
+      def checkbox_radius
+        defined?(@checkbox_radius) ? @checkbox_radius : "rounded-sm"
+      end
 
       # @return [String] Background of the listbox option that the arrow keys highlight
       #   (belongs-to autocomplete results)
-      attr_accessor :item_active
+      def item_active
+        defined?(@item_active) ? @item_active : "bg-zinc-100"
+      end
 
       # @return [String] Shadow of floating panels such as the belongs-to autocomplete results
-      attr_accessor :popover_shadow
+      def popover_shadow
+        defined?(@popover_shadow) ? @popover_shadow : "shadow-lg"
+      end
+
+      attr_writer :control_shadow, :checkbox_border, :checkbox_radius, :item_active, :popover_shadow
 
       # @!endgroup
+
       # --- end forms additions ---
 
       # Creates a Theme with the values of the Neutral look.
@@ -349,7 +364,6 @@ module IronAdmin
         init_feedback_defaults
         init_palette_defaults
         init_chart_defaults
-        init_form_control_defaults
       end
 
       # Copies Array and Hash values (chart colors, palettes) too, so a copy never shares them.
@@ -509,16 +523,6 @@ module IronAdmin
         @chart_grid_color = "rgba(228, 228, 231, 1)"
         @chart_text_color = "rgb(113, 113, 122)"
       end
-
-      # --- forms additions ---
-      def init_form_control_defaults
-        @control_shadow = "shadow-xs"
-        @checkbox_border = "border-zinc-300"
-        @checkbox_radius = "rounded-sm"
-        @item_active = "bg-zinc-100"
-        @popover_shadow = "shadow-lg"
-      end
-      # --- end forms additions ---
     end
   end
 end

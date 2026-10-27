@@ -136,6 +136,22 @@ RSpec.describe IronAdmin::Configuration::Theme do
         expect(theme.public_send(property)).to eq(value)
       end
     end
+
+    context "with an empty control_shadow" do
+      before { theme.control_shadow = "" }
+
+      it "keeps it, so controls get no shadow" do
+        expect(theme.control_shadow).to eq("")
+      end
+    end
+
+    context "with a copy" do
+      before { theme.checkbox_radius = "rounded-none" }
+
+      it "keeps the value set on the original" do
+        expect(theme.dup.checkbox_radius).to eq("rounded-none")
+      end
+    end
   end
 
   describe "#name" do
