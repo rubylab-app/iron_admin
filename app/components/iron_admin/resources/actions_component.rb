@@ -30,6 +30,24 @@ module IronAdmin
       end
 
       # @api private
+      # @return [String] CSS classes of the panel
+      def panel_classes
+        "p-4 #{Styles.panel(theme)}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of the panel title
+      def title_classes
+        "mb-3 #{Styles.panel_title(theme)}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of an action button
+      def button_classes
+        Styles.secondary_button(theme)
+      end
+
+      # @api private
       # @param action [Hash] Action configuration
       # @return [String] URL for executing the action
       def action_url(action)

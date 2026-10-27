@@ -19,7 +19,6 @@ module ThemeHardcodedColors
     "app/views/iron_admin/shared/_pagination.html.haml",
 
     # data package
-    "app/components/iron_admin/resources/data_table_component.html.haml",
     "app/views/iron_admin/audit/index.html.haml",
     "app/views/iron_admin/resources/index.html.haml",
     "app/views/iron_admin/resources/show.html.haml",

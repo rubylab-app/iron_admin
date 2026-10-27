@@ -105,4 +105,34 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
       end
     end
   end
+
+  describe "rendered row" do
+    subject(:row) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(field: field, record: user)).at_css("div")
+      end
+    end
+
+    it "lays out the label and the value like the show page's detail rows" do
+      expect(row[:class]).to eq(IronAdmin::Resources::Styles::DETAIL_ROW)
+    end
+
+    it "writes the label in the theme's muted text color" do
+      expect(row.at_css("dt")[:class].split).to include("text-zinc-500")
+    end
+
+    it "writes the value in the theme's body text color" do
+      expect(row.at_css("dd")[:class].split).to include("text-zinc-900")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.body_text = "text-zinc-100" }
+      end
+
+      it "writes the value in that theme's body text color" do
+        expect(row.at_css("dd")[:class].split).to include("text-zinc-100")
+      end
+    end
+  end
 end

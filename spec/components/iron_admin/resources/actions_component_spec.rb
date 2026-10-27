@@ -63,4 +63,55 @@ RSpec.describe IronAdmin::Resources::ActionsComponent, type: :component do
       expect(button["data-turbo-confirm"]).to be_nil
     end
   end
+
+  describe "theme" do
+    subject(:rendered) do
+      render_inline(described_class.new(actions: [{ name: :archive, icon: "archive-box" }], record: user,
+                                        resource_class: IronAdmin::Resources::UserResource))
+    end
+
+    let(:styles) { IronAdmin::Resources::Styles }
+    let(:theme) { IronAdmin.current_theme }
+
+    it "renders the actions in a panel" do
+      expect(rendered.at_css("div")[:class].split).to include(*styles.panel(theme).split)
+    end
+
+    it "titles the panel with the panel title classes" do
+      expect(rendered.at_css("h2")[:class].split).to include(*styles.panel_title(theme).split)
+    end
+
+    it "renders each action as a secondary button" do
+      expect(rendered.at_css("button")[:class]).to eq(styles.secondary_button(theme))
+    end
+
+    it "draws 16px icons" do
+      expect(rendered.at_css("button svg")[:class].split).to include("h-4", "w-4")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.card_title = "text-base font-bold text-white"
+          t.btn_secondary = "bg-zinc-800 text-zinc-100"
+          t.label_transform = "uppercase tracking-wider"
+          t.table_frame = "ring-1 ring-zinc-700"
+          t.table_cell_padding = "px-3 py-1.5"
+        end
+      end
+
+      it "uses that theme's card background" do
+        expect(rendered.at_css("div")[:class].split).to include("bg-zinc-900")
+      end
+
+      it "uses that theme's card title" do
+        expect(rendered.at_css("h2")[:class].split).to include("text-base", "font-bold", "text-white")
+      end
+
+      it "uses that theme's secondary button" do
+        expect(rendered.at_css("button")[:class].split).to include("bg-zinc-800", "text-zinc-100")
+      end
+    end
+  end
 end
