@@ -51,11 +51,11 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
         end
 
         it "pads the page like the other admin pages" do
-          expect(container_classes).to include("p-4", "sm:p-6", "lg:p-8")
+          expect(container_classes).to include("px-4", "sm:px-6", "lg:px-8", "py-6")
         end
 
         it "does not use the fixed desktop padding on small screens" do
-          expect(container_classes).not_to include("p-8")
+          expect(container_classes).not_to include("p-8", "lg:p-8")
         end
       end
 

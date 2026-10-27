@@ -1,7 +1,7 @@
 - form_url = resources_path(@resource_class.resource_name)
 
-.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
-  %h1.text-2xl.mb-6{ class: cp_heading }= I18n.t("iron_admin.resources.new.title", model: @resource_class.model.model_name.human)
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
+  %h1.mb-6{ class: "#{t.page_title} #{t.heading_font}" }= I18n.t("iron_admin.resources.new.title", model: @resource_class.model.model_name.human)
 
   .p-6{ class: cp_card }
     - if (form_component = iron_admin_form_component(@resource_class, record: @record, fields: @fields, url: form_url))
