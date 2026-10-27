@@ -6,7 +6,7 @@ require "rails_helper"
 # error page. HTML requests get a page with a link back; other formats keep
 # the bare status.
 RSpec.describe "Error pages", type: :request do
-  let(:page) { Nokogiri::HTML(response.body) }
+  let(:page) { response.parsed_body }
   let(:heading) { page.at_css("#cp-error-page h1")&.text&.squish }
   let(:back_link) { page.at_css("#cp-error-page a")&.[]("href") }
 

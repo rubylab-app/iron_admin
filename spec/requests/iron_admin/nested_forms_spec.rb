@@ -217,7 +217,7 @@ RSpec.describe "Nested Forms", type: :request do
       end
     end
     let(:user) { create(:user) }
-    let(:html) { Nokogiri::HTML5(response.body) }
+    let(:html) { response.parsed_body }
 
     # The child attribute names of the inputs in a nested row, in page order.
     def nested_input_names(row)

@@ -420,7 +420,7 @@ RSpec.describe "IronAdmin::Imports", type: :request do
   end
 
   def html
-    Nokogiri::HTML(response.body)
+    response.parsed_body
   end
 
   def import_form

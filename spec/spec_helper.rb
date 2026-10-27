@@ -2,18 +2,20 @@ require "simplecov"
 require "simplecov-console"
 
 SimpleCov.start "rails" do
-  add_filter "/spec/"
-  add_filter "/lib/generators/"
-  add_filter "/lib/iron_admin/version.rb"
-  add_filter "/lib/iron_admin/engine.rb"
+  skip "/spec/"
+  skip "/lib/generators/"
+  skip "/lib/iron_admin/version.rb"
+  skip "/lib/iron_admin/engine.rb"
 
-  add_group "Lib", "lib/iron_admin"
-  add_group "Controllers", "app/controllers"
-  add_group "Components", "app/components"
-  add_group "Helpers", "app/helpers"
+  group "Lib", "lib/iron_admin"
+  group "Controllers", "app/controllers"
+  group "Components", "app/components"
+  group "Helpers", "app/helpers"
 
-  minimum_coverage 90
-  minimum_coverage_by_file 80
+  coverage :line do
+    minimum 90
+    minimum 80, per: :file
+  end
 
   formatter SimpleCov::Formatter::MultiFormatter.new([
                                                        SimpleCov::Formatter::HTMLFormatter,

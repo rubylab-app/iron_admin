@@ -47,7 +47,7 @@ RSpec.describe "Index state", type: :request do
     { "scope" => "expired", "q" => "KEY", "sort" => "expires_at", "direction" => "asc", "page" => "2",
       "filters" => filters, }
   end
-  let(:document) { Nokogiri::HTML(response.body) }
+  let(:document) { response.parsed_body }
 
   before do
     IronAdmin.reset_configuration!
