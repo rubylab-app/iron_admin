@@ -1,6 +1,4 @@
-%div{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow} p-6",
-     data: { controller: "cp-chart", cp_chart_config_value: chart_config } }
-  %h2.text-lg.font-semibold.mb-4{ class: theme.body_text }
-    = title
+%div{ class: "#{card_classes} p-5", data: { controller: "cp-chart", cp_chart_config_value: chart_config } }
+  %h2.mb-4{ class: title_classes }= title
   %div{ style: "height: #{height}px; position: relative;" }
-    %canvas{ data: { cp_chart_target: "canvas" } }
+    %canvas{ role: "img", aria: { label: title }, data: { cp_chart_target: "canvas" } }

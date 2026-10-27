@@ -58,6 +58,17 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
           expect(container_classes).not_to include("p-8")
         end
       end
+
+      context "with the empty state" do
+        subject(:card_classes) do
+          get iron_admin.root_path, headers: { "Accept" => "text/html" }
+          response.parsed_body.css("p").find { |paragraph| paragraph.text.include?("No dashboard configured") }.parent[:class].split
+        end
+
+        it "frames the message like the dashboard cards" do
+          expect(card_classes).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+        end
+      end
     end
 
     context "with dashboard class configured" do
@@ -98,6 +109,38 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
 
       it "switches to four columns at the xl breakpoint" do
         expect(grid_classes).to include("xl:grid-cols-4")
+      end
+
+      it "spaces the cards like the stats grid" do
+        expect(grid_classes).to include("gap-4")
+      end
+    end
+
+    context "with a registered theme chosen by the theme cookie" do
+      subject(:card) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("#metric_total_users")
+      end
+
+      before do
+        IronAdmin.configure do |config|
+          config.register_theme(:harbor) do |t|
+            t.card_bg = "bg-slate-900"
+            t.metric_value = "text-4xl font-black text-white"
+          end
+        end
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) do
+          metric(:total_users, live: true) { 42 }
+        end
+        cookies[IronAdmin::Configuration::THEME_COOKIE] = "harbor"
+      end
+
+      it "frames the metric cards with that theme's surface" do
+        expect(card[:class].split).to include("bg-slate-900")
+      end
+
+      it "shows the figures in that theme's metric_value" do
+        expect(card.css("p").last[:class].split).to include(*%w[text-4xl font-black text-white])
       end
     end
 

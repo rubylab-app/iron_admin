@@ -6,17 +6,7 @@ require "rails_helper"
 # IronAdmin::Configuration::Theme properties.
 module ThemeHardcodedColors
   # Files still being migrated to theme properties; each package removes its own.
-  PENDING = [
-    # dashboard package
-    "app/components/iron_admin/dashboards/activity_feed_component.rb",
-    "app/components/iron_admin/dashboards/activity_feed_component/item_component.html.haml",
-    "app/components/iron_admin/dashboards/metric_card_component.html.haml",
-    "app/components/iron_admin/dashboards/progress_component.html.haml",
-    "app/components/iron_admin/dashboards/quick_links_component/link_component.html.haml",
-    "app/components/iron_admin/dashboards/recent_table_component.html.haml",
-    "app/components/iron_admin/dashboards/stats_grid_component.rb",
-    "app/components/iron_admin/dashboards/stats_grid_component/stat_component.html.haml",
-  ].freeze
+  PENDING = [].freeze
 
   # Utilities whose value is a color.
   UTILITY = "(?:bg|text|border(?:-[xytrblse])?|divide|(?:inset-)?ring(?:-offset)?|outline|placeholder|fill|stroke|" \

@@ -1,7 +1,11 @@
-%div{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow} p-6" }
-  .flex.items-center.justify-between.mb-2
-    %h2.text-sm.font-medium{ class: theme.muted_text }= title
-    %span.text-sm.font-semibold{ class: theme.body_text }= "#{formatted_value} / #{formatted_max}"
-  .w-full.bg-gray-200.rounded-full.h-2.5
-    %div{ class: "h-2.5 rounded-full", style: "width: #{percentage}%; background-color: #{bar_color};" }
-  %p.mt-2.text-xs.text-right{ class: theme.muted_text }= "#{percentage}%"
+-# Laid out like the metric cards: label on top, figure below, then the bar.
+%div{ class: "#{card_classes} p-5" }
+  %h2{ class: label_classes }= title
+  .mt-2.flex.items-baseline.justify-between.gap-3
+    %p.min-w-0
+      %span{ class: theme.metric_value }= formatted_value
+      %span.whitespace-nowrap.text-sm.tabular-nums{ class: theme.muted_text }= "/ #{formatted_max}"
+    %p.shrink-0.text-sm.font-medium.tabular-nums{ class: theme.muted_text }= "#{percentage}%"
+  -# h-1.5 goes in the class string: in HAML's dot syntax ".h-1.5" is the classes "h-1" and "5".
+  %div{ class: "mt-3 h-1.5 overflow-hidden #{theme.progress_track} #{theme.control_radius}", role: "progressbar", aria: bar_aria }
+    .h-full{ class: theme.control_radius, style: "width: #{percentage}%; background-color: #{bar_color};" }

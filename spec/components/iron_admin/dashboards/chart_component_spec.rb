@@ -144,6 +144,23 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       end
     end
 
+    context "with a doughnut chart" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Plans", type: :doughnut, data: [1, 2], labels: %w[A B]).chart_config)["data"]["datasets"].first }
+
+      # One border color would ring every slice, and every legend box, in the line color.
+      it "outlines each slice in its own color" do
+        expect(dataset["borderColor"]).to eq(IronAdmin.current_theme.chart_colors)
+      end
+    end
+
+    context "with per-chart colors on a pie chart" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Split", type: :pie, data: [1, 2], labels: %w[A B], colors: ["#111", "#222"]).chart_config)["data"]["datasets"].first }
+
+      it "outlines each slice in its own per-chart color" do
+        expect(dataset["borderColor"]).to eq(["#111", "#222"])
+      end
+    end
+
     context "with theme border color" do
       before do
         IronAdmin.configuration.theme.chart_border_color = "rgb(34, 197, 94)"
@@ -182,6 +199,18 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       it "colors the legend labels" do
         expect(options["plugins"]["legend"]["labels"]["color"]).to eq(text)
       end
+
+      it "draws grid lines across the value axis only" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["grid"]["display"] }).to eq([false, nil])
+      end
+    end
+
+    context "with a horizontal bar chart" do
+      let(:type) { :horizontal_bar }
+
+      it "draws grid lines across the value axis, which is x, only" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["grid"]["display"] }).to eq([nil, false])
+      end
     end
 
     context "with a radial chart" do
@@ -205,6 +234,10 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
       it "adds no scales, which would draw axes" do
         expect(options).not_to have_key("scales")
+      end
+
+      it "marks the legend entries with dots, like the badges" do
+        expect(options["plugins"]["legend"]["labels"]).to include("usePointStyle" => true, "pointStyle" => "circle")
       end
 
       it "colors the legend labels" do
@@ -273,6 +306,52 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
     it "is an h2, one level below the page title" do
       expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([%w[h2 Revenue]])
+    end
+  end
+
+  describe "canvas" do
+    subject(:canvas) { render_inline(described_class.new(title: "Revenue", data: [1], labels: ["Jan"])).at_css("canvas") }
+
+    it "is an image named after the chart title" do
+      expect([canvas[:role], canvas["aria-label"]]).to eq(%w[img Revenue])
+    end
+  end
+
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(title: "Revenue", data: [1], labels: ["Jan"])).at_css("div") }
+
+    context "with the default theme" do
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "titles the card with the theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*IronAdmin.current_theme.card_title.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.card_bg = "bg-slate-900"
+          t.border_width = "border-2"
+          t.card_title = "text-base font-bold text-white"
+          t.heading_font = "font-serif"
+        end
+      end
+
+      it "frames the card with that theme's surface and border width" do
+        expect(card[:class].split).to include("bg-slate-900", "border-2")
+      end
+
+      it "titles the card with that theme's card_title and heading_font" do
+        expect(card.at_css("h2")[:class].split).to include(*%w[text-base font-bold text-white font-serif])
+      end
+
+      # Tailwind does not guarantee which of two font sizes wins, so only the theme sets one.
+      it "leaves the title's size and color to that theme's card_title" do
+        expect(card.at_css("h2")[:class].split.grep(/text-/)).to eq(%w[text-base text-white])
+      end
     end
   end
 end

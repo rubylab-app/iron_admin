@@ -83,6 +83,92 @@ RSpec.describe IronAdmin::Dashboards::ProgressComponent, type: :component do
     end
   end
 
+  describe "progress bar" do
+    subject(:bar) { render_inline(described_class.new(title: "Signups", value: 40, max: 200)).at_css("[role=progressbar]") }
+
+    it "names the bar after the title" do
+      expect(bar["aria-label"]).to eq("Signups")
+    end
+
+    # The percentage stays within 0..100 even when the value passes the target.
+    it "exposes the completion percentage to assistive technology" do
+      expect(bar.attributes.slice("aria-valuemin", "aria-valuemax", "aria-valuenow").transform_values(&:value))
+        .to eq("aria-valuemin" => "0", "aria-valuemax" => "100", "aria-valuenow" => "20.0")
+    end
+
+    it "reads out the value and the target" do
+      expect(bar["aria-valuetext"]).to eq("40 / 200")
+    end
+
+    it "draws the track in the theme's progress_track and control_radius" do
+      expect(bar[:class].split).to include(*IronAdmin.current_theme.progress_track.split, IronAdmin.current_theme.control_radius)
+    end
+
+    it "fills the bar in the bar color" do
+      expect(bar.at_css("div")[:style]).to include("background-color: #{IronAdmin.current_theme.chart_border_color}")
+    end
+  end
+
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(title: "Signups", value: 40, max: 200)).at_css("div") }
+
+    let(:title) { card.at_css("h2") }
+    let(:figure) { card.css("span").find { |span| span.text.strip == "40" } }
+
+    context "with the default theme" do
+      # HAML's dot syntax reads ".py-3.5" as the classes "py-3" and "5".
+      it "keeps fractional sizes such as py-3.5 whole" do
+        expect(card.css("[class]").flat_map { |node| node[:class].split }).not_to include(match(/\A\d+\z/))
+      end
+
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "puts the title on top in the theme's metric_label" do
+        expect(title[:class].split).to include(*IronAdmin.current_theme.metric_label.split)
+      end
+
+      it "shows the value in the theme's metric_value" do
+        expect(figure[:class].split).to include(*IronAdmin.current_theme.metric_value.split)
+      end
+
+      # On a phone "$123,456.78 / $250,000.00" wrapped between the slash and the target.
+      it "keeps the slash on the target's line" do
+        expect(card.css("span").find { |span| span.text.strip == "/ 200" }[:class].split).to include("whitespace-nowrap")
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.border_width = "border-2"
+          t.progress_track = "bg-slate-800"
+          t.control_radius = "rounded-none"
+          t.metric_value = "text-4xl font-black text-white"
+          t.chart_border_color = "rgb(56, 189, 248)"
+        end
+      end
+
+      it "frames the card with that theme's border width" do
+        expect(card[:class].split).to include("border-2")
+      end
+
+      it "draws the track in that theme's progress_track and control_radius" do
+        expect(card.at_css("[role=progressbar]")[:class].split).to include("bg-slate-800", "rounded-none")
+      end
+
+      it "fills the bar in that theme's chart_border_color" do
+        expect(card.at_css("[role=progressbar] div")[:style]).to include("background-color: rgb(56, 189, 248)")
+      end
+
+      # Tailwind does not guarantee which of two font sizes wins, so only the theme sets one.
+      it "leaves the value's size and color to that theme's metric_value" do
+        expect(figure[:class].split.grep(/text-/)).to eq(%w[text-4xl text-white])
+      end
+    end
+  end
+
   # The dashboard page title is the h1, so a widget title is an h2.
   describe "widget title" do
     subject(:headings) do

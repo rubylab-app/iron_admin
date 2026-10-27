@@ -25,6 +25,10 @@ export default class extends Controller {
 
   initChart() {
     if (!this.hasCanvasTarget) return
+    // A canvas does not inherit CSS fonts: draw the chart in the theme font of its card,
+    // and redraw it once a web font such as Inter has loaded.
+    Chart.defaults.font.family = getComputedStyle(this.element).fontFamily
     this.chart = new Chart(this.canvasTarget, this.configValue)
+    document.fonts?.ready.then(() => this.chart?.update("none"))
   }
 }

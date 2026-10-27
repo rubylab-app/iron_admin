@@ -1,8 +1,9 @@
-%div{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow}" }
-  .px-6.py-4.border-b{ class: theme.card_border }
-    %h2.text-lg.font-semibold{ class: theme.body_text }
-      = title
+%div{ class: card_classes }
+  -# py-3.5 goes in the class string: in HAML's dot syntax ".py-3.5" is the classes "py-3" and "5".
+  %div{ class: "border-b px-5 py-3.5 #{theme.card_border}" }
+    %h2{ class: title_classes }= title
 
-  %ul.divide-y{ class: theme.card_border, role: "list" }
+  -# divide-y takes its color from table_border: a border color on the list would leave the dividers in currentColor.
+  %ul.divide-y{ class: theme.table_border, role: "list" }
     - items.each do |item|
       = item

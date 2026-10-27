@@ -1,14 +1,14 @@
 -# Laid out like MetricCardComponent: the label wraps beside the icon instead of reaching it, and the
 -# value sits on its own full-width row, so a long value never pushes the icon out of a narrow card.
-%div{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow} p-6" }
-  .flex.items-start.justify-between.gap-4
-    %p.min-w-0.break-words.text-sm.font-medium{ class: theme.muted_text }= label
+%div{ class: "#{card_classes} p-5" }
+  .flex.items-center.justify-between.gap-3
+    %p.min-w-0.break-words{ class: label_classes }= label
     - if icon
-      .shrink-0.p-3.rounded-full.bg-indigo-50
-        = heroicon icon, variant: :outline, options: { class: "h-6 w-6 text-indigo-600" }
-  %p.mt-2.text-3xl.font-semibold{ class: "#{theme.body_text} xl:text-2xl 2xl:text-3xl" }= value
+      .flex.h-8.w-8.shrink-0.items-center.justify-center{ class: icon_tile_classes }
+        = heroicon icon, variant: :outline, options: { class: "h-4 w-4" }
+  %p.mt-2{ class: theme.metric_value }= value
   - if change
-    .flex.items-center.gap-1.mt-2{ class: change_classes }
+    .mt-1.flex.items-center.gap-1.text-sm.font-medium{ class: change_classes }
       - if change_icon
         = heroicon change_icon, variant: :mini, options: { class: "h-4 w-4" }
-      %span.text-sm= change
+      %span.tabular-nums= change

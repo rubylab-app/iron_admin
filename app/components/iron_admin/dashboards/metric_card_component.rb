@@ -4,6 +4,8 @@ module IronAdmin
   module Dashboards
     # Renders a metric card with name and formatted value.
     class MetricCardComponent < ViewComponent::Base
+      include Concerns::ThemedCard
+
       # @param name [String, Symbol] Metric name
       # @param value [Numeric] Metric value
       # @param format [Symbol] Format (:number, :currency, :percentage)
