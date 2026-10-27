@@ -51,6 +51,58 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
     end
   end
 
+  describe "theme switcher" do
+    subject(:switcher) { rendered.at_css("header details[data-controller='cp-disclosure']") }
+
+    let(:rendered) do
+      with_controller_class(IronAdmin::ResourcesController) do
+        with_request_url("/admin/users") { render_inline(described_class.new) }
+      end
+    end
+
+    context "with only the default theme" do
+      it "is hidden" do
+        expect(switcher).to be_nil
+      end
+    end
+
+    context "with two themes" do
+      before { IronAdmin.configuration.register_theme(:midnight) }
+
+      it "is shown" do
+        expect(switcher).to be_present
+      end
+    end
+
+    context "with the theme_switcher slot overridden" do
+      subject(:override) { rendered.at_css("header .custom-switcher") }
+
+      let(:custom_switcher) do
+        component = Class.new(ViewComponent::Base) do
+          def initialize(themes:, current_theme:)
+            super()
+            @names = themes.map(&:name)
+            @current = current_theme.name
+          end
+
+          def call
+            tag.span("#{@names.join(",")}:#{@current}", class: "custom-switcher")
+          end
+        end
+        stub_const("CustomSwitcherComponent", component)
+      end
+
+      before do
+        IronAdmin.configuration.register_theme(:midnight)
+        IronAdmin.configuration.components.theme_switcher = custom_switcher
+      end
+
+      it "renders the override with the themes and the current theme" do
+        expect(override.text).to eq("neutral,midnight:neutral")
+      end
+    end
+  end
+
   describe "component class" do
     it "inherits from ViewComponent::Base" do
       expect(described_class.superclass).to eq(ViewComponent::Base)

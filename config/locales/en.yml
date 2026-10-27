@@ -110,6 +110,10 @@ en:
       dismiss: "Dismiss"
     modal:
       close: "Close"
+    theme_switcher:
+      button_label: "Theme: %{theme}"
+      menu_label: "Themes"
+      unknown: "That theme is not available."
     nested_form:
       add_button: "Add row"
       remove_button: "Remove"

@@ -20,6 +20,7 @@ module IronAdmin
         navbar: %i[current_user title],
         sidebar: %i[current_user],
         flash: %i[flash current_user],
+        theme_switcher: %i[themes current_theme current_user],
         table: %i[records fields resource_class current_user current_sort current_direction scope query base_url],
         form: %i[record fields resource_class url current_user],
         filter_bar: %i[filters resource_class form_url scope query active_count current_user
@@ -36,6 +37,7 @@ module IronAdmin
         navbar: "IronAdmin::Layout::NavbarComponent",
         sidebar: "IronAdmin::Layout::SidebarComponent",
         flash: "IronAdmin::Layout::FlashComponent",
+        theme_switcher: "IronAdmin::Layout::ThemeSwitcherComponent",
       }.freeze
 
       # Keyword arguments a {#fields} component receives.

@@ -131,6 +131,31 @@ RSpec.describe "Engine layout", type: :request do
     end
   end
 
+  describe "theme switcher" do
+    subject(:form) do
+      get iron_admin.resources_path("users", page: 1), as: :html
+      response.parsed_body.at_css("header details form")
+    end
+
+    context "with one theme" do
+      it "is not rendered" do
+        expect(form).to be_nil
+      end
+    end
+
+    context "with two themes" do
+      before { IronAdmin.configuration.register_theme(:midnight) }
+
+      it "posts to the mounted theme switch endpoint" do
+        expect(form[:action]).to eq("/admin/theme")
+      end
+
+      it "returns to the current page" do
+        expect(form.at_css("input[name='return_to']")[:value]).to eq("/admin/users?page=1")
+      end
+    end
+  end
+
   describe "favicon" do
     subject(:icon_links) do
       get iron_admin.resources_path("users"), as: :html

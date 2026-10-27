@@ -74,6 +74,35 @@ RSpec.describe IronAdmin::Configuration::Components do
     end
   end
 
+  describe "theme_switcher slot" do
+    it "passes the themes, the current theme and the current user" do
+      expect(described_class::SLOTS[:theme_switcher]).to eq(%i[themes current_theme current_user])
+    end
+
+    it "renders IronAdmin::Layout::ThemeSwitcherComponent without an override" do
+      expect(components.resolve(:theme_switcher)).to eq(IronAdmin::Layout::ThemeSwitcherComponent)
+    end
+
+    it "is global only" do
+      expect(described_class::RESOURCE_SLOTS).not_to include(:theme_switcher)
+    end
+
+    context "with a component that requires a keyword the slot does not pass" do
+      let(:picker) do
+        Class.new(ViewComponent::Base) do
+          def initialize(palettes:)
+            super()
+            @palettes = palettes
+          end
+        end
+      end
+
+      it "raises ArgumentError" do
+        expect { components.theme_switcher = picker }.to raise_error(ArgumentError, /requires :palettes/)
+      end
+    end
+  end
+
   describe "flash slot" do
     it "passes the request's flash and the current user" do
       expect(described_class::SLOTS[:flash]).to eq(%i[flash current_user])
