@@ -303,7 +303,7 @@ RSpec.describe "New Field Types", type: :request do
         expect(response.body).to include("ruby")
         expect(response.body).to include("rails")
         expect(response.body).to include("web")
-        expect(response.body).to include("bg-indigo-50")
+        expect(response.body).to include("bg-zinc-100 text-zinc-700")
       end
 
       it "handles empty tags gracefully" do

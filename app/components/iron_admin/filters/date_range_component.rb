@@ -60,15 +60,13 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for label elements
       def label_classes
-        "block text-xs font-semibold uppercase tracking-wider #{theme.muted_text}"
+        ControlStyles.label(theme)
       end
 
       # @api private
       # @return [String] CSS classes for date input fields
       def input_classes
-        "block w-full border px-3 py-2 text-sm shadow-sm outline-none " \
-          "transition duration-150 ease-in-out #{theme.border_radius} #{theme.input_border} " \
-          "#{theme.card_bg} #{theme.body_text} #{theme.input_focus}"
+        ControlStyles.input(theme)
       end
     end
   end

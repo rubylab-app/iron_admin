@@ -49,37 +49,81 @@ RSpec.describe IronAdmin::Filters::BarComponent, type: :component do
   end
 
   describe "#trigger_classes" do
+    subject(:trigger_classes) { described_class.new(form_url: "/admin/users").trigger_classes }
+
     it "includes flex layout" do
-      component = described_class.new(form_url: "/admin/users")
-      expect(component.trigger_classes).to include("inline-flex")
+      expect(trigger_classes).to include("inline-flex")
     end
 
     it "includes cursor pointer" do
-      component = described_class.new(form_url: "/admin/users")
-      expect(component.trigger_classes).to include("cursor-pointer")
+      expect(trigger_classes).to include("cursor-pointer")
     end
 
-    it "includes border and shadow" do
-      component = described_class.new(form_url: "/admin/users")
-      expect(component.trigger_classes).to include("border")
-      expect(component.trigger_classes).to include("shadow-sm")
+    it "uses the filter trigger classes of the current theme" do
+      expect(trigger_classes).to eq(IronAdmin::Filters::ControlStyles.trigger(IronAdmin.current_theme))
     end
   end
 
   describe "#dropdown_classes" do
+    subject(:dropdown_classes) { described_class.new(form_url: "/admin/users").dropdown_classes.split }
+
     it "includes absolute positioning" do
-      component = described_class.new(form_url: "/admin/users")
-      expect(component.dropdown_classes).to include("absolute")
+      expect(dropdown_classes).to include("absolute")
     end
 
     it "includes z-index" do
-      component = described_class.new(form_url: "/admin/users")
-      expect(component.dropdown_classes).to include("z-20")
+      expect(dropdown_classes).to include("z-20")
     end
 
     it "includes width" do
-      component = described_class.new(form_url: "/admin/users")
-      expect(component.dropdown_classes).to include("w-72")
+      expect(dropdown_classes).to include("w-72")
+    end
+
+    it "uses the theme's popover shadow" do
+      expect(dropdown_classes).to include("shadow-lg")
+    end
+  end
+
+  describe "rendered bar" do
+    subject(:rendered) { render_inline(described_class.new(form_url: "/admin/users", active_count: 2)) }
+
+    it "shows the active filter count with the filter count classes" do
+      count = rendered.css("summary span").find { |span| span.text.strip == "2" }
+
+      expect(count[:class]).to eq(IronAdmin::Filters::ControlStyles.count(IronAdmin.current_theme))
+    end
+
+    it "draws the chevron in the theme's decorative icon color" do
+      expect(rendered.css("summary svg").last[:class].split).to include("text-zinc-400")
+    end
+
+    it "styles the Apply button with the apply button classes" do
+      expect(rendered.at_css("button[type=submit]")[:class]).to eq(
+        IronAdmin::Filters::ControlStyles.apply_button(IronAdmin.current_theme)
+      )
+    end
+
+    it "separates the actions with the footer classes" do
+      expect(rendered.at_css("button[type=submit]").parent[:class]).to eq(
+        IronAdmin::Filters::ControlStyles.footer(IronAdmin.current_theme)
+      )
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.btn_secondary = "bg-zinc-800 text-zinc-100"
+          t.popover_shadow = "shadow-2xl"
+        end
+      end
+
+      it "styles the trigger with that theme's secondary button" do
+        expect(rendered.at_css("summary")[:class].split).to include("bg-zinc-800", "text-zinc-100")
+      end
+
+      it "floats the panel with that theme's popover shadow" do
+        expect(rendered.at_css("summary + div")[:class].split).to include("shadow-2xl")
+      end
     end
   end
 

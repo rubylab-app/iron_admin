@@ -236,12 +236,12 @@ RSpec.describe "IronAdmin::Audit", type: :request do
 
     it "gives the selects, date inputs, Filter button and Clear link one height, so they line up" do
       controls = filter_row.css("select, input[type=date], button, a")
-      expect(controls.map { |control| control[:class].split.include?("h-10.5") }).to all(be(true))
+      expect(controls.map { |control| control[:class].split.include?("h-9") }).to all(be(true))
     end
 
-    it "pads the date inputs like the selects" do
-      paddings = filter_row.css("select, input[type=date]").map { |control| control[:class].split.grep(/\Ap[xy]-/).sort }
-      expect(paddings.uniq).to eq([%w[px-3.5 py-2.5]])
+    it "insets the text of the date inputs like the selects" do
+      left_paddings = filter_row.css("select, input[type=date]").map { |control| control[:class][/(?<![\w-])p[xl]-([\d.]+)/, 1] }
+      expect(left_paddings.uniq).to eq(["3"])
     end
   end
 

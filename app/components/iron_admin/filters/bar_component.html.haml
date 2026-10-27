@@ -1,12 +1,12 @@
 .flex.justify-end.mb-4
   %details.relative.group{ open: has_active_filters? || nil }
     %summary{ class: trigger_classes, style: "list-style: none; -webkit-appearance: none;" }
-      = heroicon "funnel", variant: :mini, options: { class: "h-4 w-4 #{theme.muted_text}" }
+      = heroicon "funnel", variant: :mini, options: { class: "h-4 w-4 #{theme.icon_muted}" }
       %span Filters
       - if has_active_filters?
-        %span.inline-flex.items-center.justify-center.h-5.min-w-5.px-1.text-xs.font-medium.rounded-full{ class: theme.badge_count }
+        %span{ class: count_classes }
           = active_count
-      = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4 text-gray-400 transition-transform group-open:rotate-180" }
+      = heroicon "chevron-down", variant: :mini, options: { class: "h-4 w-4 #{theme.icon_muted} transition-transform group-open:rotate-180" }
 
     %div{ class: dropdown_classes }
       = form_tag form_url, method: :get, class: "p-4" do
@@ -19,7 +19,7 @@
           - filters.each do |filter|
             = filter
 
-        .flex.items-center.gap-3.mt-4.pt-3.border-t.border-gray-100
-          %button.px-4.py-2.text-sm.font-medium.rounded-lg{ type: "submit", class: theme.btn_primary }
+        %div{ class: footer_classes }
+          %button{ type: "submit", class: apply_classes }
             Apply
           = link_to "Clear", clear_url, class: "text-sm #{theme.link_muted}"

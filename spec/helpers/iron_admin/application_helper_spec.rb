@@ -31,14 +31,65 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
     end
 
     context "with badge field" do
+      subject(:badge) { Nokogiri::HTML.fragment(helper.display_field_value(license, field)).at_css("span") }
+
       let(:license) { create(:license, user: user, status: :active) }
       let(:field) { IronAdmin::Field.new(:status, type: :badge, colors: { active: :green }) }
+      let(:badge_classes) { badge[:class].split }
 
-      it "returns badge html" do
-        result = helper.display_field_value(license, field)
+      it "renders the humanized value" do
+        expect(badge.text).to eq("Active")
+      end
 
-        expect(result).to include("Active")
-        expect(result).to include("rounded-full")
+      it "uses the theme's palette classes of the field's color" do
+        expect(badge_classes).to include("bg-emerald-50", "text-emerald-700")
+      end
+
+      it "uses the theme's badge shape" do
+        expect(badge_classes).to include("rounded-md", "font-medium")
+      end
+
+      it "renders the dot of the color" do
+        expect(badge.at_css("span[aria-hidden=true]")[:class].split).to include("bg-emerald-500")
+      end
+
+      context "without a color for the value in the field" do
+        let(:field) { IronAdmin::Field.new(:status, type: :badge) }
+
+        it "uses the color config.badge_colors maps the value to" do
+          expect(badge_classes).to include("bg-emerald-50")
+        end
+      end
+
+      context "with a value no color covers" do
+        let(:license) { create(:license, user: user, status: :revoked) }
+        let(:field) { IronAdmin::Field.new(:status, type: :badge) }
+
+        it "uses the gray badge" do
+          expect(badge_classes).to include("bg-zinc-50", "text-zinc-600")
+        end
+      end
+
+      context "with config.badge_colors classes for the field's color" do
+        let(:field) { IronAdmin::Field.new(:status, type: :badge, colors: { active: :cyan }) }
+
+        before { IronAdmin.configuration.badge_colors[:cyan] = "bg-cyan-100 text-cyan-800" }
+
+        it "uses those classes" do
+          expect(badge_classes).to include("bg-cyan-100", "text-cyan-800")
+        end
+      end
+
+      context "with a registered theme active" do
+        before do
+          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+            t.badge_palette[:green] = "bg-emerald-950 text-emerald-300"
+          end
+        end
+
+        it "uses that theme's palette" do
+          expect(badge_classes).to include("bg-emerald-950", "text-emerald-300")
+        end
       end
     end
 
@@ -57,6 +108,12 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         result = helper.display_field_value(document, field)
 
         expect(result).not_to include("secret123")
+      end
+
+      it "writes the dots in the theme's muted text color" do
+        dots = Nokogiri::HTML.fragment(helper.display_field_value(user, field)).at_css("span")
+
+        expect(dots[:class].split).to include("text-zinc-500")
       end
     end
 
@@ -106,6 +163,13 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         expect(result).to include("first.pdf")
         expect(result).to include("second.pdf")
       end
+
+      it "renders a file without a preview as a chip in the theme's chip colors" do
+        document.attachments.attach(io: StringIO.new("doc"), filename: "notes.pdf", content_type: "application/pdf")
+        chip = Nokogiri::HTML.fragment(helper.display_field_value(document, field)).at_css("span")
+
+        expect(chip[:class].split).to include("bg-zinc-100", "text-zinc-700", "rounded-md")
+      end
     end
 
     context "with hidden field" do
@@ -130,7 +194,22 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         end
 
         it "keeps the check icon hidden from screen readers" do
-          expect(rendered.at_css("svg.text-green-500")["aria-hidden"]).to eq("true")
+          expect(rendered.at_css("svg")["aria-hidden"]).to eq("true")
+        end
+
+        it "colors the check icon with the theme's success text color" do
+          expect(rendered.at_css("svg")[:class].split).to include("text-emerald-700")
+        end
+      end
+
+      context "when the value is true with a registered theme active" do
+        before do
+          user.active = true
+          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.success_text = "text-lime-400" }
+        end
+
+        it "colors the check icon with that theme's success text color" do
+          expect(rendered.at_css("svg")[:class].split).to include("text-lime-400")
         end
 
         it "positions the wrapper so the screen reader text stays inside its cell" do
@@ -146,7 +225,11 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         end
 
         it "keeps the cross icon hidden from screen readers" do
-          expect(rendered.at_css("svg.text-red-400")["aria-hidden"]).to eq("true")
+          expect(rendered.at_css("svg")["aria-hidden"]).to eq("true")
+        end
+
+        it "colors the cross icon with the theme's muted text color, which keeps 3:1 for an icon" do
+          expect(rendered.at_css("svg")[:class].split).to include("text-zinc-500")
         end
 
         it "positions the wrapper so the screen reader text stays inside its cell" do
@@ -190,6 +273,12 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         expect(result).to include("language-ruby")
       end
 
+      it "renders the block in the theme's code block colors and card radius" do
+        block = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("pre")
+
+        expect(block[:class].split).to include("bg-zinc-950", "text-zinc-100", "rounded-lg")
+      end
+
       it "returns nil when value is blank" do
         widget.source_code = nil
         expect(helper.display_field_value(widget, field)).to be_nil
@@ -220,11 +309,40 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         expect(helper.display_field_value(widget, field)).to be_nil
       end
 
-      it "uses default color when none specified" do
-        default_field = IronAdmin::Field.new(:completion, type: :progress_bar)
-        result = helper.display_field_value(widget, default_field)
+      it "draws the track in the theme's progress track color" do
+        track = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("div > div")
 
-        expect(result).to include("bg-indigo-600")
+        expect(track[:class].split).to include("bg-zinc-200")
+      end
+
+      it "leaves the background of a bar with a color class to that class" do
+        bar = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css(".bg-green-500")
+
+        expect(bar[:style]).not_to include("background-color")
+      end
+
+      context "without a color" do
+        subject(:bar) { Nokogiri::HTML.fragment(helper.display_field_value(widget, default_field)).at_css("div > div > div") }
+
+        let(:default_field) { IronAdmin::Field.new(:completion, type: :progress_bar) }
+
+        it "fills the bar with the theme's chart border color" do
+          expect(bar[:style]).to include("background-color: rgb(99, 102, 241)")
+        end
+      end
+
+      context "without a color and with a registered theme active" do
+        subject(:bar) { Nokogiri::HTML.fragment(helper.display_field_value(widget, default_field)).at_css("div > div > div") }
+
+        let(:default_field) { IronAdmin::Field.new(:completion, type: :progress_bar) }
+
+        before do
+          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.chart_border_color = "rgb(1, 2, 3)" }
+        end
+
+        it "fills the bar with that theme's chart border color" do
+          expect(bar[:style]).to include("background-color: rgb(1, 2, 3)")
+        end
       end
     end
 
@@ -251,6 +369,12 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         widget.config_json = "{}"
         expect(helper.display_field_value(widget, field)).to be_nil
       end
+
+      it "frames the list with the theme's border width, border and divider colors" do
+        list = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("dl")
+
+        expect(list[:class].split).to include("border", "border-zinc-200", "divide-zinc-200", "rounded-md")
+      end
     end
 
     context "with boolean_group field" do
@@ -263,8 +387,12 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         expect(result).to include("Read")
         expect(result).to include("Write")
         expect(result).to include("Delete")
-        expect(result).to include("rounded-full")
-        expect(result).to include("bg-indigo-50")
+      end
+
+      it "renders the pills in the theme's chip colors and badge shape" do
+        pill = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("span")
+
+        expect(pill[:class].split).to include("bg-zinc-100", "text-zinc-700", "rounded-md", "font-medium")
       end
 
       it "does not render unselected values" do
@@ -312,6 +440,50 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         result = helper.display_field_value(widget, default_field)
 
         expect(result).to include("h-32")
+      end
+
+      it "frames the image with the theme's control radius, border width and border color" do
+        image = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("img")
+
+        expect(image[:class].split).to include("rounded-md", "border", "border-zinc-200")
+      end
+    end
+
+    context "with tags field" do
+      subject(:chips) { Nokogiri::HTML.fragment(helper.display_field_value(post_record, field)).css("span") }
+
+      let(:post_record) { create(:post, category_tags: "ruby, rails") }
+      let(:field) { IronAdmin::Field.new(:category_tags, type: :tags) }
+
+      it "renders a chip per tag" do
+        expect(chips.map(&:text)).to eq(%w[ruby rails])
+      end
+
+      it "renders the chips in the theme's chip colors and badge shape" do
+        expect(chips.first[:class].split).to include("bg-zinc-100", "text-zinc-700", "ring-zinc-200", "rounded-md")
+      end
+
+      context "with a registered theme active" do
+        before { IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.chip = "bg-zinc-800" } }
+
+        it "uses that theme's chip classes" do
+          expect(chips.first[:class].split).to include("bg-zinc-800")
+        end
+      end
+    end
+
+    context "with color field" do
+      subject(:swatch) { Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("span > span") }
+
+      let(:widget) { create(:widget, name: "#ff8800") }
+      let(:field) { IronAdmin::Field.new(:name, type: :color) }
+
+      it "fills the swatch with the record's color" do
+        expect(swatch[:style]).to eq("background-color: #ff8800")
+      end
+
+      it "outlines the swatch with the theme's border width, border color and control radius" do
+        expect(swatch[:class].split).to include("border", "border-zinc-200", "rounded-md")
       end
     end
 
@@ -725,20 +897,6 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       it "returns empty array" do
         expect(helper.filter_options_for(IronAdmin::Resources::UserResource, filter)).to eq([])
       end
-    end
-  end
-
-  describe "#badge_color_classes" do
-    it "returns color classes for known color" do
-      result = helper.send(:badge_color_classes, :green)
-
-      expect(result).to include("bg-green")
-    end
-
-    it "returns gray classes for unknown color" do
-      result = helper.send(:badge_color_classes, :nonexistent)
-
-      expect(result).to include("bg-gray")
     end
   end
 end

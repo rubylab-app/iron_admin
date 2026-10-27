@@ -35,6 +35,12 @@ module IronAdmin
       end
 
       # @api private
+      # @return [String] CSS classes of the label and value row
+      def row_classes
+        Styles::DETAIL_ROW
+      end
+
+      # @api private
       # @return [String] Humanized field label
       def label
         field.name.to_s.humanize

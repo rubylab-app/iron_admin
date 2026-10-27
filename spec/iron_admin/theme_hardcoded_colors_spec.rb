@@ -7,18 +7,6 @@ require "rails_helper"
 module ThemeHardcodedColors
   # Files still being migrated to theme properties; each package removes its own.
   PENDING = [
-    # data package
-    "app/components/iron_admin/filters/bar_component.html.haml",
-    "app/components/iron_admin/filters/bar_component.rb",
-    "app/components/iron_admin/filters/select_filter_component.rb",
-    "app/components/iron_admin/resources/data_table_component.html.haml",
-    "app/components/iron_admin/ui/badge_component.rb",
-    "app/helpers/iron_admin/field_display_helper.rb",
-    "app/views/iron_admin/audit/index.html.haml",
-    "app/views/iron_admin/resources/index.html.haml",
-    "app/views/iron_admin/resources/show.html.haml",
-    "app/views/iron_admin/search/index.html.haml",
-
     # forms package
     "app/components/iron_admin/form/belongs_to_autocomplete_component.html.haml",
     "app/components/iron_admin/form/belongs_to_autocomplete_component.rb",

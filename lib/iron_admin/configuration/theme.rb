@@ -152,6 +152,9 @@ module IronAdmin
       # @return [String] Extra classes of the table container (empty = none)
       attr_accessor :table_frame
 
+      # @return [String] Edge shadow of the sticky actions column of index tables (empty = none)
+      attr_accessor :table_sticky_shadow
+
       # @return [String] Table row hover classes
       attr_accessor :table_row_hover
 
@@ -170,6 +173,10 @@ module IronAdmin
 
       # @return [String] Card shadow classes
       attr_accessor :card_shadow
+
+      # @return [String] Shadow of floating surfaces: dropdown menus, the filter panel, the theme
+      #   switcher panel and modals (empty = none)
+      attr_accessor :popover_shadow
 
       # @return [String] Card and section titles (h2): size, weight and color
       attr_accessor :card_title
@@ -311,24 +318,6 @@ module IronAdmin
 
       # @!endgroup
 
-      # --- chrome additions ---
-      # Each reader falls back to its Neutral value, so this block needs no line in #initialize.
-
-      # @!group Overlay Styles
-
-      # @!attribute [w] popover_shadow
-      #   @param value [String] Shadow classes of floating surfaces (empty = none)
-      attr_writer :popover_shadow
-
-      # @return [String] Shadow of floating surfaces: dropdown menus, the theme switcher panel and modals
-      def popover_shadow
-        defined?(@popover_shadow) ? @popover_shadow : "shadow-lg"
-      end
-
-      # @!endgroup
-
-      # --- end of chrome additions ---
-
       # Creates a Theme with the values of the Neutral look.
       #
       # @param name [Symbol, String] Name the theme is registered under
@@ -417,11 +406,13 @@ module IronAdmin
         @table_header_text = "text-xs font-medium text-zinc-500"
         @table_cell_padding = "px-4 py-2.5"
         @table_frame = ""
+        @table_sticky_shadow = "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]"
         @table_row_hover = "hover:bg-zinc-50"
         @table_border = "divide-zinc-200"
         @card_bg = "bg-white"
         @card_border = "border-zinc-200"
         @card_shadow = "shadow-xs"
+        @popover_shadow = "shadow-lg"
         @card_title = "text-sm font-semibold text-zinc-900"
         @main_bg = "bg-zinc-50"
         @border_radius = "rounded-lg"

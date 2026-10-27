@@ -24,6 +24,18 @@ module IronAdmin
       end
 
       # @api private
+      # @return [String] CSS classes of the toolbar, shown once records are selected
+      def toolbar_classes
+        "hidden items-center gap-3 px-4 py-3 border-t #{theme.card_bg} #{theme.card_border}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of an action button
+      def button_classes
+        Styles.secondary_button(theme)
+      end
+
+      # @api private
       # @param action [Hash] Bulk action configuration
       # @return [String] URL for executing the bulk action
       def action_url(action)

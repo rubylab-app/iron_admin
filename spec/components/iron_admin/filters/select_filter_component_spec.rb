@@ -44,58 +44,62 @@ RSpec.describe IronAdmin::Filters::SelectFilterComponent, type: :component do
   end
 
   describe "#label_classes" do
+    subject(:component) { described_class.new(name: :status, options: options) }
+
+    it "uses the filter label classes of the current theme" do
+      expect(component.label_classes).to eq(IronAdmin::Filters::ControlStyles.label(IronAdmin.current_theme))
+    end
+
     it "includes text-xs" do
-      component = described_class.new(name: :status, options: options)
       expect(component.label_classes).to include("text-xs")
     end
 
-    it "includes font-semibold" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.label_classes).to include("font-semibold")
-    end
+    context "with a registered theme that transforms labels active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.label_transform = "uppercase tracking-wider"
+        end
+      end
 
-    it "includes uppercase" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.label_classes).to include("uppercase")
+      it "uses that theme's label transform" do
+        expect(component.label_classes.split).to include("uppercase", "tracking-wider")
+      end
     end
   end
 
   describe "#select_classes" do
+    subject(:select_classes) { described_class.new(name: :status, options: options).select_classes.split }
+
     it "includes full width" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.select_classes).to include("w-full")
+      expect(select_classes).to include("w-full")
     end
 
     it "includes appearance-none" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.select_classes).to include("appearance-none")
+      expect(select_classes).to include("appearance-none")
     end
 
-    it "includes border" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.select_classes).to include("border")
+    it "uses the theme's border width" do
+      expect(select_classes).to include("border")
     end
 
     it "includes text-sm" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.select_classes).to include("text-sm")
+      expect(select_classes).to include("text-sm")
+    end
+
+    it "draws the chevron with the engine's cp-select-chevron class" do
+      expect(select_classes).to include("cp-select-chevron")
     end
   end
 
-  describe "#chevron_style" do
-    it "includes background-image for chevron" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.chevron_style).to include("background-image")
+  describe "rendered select" do
+    subject(:select) { render_inline(described_class.new(name: :status, options: options)).at_css("select") }
+
+    it "has no inline style, so no chevron color is fixed in the markup" do
+      expect(select[:style]).to be_nil
     end
 
-    it "includes background-position" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.chevron_style).to include("background-position")
-    end
-
-    it "includes padding-right for chevron space" do
-      component = described_class.new(name: :status, options: options)
-      expect(component.chevron_style).to include("padding-right")
+    it "uses the select classes" do
+      expect(select[:class].split).to include("cp-select-chevron", "h-9")
     end
   end
 

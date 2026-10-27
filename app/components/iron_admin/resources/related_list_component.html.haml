@@ -1,13 +1,13 @@
-.mt-6.overflow-hidden{ class: "#{theme.card_bg} #{theme.border_radius} #{theme.card_shadow}" }
-  .px-6.py-4.border-b.flex.items-center.justify-between{ class: theme.card_border }
-    %h2.text-lg.font-semibold{ class: theme.body_text }
+%div{ class: panel_classes }
+  %div{ class: header_classes }
+    %h2{ class: title_classes }
       = title
     = link_to I18n.t("iron_admin.resources.show.view_all"), view_all_url, class: "text-sm #{theme.link}"
 
   .overflow-x-auto
-    %table.min-w-full{ class: "#{theme.table_border} divide-y" }
-      %tbody{ class: "#{theme.table_border} divide-y" }
+    %table.min-w-full
+      %tbody{ class: body_classes }
         - records.each do |record|
           %tr{ class: theme.table_row_hover }
-            %td.px-6.py-3.text-sm{ class: theme.body_text }
+            %td{ class: "text-sm #{theme.table_cell_padding}" }
               = link_to helpers.display_record_label(record, display_method), record_url(record), class: theme.link

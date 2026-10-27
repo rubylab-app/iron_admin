@@ -2,7 +2,7 @@
 
 module IronAdmin
   module Ui
-    # Displays a colored badge/tag for status indicators and labels.
+    # A status badge in the theme's +badge_palette+ colors, with a +badge_dot_palette+ dot.
     #
     # @example Basic usage
     #   render IronAdmin::Ui::BadgeComponent.new(text: "Active", color: :green)
@@ -19,27 +19,17 @@ module IronAdmin
       # @return [Symbol] The size (:sm, :md, :lg)
       attr_reader :size
 
-      # Available color themes mapped to Tailwind classes.
+      # Badge classes of the built-in Neutral theme by color name, kept for code that
+      # reads them. Badges use the current theme's +badge_palette+.
       # @return [Hash{Symbol => String}]
-      COLORS = {
-        green: "bg-green-100 text-green-800",
-        red: "bg-red-100 text-red-800",
-        yellow: "bg-yellow-100 text-yellow-800",
-        blue: "bg-blue-100 text-blue-800",
-        indigo: "bg-indigo-100 text-indigo-800",
-        purple: "bg-purple-100 text-purple-800",
-        pink: "bg-pink-100 text-pink-800",
-        orange: "bg-orange-100 text-orange-800",
-        teal: "bg-teal-100 text-teal-800",
-        gray: "bg-gray-100 text-gray-800",
-      }.freeze
+      COLORS = IronAdmin::Configuration::Theme.new.badge_palette.freeze
 
       # Available sizes mapped to Tailwind classes.
       # @return [Hash{Symbol => String}]
       SIZES = {
-        sm: "px-2 py-0.5 text-xs",
-        md: "px-2.5 py-0.5 text-sm",
-        lg: "px-3 py-1 text-sm",
+        sm: "px-1.5 py-0.5 text-xs",
+        md: "px-2 py-0.5 text-xs",
+        lg: "px-2.5 py-1 text-sm",
       }.freeze
 
       # @param text [String] The badge text
@@ -52,9 +42,22 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String] CSS color classes for badge
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
+      def theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] The +config.badge_colors+ classes of the color, else the theme's
+      #   palette classes of the color (gray for an unknown color)
       def color_classes
-        IronAdmin.configuration.badge_colors[@color] || COLORS[@color] || COLORS[:gray]
+        configured_classes || theme.badge_palette.fetch(palette_color, "")
+      end
+
+      # @api private
+      # @return [String, nil] Dot classes; nil without a theme dot or with +config.badge_colors+ classes
+      def dot_classes
+        theme.badge_dot_palette[palette_color] unless configured_classes
       end
 
       # @api private
@@ -66,7 +69,24 @@ module IronAdmin
       # Renders the badge span.
       # @return [String] HTML content
       def call
-        tag.span(text, class: "inline-flex items-center font-medium rounded-full #{color_classes} #{size_classes}")
+        tag.span(class: "inline-flex items-center gap-1.5 #{size_classes} #{theme.badge_shape} #{color_classes}") do
+          safe_join([dot, text].compact)
+        end
+      end
+
+      private
+
+      def configured_classes
+        IronAdmin.configuration.badge_colors[@color]
+      end
+
+      def palette_color
+        theme.badge_palette.key?(@color) ? @color : :gray
+      end
+
+      def dot
+        classes = dot_classes
+        tag.span(class: "h-1.5 w-1.5 shrink-0 rounded-full #{classes}", "aria-hidden": "true") if classes
       end
     end
   end

@@ -1,62 +1,56 @@
-.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
+- styles = IronAdmin::Resources::Styles
+- controls = IronAdmin::Filters::ControlStyles
+- action_colors = { create: :green, update: :blue, destroy: :red }
+
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
   .flex.items-center.justify-between.mb-6
-    %h1.text-2xl{ class: cp_heading } Audit Log
+    %h1{ class: styles.page_title(t) } Audit Log
 
   - unless IronAdmin.configuration.audit_enabled
-    .rounded-lg.border.border-yellow-200.bg-yellow-50.p-4.mb-6
-      .flex
-        .shrink-0
-          = heroicon "exclamation-triangle", variant: :mini, options: { class: "h-5 w-5 text-yellow-400" }
-        .ml-3
-          %p.text-sm.text-yellow-700
-            Audit logging is currently disabled. Enable it in your IronAdmin configuration:
-            %code.ml-1.px-1.bg-yellow-100.rounded{ class: "py-0.5" } config.audit_enabled = true
+    .flex.gap-3.p-4.mb-6{ class: "#{t.border_width} #{t.border_radius} #{t.alert_palette[:warning]}" }
+      = heroicon "exclamation-triangle", variant: :mini, options: { class: "h-5 w-5 shrink-0" }
+      %p.text-sm
+        Audit logging is currently disabled. Enable it in your IronAdmin configuration:
+        %code.ml-1.px-1.font-mono{ class: "py-0.5 bg-current/10 #{t.control_radius}" } config.audit_enabled = true
 
   - if @entries.any? || @filters_applied
-    -# One height for every control, so the labels above them and the buttons line up.
-    - filter_control_height = "h-10.5"
     .mb-4
       = form_tag audit_path, method: :get, class: "flex flex-col gap-4 sm:flex-row sm:items-end" do
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "resource", class: cp_muted_text } Resource
-          %select#resource{ name: "resource", class: "#{cp_select_class} #{filter_control_height}" }
+          %label.mb-1{ for: "resource", class: controls.label(t) } Resource
+          %select#resource{ name: "resource", class: controls.select(t) }
             %option{ value: "" } All Resources
             - @resource_options.each do |value, label|
               %option{ value: value, selected: params[:resource] == value }= label
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "action_filter", class: cp_muted_text } Action
-          %select#action_filter{ name: "action_filter", class: "#{cp_select_class} #{filter_control_height}" }
+          %label.mb-1{ for: "action_filter", class: controls.label(t) } Action
+          %select#action_filter{ name: "action_filter", class: controls.select(t) }
             %option{ value: "" } All Actions
             - @action_options.each do |action|
               %option{ value: action, selected: params[:action_filter] == action }= action.humanize
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "from", class: cp_muted_text } From
-          = date_field_tag :from, params[:from], class: "#{cp_input_class} #{filter_control_height}"
+          %label.mb-1{ for: "from", class: controls.label(t) } From
+          = date_field_tag :from, params[:from], class: controls.input(t)
         .flex-1
-          %label.block.text-xs.font-semibold.uppercase.tracking-wider.mb-1{ for: "to", class: cp_muted_text } To
-          = date_field_tag :to, params[:to], class: "#{cp_input_class} #{filter_control_height}"
+          %label.mb-1{ for: "to", class: controls.label(t) } To
+          = date_field_tag :to, params[:to], class: controls.input(t)
         .flex.gap-2
-          %button{ type: "submit", class: "#{cp_btn_primary} #{filter_control_height}" } Filter
-          = link_to "Clear", audit_path, class: "#{cp_btn_ghost} #{filter_control_height}"
+          %button{ type: "submit", class: controls.apply_button(t) } Filter
+          = link_to "Clear", audit_path, class: styles.ghost_button(t)
 
   - if @entries.any?
-    .overflow-x-auto
-      %table.min-w-full{ class: "#{cp_table_border} divide-y #{t.card_bg} #{t.border_radius} #{t.card_shadow}" }
-        %thead{ class: cp_table_header_bg }
+    %div{ class: styles.table_frame(t) }
+      %table{ class: styles.table(t) }
+        %thead{ class: t.table_header_bg }
           %tr
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Timestamp
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } User
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Action
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Resource
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Record ID
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } IP Address
-            %th.px-6.py-3.text-left.text-xs.font-medium.uppercase.tracking-wider{ class: cp_muted_text } Changes
-        %tbody{ class: "#{cp_table_border} divide-y" }
+            - ["Timestamp", "User", "Action", "Resource", "Record ID", "IP Address", "Changes"].each do |heading|
+              %th{ scope: "col", class: styles.header_cell(t) }= heading
+        %tbody{ class: styles.divided(t) }
           - @entries.each do |entry|
-            %tr{ class: cp_table_row_hover }
-              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+            %tr{ class: t.table_row_hover }
+              %td{ class: "#{styles.cell(t)} tabular-nums" }
                 = entry.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+              %td{ class: styles.cell(t) }
                 - user_label = @user_labels[IronAdmin::AuditLog.user_identifier(entry.user)]
                 - if user_label
                   = user_label
@@ -67,40 +61,37 @@
                 - elsif entry.user.present?
                   = entry.user.to_s
                 - else
-                  %span{ class: cp_muted_text } Unknown
-              %td.px-6.py-4.whitespace-nowrap.text-sm
-                - action_colors = { create: "green", update: "blue", destroy: "red" }
-                - color = action_colors[entry.action.to_sym] || "gray"
-                %span{ class: "inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-#{color}-100 text-#{color}-800" }
-                  = entry.action.to_s.humanize
-              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+                  %span{ class: t.muted_text } Unknown
+              %td{ class: styles.cell(t) }
+                = render IronAdmin::Ui::BadgeComponent.new(text: entry.action.to_s.humanize, color: action_colors.fetch(entry.action.to_sym, :gray))
+              %td{ class: styles.cell(t) }
                 = @resource_labels.fetch(entry.resource.to_s, entry.resource)
-              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_body_text }
+              %td{ class: "#{styles.cell(t)} tabular-nums" }
                 = entry.record_id
-              %td.px-6.py-4.whitespace-nowrap.text-sm{ class: cp_muted_text }
+              %td{ class: "#{styles.muted_cell(t)} tabular-nums" }
                 = entry.ip_address || "-"
-              %td.px-6.py-4.text-sm{ class: cp_body_text }
+              %td{ class: "text-sm #{t.table_cell_padding} #{t.body_text}" }
                 - if entry.record_changes.present? && entry.record_changes.any?
                   %details
-                    %summary.cursor-pointer{ class: cp_link }
+                    %summary.cursor-pointer{ class: "#{t.link} #{t.focus_ring}" }
                       = pluralize(entry.record_changes.keys.count, "field")
                       changed
-                    .mt-2.text-xs.font-mono.bg-gray-50.p-2.rounded.max-w-md.overflow-auto
+                    .mt-2.p-2.max-w-md.overflow-auto.text-xs.font-mono{ class: "#{t.control_radius} #{t.surface_muted}" }
                       - entry.record_changes.each do |field, values|
                         .mb-1
                           %strong= field
                           \:
                           - if values.is_a?(Array) && values.length == 2
-                            %span{ class: "text-red-600 line-through" }= values[0].to_s.truncate(30)
-                            = heroicon "arrow-right", variant: :mini, options: { class: "h-3 w-3 inline mx-1" }
-                            %span{ class: "text-green-600" }= values[1].to_s.truncate(30)
+                            %span.line-through{ class: t.error_text }= values[0].to_s.truncate(30)
+                            = heroicon "arrow-right", variant: :mini, options: { class: "h-3 w-3 inline mx-1 #{t.icon_muted}" }
+                            %span{ class: t.success_text }= values[1].to_s.truncate(30)
                           - else
                             = values.to_s.truncate(50)
                 - else
-                  %span{ class: cp_muted_text } -
+                  %span{ class: t.muted_text } -
 
   - else
-    .text-center.py-12{ class: cp_muted_text }
-      = heroicon "clipboard-document-list", variant: :outline, options: { class: "h-12 w-12 mx-auto mb-4" }
-      %p.text-lg.font-medium No audit log entries found.
-      %p.text-sm.mt-2 Activity will appear here once users perform actions.
+    .text-center.py-12
+      = heroicon "clipboard-document-list", variant: :outline, options: { class: "h-10 w-10 mx-auto mb-4 #{t.icon_muted}" }
+      %p.text-sm.font-medium{ class: t.body_text } No audit log entries found.
+      %p.mt-1.text-sm{ class: t.muted_text } Activity will appear here once users perform actions.
