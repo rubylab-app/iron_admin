@@ -124,6 +124,20 @@ RSpec.describe "Tool system enhancements", type: :request do
         expect(response.body).to include("Reason")
         expect(response.body).to include("Priority")
       end
+
+      it "renders the textarea as a theme textarea" do
+        get tool_action_form_path("form_test", "with_form"), as: :html
+
+        expect(response.parsed_body.at_css("#tool_action_reason")[:class].split)
+          .to eq(IronAdmin::Form::ControlClasses.textarea(IronAdmin.configuration.theme).split)
+      end
+
+      it "renders the select as a theme select" do
+        get tool_action_form_path("form_test", "with_form"), as: :html
+
+        expect(response.parsed_body.at_css("#tool_action_priority")[:class].split)
+          .to eq(IronAdmin::Form::ControlClasses.select(IronAdmin.configuration.theme).split)
+      end
     end
 
     context "with an action without form_fields" do
@@ -227,6 +241,13 @@ RSpec.describe "Tool system enhancements", type: :request do
       get tool_path("show_test"), as: :html
 
       expect(response.body).not_to include("Hidden")
+    end
+
+    it "renders the action as a theme secondary button" do
+      get tool_path("show_test"), as: :html
+
+      expect(response.parsed_body.at_css("form[action$='/visible_action'] button")[:class].split)
+        .to eq(IronAdmin::Form::ControlClasses.button(IronAdmin.configuration.theme, :secondary).split)
     end
   end
 

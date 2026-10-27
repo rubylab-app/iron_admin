@@ -239,9 +239,9 @@ RSpec.describe "IronAdmin::Audit", type: :request do
       expect(controls.map { |control| control[:class].split.include?("h-10.5") }).to all(be(true))
     end
 
-    it "pads the date inputs like the selects" do
-      paddings = filter_row.css("select, input[type=date]").map { |control| control[:class].split.grep(/\Ap[xy]-/).sort }
-      expect(paddings.uniq).to eq([%w[px-3.5 py-2.5]])
+    it "starts the text of the date inputs at the same inset as the selects" do
+      insets = filter_row.css("select, input[type=date]").map { |control| control[:class][/(?<![\w-])p[lx]-(\S+)/, 1] }
+      expect(insets.uniq).to eq(["3"])
     end
   end
 

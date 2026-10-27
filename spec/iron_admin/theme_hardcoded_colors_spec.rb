@@ -30,15 +30,6 @@ module ThemeHardcodedColors
     "app/views/iron_admin/resources/show.html.haml",
     "app/views/iron_admin/search/index.html.haml",
 
-    # forms package
-    "app/helpers/iron_admin/theme_helper.rb",
-    "app/views/iron_admin/imports/new.html.haml",
-    "app/views/iron_admin/imports/preview.html.haml",
-    "app/views/iron_admin/resources/_form.html.haml",
-    "app/views/iron_admin/resources/action_form.html.haml",
-    "app/views/iron_admin/resources/bulk_action_form.html.haml",
-    "app/views/iron_admin/tools/action_form.html.haml",
-
     # dashboard package
     "app/components/iron_admin/dashboards/activity_feed_component.rb",
     "app/components/iron_admin/dashboards/activity_feed_component/item_component.html.haml",

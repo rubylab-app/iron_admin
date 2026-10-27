@@ -84,14 +84,14 @@ RSpec.describe "Default theme accessibility", type: :request do
   end
 
   describe "GET /:resource_name/import" do
-    let(:column_chips) { document.css("span.bg-gray-100.rounded-md") }
+    let(:column_chips) { document.css("form .flex-wrap > span") }
 
     before do
       IronAdmin::ResourceRegistry.register(import_resource)
       get iron_admin.resource_import_path("contrast_import_users"), as: :html
     end
 
-    it "writes the column chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
+    it "writes the column chips in zinc-700, which keeps 9.5:1 on their zinc-100 background" do
       expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-zinc-700"))
     end
 
@@ -101,7 +101,7 @@ RSpec.describe "Default theme accessibility", type: :request do
   end
 
   describe "POST /:resource_name/import/preview" do
-    let(:column_chips) { document.css("span.bg-gray-100.rounded-md") }
+    let(:column_chips) { document.css(".flex-wrap > span") }
 
     before do
       IronAdmin::ResourceRegistry.register(import_resource)
@@ -110,7 +110,7 @@ RSpec.describe "Default theme accessibility", type: :request do
       post iron_admin.resource_import_preview_path("contrast_import_users"), params: { file: file }
     end
 
-    it "writes the mapping chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
+    it "writes the mapping chips in zinc-700, which keeps 9.5:1 on their zinc-100 background" do
       expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-zinc-700"))
     end
 
