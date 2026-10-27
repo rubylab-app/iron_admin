@@ -11,7 +11,7 @@ module IronAdmin
       include IronAdmin::ThemeHelper
 
       # Classes of every sidebar link, current or not.
-      LINK_CLASSES = "flex items-center gap-3 px-3 py-2 rounded-lg"
+      LINK_CLASSES = "relative flex items-center gap-3 px-3 py-2 rounded-lg"
 
       # @param current_user [Object, nil]
       def initialize(current_user: nil)

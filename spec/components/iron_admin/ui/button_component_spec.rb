@@ -43,7 +43,7 @@ RSpec.describe IronAdmin::Ui::ButtonComponent, type: :component do
   describe "#variant_classes" do
     it "returns primary classes" do
       component = described_class.new(text: "Test", variant: :primary)
-      expect(component.variant_classes).to include("bg-indigo-600")
+      expect(component.variant_classes).to include("bg-zinc-900")
     end
 
     it "returns secondary classes" do
@@ -58,7 +58,7 @@ RSpec.describe IronAdmin::Ui::ButtonComponent, type: :component do
 
     it "returns ghost classes" do
       component = described_class.new(text: "Test", variant: :ghost)
-      expect(component.variant_classes).to include("bg-gray-100")
+      expect(component.variant_classes).to include("bg-transparent")
     end
   end
 

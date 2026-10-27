@@ -193,15 +193,19 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
       end
 
       it "drops the inactive link classes from the current page's link" do
-        expect(active_link).not_to include("text-gray-300", "hover:bg-gray-800")
+        expect(active_link).not_to include("text-zinc-600", "hover:bg-zinc-200/60")
       end
 
       it "keeps the inactive link classes on the other links" do
-        expect(other_link).to include("text-gray-300", "hover:bg-gray-800")
+        expect(other_link).to include("text-zinc-600", "hover:bg-zinc-200/60")
       end
 
       it "leaves the active classes off the other links" do
         expect(other_link).not_to include("bg-indigo-700")
+      end
+
+      it "positions every link, so the active link's before: accent bar stays inside it" do
+        expect([active_link, other_link]).to all(include("relative"))
       end
     end
   end

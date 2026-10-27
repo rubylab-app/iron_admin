@@ -3,8 +3,8 @@
 require "rails_helper"
 
 # Heading levels and text colors that axe-core flagged on default-theme pages.
-# Contrast: gray-400 on gray-50 is 2.5:1 and gray-500 on gray-100 is 4.4:1
-# (below WCAG AA); gray-500 on gray-50 is 4.6:1 and gray-700 on gray-100 is 9.4:1.
+# Contrast: zinc-400 on zinc-50 is 2.5:1 and zinc-500 on zinc-100 is 4.4:1
+# (below WCAG AA); zinc-500 on zinc-50 is 4.6:1 and zinc-700 on zinc-100 is 9.5:1.
 RSpec.describe "Default theme accessibility", type: :request do
   let(:document) { response.parsed_body }
   let(:import_resource) do
@@ -73,11 +73,11 @@ RSpec.describe "Default theme accessibility", type: :request do
         before { get instance_exec(user, &path), as: :html }
 
         it "uses the theme's muted text color, which keeps 4.5:1 on the page background" do
-          expect(id_classes).to include("text-gray-500")
+          expect(id_classes).to include("text-zinc-500")
         end
 
-        it "does not use gray-400, which is 2.5:1 on the page background" do
-          expect(id_classes).not_to include("text-gray-400")
+        it "does not use zinc-400, which is 2.5:1 on the page background" do
+          expect(id_classes).not_to include("text-zinc-400")
         end
       end
     end
@@ -92,7 +92,7 @@ RSpec.describe "Default theme accessibility", type: :request do
     end
 
     it "writes the column chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
-      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-gray-700"))
+      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-zinc-700"))
     end
 
     it "lists every import column" do
@@ -111,7 +111,7 @@ RSpec.describe "Default theme accessibility", type: :request do
     end
 
     it "writes the mapping chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
-      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-gray-700"))
+      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-zinc-700"))
     end
 
     it "lists every mapped column" do
