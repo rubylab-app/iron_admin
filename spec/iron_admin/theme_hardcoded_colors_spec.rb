@@ -9,9 +9,7 @@ module ThemeHardcodedColors
   PENDING = [
     # chrome package
     "app/components/iron_admin/ui/alert_component.rb",
-    "app/components/iron_admin/ui/dropdown_component.rb",
     "app/components/iron_admin/ui/empty_state_component.html.haml",
-    "app/components/iron_admin/ui/modal_component.html.haml",
     "app/components/iron_admin/ui/pagination_component.rb",
     "app/components/iron_admin/ui/tooltip_component.rb",
     "app/views/iron_admin/shared/_pagination.html.haml",

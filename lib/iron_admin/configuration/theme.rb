@@ -311,6 +311,24 @@ module IronAdmin
 
       # @!endgroup
 
+      # --- chrome additions ---
+      # Each reader falls back to its Neutral value, so this block needs no line in #initialize.
+
+      # @!group Overlay Styles
+
+      # @!attribute [w] popover_shadow
+      #   @param value [String] Shadow classes of floating surfaces (empty = none)
+      attr_writer :popover_shadow
+
+      # @return [String] Shadow of floating surfaces: dropdown menus, the theme switcher panel and modals
+      def popover_shadow
+        defined?(@popover_shadow) ? @popover_shadow : "shadow-lg"
+      end
+
+      # @!endgroup
+
+      # --- end of chrome additions ---
+
       # Creates a Theme with the values of the Neutral look.
       #
       # @param name [Symbol, String] Name the theme is registered under
