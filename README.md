@@ -6,7 +6,7 @@
 
 Convention-over-configuration admin panel engine for Ruby on Rails. Build beautiful admin interfaces with minimal code.
 
-**[Live demo](https://demo.ironadmin.rubylab.app/)** · [Demo source](https://github.com/rubylab-app/meridian_magazine) · [Documentation](https://rubylab-app.github.io/iron_admin/)
+**[Live demo](https://demo.ironadmin.rubylab.app/)** · [Demo source](https://github.com/rubylab-app/meridian_magazine) · [Documentation](https://rubylab-app.github.io/iron_admin/) · [What's new in 0.7](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-7-the-whole-roadmap-shipped-then-i-tried-to-break-it-6be683936023)
 
 [![The IronAdmin dashboard of the Meridian Magazine demo, with metric cards, a bar chart of articles published per month and a pie chart of articles by category](docs/site/assets/images/demo-dashboard.png)](https://demo.ironadmin.rubylab.app/)
 

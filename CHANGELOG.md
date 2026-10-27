@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 - **Live demo links** — The README, the docs index (`docs/README.md`) and the documentation site's home and Getting Started pages link to the live demo at https://demo.ironadmin.rubylab.app/ and to its source, the [Meridian Magazine](https://github.com/rubylab-app/meridian_magazine) Rails app, where you sign in by picking an admin, an editor or an author. The site's sidebar also links to the live demo. The README and the site's home page show a screenshot of the demo's dashboard, stored at `docs/site/assets/images/demo-dashboard.png` so the site publishes it and the gem does not package it. The home page also uses it as its social preview image (`og:image`), so a shared link to the documentation shows the screenshot.
+- **0.7.0 release post** — The README and the documentation site's home page link to the post about what changed in 0.7.0 and how it was tested: [IronAdmin 0.7: The Whole Roadmap Shipped, Then I Tried to Break It](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-7-the-whole-roadmap-shipped-then-i-tried-to-break-it-6be683936023).
 
 ## [0.7.0] - 2026-10-26
 
