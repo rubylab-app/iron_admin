@@ -2,7 +2,7 @@
 
 module IronAdmin
   module Resources
-    # Renders breadcrumb navigation.
+    # Renders breadcrumb navigation: small muted links separated by chevrons.
     class BreadcrumbComponent < ViewComponent::Base
       renders_many :items, "ItemComponent"
 
@@ -40,12 +40,13 @@ module IronAdmin
         end
 
         # @api private
-        # @return [String] CSS classes for breadcrumb item
+        # @return [String] CSS classes for breadcrumb item: the current page in
+        #   body text, the others as the theme's muted links
         def item_classes
           if current
             "text-sm font-medium #{theme.body_text}"
           else
-            "text-sm #{theme.link}"
+            "text-sm #{theme.link_muted} #{theme.focus_ring}"
           end
         end
 

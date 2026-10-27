@@ -57,13 +57,18 @@ module IronAdmin
         ghost: -> { IronAdmin.current_theme.btn_ghost },
       }.freeze
 
-      # Size class mappings.
+      # Size class mappings (md is 36px high).
       # @return [Hash{Symbol => String}]
       SIZES = {
-        sm: "px-3 py-1.5 text-sm",
-        md: "px-4 py-2 text-sm",
-        lg: "px-5 py-2.5 text-base",
+        sm: "h-8 px-3 text-sm",
+        md: "h-9 px-3.5 text-sm",
+        lg: "h-10 px-4 text-base",
       }.freeze
+
+      # Variants whose theme classes carry their own focus outline (+btn_primary+);
+      # the others get the theme's +focus_ring+.
+      # @return [Array<Symbol>]
+      OWN_FOCUS_VARIANTS = %i[primary].freeze
 
       # @param text [String, nil] Button text
       # @param variant [Symbol] Style variant (default: :primary)
@@ -103,14 +108,21 @@ module IronAdmin
       # @api private
       # @return [String] Base CSS classes for all button variants
       def base_classes
-        "inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-colors duration-150 " \
-          "focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        "inline-flex shrink-0 items-center justify-center gap-2 font-medium whitespace-nowrap transition-colors " \
+          "duration-150 disabled:opacity-50 disabled:cursor-not-allowed #{IronAdmin.current_theme.control_radius}"
+      end
+
+      # @api private
+      # @return [String] The theme's +focus_ring+, unless the variant's classes carry their own
+      def focus_classes
+        variant = VARIANTS.key?(@variant) ? @variant : :primary
+        OWN_FOCUS_VARIANTS.include?(variant) ? "" : IronAdmin.current_theme.focus_ring
       end
 
       # @api private
       # @return [String] Combined CSS classes for button
       def button_classes
-        "#{base_classes} #{variant_classes} #{size_classes}"
+        [base_classes, variant_classes, focus_classes, size_classes].compact_blank.join(" ")
       end
 
       # @api private

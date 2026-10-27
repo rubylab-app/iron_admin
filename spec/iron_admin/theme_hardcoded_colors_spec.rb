@@ -7,13 +7,6 @@ require "rails_helper"
 module ThemeHardcodedColors
   # Files still being migrated to theme properties; each package removes its own.
   PENDING = [
-    # chrome package
-    "app/components/iron_admin/ui/alert_component.rb",
-    "app/components/iron_admin/ui/empty_state_component.html.haml",
-    "app/components/iron_admin/ui/pagination_component.rb",
-    "app/components/iron_admin/ui/tooltip_component.rb",
-    "app/views/iron_admin/shared/_pagination.html.haml",
-
     # data package
     "app/components/iron_admin/filters/bar_component.html.haml",
     "app/components/iron_admin/filters/bar_component.rb",

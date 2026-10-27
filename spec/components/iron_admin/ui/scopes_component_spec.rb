@@ -103,6 +103,38 @@ RSpec.describe IronAdmin::Ui::ScopesComponent, type: :component do
       expect(classes).to include("py-2")
       expect(classes).to include("text-sm")
     end
+
+    it "outlines a focused tab with the theme's focus_ring" do
+      component = described_class.new(scopes: scopes, current_scope: "all", base_path: "/admin/users")
+      expect(component.scope_classes({ name: :all }).split).to include("focus-visible:outline-indigo-500")
+    end
+
+    context "with a registered theme active" do
+      subject(:classes) do
+        described_class.new(scopes: scopes, current_scope: "active", base_path: "/admin/users")
+          .scope_classes({ name: :active }).split
+      end
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.scope_active = "border-indigo-400 text-white"
+        end
+      end
+
+      it "uses that theme's scope_active classes" do
+        expect(classes).to include("border-indigo-400", "text-white")
+      end
+    end
+  end
+
+  describe "rendering" do
+    subject(:tabs) do
+      render_inline(described_class.new(scopes: scopes, current_scope: "active", base_path: "/admin/users")).css("a")
+    end
+
+    it "marks the active tab as the current page" do
+      expect(tabs.select { |tab| tab["aria-current"] == "page" }.map(&:text)).to eq(["Active"])
+    end
   end
 
   describe "#render?" do
