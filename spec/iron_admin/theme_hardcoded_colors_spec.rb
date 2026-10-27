@@ -18,12 +18,6 @@ module ThemeHardcodedColors
     "app/components/iron_admin/ui/tooltip_component.rb",
     "app/views/iron_admin/shared/_pagination.html.haml",
 
-    # data package
-    "app/views/iron_admin/audit/index.html.haml",
-    "app/views/iron_admin/resources/index.html.haml",
-    "app/views/iron_admin/resources/show.html.haml",
-    "app/views/iron_admin/search/index.html.haml",
-
     # forms package
     "app/components/iron_admin/form/belongs_to_autocomplete_component.html.haml",
     "app/components/iron_admin/form/belongs_to_autocomplete_component.rb",

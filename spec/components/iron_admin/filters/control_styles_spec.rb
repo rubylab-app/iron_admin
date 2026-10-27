@@ -82,6 +82,18 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
     end
   end
 
+  describe ".search_input" do
+    subject(:classes) { described_class.search_input(theme).split }
+
+    it "keeps room for the magnifying glass" do
+      expect(classes).to include("pl-9", "pr-3")
+    end
+
+    it "is 36px high with the theme's input classes" do
+      expect(classes).to include("h-9", "border", "border-zinc-200", "rounded-md", "bg-white", "placeholder:text-zinc-500")
+    end
+  end
+
   describe ".trigger" do
     subject(:classes) { described_class.trigger(theme).split }
 

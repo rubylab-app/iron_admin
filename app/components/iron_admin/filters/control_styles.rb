@@ -28,6 +28,12 @@ module IronAdmin
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
+      # @return [String] The search input, with room for the magnifying glass on its left
+      def search_input(theme)
+        "block w-full h-9 pl-9 pr-3 text-sm outline-none transition duration-150 ease-in-out #{field(theme)}"
+      end
+
+      # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] The +<summary>+ that opens the filter panel, styled as a secondary button
       def trigger(theme)
         "inline-flex items-center gap-2 h-9 px-3.5 text-sm font-medium cursor-pointer select-none " \

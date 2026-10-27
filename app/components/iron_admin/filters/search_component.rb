@@ -49,8 +49,7 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for search input field
       def input_classes
-        "block w-full h-9 pl-9 pr-3 text-sm outline-none transition duration-150 ease-in-out " \
-          "#{ControlStyles.field(theme)}"
+        ControlStyles.search_input(theme)
       end
     end
   end

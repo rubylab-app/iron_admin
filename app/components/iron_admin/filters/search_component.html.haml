@@ -1,4 +1,4 @@
-= form_tag form_url, method: :get, class: "flex" do
+= form_tag form_url, method: :get, class: "flex w-full sm:w-auto" do
   - hidden_params.each do |key, val|
     = hidden_field_tag key, val, id: nil
   .relative.w-full.sm:w-64

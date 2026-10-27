@@ -897,14 +897,24 @@ RSpec.describe "IronAdmin::Resources", type: :request do
         expect(response.body).to include("rails")
       end
 
+      it "renders each associated record as a chip in the theme's chip colors" do
+        post_record = create(:post, title: "Test Post")
+        post_record.tags << create(:tag, name: "ruby")
+
+        get iron_admin.resource_path("posts", post_record), as: :html
+
+        chip = response.parsed_body.css("a").find { |link| link.text.strip == "ruby" }
+        expect(chip[:class].split).to include("bg-zinc-100", "text-zinc-700", "rounded-md")
+      end
+
       it "does not display HABTM section card when no associated records" do
         post_record = create(:post, title: "No Tags Post")
 
         get iron_admin.resource_path("posts", post_record), as: :html
 
         expect(response).to have_http_status(:ok)
-        # The HABTM section with badges should not appear (though "Tags" may appear in sidebar menu)
-        expect(response.body).not_to include("bg-indigo-50")
+        # The sidebar menu may still list "Tags"; the page content must not.
+        expect(response.parsed_body.css("h2").map { |heading| heading.text.strip }).not_to include("Tags")
       end
     end
 
