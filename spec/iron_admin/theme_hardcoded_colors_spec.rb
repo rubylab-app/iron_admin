@@ -5,9 +5,6 @@ require "rails_helper"
 # Finds colors written in templates, which no theme can change. Colors belong in
 # IronAdmin::Configuration::Theme properties.
 module ThemeHardcodedColors
-  # Files still being migrated to theme properties; each package removes its own.
-  PENDING = [].freeze
-
   # Utilities whose value is a color.
   UTILITY = "(?:bg|text|border(?:-[xytrblse])?|divide|(?:inset-)?ring(?:-offset)?|outline|placeholder|fill|stroke|" \
             "from|via|to|(?:inset-|drop-)?shadow|decoration|accent|caret)"
@@ -52,20 +49,10 @@ RSpec.describe ThemeHardcodedColors do
   end
 
   describe "app sources" do
-    subject(:offenses) { (sources - described_class::PENDING).flat_map { |path| offenses_in(path) } }
+    subject(:offenses) { sources.flat_map { |path| offenses_in(path) } }
 
     it "take every color from the theme" do
       expect(offenses).to be_empty
-    end
-  end
-
-  describe "PENDING" do
-    it "lists only files that exist" do
-      expect(described_class::PENDING - sources).to be_empty
-    end
-
-    it "lists only files that still hard-code a color, so migrated files leave it" do
-      expect(described_class::PENDING.select { |path| offenses_in(path).empty? }).to be_empty
     end
   end
 
