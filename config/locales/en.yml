@@ -92,6 +92,7 @@ en:
       file_remove: "Remove"
       markdown_placeholder: "Write markdown here..."
       tags_placeholder: "Type and press Enter to add..."
+      tags_remove: "Remove %{tag}"
       color_placeholder: "#000000"
       color_picker_label: "%{field} picker"
       color_invalid: "Enter a hex color such as #1a2b3c or #abc."

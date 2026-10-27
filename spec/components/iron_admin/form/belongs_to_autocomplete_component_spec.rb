@@ -91,9 +91,19 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
       expect(component.input_classes).to include("border")
     end
 
-    it "includes error classes when has_error" do
+    it "uses the theme's input_error when has_error" do
       component = described_class.new(name: :user_id, resource_name: "users", has_error: true)
-      expect(component.input_classes).to include("border-red-400")
+      expect(component.input_classes.split).to include(*IronAdmin.current_theme.input_error.split)
+    end
+
+    it "drops the theme's input_border when has_error" do
+      component = described_class.new(name: :user_id, resource_name: "users", has_error: true)
+      expect(component.input_classes.split).not_to include(*IronAdmin.current_theme.input_border.split)
+    end
+
+    it "uses the theme's surface_muted when disabled" do
+      component = described_class.new(name: :user_id, resource_name: "users", disabled: true)
+      expect(component.input_classes.split).to include(IronAdmin.current_theme.surface_muted)
     end
 
     it "includes disabled classes when disabled" do
@@ -113,9 +123,30 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
       expect(component.dropdown_classes).to include("z-50")
     end
 
-    it "includes shadow" do
+    it "uses the theme's popover_shadow" do
       component = described_class.new(name: :user_id, resource_name: "users")
-      expect(component.dropdown_classes).to include("shadow-lg")
+      expect(component.dropdown_classes.split).to include(IronAdmin.current_theme.popover_shadow)
+    end
+
+    it "uses the theme's card border and background" do
+      theme = IronAdmin.current_theme
+      component = described_class.new(name: :user_id, resource_name: "users")
+      expect(component.dropdown_classes.split).to include(theme.border_width, theme.card_border, theme.card_bg)
+    end
+  end
+
+  describe "#dropdown_item_classes" do
+    it "uses the theme's item_hover and control_radius" do
+      theme = IronAdmin.current_theme
+      component = described_class.new(name: :user_id, resource_name: "users")
+      expect(component.dropdown_item_classes.split).to include(theme.item_hover, theme.control_radius)
+    end
+  end
+
+  describe "#empty_item_classes" do
+    it "uses the theme's muted text color" do
+      component = described_class.new(name: :user_id, resource_name: "users")
+      expect(component.empty_item_classes.split).to include(IronAdmin.current_theme.muted_text)
     end
   end
 
@@ -229,6 +260,37 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
     it "disables input when disabled" do
       result = render_inline(described_class.new(name: :user_id, resource_name: "users", disabled: true))
       expect(result.css("input[type='text'][disabled]")).to be_present
+    end
+
+    describe "classes of the options its script builds" do
+      subject(:container) { render_inline(component).at_css("##{component.component_id}") }
+
+      let(:component) { described_class.new(name: :user_id, resource_name: "users") }
+
+      it "hands the option classes over in a data attribute" do
+        expect(container["data-item-class"]).to eq(component.dropdown_item_classes)
+      end
+
+      it "hands the theme's item_active over for the highlighted option" do
+        expect(container["data-active-class"]).to eq(IronAdmin.current_theme.item_active)
+      end
+
+      it "hands the empty result classes over in a data attribute" do
+        expect(container["data-empty-class"]).to eq(component.empty_item_classes)
+      end
+    end
+  end
+
+  context "with a registered theme active" do
+    before do
+      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+        theme.control_radius = "rounded-none"
+        theme.checkbox_radius = "rounded-none"
+      end
+    end
+
+    it "renders the input with that theme's radius" do
+      expect(render_inline(described_class.new(name: :user_id, resource_name: "users")).at_css("input[type='text']")[:class].split).to include("rounded-none")
     end
   end
 end

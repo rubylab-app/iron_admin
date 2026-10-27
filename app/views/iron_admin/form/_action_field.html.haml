@@ -1,0 +1,32 @@
+-# One field of an action form (resource, bulk and tool actions); scope is the params key.
+- input_id = "#{scope}_#{field.name}"
+- input_name = "#{scope}[#{field.name}]"
+.space-y-1.5
+  %label.block.text-sm.font-medium{ class: cp_label_text, for: input_id }
+    = field.label
+    - if field.required
+      %span{ class: t.error_text } *
+
+  - case field.type
+  - when :text
+    = text_field_tag input_name, field.default, id: input_id, class: cp_input_class,
+      placeholder: field.placeholder, required: field.required
+  - when :textarea
+    = text_area_tag input_name, field.default, id: input_id, rows: 4, class: cp_textarea_class,
+      placeholder: field.placeholder, required: field.required
+  - when :number
+    = number_field_tag input_name, field.default, id: input_id, class: cp_input_class,
+      placeholder: field.placeholder, step: "any", required: field.required
+  - when :boolean
+    .flex.items-center.gap-2
+      = check_box_tag input_name, "1", field.default, id: input_id, class: cp_checkbox_class
+      %span.text-sm{ class: cp_body_text }= field.label
+  - when :date
+    = date_field_tag input_name, field.default, id: input_id, class: cp_input_class, required: field.required
+  - when :datetime
+    = datetime_field_tag input_name, field.default, id: input_id, class: cp_input_class, required: field.required
+  - when :select
+    %select{ name: input_name, id: input_id, class: cp_select_class, required: field.required }
+      %option{ value: "" }= field.placeholder || "Select..."
+      - (field.options || []).each do |opt|
+        %option{ value: opt, selected: field.default == opt }= opt.to_s.humanize

@@ -38,10 +38,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String] CSS classes for checkbox input
+      # @return [String] CSS classes for checkbox input, with the engine's check mark
       def checkbox_classes
-        "h-4 w-4 rounded border-gray-300 text-indigo-600 #{theme.checkbox_checked} " \
-          "transition duration-150 ease-in-out"
+        ControlClasses.checkbox(theme)
       end
 
       # @api private

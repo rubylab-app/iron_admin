@@ -7,27 +7,6 @@ require "rails_helper"
 module ThemeHardcodedColors
   # Files still being migrated to theme properties; each package removes its own.
   PENDING = [
-    # forms package
-    "app/components/iron_admin/form/belongs_to_autocomplete_component.html.haml",
-    "app/components/iron_admin/form/belongs_to_autocomplete_component.rb",
-    "app/components/iron_admin/form/belongs_to_component.html.haml",
-    "app/components/iron_admin/form/belongs_to_component.rb",
-    "app/components/iron_admin/form/checkbox_component.rb",
-    "app/components/iron_admin/form/date_picker_component.rb",
-    "app/components/iron_admin/form/field_wrapper_component.html.haml",
-    "app/components/iron_admin/form/nested_form_component.html.haml",
-    "app/components/iron_admin/form/select_component.rb",
-    "app/components/iron_admin/form/text_input_component.rb",
-    "app/components/iron_admin/form/textarea_component.rb",
-    "app/helpers/iron_admin/theme_helper.rb",
-    "app/views/iron_admin/form/_nested_row.html.haml",
-    "app/views/iron_admin/imports/new.html.haml",
-    "app/views/iron_admin/imports/preview.html.haml",
-    "app/views/iron_admin/resources/_form.html.haml",
-    "app/views/iron_admin/resources/action_form.html.haml",
-    "app/views/iron_admin/resources/bulk_action_form.html.haml",
-    "app/views/iron_admin/tools/action_form.html.haml",
-
     # dashboard package
     "app/components/iron_admin/dashboards/activity_feed_component.rb",
     "app/components/iron_admin/dashboards/activity_feed_component/item_component.html.haml",

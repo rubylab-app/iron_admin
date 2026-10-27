@@ -22,30 +22,27 @@ module IronAdmin
 
     # @return [String] Primary button classes
     def cp_btn_primary
-      "inline-flex items-center px-4 py-2 #{t.border_radius} #{t.btn_primary} " \
-        "transition duration-150 ease-in-out"
+      Form::ControlClasses.button(t, :primary)
     end
 
-    # @return [String] Large primary button classes
+    # @return [String] Classes of a form's submit button (the same as {#cp_btn_primary})
     def cp_btn_primary_lg
-      "inline-flex items-center px-5 text-sm font-medium #{t.border_radius} shadow-sm " \
-        "#{t.btn_primary} transition duration-150 ease-in-out cursor-pointer py-2.5"
+      cp_btn_primary
     end
 
     # @return [String] Secondary button classes
     def cp_btn_secondary
-      "inline-flex items-center px-5 text-sm font-medium #{t.border_radius} shadow-sm " \
-        "#{t.btn_secondary} transition duration-150 ease-in-out py-2.5"
+      Form::ControlClasses.button(t, :secondary)
     end
 
     # @return [String] Danger button classes
     def cp_btn_danger
-      "px-4 py-2 #{t.border_radius} #{t.btn_danger}"
+      Form::ControlClasses.button(t, :danger)
     end
 
     # @return [String] Ghost button classes
     def cp_btn_ghost
-      "inline-flex items-center gap-2 px-4 py-2 #{t.border_radius} #{t.btn_ghost}"
+      Form::ControlClasses.button(t, :ghost)
     end
 
     # @return [String] Link classes
@@ -63,48 +60,50 @@ module IronAdmin
       t.input_focus
     end
 
+    # @param error [Boolean] Whether the value failed validation
+    # @param padding [String] Horizontal padding, such as "pl-7 pr-3" after a prefix
     # @return [String] Text input classes
-    def cp_input_class
-      "block w-full appearance-none #{t.border_radius} border #{t.input_border} #{t.card_bg} px-3.5 py-2.5 text-sm " \
-        "#{t.body_text} shadow-sm outline-none placeholder:text-gray-400 transition duration-150 ease-in-out #{t.input_focus}"
+    def cp_input_class(error: false, padding: Form::ControlClasses::INPUT_PADDING)
+      Form::ControlClasses.input(t, error:, padding:)
     end
 
-    # @return [String] Select input classes
-    def cp_select_class
-      "block w-full appearance-none #{t.border_radius} border #{t.input_border} #{t.card_bg} px-3.5 py-2.5 pr-10 text-sm " \
-        "#{t.body_text} shadow-sm outline-none transition duration-150 ease-in-out #{t.input_focus} cp-select-chevron"
+    # @param error [Boolean] Whether the value failed validation
+    # @return [String] Select input classes, with the engine's chevron
+    def cp_select_class(error: false)
+      Form::ControlClasses.select(t, error:)
     end
 
+    # @param error [Boolean] Whether the value failed validation
     # @return [String] Textarea classes
-    def cp_textarea_class
-      "block w-full appearance-none #{t.border_radius} border #{t.input_border} #{t.card_bg} px-3.5 py-2.5 text-sm " \
-        "#{t.body_text} shadow-sm outline-none placeholder:text-gray-400 transition duration-150 ease-in-out " \
-        "#{t.input_focus} resize-y"
+    def cp_textarea_class(error: false)
+      Form::ControlClasses.textarea(t, error:)
     end
 
-    # @return [String] Checkbox classes
+    # @return [String] Checkbox classes, with the engine's check mark
     def cp_checkbox_class
-      "h-4.5 w-4.5 appearance-none rounded border #{t.input_border} #{t.card_bg} shadow-sm transition duration-150 " \
-        "ease-in-out #{t.checkbox_checked} cp-checkbox-mark focus:ring-offset-1 cursor-pointer"
+      Form::ControlClasses.checkbox(t)
+    end
+
+    # @return [String] Radio button classes, with the engine's dot
+    def cp_radio_class
+      Form::ControlClasses.radio(t)
     end
 
     # @return [String] Filter input classes
     def cp_filter_input_class
-      "block w-full appearance-none #{t.border_radius} border #{t.input_border} #{t.card_bg} px-3 py-2 text-sm " \
-        "#{t.body_text} shadow-sm outline-none transition duration-150 ease-in-out #{t.input_focus}"
+      Form::ControlClasses.input(t)
     end
 
-    # @return [String] Search input classes
+    # @return [String] Classes of a search input with an icon on its left
     def cp_search_class
-      "block w-full appearance-none #{t.border_radius} border #{t.input_border} #{t.card_bg} pl-10 pr-4 py-2 text-sm " \
-        "#{t.body_text} shadow-sm outline-none placeholder:text-gray-400 transition duration-150 ease-in-out #{t.input_focus}"
+      Form::ControlClasses.input(t, padding: "pl-9 pr-3")
     end
 
     # @return [String] Navbar search input classes
     def cp_navbar_search_class
-      "block w-full appearance-none #{t.border_radius} border #{t.input_border} #{t.navbar_search_bg} pl-10 pr-4 py-2 text-sm " \
-        "#{t.body_text} shadow-sm outline-none transition duration-150 ease-in-out placeholder:text-gray-400 " \
-        "#{t.input_focus} #{t.navbar_search_focus_bg}"
+      "block w-full h-9 appearance-none pl-9 pr-3 text-sm outline-hidden transition duration-150 ease-in-out " \
+        "#{t.control_radius} #{t.border_width} #{t.input_border} #{t.navbar_search_bg} #{t.body_text} " \
+        "#{t.placeholder_text} #{t.input_focus} #{t.navbar_search_focus_bg}"
     end
 
     # @return [String] Active scope tab classes
@@ -119,13 +118,12 @@ module IronAdmin
 
     # @return [String] Badge count classes
     def cp_badge_count
-      "inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full #{t.badge_count} text-xs font-bold"
+      "inline-flex h-5 min-w-5 items-center justify-center px-1.5 text-xs tabular-nums #{t.badge_shape} #{t.badge_count}"
     end
 
-    # @return [String] Filter apply button classes
+    # @return [String] Filter apply button classes (a primary button)
     def cp_btn_filter_apply
-      "inline-flex items-center px-3 #{t.border_radius} #{t.btn_primary} " \
-        "text-sm font-medium transition duration-150 ease-in-out py-1.5"
+      cp_btn_primary
     end
 
     # @return [String] Sidebar background classes
@@ -153,14 +151,14 @@ module IronAdmin
       t.sidebar_group_label
     end
 
-    # @return [String] Heading classes
+    # @return [String] Heading classes: the heading weight and the heading font, or the body font without one
     def cp_heading
-      "#{t.heading_weight} #{t.font_family}".strip
+      "#{t.heading_weight} #{t.heading_font.presence || t.font_family}".strip
     end
 
-    # @return [String] Card classes
+    # @return [String] Card classes: background, border, radius and shadow
     def cp_card
-      "#{t.card_bg} #{t.border_radius} #{t.card_shadow}"
+      "#{t.card_bg} #{t.border_width} #{t.card_border} #{t.border_radius} #{t.card_shadow}"
     end
 
     # @return [String] Body text classes
@@ -193,11 +191,10 @@ module IronAdmin
       t.table_border
     end
 
+    # @param error [Boolean] Whether the upload failed validation
     # @return [String] File input classes
-    def cp_file_input_class
-      "block w-full text-sm #{t.body_text} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 " \
-        "file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 " \
-        "file:cursor-pointer cursor-pointer"
+    def cp_file_input_class(error: false)
+      Form::ControlClasses.file_input(t, error:)
     end
   end
 end

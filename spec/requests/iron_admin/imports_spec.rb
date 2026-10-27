@@ -77,6 +77,25 @@ RSpec.describe "IronAdmin::Imports", type: :request do
 
       expect(html.css("form .flex-wrap > span").map { |chip| chip.text.strip }).to eq(%w[Preferences Active Email Name])
     end
+
+    describe "theme classes" do
+      let(:theme) { IronAdmin.configuration.theme }
+      let(:controls) { IronAdmin::Form::ControlClasses }
+
+      before { get iron_admin.resource_import_path("request_import_users"), as: :html }
+
+      it "renders the file field as a theme file input" do
+        expect(html.at_css("#file")[:class].split).to eq(controls.file_input(theme).split)
+      end
+
+      it "renders the format select as a theme select" do
+        expect(html.at_css("#import_format")[:class].split).to eq(controls.select(theme).split)
+      end
+
+      it "renders the field names as theme chips" do
+        expect(html.css("form .flex-wrap > span").map { |chip| chip[:class].split }).to all(include(*theme.chip.split))
+      end
+    end
   end
 
   describe "importing from the preview page" do
@@ -141,6 +160,20 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       preview_csv("Name,Email\nJane,jane@example.com\n")
 
       expect(preview_cells.first.first(2)).to eq(["Jane", "jane@example.com"])
+    end
+
+    it "renders the header cells with the theme's table header classes" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      theme = IronAdmin.configuration.theme
+      expect(html.css("thead th").map { |header| header[:class].split })
+        .to all(include(*theme.table_header_text.split, *theme.table_cell_padding.split))
+    end
+
+    it "writes the errors of an invalid row in the theme's error color" do
+      preview_csv("Name,Email\n,nameless@example.com\n")
+
+      expect(html.at_css("tbody tr td:last-child")[:class].split).to include(IronAdmin.configuration.theme.error_text)
     end
 
     it "orders the columns as import_fields does" do

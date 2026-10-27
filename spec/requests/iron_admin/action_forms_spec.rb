@@ -69,6 +69,32 @@ RSpec.describe "Action Forms", type: :request do
         expect(response.parsed_body.at_css("form[action='#{action_path}']")["data-turbo-frame"]).to eq("_top")
       end
 
+      describe "theme classes" do
+        let(:document) { response.parsed_body }
+        let(:theme) { IronAdmin.configuration.theme }
+        let(:controls) { IronAdmin::Form::ControlClasses }
+
+        before do
+          get iron_admin.resource_action_form_path("form_exec_licenses", license, "revoke_with_reason"), as: :html
+        end
+
+        it "renders the textarea as a theme textarea" do
+          expect(document.at_css("#action_form_reason")[:class].split).to eq(controls.textarea(theme).split)
+        end
+
+        it "renders the checkbox as a theme checkbox" do
+          expect(document.at_css("#action_form_notify")[:class].split).to eq(controls.checkbox(theme).split)
+        end
+
+        it "writes the required mark in the theme's error color" do
+          expect(document.at_css("label[for=action_form_reason] span")[:class].split).to include(theme.error_text)
+        end
+
+        it "renders Execute as a theme primary button" do
+          expect(document.at_css("button[type=submit]")[:class].split).to eq(controls.button(theme, :primary).split)
+        end
+      end
+
       it "returns not found for an unknown action before finding the record" do
         get iron_admin.resource_action_form_path("form_exec_licenses", 999_999, "missing_action"),
             as: :html
@@ -262,6 +288,13 @@ RSpec.describe "Action Forms", type: :request do
 
         action_path = iron_admin.resource_bulk_action_path("bulk_form_exec_licenses", "bulk_revoke_with_note")
         expect(response.parsed_body.at_css("form[action='#{action_path}']")["data-turbo-frame"]).to eq("_top")
+      end
+
+      it "renders the textarea as a theme textarea" do
+        get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"), as: :html
+
+        expect(response.parsed_body.at_css("#action_form_note")[:class].split)
+          .to eq(IronAdmin::Form::ControlClasses.textarea(IronAdmin.configuration.theme).split)
       end
     end
 

@@ -110,4 +110,28 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
       expect(component.error_classes).to include("mt-1.5")
     end
   end
+
+  describe "rendering" do
+    let(:theme) { IronAdmin.current_theme }
+
+    context "when required" do
+      subject(:mark) { render_inline(described_class.new(name: :email, required: true)) { "input" }.at_css("label span") }
+
+      it "writes the required mark in the theme's error color" do
+        expect(mark[:class].split).to include(theme.error_text)
+      end
+    end
+
+    context "with errors" do
+      subject(:result) { render_inline(described_class.new(name: :email, errors: ["is invalid"])) { "input" } }
+
+      it "writes the message in the theme's error color" do
+        expect(result.at_css("p")[:class].split).to include(theme.error_text)
+      end
+
+      it "draws the icon in the theme's error color" do
+        expect(result.at_css("svg")[:class].split).to include(theme.error_text)
+      end
+    end
+  end
 end

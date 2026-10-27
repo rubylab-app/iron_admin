@@ -80,9 +80,19 @@ RSpec.describe IronAdmin::Form::DatePickerComponent, type: :component do
       expect(component.input_classes).to include("w-full")
     end
 
-    it "includes error classes when has_error" do
+    it "uses the theme's input_error when has_error" do
       component = described_class.new(name: :created_at, has_error: true)
-      expect(component.input_classes).to include("border-red-400")
+      expect(component.input_classes.split).to include(*IronAdmin.current_theme.input_error.split)
+    end
+
+    it "drops the theme's input_border when has_error" do
+      component = described_class.new(name: :created_at, has_error: true)
+      expect(component.input_classes.split).not_to include(*IronAdmin.current_theme.input_border.split)
+    end
+
+    it "uses the theme's surface_muted when disabled" do
+      component = described_class.new(name: :created_at, disabled: true)
+      expect(component.input_classes.split).to include(IronAdmin.current_theme.surface_muted)
     end
 
     it "includes disabled classes when disabled" do
@@ -135,6 +145,19 @@ RSpec.describe IronAdmin::Form::DatePickerComponent, type: :component do
     it "renders disabled input" do
       result = render_inline(described_class.new(name: :created_at, disabled: true))
       expect(result.css("input[disabled]")).to be_present
+    end
+  end
+
+  context "with a registered theme active" do
+    before do
+      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+        theme.control_radius = "rounded-none"
+        theme.checkbox_radius = "rounded-none"
+      end
+    end
+
+    it "renders the input with that theme's radius" do
+      expect(render_inline(described_class.new(name: :created_at)).at_css("input")[:class].split).to include("rounded-none")
     end
   end
 end

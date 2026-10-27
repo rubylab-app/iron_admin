@@ -59,7 +59,14 @@ module IronAdmin
       # @return [String] Checked checkbox classes
       attr_accessor :checkbox_checked
 
-      # @return [String] Border color and focus ring of inputs with validation errors
+      # @return [String] Border color of unchecked checkboxes and radio buttons
+      attr_accessor :checkbox_border
+
+      # @return [String] Radius of checkboxes (radio buttons are always round)
+      attr_accessor :checkbox_radius
+
+      # @return [String] Border color and focus state (ring width included) of inputs with
+      #   validation errors, used instead of {#input_border} and {#input_focus}
       attr_accessor :input_error
 
       # @return [String] Color of input placeholders (with the +placeholder:+ variant)
@@ -70,6 +77,9 @@ module IronAdmin
 
       # @return [String] Radius of inputs, buttons, selects and dropdown items
       attr_accessor :control_radius
+
+      # @return [String] Shadow of inputs, selects, textareas and buttons other than ghost ones (empty = none)
+      attr_accessor :control_shadow
 
       # @!endgroup
 
@@ -174,8 +184,8 @@ module IronAdmin
       # @return [String] Card shadow classes
       attr_accessor :card_shadow
 
-      # @return [String] Shadow of floating surfaces: dropdown menus, the filter panel, the theme
-      #   switcher panel and modals (empty = none)
+      # @return [String] Shadow of floating surfaces: dropdown menus, the filter panel, belongs-to
+      #   autocomplete results, the theme switcher panel and modals (empty = none)
       attr_accessor :popover_shadow
 
       # @return [String] Card and section titles (h2): size, weight and color
@@ -243,6 +253,10 @@ module IronAdmin
 
       # @return [String] Hover of menu items, list rows and pagination links
       attr_accessor :item_hover
+
+      # @return [String] Background of the listbox option that the arrow keys highlight
+      #   (belongs-to autocomplete results)
+      attr_accessor :item_active
 
       # @return [String] Color of decorative icons
       attr_accessor :icon_muted
@@ -369,13 +383,16 @@ module IronAdmin
         @link_muted = "text-zinc-500 hover:text-zinc-900"
         @focus_ring = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
         @control_radius = "rounded-md"
+        @control_shadow = "shadow-xs"
       end
 
       def init_form_defaults
         @input_border = "border-zinc-200 hover:border-zinc-300"
         @input_focus = "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15"
         @checkbox_checked = "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15"
-        @input_error = "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+        @checkbox_border = "border-zinc-300"
+        @checkbox_radius = "rounded-sm"
+        @input_error = "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20"
         @placeholder_text = "placeholder:text-zinc-500"
         @disabled_text = "text-zinc-300"
       end
@@ -421,6 +438,7 @@ module IronAdmin
         @swatch = "bg-white ring-1 ring-inset ring-zinc-300"
         @surface_muted = "bg-zinc-50"
         @item_hover = "hover:bg-zinc-100"
+        @item_active = "bg-zinc-100"
         @icon_muted = "text-zinc-400"
         @overlay_bg = "bg-zinc-900/40"
       end

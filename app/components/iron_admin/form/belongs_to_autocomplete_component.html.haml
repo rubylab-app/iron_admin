@@ -1,4 +1,5 @@
-.relative{ id: component_id, data: { autocomplete_url: autocomplete_url } }
+-# The script builds the result options, so it takes their theme classes from data attributes.
+.relative{ id: component_id, data: { autocomplete_url: autocomplete_url, item_class: dropdown_item_classes, active_class: theme.item_active, empty_class: empty_item_classes } }
   %input{ type: "hidden", name: name, id: "#{component_id}-hidden", value: selected_id }
   %input{ type: "text",
           id: input_id,
@@ -21,6 +22,9 @@
     const textInput = document.getElementById('#{input_id}');
     const dropdown = document.getElementById('#{listbox_id}');
     const autocompleteUrl = container.dataset.autocompleteUrl;
+    const itemClass = container.dataset.itemClass;
+    const emptyClass = container.dataset.emptyClass;
+    const activeClasses = (container.dataset.activeClass || '').split(/\s+/).filter(Boolean);
 
     let debounceTimer = null;
     let selectedIndex = -1;
@@ -46,7 +50,7 @@
 
     function createResultItem(item, index) {
       const div = document.createElement('div');
-      div.className = '#{dropdown_item_classes}';
+      div.className = itemClass;
       div.id = dropdown.id + '-option-' + index;
       div.setAttribute('role', 'option');
       div.setAttribute('aria-selected', 'false');
@@ -61,7 +65,7 @@
 
     function createNoResultsItem() {
       const div = document.createElement('div');
-      div.className = 'px-3 py-2 text-sm text-gray-500';
+      div.className = emptyClass;
       div.setAttribute('role', 'option');
       div.setAttribute('aria-disabled', 'true');
       div.textContent = 'No results found';
@@ -100,12 +104,12 @@
       const items = dropdown.querySelectorAll('[data-id]');
       items.forEach((el, i) => {
         if (i === index) {
-          el.classList.add('bg-gray-100');
+          el.classList.add(...activeClasses);
           el.setAttribute('aria-selected', 'true');
           textInput.setAttribute('aria-activedescendant', el.id);
           el.scrollIntoView({ block: 'nearest' });
         } else {
-          el.classList.remove('bg-gray-100');
+          el.classList.remove(...activeClasses);
           el.setAttribute('aria-selected', 'false');
         }
       });
