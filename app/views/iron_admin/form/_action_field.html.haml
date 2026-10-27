@@ -1,7 +1,7 @@
 -# One field of an action form (resource, bulk and tool actions); scope is the params key.
 - input_id = "#{scope}_#{field.name}"
 - input_name = "#{scope}[#{field.name}]"
-.space-y-1.5
+%div{ class: "space-y-1.5" }
   %label.block.text-sm.font-medium{ class: cp_label_text, for: input_id }
     = field.label
     - if field.required

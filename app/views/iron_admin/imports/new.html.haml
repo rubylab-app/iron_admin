@@ -8,10 +8,10 @@
     -# redirect after a form submission, so the upload is a full page request.
     = form_tag resource_import_preview_path(@resource_class.resource_name),
       multipart: true, class: "space-y-5", data: { turbo: false } do
-      .space-y-1.5
+      %div{ class: "space-y-1.5" }
         = label_tag :file, I18n.t("iron_admin.imports.new.file_label"), class: "block text-sm font-medium #{cp_label_text}"
         = file_field_tag :file, required: true, class: cp_file_input_class
-      .space-y-1.5
+      %div{ class: "space-y-1.5" }
         = label_tag :import_format, I18n.t("iron_admin.imports.new.format_label"), class: "block text-sm font-medium #{cp_label_text}"
         = select_tag :import_format,
           options_for_select(@formats.map { |format| [format.to_s.upcase, format] }),

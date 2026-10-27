@@ -42,6 +42,17 @@ RSpec.describe IronAdmin::Engine do
       end
     end
 
+    context "with a fractional value in the HAML class shorthand" do
+      # HAML ends a shorthand class at the dot, so `.gap-1.5` renders the classes
+      # "gap-1" and "5"; write fractional values in a class attribute.
+      let(:sources) { described_class.root.glob("app/**/*.haml") }
+      let(:pattern) { /^\s*(?:%[\w:-]+|[.#][\w:-]+)(?:[.#][\w:-]+)*?\.\d+(?![\w:-])/ }
+
+      it "uses none of them" do
+        expect(offenses).to be_empty
+      end
+    end
+
     context "with an arbitrary value split across string literals" do
       # Tailwind reads `bg-[url(...)]` only as one unbroken token; a value that
       # continues in the next literal generates no CSS.
