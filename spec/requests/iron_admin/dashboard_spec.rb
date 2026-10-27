@@ -2,6 +2,35 @@ require "rails_helper"
 
 RSpec.describe "IronAdmin::Dashboard", type: :request do
   describe "GET /" do
+    describe "page title" do
+      subject(:title_classes) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("h1")[:class].split
+      end
+
+      it "uses the theme's page_title" do
+        expect(title_classes).to include("text-xl", "font-semibold", "tracking-tight", "text-zinc-900")
+      end
+
+      context "with a registered theme picked by the theme cookie" do
+        before do
+          IronAdmin.configuration.register_theme(:editorial) do |t|
+            t.page_title = "text-3xl font-normal text-stone-900"
+            t.heading_font = "font-[family-name:Fraunces,serif]"
+          end
+          cookies["iron_admin_theme"] = "editorial"
+        end
+
+        it "uses that theme's page_title and heading_font" do
+          expect(title_classes).to include("text-3xl", "font-normal", "font-[family-name:Fraunces,serif]")
+        end
+
+        it "drops the default theme's page_title" do
+          expect(title_classes).not_to include("text-xl", "font-semibold")
+        end
+      end
+    end
+
     context "without dashboard class configured" do
       it "returns success" do
         get iron_admin.root_path, headers: { "Accept" => "text/html" }

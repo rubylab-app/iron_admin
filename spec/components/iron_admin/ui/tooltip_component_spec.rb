@@ -69,9 +69,39 @@ RSpec.describe IronAdmin::Ui::TooltipComponent, type: :component do
     it "includes base styling" do
       component = described_class.new(text: "Info")
       expect(component.tooltip_classes).to include("text-xs")
-      expect(component.tooltip_classes).to include("bg-gray-900")
-      expect(component.tooltip_classes).to include("text-white")
-      expect(component.tooltip_classes).to include("rounded")
+    end
+
+    it "colors the tooltip with the theme's tooltip classes" do
+      component = described_class.new(text: "Info")
+      expect(component.tooltip_classes.split).to include("bg-zinc-900", "text-white")
+    end
+
+    it "rounds the tooltip with the theme's control_radius" do
+      component = described_class.new(text: "Info")
+      expect(component.tooltip_classes.split).to include("rounded-md")
+    end
+
+    it "shows the tooltip while its trigger has keyboard focus" do
+      component = described_class.new(text: "Info")
+      expect(component.tooltip_classes.split).to include("group-focus-within:opacity-100", "group-focus-within:visible")
+    end
+
+    context "with a registered theme active" do
+      subject(:classes) { described_class.new(text: "Info").tooltip_classes.split }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.tooltip = "bg-white text-zinc-900"
+        end
+      end
+
+      it "uses that theme's tooltip classes" do
+        expect(classes).to include("bg-white", "text-zinc-900")
+      end
+
+      it "drops the default theme's tooltip classes" do
+        expect(classes).not_to include("bg-zinc-900")
+      end
     end
 
     it "includes visibility classes" do

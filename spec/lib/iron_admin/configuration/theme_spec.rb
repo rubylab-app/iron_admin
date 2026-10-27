@@ -275,4 +275,31 @@ RSpec.describe IronAdmin::Configuration::Theme do
       expect(theme.font_stylesheet_url).to be_nil
     end
   end
+
+  # Chrome package additions.
+  describe "#popover_shadow" do
+    it "is a large shadow in Neutral" do
+      expect(theme.popover_shadow).to eq("shadow-lg")
+    end
+
+    context "when set" do
+      before { theme.popover_shadow = "shadow-[4px_4px_0_0_var(--color-zinc-950)]" }
+
+      it "returns the new classes" do
+        expect(theme.popover_shadow).to eq("shadow-[4px_4px_0_0_var(--color-zinc-950)]")
+      end
+
+      it "keeps them in a copy" do
+        expect(theme.dup.popover_shadow).to eq("shadow-[4px_4px_0_0_var(--color-zinc-950)]")
+      end
+    end
+
+    context "when set to an empty String" do
+      before { theme.popover_shadow = "" }
+
+      it "draws no shadow" do
+        expect(theme.popover_shadow).to eq("")
+      end
+    end
+  end
 end

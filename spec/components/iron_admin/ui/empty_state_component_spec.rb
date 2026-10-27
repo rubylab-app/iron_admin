@@ -46,4 +46,37 @@ RSpec.describe IronAdmin::Ui::EmptyStateComponent, type: :component do
       expect(component.has_action?).to be false
     end
   end
+
+  describe "rendering" do
+    subject(:rendered) { render_inline(component) }
+
+    let(:component) { described_class.new(title: "No users yet", action_text: "New user", action_href: "/admin/users/new") }
+    let(:icon_tile) { rendered.at_css("div > div")[:class].split }
+
+    context "with the default theme" do
+      it "sets the icon on the theme's muted surface" do
+        expect(icon_tile).to include("bg-zinc-50", "border", "border-zinc-200", "rounded-lg")
+      end
+
+      it "titles the state with the theme's card_title" do
+        expect(rendered.at_css("h3")[:class].split).to include("text-sm", "font-semibold", "text-zinc-900")
+      end
+
+      it "renders the action as a primary button" do
+        expect(rendered.at_css("a[href='/admin/users/new']")[:class].split).to include("h-9", "bg-zinc-900", "rounded-md")
+      end
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.surface_muted = "bg-zinc-800"
+        end
+      end
+
+      it "sets the icon on that theme's muted surface" do
+        expect(icon_tile).to include("bg-zinc-800")
+      end
+    end
+  end
 end

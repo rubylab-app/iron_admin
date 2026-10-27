@@ -103,6 +103,155 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
     end
   end
 
+  describe "theme" do
+    subject(:rendered) do
+      with_controller_class(IronAdmin::ResourcesController) do
+        with_request_url("/admin/users") { render_inline(described_class.new(current_user: user)) }
+      end
+    end
+
+    let(:user) { instance_double(User, name: "Ada Lovelace") }
+    let(:header) { rendered.at_css("header")[:class].split }
+    let(:search_input) { rendered.at_css("header input[name='q']")[:class].split }
+    let(:search_icon) { rendered.at_css("header form svg")[:class].split }
+    let(:menu_button) { rendered.at_css("button[aria-label='Open menu']")[:class].split }
+    let(:user_name) { rendered.css("header span").find { |span| span.text.strip == "Ada Lovelace" }[:class].split }
+
+    context "with the default theme" do
+      it "is a 56px bar with the theme's background and bottom border" do
+        expect(header).to include("h-14", "bg-white", "border-b", "border-zinc-200")
+      end
+
+      it "makes the search input 36px high" do
+        expect(search_input).to include("h-9")
+      end
+
+      it "styles the search input with the theme's border, radius and backgrounds" do
+        expect(search_input).to include("border", "border-zinc-200", "rounded-md", "bg-zinc-50", "focus:bg-white")
+      end
+
+      it "colors the search placeholder and focus ring from the theme" do
+        expect(search_input).to include("placeholder:text-zinc-500", "focus:ring-indigo-500/15")
+      end
+
+      it "mutes the search icon" do
+        expect(search_icon).to include("text-zinc-400")
+      end
+
+      it "styles the menu button as a ghost icon button" do
+        expect(menu_button).to include("hover:bg-zinc-100", "rounded-md", "focus-visible:outline-indigo-500")
+      end
+
+      it "writes the user name in the theme's navbar_text color" do
+        expect(user_name).to include("text-zinc-600")
+      end
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.navbar_bg = "bg-zinc-900"
+          t.navbar_border = "border-zinc-800"
+          t.navbar_search_bg = "bg-zinc-800"
+          t.navbar_text = "text-zinc-300"
+          t.control_radius = "rounded-full"
+        end
+      end
+
+      it "uses that theme's navbar background and border" do
+        expect(header).to include("bg-zinc-900", "border-zinc-800")
+      end
+
+      it "drops the default theme's navbar background" do
+        expect(header).not_to include("bg-white")
+      end
+
+      it "styles the search input with that theme" do
+        expect(search_input).to include("bg-zinc-800", "rounded-full")
+      end
+
+      it "writes the user name in that theme's navbar_text color" do
+        expect(user_name).to include("text-zinc-300")
+      end
+    end
+  end
+
+  describe "search shortcut" do
+    subject(:form) do
+      with_controller_class(IronAdmin::ResourcesController) do
+        with_request_url("/admin/users") { render_inline(described_class.new) }
+      end.at_css("header form[role='search']")
+    end
+
+    let(:hint) { form.at_css("kbd") }
+
+    it "attaches the cp-search-shortcut controller to the search form" do
+      expect(form["data-controller"]).to eq("cp-search-shortcut")
+    end
+
+    it "listens for the shortcut anywhere on the page" do
+      expect(form["data-action"]).to eq("keydown@window->cp-search-shortcut#focus")
+    end
+
+    it "focuses the search input" do
+      expect(form.at_css("input[name='q']")["data-cp-search-shortcut-target"]).to eq("input")
+    end
+
+    it "shows the shortcut in a keyboard hint" do
+      expect(hint["data-cp-search-shortcut-target"]).to eq("hint")
+    end
+
+    it "reads ⌘K until the controller names the platform's shortcut" do
+      expect(hint.text.strip).to eq("⌘K")
+    end
+
+    it "hides the hint until the controller connects, as the shortcut needs it" do
+      expect(hint.key?("hidden")).to be(true)
+    end
+
+    it "hides the hint from screen readers" do
+      expect(hint["aria-hidden"]).to eq("true")
+    end
+
+    it "hides the hint below the sm breakpoint" do
+      expect(hint[:class].split).to include("hidden", "sm:inline-flex")
+    end
+
+    it "styles the hint with the theme's kbd classes" do
+      expect(hint[:class].split).to include("border-zinc-200", "bg-white", "text-zinc-500")
+    end
+
+    it "leaves room for the hint in the search input" do
+      expect(form.at_css("input[name='q']")[:class].split).to include("sm:pr-16")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.kbd = "border-zinc-700 bg-zinc-800 text-zinc-300"
+        end
+      end
+
+      it "styles the hint with that theme's kbd classes" do
+        expect(hint[:class].split).to include("border-zinc-700", "bg-zinc-800", "text-zinc-300")
+      end
+    end
+
+    describe "controller" do
+      it "is registered under the identifier the template uses" do
+        entry_point = IronAdmin::Engine.root.join("app/javascript/iron_admin/index.js").read
+
+        expect(entry_point).to include(%(application.register("cp-search-shortcut", CpSearchShortcutController)))
+      end
+
+      it "is pinned in the engine's import map" do
+        importmap = IronAdmin::Engine.root.join("config/importmap.rb").read
+
+        expect(importmap).to include(%(pin "iron_admin/controllers/cp_search_shortcut_controller"))
+      end
+    end
+  end
+
   describe "component class" do
     it "inherits from ViewComponent::Base" do
       expect(described_class.superclass).to eq(ViewComponent::Base)

@@ -58,8 +58,16 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
       expect(result.css("h1, h2, h3, h4, h5, h6")).to be_empty
     end
 
-    it "shows the configured title with the brand classes" do
-      expect(result.at_css(".text-xl.font-bold")&.text&.strip).to eq("Meridian Admin")
+    it "shows the configured title" do
+      expect(result.at_xpath(".//div[normalize-space(text())='Meridian Admin']")).to be_present
+    end
+
+    it "sets the title in the theme's heading weight" do
+      expect(result.at_xpath(".//div[normalize-space(text())='Meridian Admin']")[:class].split).to include("font-semibold")
+    end
+
+    it "puts the brand in a row as high as the navbar" do
+      expect(result.at_css("#cp-sidebar-panel > div")[:class].split).to include("h-14")
     end
 
     context "with a logo" do
@@ -305,6 +313,77 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
       result = render_inline(described_class.new)
 
       expect(result.text).to include("Utilities")
+    end
+  end
+
+  describe "theme" do
+    subject(:result) { with_request_url("/admin/users") { render_inline(described_class.new) } }
+
+    let(:panel) { result.at_css("#cp-sidebar-panel")[:class].split }
+    let(:group_label) { result.at_css("div.mt-6 > p")[:class].split }
+    let(:link) { result.at_css("a[href='/admin/licenses']")[:class].split }
+    let(:close_button) { result.at_css("button[aria-label='Close menu']")[:class].split }
+
+    context "with the default theme" do
+      it "shares the page background" do
+        expect(panel).to include("bg-zinc-50")
+      end
+
+      it "separates the sidebar with the theme's sidebar_border on large screens" do
+        expect(panel).to include("lg:border-r", "border-zinc-200")
+      end
+
+      it "writes the group labels small, in the theme's group label color" do
+        expect(group_label).to include("text-xs", "text-zinc-500")
+      end
+
+      it "keeps the group labels as written" do
+        expect(group_label).not_to include("uppercase")
+      end
+
+      it "sets the links in small medium text" do
+        expect(link).to include("text-sm", "font-medium")
+      end
+
+      it "rounds the links with the theme's control_radius" do
+        expect(link).to include("rounded-md")
+      end
+
+      it "outlines the focused link with the theme's focus_ring" do
+        expect(link).to include("focus-visible:outline-indigo-500")
+      end
+
+      it "styles the close button as a ghost icon button" do
+        expect(close_button).to include("hover:bg-zinc-100", "rounded-md")
+      end
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+          t.sidebar_bg = "bg-yellow-300"
+          t.sidebar_border = "lg:border-r-2 border-black"
+          t.sidebar_group_label = "text-black"
+          t.label_transform = "uppercase tracking-widest"
+          t.control_radius = "rounded-none"
+        end
+      end
+
+      it "uses that theme's sidebar background and edge" do
+        expect(panel).to include("bg-yellow-300", "lg:border-r-2", "border-black")
+      end
+
+      it "drops the default theme's sidebar background and edge" do
+        expect(panel).not_to include("bg-zinc-50", "lg:border-r", "border-zinc-200")
+      end
+
+      it "writes the group labels with that theme's label_transform and color" do
+        expect(group_label).to include("uppercase", "tracking-widest", "text-black")
+      end
+
+      it "rounds the links with that theme's control_radius" do
+        expect(link).to include("rounded-none")
+      end
     end
   end
 end

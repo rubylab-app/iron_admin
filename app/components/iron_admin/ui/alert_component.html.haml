@@ -4,5 +4,5 @@
     .flex-1.text-sm
       = message || content
     - if dismissible
-      %button.shrink-0.opacity-70.hover:opacity-100.transition-opacity{ type: "button", "aria-label": dismiss_label, data: { action: "cp-alert#dismiss" } }
-        = heroicon "x-mark", variant: :mini, options: { class: "h-5 w-5" }
+      %button{ type: "button", class: dismiss_classes, "aria-label": dismiss_label, data: { action: "cp-alert#dismiss" } }
+        = heroicon "x-mark", variant: :mini, options: { class: "h-4 w-4" }

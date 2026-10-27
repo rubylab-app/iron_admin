@@ -1,19 +1,19 @@
 %div{ class: "fixed inset-0 z-50 overflow-y-auto", data: dismissible ? { controller: "cp-modal", action: "keydown.esc@window->cp-modal#close" } : {}, role: "dialog", aria: { modal: true } }
   .flex.min-h-full.items-center.justify-center.p-4
     -# Backdrop
-    .fixed.inset-0.transition-opacity{ class: "bg-gray-500/75", data: dismissible ? { action: "click->cp-modal#close" } : {} }
+    .fixed.inset-0.transition-opacity{ class: theme.overlay_bg, data: dismissible ? { action: "click->cp-modal#close" } : {} }
 
     -# Modal panel
     %div{ class: modal_classes }
       -# Header
       - if title? || dismissible
-        .flex.items-center.justify-between.px-6.py-4.border-b{ class: theme.card_border }
+        .flex.items-center.justify-between.gap-4.px-6.py-4.border-b{ class: theme.card_border }
           - if title?
-            %h3.text-lg.font-semibold{ class: theme.body_text }
+            %h3{ class: "#{theme.card_title} #{theme.heading_font}" }
               = title
           - if dismissible
-            %button.text-gray-400.hover:text-gray-500.transition-colors{ type: "button", "aria-label": close_label, data: { action: "cp-modal#close" } }
-              = heroicon "x-mark", variant: :outline, options: { class: "h-6 w-6" }
+            %button.-mr-2.ml-auto.inline-flex.h-8.w-8.shrink-0.items-center.justify-center{ type: "button", class: "#{theme.control_radius} #{theme.btn_ghost} #{theme.focus_ring}", "aria-label": close_label, data: { action: "cp-modal#close" } }
+              = heroicon "x-mark", variant: :outline, options: { class: "h-5 w-5" }
 
       -# Content
       .px-6.py-4

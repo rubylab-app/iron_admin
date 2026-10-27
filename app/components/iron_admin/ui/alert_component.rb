@@ -2,7 +2,8 @@
 
 module IronAdmin
   module Ui
-    # Renders a styled alert/notification message.
+    # Renders a styled alert/notification message, colored by the theme's
+    # +alert_palette+ entry for its type.
     #
     # @example Success alert
     #   render IronAdmin::Ui::AlertComponent.new(
@@ -30,33 +31,13 @@ module IronAdmin
       # @return [Boolean] Whether alert can be dismissed
       attr_reader :dismissible
 
-      # Type configurations with colors and icons.
+      # Icon of each type. The colors come from the theme's +alert_palette+.
       # @return [Hash{Symbol => Hash}]
       TYPES = {
-        success: {
-          bg: "bg-green-50",
-          border: "border-green-200",
-          text: "text-green-800",
-          icon: "check-circle",
-        },
-        error: {
-          bg: "bg-red-50",
-          border: "border-red-200",
-          text: "text-red-800",
-          icon: "x-circle",
-        },
-        warning: {
-          bg: "bg-yellow-50",
-          border: "border-yellow-200",
-          text: "text-yellow-800",
-          icon: "exclamation-triangle",
-        },
-        info: {
-          bg: "bg-blue-50",
-          border: "border-blue-200",
-          text: "text-blue-800",
-          icon: "information-circle",
-        },
+        success: { icon: "check-circle" },
+        error: { icon: "x-circle" },
+        warning: { icon: "exclamation-triangle" },
+        info: { icon: "information-circle" },
       }.freeze
 
       # Types announced with +role="alert"+; the others use +role="status"+.
@@ -77,13 +58,22 @@ module IronAdmin
       # @api private
       # @return [Hash] Configuration for the current alert type
       def type_config
-        TYPES[@type] || TYPES[:info]
+        TYPES[palette_type]
       end
 
       # @api private
-      # @return [String] CSS classes for alert container
+      # @return [String] CSS classes for alert container: the theme's palette
+      #   entry for the type (else its +:info+ entry), border width and radius
       def alert_classes
-        "#{type_config[:bg]} #{type_config[:border]} #{type_config[:text]} border #{theme.border_radius} p-4"
+        palette = theme.alert_palette.to_h
+        colors = palette[palette_type] || palette[:info]
+        "#{colors} #{theme.border_width} #{theme.border_radius} px-4 py-3"
+      end
+
+      # @api private
+      # @return [String] CSS classes for the dismiss button
+      def dismiss_classes
+        "-m-1 shrink-0 p-1 opacity-70 transition-opacity hover:opacity-100 #{theme.control_radius} #{theme.focus_ring}"
       end
 
       # @api private
@@ -103,6 +93,12 @@ module IronAdmin
       # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
         IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [Symbol] The alert type, or +:info+ for an unknown one
+      def palette_type
+        TYPES.key?(@type) ? @type : :info
       end
 
       # @api private

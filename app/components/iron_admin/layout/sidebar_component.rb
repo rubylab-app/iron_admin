@@ -10,8 +10,12 @@ module IronAdmin
     class SidebarComponent < ViewComponent::Base
       include IronAdmin::ThemeHelper
 
-      # Classes of every sidebar link, current or not.
-      LINK_CLASSES = "relative flex items-center gap-3 px-3 py-2 rounded-lg"
+      # Layout classes of every sidebar link, current or not. Its radius, focus
+      # outline and colors come from the theme.
+      LINK_CLASSES = "relative flex items-center gap-2.5 px-2.5 py-1.5 text-sm font-medium"
+
+      # Classes of the icon of a sidebar link.
+      ICON_CLASSES = "h-4 w-4 shrink-0"
 
       # @param current_user [Object, nil]
       def initialize(current_user: nil)
@@ -48,8 +52,20 @@ module IronAdmin
       # @param extra [String] More classes for the link
       # @return [Hash] +link_to+ options: the link classes, plus +aria-current="page"+ when +active+
       def link_options(active, extra = nil)
-        classes = active ? cp_sidebar_link_active : cp_sidebar_link
-        { class: [LINK_CLASSES, classes, extra].compact_blank.join(" "), aria: { current: ("page" if active) } }
+        classes = [LINK_CLASSES, theme.control_radius, theme.focus_ring, active ? cp_sidebar_link_active : cp_sidebar_link, extra]
+        { class: classes.compact_blank.join(" "), aria: { current: ("page" if active) } }
+      end
+
+      # @api private
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
+      def theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] Classes of the group labels: the theme's label case and color
+      def group_label_classes
+        "#{theme.label_transform} #{theme.sidebar_group_label}".strip
       end
 
       # @api private

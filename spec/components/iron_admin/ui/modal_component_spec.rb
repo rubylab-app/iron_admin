@@ -76,13 +76,58 @@ RSpec.describe IronAdmin::Ui::ModalComponent, type: :component do
       component = described_class.new
       expect(component.modal_classes).to include("w-full")
     end
+
+    context "with the default theme" do
+      subject(:classes) { described_class.new.modal_classes.split }
+
+      it "draws the panel as a theme surface" do
+        expect(classes).to include("bg-white", "border", "border-zinc-200", "rounded-lg")
+      end
+
+      it "lifts the panel with the theme's popover_shadow" do
+        expect(classes).to include("shadow-lg")
+      end
+
+      it "builds no shadow class out of card_shadow" do
+        expect(classes.grep(/\Ashadow-xs-/)).to be_empty
+      end
+    end
+
+    context "with a registered theme active" do
+      subject(:classes) { described_class.new.modal_classes.split }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+          t.popover_shadow = "shadow-[6px_6px_0_0_var(--color-zinc-950)]"
+          t.border_width = "border-2"
+        end
+      end
+
+      it "uses that theme's popover_shadow and border_width" do
+        expect(classes).to include("shadow-[6px_6px_0_0_var(--color-zinc-950)]", "border-2")
+      end
+    end
+  end
+
+  describe "header" do
+    subject(:dialog) { render_inline(component).at_css("[role=dialog]") }
+
+    let(:component) { described_class.new.with_title_content("Delete user").with_content("Body") }
+
+    it "titles the dialog with the theme's card_title" do
+      expect(dialog.at_css("h3")[:class].split).to include("text-sm", "font-semibold", "text-zinc-900")
+    end
+
+    it "styles the close button as a ghost icon button" do
+      expect(dialog.at_css("button")[:class].split).to include("hover:bg-zinc-100", "rounded-md", "focus-visible:outline-indigo-500")
+    end
   end
 
   describe "backdrop" do
     subject(:backdrop) { render_inline(described_class.new.with_content("Body")).at_css("div.fixed.inset-0.transition-opacity") }
 
-    it "uses a translucent background that Tailwind v4 still generates" do
-      expect(backdrop[:class].split).to include("bg-gray-500/75")
+    it "uses the theme's translucent overlay background" do
+      expect(backdrop[:class].split).to include("bg-zinc-900/40")
     end
 
     it "does not use the bg-opacity utility that Tailwind v4 removed" do

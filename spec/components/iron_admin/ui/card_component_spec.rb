@@ -45,6 +45,33 @@ RSpec.describe IronAdmin::Ui::CardComponent, type: :component do
       classes = component.card_classes
       expect(classes).not_to match(/\bshadow\b/)
     end
+
+    context "with the default theme" do
+      subject(:classes) { described_class.new.card_classes.split }
+
+      it "draws the card as a theme surface" do
+        expect(classes).to include("bg-white", "border", "border-zinc-200", "rounded-lg", "shadow-xs")
+      end
+    end
+
+    context "with a registered theme active" do
+      subject(:classes) { described_class.new.card_classes.split }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+          t.border_width = "border-2"
+          t.card_border = "border-black"
+        end
+      end
+
+      it "draws the border with that theme's border_width and card_border" do
+        expect(classes).to include("border-2", "border-black")
+      end
+
+      it "drops the default theme's border width" do
+        expect(classes).not_to include("border")
+      end
+    end
   end
 
   describe "#content_classes" do

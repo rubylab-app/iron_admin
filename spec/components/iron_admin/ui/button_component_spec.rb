@@ -65,17 +65,73 @@ RSpec.describe IronAdmin::Ui::ButtonComponent, type: :component do
   describe "#size_classes" do
     it "returns sm classes" do
       component = described_class.new(text: "Test", size: :sm)
-      expect(component.size_classes).to include("py-1.5")
+      expect(component.size_classes.split).to include("h-8", "px-3")
     end
 
-    it "returns md classes" do
+    it "returns md classes, 36px high" do
       component = described_class.new(text: "Test", size: :md)
-      expect(component.size_classes).to include("py-2")
+      expect(component.size_classes.split).to include("h-9", "px-3.5", "text-sm")
     end
 
     it "returns lg classes" do
       component = described_class.new(text: "Test", size: :lg)
-      expect(component.size_classes).to include("py-2.5")
+      expect(component.size_classes.split).to include("h-10", "px-4")
+    end
+  end
+
+  describe "#button_classes" do
+    subject(:classes) { described_class.new(text: "Test", variant: variant).button_classes.split }
+
+    let(:variant) { :secondary }
+
+    context "with the default theme" do
+      it "rounds the button with the theme's control_radius" do
+        expect(classes).to include("rounded-md")
+      end
+
+      it "outlines a focused button with the theme's focus_ring" do
+        expect(classes).to include("focus-visible:outline-2", "focus-visible:outline-indigo-500")
+      end
+    end
+
+    context "with the primary variant, whose btn_primary carries its own focus outline" do
+      let(:variant) { :primary }
+
+      before do
+        IronAdmin.configuration.theme do |t|
+          t.btn_primary = "bg-black text-white focus-visible:outline-black"
+          t.focus_ring = "focus-visible:outline-indigo-500"
+        end
+      end
+
+      it "keeps btn_primary's focus outline" do
+        expect(classes).to include("focus-visible:outline-black")
+      end
+
+      it "leaves out the focus_ring, which would set the outline color twice" do
+        expect(classes).not_to include("focus-visible:outline-indigo-500")
+      end
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+          t.btn_secondary = "bg-yellow-300 text-black border-2 border-black"
+          t.control_radius = "rounded-none"
+        end
+      end
+
+      it "uses that theme's variant classes" do
+        expect(classes).to include("bg-yellow-300", "border-black")
+      end
+
+      it "rounds the button with that theme's control_radius" do
+        expect(classes).to include("rounded-none")
+      end
+
+      it "drops the default theme's radius" do
+        expect(classes).not_to include("rounded-md")
+      end
     end
   end
 

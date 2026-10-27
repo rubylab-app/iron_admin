@@ -11,6 +11,12 @@ module IronAdmin
     # @example Basic pagination
     #   render IronAdmin::Ui::PaginationComponent.new(pagy: @pagy)
     class PaginationComponent < ViewComponent::Base
+      # Size, shape and type of every page and prev/next link; the theme adds
+      # their border width, radius and colors.
+      # @return [String]
+      ITEM_CLASSES = "inline-flex h-8 min-w-8 items-center justify-center px-2 text-sm font-medium tabular-nums " \
+                     "transition-colors duration-150"
+
       # @return [Pagy] The Pagy pagination object
       attr_reader :pagy_obj
 
@@ -48,13 +54,13 @@ module IronAdmin
 
       # @api private
       # @param active [Boolean] Whether this is the current page
-      # @return [String] CSS classes for page number links
+      # @return [String] CSS classes for page number links: the theme's
+      #   +pagination_active+ for the current page, else a ghost link
       def page_link_classes(active: false)
-        base = "px-3 py-2 text-sm font-medium border transition-colors duration-150"
         if active
-          "#{base} bg-indigo-50 border-indigo-500 text-indigo-600 z-10"
+          "#{item_base} #{theme.pagination_active}"
         else
-          "#{base} #{theme.card_bg} #{theme.card_border} #{theme.body_text} hover:bg-gray-50"
+          "#{item_base} border-transparent #{theme.body_text} #{theme.item_hover} #{theme.focus_ring}"
         end
       end
 
@@ -62,12 +68,23 @@ module IronAdmin
       # @param disabled [Boolean] Whether nav link is disabled
       # @return [String] CSS classes for prev/next navigation links
       def nav_link_classes(disabled: false)
-        base = "relative inline-flex items-center px-3 py-2 text-sm font-medium border transition-colors duration-150"
         if disabled
-          "#{base} #{theme.card_bg} #{theme.card_border} text-gray-300 cursor-not-allowed"
+          "#{item_base} border-transparent #{theme.disabled_text} cursor-not-allowed"
         else
-          "#{base} #{theme.card_bg} #{theme.card_border} #{theme.body_text} hover:bg-gray-50"
+          "#{item_base} border-transparent #{theme.body_text} #{theme.item_hover} #{theme.focus_ring}"
         end
+      end
+
+      # @api private
+      # @return [String] CSS classes for the gap between page numbers
+      def gap_classes
+        "#{item_base} border-transparent #{theme.muted_text} cursor-default"
+      end
+
+      private
+
+      def item_base
+        "#{ITEM_CLASSES} #{theme.border_width} #{theme.control_radius}"
       end
     end
   end

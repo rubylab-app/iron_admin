@@ -1,28 +1,30 @@
 -# locals: (pagy:)
 - if pagy.pages > 1
-  %nav.flex.items-center.justify-between.border-t.border-gray-200.bg-white.px-4.py-3{ class: "sm:px-6", "aria-label": "Pagination" }
+  - link_classes = "relative inline-flex h-8 items-center px-3 text-sm font-medium transition-colors duration-150 #{t.control_radius} #{t.btn_secondary} #{t.focus_ring}"
+  -# A link with no href, marked disabled: its faded text is exempt from WCAG contrast.
+  - disabled_classes = "relative inline-flex h-8 items-center px-3 text-sm font-medium cursor-not-allowed #{t.control_radius} #{t.border_width} #{t.card_border} #{t.card_bg} #{t.disabled_text}"
+  %nav.flex.items-center.justify-between.gap-3.py-1{ "aria-label": "Pagination" }
     .hidden{ class: "sm:block" }
-      %p.text-sm.text-gray-700
+      %p.text-sm{ class: t.muted_text }
         Showing
-        %span.font-medium= pagy.from
+        %span.font-medium.tabular-nums{ class: t.body_text }= pagy.from
         to
-        %span.font-medium= pagy.to
+        %span.font-medium.tabular-nums{ class: t.body_text }= pagy.to
         of
-        %span.font-medium= pagy.count
+        %span.font-medium.tabular-nums{ class: t.body_text }= pagy.count
         results
 
-    .flex.flex-1.justify-between{ class: "sm:justify-end" }
+    .flex.flex-1.justify-between.gap-2{ class: "sm:justify-end" }
       - if pagy.previous
-        = link_to url_for(request.query_parameters.merge(page: pagy.previous)), class: "relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0" do
+        = link_to url_for(request.query_parameters.merge(page: pagy.previous)), class: link_classes do
           Previous
       - else
-        -# A link with no href, marked disabled: its faded text is exempt from WCAG contrast.
-        %span.relative.inline-flex.items-center.rounded-md.bg-white.px-3.py-2.text-sm.font-semibold.text-gray-300.ring-1.ring-inset.ring-gray-300.cursor-not-allowed{ role: "link", "aria-disabled": "true" }
+        %span{ class: disabled_classes, role: "link", "aria-disabled": "true" }
           Previous
 
       - if pagy.next
-        = link_to url_for(request.query_parameters.merge(page: pagy.next)), class: "relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0" do
+        = link_to url_for(request.query_parameters.merge(page: pagy.next)), class: link_classes do
           Next
       - else
-        %span.relative.ml-3.inline-flex.items-center.rounded-md.bg-white.px-3.py-2.text-sm.font-semibold.text-gray-300.ring-1.ring-inset.ring-gray-300.cursor-not-allowed{ role: "link", "aria-disabled": "true" }
+        %span{ class: disabled_classes, role: "link", "aria-disabled": "true" }
           Next
