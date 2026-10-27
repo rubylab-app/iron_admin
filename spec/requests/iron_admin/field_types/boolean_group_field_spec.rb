@@ -15,7 +15,7 @@ RSpec.describe "Boolean group field type", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Read")
       expect(response.body).to include("Write")
-      expect(response.body).to include("bg-indigo-50")
+      expect(response.body).to include("bg-zinc-100 text-zinc-700")
     end
 
     it "handles empty permissions gracefully" do

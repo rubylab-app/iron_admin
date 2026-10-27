@@ -22,8 +22,8 @@ module IronAdmin
       return if value.blank?
 
       lang = field.options[:language].presence || ""
-      content_tag(:pre, class: "overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm") do
-        content_tag(:code, value, class: "text-gray-100 font-mono language-#{lang}")
+      content_tag(:pre, class: "overflow-x-auto p-4 text-sm #{t.border_radius} #{t.code_block}") do
+        content_tag(:code, value, class: "font-mono language-#{lang}")
       end
     end
 
@@ -52,19 +52,12 @@ module IronAdmin
               IronAdmin.configuration.badge_colors[value.to_s] ||
               IronAdmin.configuration.badge_colors[value] ||
               :gray
-      color_classes = badge_color_classes(color)
 
-      content_tag(:span, value.to_s.humanize,
-                  class: "inline-flex px-2 py-1 text-xs font-semibold rounded-full #{color_classes}")
-    end
-
-    def badge_color_classes(color)
-      IronAdmin::Configuration::BADGE_COLOR_CLASSES[color.to_sym] ||
-        IronAdmin::Configuration::BADGE_COLOR_CLASSES[:gray]
+      render(IronAdmin::Ui::BadgeComponent.new(text: value.to_s.humanize, color: color))
     end
 
     def display_password
-      content_tag(:span, "\u2022" * 8, class: "text-gray-400 tracking-wider")
+      content_tag(:span, "\u2022" * 8, class: "tracking-wider #{cp_muted_text}")
     end
 
     def display_file(record, field)
@@ -74,7 +67,7 @@ module IronAdmin
       return unless attachment.attached?
 
       if attachment.image?
-        image_tag main_app.url_for(attachment), class: "h-16 w-16 object-cover rounded"
+        image_tag main_app.url_for(attachment), class: "h-16 w-16 object-cover #{t.control_radius}"
       else
         content_tag(:span, class: "inline-flex items-center gap-1.5") do
           heroicon("paper-clip", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }) +
@@ -93,10 +86,9 @@ module IronAdmin
         safe_join(
           attachments.map do |attachment|
             if attachment.image?
-              image_tag main_app.url_for(attachment), class: "h-12 w-12 object-cover rounded"
+              image_tag main_app.url_for(attachment), class: "h-12 w-12 object-cover #{t.control_radius}"
             else
-              content_tag(:span, attachment.filename.to_s,
-                          class: "inline-flex items-center px-2 py-1 text-xs rounded bg-gray-100 text-gray-700")
+              content_tag(:span, attachment.filename.to_s, class: "inline-flex items-center px-2 py-0.5 text-xs #{chip_classes}")
             end
           end
         )
@@ -134,8 +126,7 @@ module IronAdmin
       content_tag(:div, class: "flex flex-wrap gap-1") do
         safe_join(
           tags.map do |tag|
-            content_tag(:span, tag,
-                        class: "inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700")
+            content_tag(:span, tag, class: "inline-flex items-center px-2 py-0.5 text-xs #{chip_classes}")
           end
         )
       end
@@ -147,7 +138,7 @@ module IronAdmin
 
       content_tag(:span, class: "inline-flex items-center gap-1") do
         link_to(value, value, target: "_blank", rel: "noopener noreferrer", class: cp_link) +
-          heroicon("arrow-top-right-on-square", variant: :mini, options: { class: "h-3.5 w-3.5 #{cp_muted_text}" })
+          heroicon("arrow-top-right-on-square", variant: :mini, options: { class: "h-3.5 w-3.5 #{t.icon_muted}" })
       end
     end
 
@@ -163,7 +154,7 @@ module IronAdmin
       return if value.blank?
 
       content_tag(:span, class: "inline-flex items-center gap-2") do
-        content_tag(:span, "", class: "inline-block h-5 w-5 rounded border border-gray-300",
+        content_tag(:span, "", class: "inline-block h-5 w-5 #{t.control_radius} #{t.border_width} #{t.card_border}",
                                style: "background-color: #{ERB::Util.html_escape(value)}") +
           content_tag(:code, value, class: "text-xs #{cp_muted_text}")
       end
@@ -181,9 +172,9 @@ module IronAdmin
 
     def display_boolean(record, field)
       if record.public_send(field.name)
-        boolean_icon("check-circle", "text-green-500", I18n.t("iron_admin.fields.boolean_true"))
+        boolean_icon("check-circle", t.success_text, I18n.t("iron_admin.fields.boolean_true"))
       else
-        boolean_icon("x-circle", "text-red-400", I18n.t("iron_admin.fields.boolean_false"))
+        boolean_icon("x-circle", cp_muted_text, I18n.t("iron_admin.fields.boolean_false"))
       end
     end
 
@@ -261,7 +252,7 @@ module IronAdmin
       pairs = parse_hash_value(value)
       return if pairs.empty?
 
-      content_tag(:dl, class: "divide-y divide-gray-100 rounded border border-gray-200 text-sm") do
+      content_tag(:dl, class: "divide-y text-sm #{t.table_border} #{t.control_radius} #{t.border_width} #{t.card_border}") do
         safe_join(pairs.map { |k, v| key_value_pair_row(k, v) })
       end
     end
@@ -281,11 +272,12 @@ module IronAdmin
     end
 
     def boolean_group_pill(value)
-      content_tag(
-        :span,
-        value.to_s.humanize,
-        class: "inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-700 mr-1 mb-1"
-      )
+      content_tag(:span, value.to_s.humanize, class: "inline-block px-2 py-0.5 mr-1 mb-1 text-xs #{chip_classes}")
+    end
+
+    # Tags, file names and other values shown as chips.
+    def chip_classes
+      "#{t.badge_shape} #{t.chip}"
     end
 
     def display_external_image(record, field)
@@ -297,7 +289,7 @@ module IronAdmin
       tag.img(
         src: url,
         alt: "",
-        class: "#{height} w-auto object-cover rounded border border-gray-200",
+        class: "#{height} w-auto object-cover #{t.control_radius} #{t.border_width} #{t.card_border}",
         loading: "lazy",
         onerror: "this.style.display='none'"
       )
@@ -308,10 +300,9 @@ module IronAdmin
       return if value.nil?
 
       pct = calculate_progress_percentage(value, field)
-      color = field.options[:color] || "bg-indigo-600"
 
       content_tag(:div, class: "flex items-center gap-2") do
-        progress_bar_track(pct, color) +
+        progress_bar_track(pct, field.options[:color]) +
           content_tag(:span, "#{value.to_i}%", class: "text-xs tabular-nums #{cp_muted_text}")
       end
     end
@@ -409,9 +400,12 @@ module IronAdmin
       ((value.to_f - min) / (max - min) * 100.0).clamp(0.0, 100.0)
     end
 
+    # A +color+ class fills the bar; without one, the theme's chart border color does.
     def progress_bar_track(pct, color)
-      content_tag(:div, class: "flex-1 h-2 rounded-full bg-gray-200 overflow-hidden") do
-        content_tag(:div, "", class: "h-2 rounded-full #{color}", style: "width: #{pct.round(1)}%")
+      width = "width: #{pct.round(1)}%"
+      style = color ? width : "#{width}; background-color: #{t.chart_border_color}"
+      content_tag(:div, class: "flex-1 h-2 rounded-full overflow-hidden #{t.progress_track}") do
+        content_tag(:div, "", class: "h-2 rounded-full #{color}".strip, style: style)
       end
     end
   end
