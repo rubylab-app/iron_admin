@@ -311,6 +311,26 @@ module IronAdmin
 
       # @!endgroup
 
+      # --- data additions ---
+
+      # @!group Data Styles
+
+      # @return [String] Shadow of floating panels, such as the filter panel of the index page
+      def popover_shadow
+        defined?(@popover_shadow) ? @popover_shadow : "shadow-lg"
+      end
+
+      # @return [String] Edge shadow of the sticky actions column of index tables
+      def table_sticky_shadow
+        defined?(@table_sticky_shadow) ? @table_sticky_shadow : "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]"
+      end
+
+      attr_writer :popover_shadow, :table_sticky_shadow
+
+      # @!endgroup
+
+      # --- end of data additions ---
+
       # Creates a Theme with the values of the Neutral look.
       #
       # @param name [Symbol, String] Name the theme is registered under
