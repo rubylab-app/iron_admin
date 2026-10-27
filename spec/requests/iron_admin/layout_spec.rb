@@ -156,6 +156,69 @@ RSpec.describe "Engine layout", type: :request do
     end
   end
 
+  # The import preview path has no GET route: returning to it after the switch would be a 404.
+  describe "theme switcher on a page answering a POST" do
+    subject(:return_to) do
+      post iron_admin.resource_import_preview_path("switcher_import_users"),
+           params: { file: Rack::Test::UploadedFile.new(StringIO.new("Name\nJane\n"), "text/csv", original_filename: "users.csv") },
+           headers: referer ? { "Referer" => referer } : {}
+      response.parsed_body.at_css("header details form input[name='return_to']")
+    end
+
+    let(:import_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "SwitcherImportUserResource"
+        end
+
+        def self.resource_name
+          "switcher_import_users"
+        end
+
+        imports :csv
+      end
+    end
+
+    before do
+      IronAdmin.configuration.register_theme(:midnight)
+      IronAdmin::ResourceRegistry.register(import_resource)
+    end
+
+    context "when the browser came from a page of this site" do
+      let(:referer) { "http://www.example.com/admin/switcher_import_users/import?step=1" }
+
+      it "returns to that page" do
+        expect(return_to[:value]).to eq("/admin/switcher_import_users/import?step=1")
+      end
+    end
+
+    context "without a Referer" do
+      let(:referer) { nil }
+
+      it "sends no return_to, so the switch leads to the admin root" do
+        expect(return_to).to be_nil
+      end
+    end
+
+    context "with a Referer from another host" do
+      let(:referer) { "http://evil.example/admin/switcher_import_users/import" }
+
+      it "sends no return_to" do
+        expect(return_to).to be_nil
+      end
+    end
+
+    context "with a Referer on this host that is not a web URL" do
+      let(:referer) { "ftp://www.example.com/admin/switcher_import_users/import" }
+
+      it "sends no return_to" do
+        expect(return_to).to be_nil
+      end
+    end
+  end
+
   describe "favicon" do
     subject(:icon_links) do
       get iron_admin.resources_path("users"), as: :html

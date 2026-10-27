@@ -321,6 +321,37 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         expect(bar[:style]).not_to include("background-color")
       end
 
+      it "rounds the track with the theme's control_radius, like the dashboard progress bar" do
+        track = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css("div > div")
+
+        expect(track[:class].split).to include(IronAdmin.current_theme.control_radius)
+      end
+
+      it "rounds the bar with the theme's control_radius" do
+        bar = Nokogiri::HTML.fragment(helper.display_field_value(widget, field)).at_css(".bg-green-500")
+
+        expect(bar[:class].split).to include(IronAdmin.current_theme.control_radius)
+      end
+
+      context "with a registered theme with square controls active" do
+        subject(:radii) do
+          fragment = Nokogiri::HTML.fragment(helper.display_field_value(widget, field))
+          [fragment.at_css("div > div"), fragment.at_css(".bg-green-500")].map { |node| node[:class].split }
+        end
+
+        before do
+          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) { |t| t.control_radius = "rounded-none" }
+        end
+
+        it "draws a square track and bar" do
+          expect(radii).to all(include("rounded-none"))
+        end
+
+        it "does not round them into a pill" do
+          expect(radii.flatten).not_to include("rounded-full")
+        end
+      end
+
       context "without a color" do
         subject(:bar) { Nokogiri::HTML.fragment(helper.display_field_value(widget, default_field)).at_css("div > div > div") }
 

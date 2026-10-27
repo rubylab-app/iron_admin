@@ -67,7 +67,7 @@ RSpec.describe "Theme switch", type: :request do
       end
 
       it "explains the theme is not available" do
-        expect(flash[:alert]).to eq(I18n.t("iron_admin.theme_switcher.unknown"))
+        expect(flash[:alert]).to eq("That theme is not available.")
       end
 
       it "redirects back with 303 See Other" do

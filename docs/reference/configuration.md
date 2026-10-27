@@ -37,7 +37,7 @@ IronAdmin.configure do |config|
 
   # --- Themes ---
   config.theme do |t|            # the default theme (Neutral unless default_theme names another)
-    t.link = "text-indigo-600 hover:text-indigo-500"
+    t.link = "text-indigo-600 hover:text-indigo-700"
   end
   config.register_theme(:midnight, label: "Midnight") do |t|
     t.color_scheme = "dark"

@@ -135,6 +135,11 @@ RSpec.describe IronAdmin::Ui::ScopesComponent, type: :component do
     it "marks the active tab as the current page" do
       expect(tabs.select { |tab| tab["aria-current"] == "page" }.map(&:text)).to eq(["Active"])
     end
+
+    # The tabs do not wrap their names, so many scopes scroll inside the row, like the index tabs.
+    it "scrolls the row of tabs sideways instead of the page" do
+      expect(tabs.first.parent[:class].split).to include("overflow-x-auto")
+    end
   end
 
   describe "#render?" do

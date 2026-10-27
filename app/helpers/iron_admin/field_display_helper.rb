@@ -400,12 +400,13 @@ module IronAdmin
       ((value.to_f - min) / (max - min) * 100.0).clamp(0.0, 100.0)
     end
 
-    # A +color+ class fills the bar; without one, the theme's chart border color does.
+    # A +color+ class fills the bar; without one, the theme's chart border color does. Both are
+    # rounded with control_radius, like the dashboard's ProgressComponent.
     def progress_bar_track(pct, color)
       width = "width: #{pct.round(1)}%"
       style = color ? width : "#{width}; background-color: #{t.chart_border_color}"
-      content_tag(:div, class: "flex-1 h-2 rounded-full overflow-hidden #{t.progress_track}") do
-        content_tag(:div, "", class: "h-2 rounded-full #{color}".strip, style: style)
+      content_tag(:div, class: "flex-1 h-2 overflow-hidden #{t.control_radius} #{t.progress_track}") do
+        content_tag(:div, "", class: "h-2 #{t.control_radius} #{color}".strip, style: style)
       end
     end
   end

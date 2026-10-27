@@ -146,8 +146,9 @@ RSpec.describe IronAdmin::Dashboards::QuickLinksComponent::LinkComponent, type: 
     let(:icon) { link.css("svg").first }
     let(:chevron) { link.css("svg").last }
 
-    it "highlights the link on hover with the theme's item_hover" do
-      expect(link[:class].split).to include(*theme.item_hover.split)
+    # item_hover (zinc-100 in Neutral) would put the muted description below AA contrast.
+    it "highlights the link on hover with the theme's table_row_hover, like a table row" do
+      expect(link[:class].split).to include(*theme.table_row_hover.split)
     end
 
     it "shows the theme's focus ring on the link" do
@@ -165,12 +166,12 @@ RSpec.describe IronAdmin::Dashboards::QuickLinksComponent::LinkComponent, type: 
     context "with a registered theme active for the request" do
       before do
         IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
-          t.item_hover = "hover:bg-slate-800"
+          t.table_row_hover = "hover:bg-slate-800"
           t.metric_icon = "bg-sky-500/10 text-sky-300"
         end
       end
 
-      it "highlights the link on hover with that theme's item_hover" do
+      it "highlights the link on hover with that theme's table_row_hover" do
         expect(link[:class].split).to include("hover:bg-slate-800")
       end
 

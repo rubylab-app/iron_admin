@@ -3,7 +3,8 @@
 module IronAdmin
   module Layout
     # Renders the top navigation bar: the global search box (focused by ⌘K or
-    # Ctrl+K through the +cp-search-shortcut+ Stimulus controller), the theme
+    # Ctrl+K through the +cp-search-shortcut+ Stimulus controller, unless the
+    # focused field already handled the shortcut, as Trix does), the theme
     # switcher and the current user's name.
     class NavbarComponent < ViewComponent::Base
       # @param current_user [Object, nil] Current user

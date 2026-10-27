@@ -6,19 +6,25 @@ require "rails_helper"
 # IronAdmin::Configuration::Theme properties.
 module ThemeHardcodedColors
   # Utilities whose value is a color.
-  UTILITY = "(?:bg|text|border(?:-[xytrblse])?|divide|(?:inset-)?ring(?:-offset)?|outline|placeholder|fill|stroke|" \
-            "from|via|to|(?:inset-|drop-)?shadow|decoration|accent|caret)"
-  PALETTE = "(?:(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|" \
-            "indigo|violet|purple|fuchsia|pink|rose)-(?:50|[1-9]00|950)|white|black)"
+  UTILITY = "(?:bg|text(?:-shadow)?|border(?:-[xytrblse])?|divide|(?:inset-)?ring(?:-offset)?|outline|placeholder|" \
+            "fill|stroke|from|via|to|(?:inset-|drop-)?shadow|decoration|accent|caret)"
+  # Every palette of Tailwind v4.3 (mauve, olive, mist and taupe came in v4.2).
+  PALETTE = "(?:(?:slate|gray|zinc|neutral|stone|mauve|olive|mist|taupe|red|orange|amber|yellow|lime|green|emerald|" \
+            "teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|[1-9]00|950)|white|black)"
   # "#" is escaped for the /x patterns below, where it would start a comment.
   COLOR_LITERAL = "(?:\\#\\h{3,8}(?!\\h)|(?<![a-z])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\\()"
-  # A palette color with an optional opacity, or an arbitrary value holding a color literal.
-  VALUE = "(?:#{PALETTE}(?:/(?:\\d+|\\[[^\\]\\s]+\\]|\\([^)\\s]+\\)))?|\\[[^\\]\\s]*?#{COLOR_LITERAL}[^\\]\\s]*\\])".freeze
-  VARIANT = "(?:[\\w-]*\\[[^\\]\\s]*\\]|[\\w-]+(?:/[\\w-]+)?):"
-  COLOR_CLASS = /(?<![\w-])(?:#{VARIANT})*!?#{UTILITY}-#{VALUE}!?(?![\w-])/
-
   NAMED_COLOR = "\\b(?:white|black|red|green|blue|yellow|orange|purple|pink|gray|grey|silver|navy|maroon|olive|" \
                 "teal|aqua|fuchsia|lime)\\b"
+  # A palette color with an optional opacity, an arbitrary value holding a color literal, or a
+  # named CSS color in brackets (bg-[red], border-[color:black]).
+  VALUE = "(?:#{PALETTE}(?:/(?:\\d+|\\[[^\\]\\s]+\\]|\\([^)\\s]+\\)))?|\\[[^\\]\\s]*?#{COLOR_LITERAL}[^\\]\\s]*\\]|" \
+          "\\[(?:color:)?#{NAMED_COLOR}\\])".freeze
+  VARIANT = "(?:[\\w-]*\\[[^\\]\\s]*\\]|[\\w-]+(?:/[\\w-]+)?):"
+  COLOR_CLASS = /(?<![\w-])(?:#{VARIANT})*!?#{UTILITY}-#{VALUE}!?(?![\w-])/
+  # An arbitrary property that sets a color, such as [color:#fff] or hover:[background-color:red].
+  ARBITRARY_PROPERTY = /(?<![\w-])(?:#{VARIANT})*\[(?:color|background(?:-color)?|border(?:-[a-z]+)?-color|
+                        outline-color|fill|stroke):[^\]\s]*?(?:#{COLOR_LITERAL}|#{NAMED_COLOR})[^\]\s]*\]/x
+
   STYLE_VALUE = "(?:#{COLOR_LITERAL}|#{NAMED_COLOR})".freeze
   # A CSS declaration of a color property in an inline style.
   STYLE_COLOR = /(?<![\w-])(?:color|background(?:-color)?|border(?:-[a-z]+)*|outline(?:-color)?|fill|stroke|
@@ -33,7 +39,7 @@ module ThemeHardcodedColors
 
   # @return [Array<String>] "path:line: class" for every hard-coded color in the line
   def offenses(path, line, number)
-    found = line.scan(COLOR_CLASS) + line.scan(SVG_COLOR)
+    found = line.scan(COLOR_CLASS) + line.scan(ARBITRARY_PROPERTY) + line.scan(SVG_COLOR)
     found += line.scan(STYLE_COLOR) if line.match?(/\bstyle\b/)
     found += line.scan(SCRIPT_STYLE_COLOR) if path.end_with?(".js")
     found.map { |offense| "#{path}:#{number}: #{offense.strip}" }
@@ -75,6 +81,11 @@ RSpec.describe ThemeHardcodedColors do
       %(%span{ style: "background-color: rgb(0, 0, 0); width: 2px" }) => ["background-color: rgb("],
       %(%div{ style: "border: 1px solid red" }) => ["border: 1px solid red"],
       %("viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-width='1.5'") => ["stroke='%236b7280"],
+      %(class: "bg-mauve-50 text-olive-700 ring-taupe-300") => %w[bg-mauve-50 text-olive-700 ring-taupe-300],
+      %(class: "border-mist-200") => ["border-mist-200"],
+      %(class: "bg-[red] text-[white] border-[color:black]") => ["bg-[red]", "text-[white]", "border-[color:black]"],
+      %(class: "text-shadow-red-500 text-shadow-lg") => ["text-shadow-red-500"],
+      %(class: "[color:#fff] hover:[background-color:rgb(0,0,0)]") => ["[color:#fff]", "hover:[background-color:rgb(0,0,0)]"],
     }.each do |source, classes|
       context "with #{source}" do
         let(:line) { source }
@@ -95,6 +106,8 @@ RSpec.describe ThemeHardcodedColors do
       %(color: "red" # a Ruby keyword, not a style),
       %("%3cpath fill='currentColor' stroke='none'"),
       %(# Renders the to-do list and the bg-image),
+      %(class: "text-shadow-lg drop-shadow-lg bg-[length:200%] bg-[redirect] text-[red-ish]"),
+      %(class: "[mask-type:luminance] [color-scheme:dark] [--my-color:red] [color:inherit] border-[color:var(--x)]"),
     ].each do |source|
       context "with #{source}" do
         let(:line) { source }

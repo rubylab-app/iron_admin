@@ -238,8 +238,9 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
         expect(item.at_css("li > a[href='/admin/users/1']")&.text&.squish).to eq("User signed up Yesterday")
       end
 
-      it "highlights the link on hover with the theme's item_hover" do
-        expect(item.at_css("a")[:class].split).to include(*IronAdmin.current_theme.item_hover.split)
+      # item_hover (zinc-100 in Neutral) would put the muted time below AA contrast.
+      it "highlights the link on hover with the theme's table_row_hover, like a table row" do
+        expect(item.at_css("a")[:class].split).to include(*IronAdmin.current_theme.table_row_hover.split)
       end
 
       it "shows the theme's focus ring on the link" do
@@ -259,7 +260,7 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
       end
 
       it "adds no hover to a row that leads nowhere" do
-        expect(item.at_css("li > div")[:class].split).not_to include(*IronAdmin.current_theme.item_hover.split)
+        expect(item.at_css("li > div")[:class].split).not_to include(*IronAdmin.current_theme.table_row_hover.split)
       end
     end
   end

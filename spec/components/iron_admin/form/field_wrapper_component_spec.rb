@@ -133,5 +133,17 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
         expect(result.at_css("svg")[:class].split).to include(theme.error_text)
       end
     end
+
+    context "with a registered theme active" do
+      subject(:mark) { render_inline(described_class.new(name: :email, required: true)) { "input" }.at_css("label span") }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.error_text = "text-rose-400" }
+      end
+
+      it "writes the required mark in that theme's error color" do
+        expect(mark[:class].split).to include("text-rose-400")
+      end
+    end
   end
 end

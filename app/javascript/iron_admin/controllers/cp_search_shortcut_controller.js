@@ -1,12 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Focuses and selects the navbar search box on ⌘K (Apple platforms) or Ctrl+K
-// (elsewhere), wherever the focus is, but never while a modal dialog is open or
-// the search box is inert (behind the open sidebar drawer). On connect it shows
-// the platform's shortcut in the hint, which stays hidden without JavaScript.
+// Focuses and selects the navbar search box on ⌘K (Apple) or Ctrl+K, wherever the
+// focus is, unless the focused field already handled it (Trix opens its link
+// dialog), a modal is open or the box is inert (behind the sidebar drawer).
 export default class extends Controller {
   static targets = ["input", "hint"]
 
+  // Names the platform's shortcut in the hint, which stays hidden without JavaScript.
   connect() {
     const platform = navigator.userAgentData?.platform || navigator.platform || ""
     this.apple = /mac|iphone|ipad|ipod/i.test(platform)
@@ -18,7 +18,7 @@ export default class extends Controller {
   }
 
   focus(event) {
-    if (!this.isShortcut(event) || !this.hasInputTarget || this.isBlocked) return
+    if (event.defaultPrevented || !this.isShortcut(event) || !this.hasInputTarget || this.isBlocked) return
 
     event.preventDefault()
     this.inputTarget.focus()

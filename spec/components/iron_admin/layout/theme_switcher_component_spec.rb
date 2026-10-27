@@ -39,6 +39,10 @@ RSpec.describe IronAdmin::Layout::ThemeSwitcherComponent, type: :component do
     expect(form["data-turbo"]).to eq("false")
   end
 
+  it "names the list of themes" do
+    expect(form["aria-label"]).to eq("Themes")
+  end
+
   it "returns to the current page" do
     expect(form.at_css("input[type='hidden'][name='return_to']")[:value]).to eq("/admin/users?page=2")
   end

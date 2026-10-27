@@ -1,4 +1,5 @@
-= link_to href, class: "flex items-center gap-3 px-5 py-3 transition-colors #{theme.item_hover} #{theme.focus_ring}" do
+-# table_row_hover, not item_hover: the muted description needs AA contrast on the hover background.
+= link_to href, class: "flex items-center gap-3 px-5 py-3 transition-colors #{theme.table_row_hover} #{theme.focus_ring}" do
   - if icon
     .flex.h-8.w-8.shrink-0.items-center.justify-center{ class: icon_tile_classes }
       = heroicon icon, variant: :outline, options: { class: "h-4 w-4" }

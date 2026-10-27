@@ -6,11 +6,12 @@
     .relative
       .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3
         = helpers.heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{theme.icon_muted}" }
-      %input.peer.block.h-9.w-full.appearance-none.pl-9.pr-3.text-sm.outline-hidden.transition.duration-150.ease-in-out{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search…", class: "sm:pr-16 #{theme.border_width} #{theme.control_radius} #{theme.input_border} #{theme.navbar_search_bg} #{theme.body_text} #{theme.placeholder_text} #{theme.input_focus} #{theme.navbar_search_focus_bg} #{theme.control_shadow}", data: { cp_search_shortcut_target: "input" } }
+      %input{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search…", class: "peer sm:pr-16 #{helpers.cp_navbar_search_class}", data: { cp_search_shortcut_target: "input" } }
       -# Hidden until the controller connects: without it there is no shortcut to show.
       %kbd{ hidden: true, "aria-hidden": "true", class: "pointer-events-none absolute top-1/2 right-2 hidden h-5 -translate-y-1/2 items-center px-1.5 text-[11px] leading-none font-medium [font-family:inherit] transition-opacity duration-150 peer-focus:opacity-0 sm:inline-flex #{theme.border_width} #{theme.control_radius} #{theme.kbd}", data: { cp_search_shortcut_target: "hint" } } ⌘K
   .ml-auto.flex.shrink-0.items-center.gap-3
     - if theme_switcher
       = render theme_switcher
     - if @current_user
-      %span.text-sm.font-medium{ class: theme.navbar_text }= @current_user.try(:name) || @current_user.try(:email)
+      -# Hidden on phones and truncated from sm: the 56px bar cannot wrap a long name.
+      %span.hidden.max-w-64.truncate.text-sm.font-medium{ class: "sm:block #{theme.navbar_text}" }= @current_user.try(:name) || @current_user.try(:email)

@@ -128,11 +128,11 @@
       - if has_bulk_actions
         - iron_admin_hidden_params(iron_admin_index_state).each do |name, value|
           = hidden_field_tag name, value, id: nil
-        .hidden.items-center.gap-3.mb-4.px-4.py-2{ data: { cp_bulk_select_target: "bar" }, class: styles.panel(t) }
+        .hidden.flex-wrap.items-center.gap-3.mb-4.px-4.py-2{ data: { cp_bulk_select_target: "bar" }, class: styles.panel(t) }
           %span.text-sm.font-medium{ class: t.muted_text }
             %span.tabular-nums{ data: { cp_bulk_select_target: "count" } } 0
             = I18n.t("iron_admin.resources.index.selected_label", default: "selected")
-          .flex.items-center.gap-2
+          .flex.flex-wrap.items-center.gap-2
             - @resource_class.defined_bulk_actions.each do |action|
               %button{ type: "submit", class: styles.secondary_button(t),
                 formaction: resource_bulk_action_path(@resource_class.resource_name, action[:name]) }

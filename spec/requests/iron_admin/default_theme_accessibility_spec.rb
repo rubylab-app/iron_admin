@@ -119,6 +119,24 @@ RSpec.describe "Default theme accessibility", type: :request do
     end
   end
 
+  # An unchecked box shows only its border, which needs 3:1 on the white card (WCAG 1.4.11).
+  describe "unchecked checkboxes" do
+    let(:boxes) { document.css("table input[type=checkbox]") }
+
+    before do
+      create(:license)
+      get iron_admin.resources_path("licenses"), as: :html
+    end
+
+    it "outlines the bulk selection boxes in zinc-500, which keeps 4.8:1 on white" do
+      expect(boxes.map { |box| box[:class].split }).to all(include("border-zinc-500"))
+    end
+
+    it "renders the bulk selection boxes" do
+      expect(boxes.size).to eq(2)
+    end
+  end
+
   describe "pagination" do
     let(:disabled_links) { document.css("nav[aria-label='Pagination'] .cursor-not-allowed") }
 

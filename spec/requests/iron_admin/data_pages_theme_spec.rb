@@ -75,6 +75,15 @@ RSpec.describe "Theme of the data pages", type: :request do
       it "takes every bulk selection checkbox from the theme's checkbox classes" do
         expect(document.css("table input[type=checkbox]").map { |box| classes_of(box) }.uniq.size).to eq(1)
       end
+
+      # Buttons do not shrink, so on a phone the bar wraps them instead of overflowing the page.
+      it "wraps the bulk action bar" do
+        expect(classes_of(document.at_css("[data-cp-bulk-select-target=bar]"))).to include("flex-wrap")
+      end
+
+      it "wraps the row of bulk action buttons" do
+        expect(classes_of(document.at_css("[data-cp-bulk-select-target=bar] > div"))).to include("flex-wrap")
+      end
     end
 
     context "with a registered theme active" do

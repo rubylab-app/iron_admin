@@ -92,6 +92,10 @@ RSpec.describe IronAdmin::Ui::ButtonComponent, type: :component do
       it "outlines a focused button with the theme's focus_ring" do
         expect(classes).to include("focus-visible:outline-2", "focus-visible:outline-indigo-500")
       end
+
+      it "shows the pointer cursor, which Tailwind v4's preflight no longer gives buttons" do
+        expect(classes).to include("cursor-pointer")
+      end
     end
 
     context "with the theme's control_shadow" do

@@ -198,6 +198,19 @@ RSpec.describe "Nested Forms", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Licenses")
     end
+
+    context "with a registered theme picked by the theme cookie" do
+      before do
+        IronAdmin.configuration.register_theme(:midnight) { |t| t.surface_muted = "bg-zinc-900" }
+        cookies["iron_admin_theme"] = "midnight"
+        get iron_admin.edit_resource_path("nested_users", user), as: :html
+      end
+
+      it "draws each nested row on that theme's muted surface" do
+        row = response.parsed_body.at_css("[data-cp-nested-form-target='rowsContainer'] [data-cp-nested-form-target='row']")
+        expect(row[:class].split).to include("bg-zinc-900")
+      end
+    end
   end
 
   describe "GET edit with declared nested fields" do

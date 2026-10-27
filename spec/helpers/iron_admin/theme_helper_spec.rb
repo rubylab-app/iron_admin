@@ -102,6 +102,10 @@ RSpec.describe IronAdmin::ThemeHelper, type: :helper do
     it "leaves out card_bg, which navbar_search_bg replaces" do
       expect(classes).not_to include(theme.card_bg)
     end
+
+    it "casts the theme's control shadow, like every input" do
+      expect(classes).to include(theme.control_shadow)
+    end
   end
 
   describe "#cp_badge_count" do

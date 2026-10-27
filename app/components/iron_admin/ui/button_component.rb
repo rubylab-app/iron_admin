@@ -113,7 +113,7 @@ module IronAdmin
       # @return [String] Base CSS classes for all button variants
       def base_classes
         "inline-flex shrink-0 items-center justify-center gap-2 font-medium whitespace-nowrap transition-colors " \
-          "duration-150 disabled:opacity-50 disabled:cursor-not-allowed #{IronAdmin.current_theme.control_radius}"
+          "duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed #{IronAdmin.current_theme.control_radius}"
       end
 
       # @api private

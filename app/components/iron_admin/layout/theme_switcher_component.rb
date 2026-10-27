@@ -48,6 +48,27 @@ module IronAdmin
       def menu_label
         I18n.t("iron_admin.theme_switcher.menu_label")
       end
+
+      # @api private
+      # @return [String, nil] Path the switch returns to: the current path on a GET page; on a page
+      #   answering a POST, which may have no GET route (an import preview), the same-site
+      #   Referer's path, else nil (the admin root)
+      def return_path
+        return @return_path if defined?(@return_path)
+
+        @return_path = request.get? || request.head? ? request.fullpath : referer_path
+      end
+
+      private
+
+      def referer_path
+        referer = URI.parse(request.referer.to_s)
+        return unless referer.is_a?(URI::HTTP) && referer.host == request.host && referer.port == request.port
+
+        referer.request_uri
+      rescue URI::InvalidURIError
+        nil
+      end
     end
   end
 end

@@ -15,7 +15,14 @@ RSpec.describe "Progress bar field type", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("75%")
       expect(response.body).to include("bg-green-500")
-      expect(response.body).to include("rounded-full")
+    end
+
+    it "rounds the bar with the theme's control_radius" do
+      widget = create(:widget, completion: 75)
+      get iron_admin.resource_path("widgets", widget), as: :html
+
+      bar = response.parsed_body.at_css(".bg-green-500")
+      expect(bar[:class].split).to include(IronAdmin.current_theme.control_radius)
     end
 
     it "handles zero completion" do

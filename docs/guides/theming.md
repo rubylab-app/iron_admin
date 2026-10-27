@@ -39,7 +39,7 @@ Neutral is a minimal light look in the style of current developer tools:
   currency columns,
 - tinted badges with a colored dot,
 - 36px buttons and inputs, and a 56px navbar whose search box takes the focus on ⌘K (Ctrl K on
-  platforms other than Apple's).
+  platforms other than Apple's), except in a rich text field, where the shortcut adds a link.
 
 Neutral's text colors meet WCAG AA contrast on the backgrounds they are drawn on.
 
@@ -108,7 +108,7 @@ Templates of the engine, and views you override in `app/views/iron_admin/`, can 
 helpers return ready-made class strings:
 
 ```ruby
-t.link            # => "text-indigo-600 hover:text-indigo-500"
+t.link            # => "text-indigo-600 hover:text-indigo-700"
 cp_btn_primary    # => "inline-flex h-9 shrink-0 items-center … bg-zinc-900 text-white hover:bg-zinc-700 …"
 cp_input_class    # => "block w-full h-9 px-3 text-sm … border-zinc-200 hover:border-zinc-300 …"
 cp_input_class(error: true) # input_error replaces input_border and input_focus
@@ -149,7 +149,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `btn_secondary` | `bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300` | Secondary buttons, such as member and bulk actions and the Filters button: colors, border (width included) and hover |
 | `btn_danger` | `bg-red-600 text-white hover:bg-red-700` | Destructive buttons, such as Delete |
 | `btn_ghost` | `bg-transparent text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900` | Ghost and icon buttons: the menu and close buttons, the theme switcher, modal close buttons. They get no `control_shadow` |
-| `link` | `text-indigo-600 hover:text-indigo-500` | Links in tables and text, such as an index row's record link and "View all" |
+| `link` | `text-indigo-600 hover:text-indigo-700` | Links in tables and text, such as an index row's record link and "View all" |
 | `link_muted` | `text-zinc-500 hover:text-zinc-900` | Secondary links, such as breadcrumbs and the filter panel's Clear link |
 
 ### Forms and controls
@@ -161,8 +161,8 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `input_focus` | `focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15` | Focus state of those controls: border color and ring |
 | `input_error` | `border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20` | Used **instead of** `input_border` and `input_focus` on a control whose value failed validation, so include the focus ring |
 | `placeholder_text` | `placeholder:text-zinc-500` | Placeholder color, with the `placeholder:` variant |
-| `checkbox_checked` | `checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15` | Checked checkboxes and radio buttons: border and background color (the check mark and the dot are white), and their focus ring |
-| `checkbox_border` | `border-zinc-300` | Border color of unchecked checkboxes and radio buttons. They don't use `input_border`, whose hover color would cover the checked border |
+| `checkbox_checked` | `checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15` | Checked checkboxes and radio buttons: border and background color, and their focus ring. The check mark and the dot are always white, in light and dark themes, so pick a checked background with at least 3:1 contrast against white (not zinc-50, 100 or 200 in a dark theme) |
+| `checkbox_border` | `border-zinc-500` | Border color of unchecked checkboxes and radio buttons. It is all that shows an unchecked control, so it keeps 3:1 contrast against `card_bg` (WCAG 1.4.11): zinc-500 is 4.8:1 on white, zinc-300 and zinc-400 are below 3:1. They don't use `input_border`, whose hover color would cover the checked border |
 | `checkbox_radius` | `rounded-sm` | Radius of checkboxes. Radio buttons are always round |
 | `control_radius` | `rounded-md` | Radius of buttons, inputs, selects, dropdown and switcher items, sidebar links, pagination links, icon tiles and tooltips |
 | `control_shadow` | `shadow-xs` | Shadow of inputs, selects, textareas, checkboxes, radio buttons and every button except ghost ones. Empty = none |
@@ -209,7 +209,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `table_cell_padding` | `px-4 py-2.5` | Padding of header and body cells, which sets how dense tables are |
 | `table_frame` | `""` | Extra classes for the panel a table scrolls in, such as a ring. Empty = none |
 | `table_sticky_shadow` | `shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]` | Edge shadow of the sticky actions column of index tables (`config.sticky_actions_column`). Empty = none |
-| `table_row_hover` | `hover:bg-zinc-50` | Row hover background |
+| `table_row_hover` | `hover:bg-zinc-50` | Hover of table rows and of the dashboard's quick links and activity feed rows. These rows hold `muted_text`, which keeps AA contrast on it |
 | `table_border` | `divide-zinc-200` | Lines between table rows and between the items of divided lists (dashboard lists, key/value fields). Use `divide-*` classes |
 
 ### Cards and panels
@@ -244,11 +244,11 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 |----------|---------------|----------|
 | `main_bg` | `bg-zinc-50` | Page background (`<body>` and the main area) |
 | `border_radius` | `rounded-lg` | Radius of cards, panels, alerts, dropdowns and modals. Buttons and inputs use `control_radius` |
-| `border_width` | `border` | Width of every themed border: cards, panels, inputs, alerts, pagination, dropdowns |
+| `border_width` | `border` | Width of the outline of cards, panels, popovers, modals, alerts, inputs, checkboxes and pagination links. One-sided dividers (navbar bottom, panel headers, footers, table rows, scope tabs) keep their template width; `sidebar_border` and `btn_secondary` carry their own |
 | `color_scheme` | `"light"` | `"light"` or `"dark"`: the CSS color scheme of the page (see [Color scheme](#color-scheme-dark-themes-and-charts)). Not a Tailwind class |
 | `swatch` | `bg-white ring-1 ring-inset ring-zinc-300` | This theme's dot in the theme switcher |
 | `surface_muted` | `bg-zinc-50` | Secondary backgrounds: readonly and disabled inputs, nested form rows, file previews, the empty state icon, audit change details |
-| `item_hover` | `hover:bg-zinc-100` | Hover of dropdown and switcher items, list rows, quick links and pagination links |
+| `item_hover` | `hover:bg-zinc-100` | Hover of dropdown and switcher items, search result rows and pagination links (rows with `muted_text` use `table_row_hover`) |
 | `item_active` | `bg-zinc-100` | The belongs-to autocomplete option that the arrow keys highlight |
 | `icon_muted` | `text-zinc-400` | Decorative icons, such as the search icon, breadcrumb separators and the empty state icon |
 | `overlay_bg` | `bg-zinc-900/40` | Backdrop behind modals and the mobile sidebar drawer |
@@ -357,7 +357,7 @@ IronAdmin.configure do |config|
     t.input_error = "border-red-500 focus:border-red-400 focus:ring-3 focus:ring-red-400/25"
     t.placeholder_text = "placeholder:text-zinc-400"
     t.checkbox_checked = "checked:border-indigo-500 checked:bg-indigo-500 focus:ring-3 focus:ring-indigo-400/25"
-    t.checkbox_border = "border-zinc-600"
+    t.checkbox_border = "border-zinc-500"
     t.control_shadow = ""
     t.disabled_text = "text-zinc-600"
 
@@ -537,10 +537,13 @@ a check mark and `aria-pressed="true"` on the current one.
   and Escape closes the menu and returns the focus to the button. A click outside closes it
   too. The `cp-disclosure` Stimulus controller handles Escape and outside clicks.
 - **Request:** each theme button submits a form, `POST /admin/theme` (`iron_admin.theme_path`)
-  with `theme` (the name) and `return_to` (the current path). The form has the CSRF token, and
-  the endpoint is protected against forgery and authenticated like every admin page. It has
-  `data-turbo="false"`: the browser loads the next page in full, so the `<html>` class, the
-  fonts and the color scheme change with it.
+  with `theme` (the name) and `return_to` (the current path). A page that answers a POST, such
+  as an import preview or a form shown again with errors, may have no GET route, so there
+  `return_to` is the path of the page the browser came from when that is on this site, and
+  is left out otherwise (the switch then leads to the admin root). The form has the CSRF
+  token, and the endpoint is protected against forgery and authenticated like every admin
+  page. It has `data-turbo="false"`: the browser loads the next page in full, so the `<html>`
+  class, the fonts and the color scheme change with it.
 - **Response:** for a registered name, the endpoint stores it in the cookie. Any other value
   leaves the cookie as it is and sets the flash alert `iron_admin.theme_switcher.unknown`
   ("That theme is not available."). It then redirects with `303 See Other` to `return_to` when
@@ -702,7 +705,8 @@ end
   the browser draws scrollbars, date and time pickers, select menus and autofill in light or
   dark colors;
 - a `<meta name="color-scheme" content="light">` (or `"dark"`) tag;
-- a lighter chevron in selects under `scheme-dark` (drawn by the engine's stylesheet).
+- a lighter chevron in selects under `scheme-dark` (drawn by the engine's stylesheet). The
+  check mark and the radio dot stay white under `scheme-dark`.
 
 `color_scheme` doesn't recolor anything else: a dark theme sets dark classes in its properties,
 as the [Midnight example](#a-complete-dark-theme) does. Charts don't read `color_scheme`

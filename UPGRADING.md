@@ -16,12 +16,12 @@ Every page is restyled:
 - **Badges:** tinted, `rounded-md`, with a colored dot, in every place a badge appears (`:badge` fields, the audit log, `BadgeComponent`). The default badge size is `px-2 py-0.5 text-xs` (it was `px-2.5 py-0.5 text-sm`).
 - **Dashboard:** metric cards put the label on top, the figure below and the icon in a small tile. Pie and doughnut slices are outlined in their own colors, and charts draw their text in the page font.
 - **Page padding:** every page, the dashboard, error, new and edit pages included, uses `px-4 sm:px-6 lg:px-8 py-6` (it was `p-4 sm:p-6 lg:p-8`). The flash messages start at `pt-6`.
-- **Other details:** a false boolean shows a muted x icon instead of a red one, the navbar search placeholder reads "Search…" (its `aria-label`, "Search across all resources", did not change), and the bulk-action, member-action and filter controls are secondary buttons.
+- **Other details:** a false boolean shows a muted x icon instead of a red one, the navbar search placeholder reads "Search…" (its `aria-label`, "Search across all resources", did not change), the navbar hides the current user's name on phones (below `sm`) and truncates a long one, and the bulk-action, member-action and filter controls are secondary buttons.
 
 **Action required:**
 
 - Rebuild your Tailwind CSS after upgrading (`bin/rails tailwindcss:build`). The new look uses classes that only a fresh build contains. If you commit `app/assets/builds/tailwind.css`, commit the rebuilt file too.
-- Update screenshots, visual regression baselines, and system specs or host CSS that select the old classes (`.p-8`, `.p-4`, `.text-2xl` titles, `.uppercase` headers, `rounded-full` badges, `bg-gray-900` in the sidebar) or the old search placeholder.
+- Update screenshots, visual regression baselines, and system specs or host CSS that select the old classes (`.p-8`, `.p-4`, `.text-2xl` titles, `.uppercase` headers, `rounded-full` badges and progress bars, `bg-gray-900` in the sidebar) or the old search placeholder.
 - To keep the 0.7 look, see section 4.
 
 ### 2. The theme values you set are kept

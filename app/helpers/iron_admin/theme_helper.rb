@@ -99,11 +99,11 @@ module IronAdmin
       Form::ControlClasses.input(t, padding: "pl-9 pr-3")
     end
 
-    # @return [String] Navbar search input classes
+    # @return [String] Navbar search input classes, which the built-in navbar uses too
     def cp_navbar_search_class
       "block w-full h-9 appearance-none pl-9 pr-3 text-sm outline-hidden transition duration-150 ease-in-out " \
         "#{t.control_radius} #{t.border_width} #{t.input_border} #{t.navbar_search_bg} #{t.body_text} " \
-        "#{t.placeholder_text} #{t.input_focus} #{t.navbar_search_focus_bg}"
+        "#{t.placeholder_text} #{t.input_focus} #{t.navbar_search_focus_bg} #{t.control_shadow}"
     end
 
     # @return [String] Active scope tab classes

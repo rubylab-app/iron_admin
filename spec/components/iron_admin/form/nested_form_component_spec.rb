@@ -201,6 +201,17 @@ RSpec.describe IronAdmin::Form::NestedFormComponent, type: :component do
       component = described_class.new(form: form_builder, nested_association: nested_association, record: user)
       expect(component.title_classes.split).to include(*IronAdmin.current_theme.card_title.split)
     end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.card_title = "text-base font-bold text-white" }
+      end
+
+      it "titles the section with that theme's card_title" do
+        component = described_class.new(form: form_builder, nested_association: nested_association, record: user)
+        expect(component.title_classes.split).to include("text-base", "font-bold", "text-white")
+      end
+    end
   end
 
   describe "#add_button_classes" do

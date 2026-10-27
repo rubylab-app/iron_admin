@@ -44,6 +44,15 @@ RSpec.describe IronAdmin::Resources::BulkActionsComponent, type: :component do
       expect(toolbar[:class].split).to include("bg-white", "border-t", "border-zinc-200")
     end
 
+    # Buttons do not shrink, so on a phone the toolbar wraps them instead of overflowing the page.
+    it "wraps the toolbar" do
+      expect(toolbar[:class].split).to include("flex-wrap")
+    end
+
+    it "wraps the row of action buttons" do
+      expect(toolbar.at_css("div")[:class].split).to include("flex-wrap")
+    end
+
     it "renders each action as a secondary button" do
       expect(rendered.at_css("button[type=submit]")[:class]).to eq(
         IronAdmin::Resources::Styles.secondary_button(IronAdmin.current_theme)

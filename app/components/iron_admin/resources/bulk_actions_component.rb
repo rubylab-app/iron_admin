@@ -26,7 +26,7 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes of the toolbar, shown once records are selected
       def toolbar_classes
-        "hidden items-center gap-3 px-4 py-3 border-t #{theme.card_bg} #{theme.card_border}"
+        "hidden flex-wrap items-center gap-3 px-4 py-3 border-t #{theme.card_bg} #{theme.card_border}"
       end
 
       # @api private

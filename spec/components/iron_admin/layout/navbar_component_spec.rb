@@ -74,6 +74,16 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
       end
     end
 
+    context "with a registered theme active" do
+      subject(:pressed) { switcher.css("button[aria-pressed='true']").pluck(:value) }
+
+      before { IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) }
+
+      it "presses that theme's button" do
+        expect(pressed).to eq(["midnight"])
+      end
+    end
+
     context "with the theme_switcher slot overridden" do
       subject(:override) { rendered.at_css("header .custom-switcher") }
 
@@ -92,13 +102,21 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
         stub_const("CustomSwitcherComponent", component)
       end
 
-      before do
-        IronAdmin.configuration.register_theme(:midnight)
-        IronAdmin.configuration.components.theme_switcher = custom_switcher
+      before { IronAdmin.configuration.components.theme_switcher = custom_switcher }
+
+      context "with two themes" do
+        before { IronAdmin.configuration.register_theme(:midnight) }
+
+        it "renders the override with the themes and the current theme" do
+          expect(override.text).to eq("neutral,midnight:neutral")
+        end
       end
 
-      it "renders the override with the themes and the current theme" do
-        expect(override.text).to eq("neutral,midnight:neutral")
+      # The override has no render? of its own: the navbar must still hide it.
+      context "with only the default theme" do
+        it "does not render the override" do
+          expect(override).to be_nil
+        end
       end
     end
   end
@@ -138,6 +156,10 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
         expect(search_input).to include("shadow-xs")
       end
 
+      it "builds the search input from cp_navbar_search_class, which custom navbars can use" do
+        expect(search_input).to contain_exactly("peer", "sm:pr-16", *IronAdmin::ResourcesController.helpers.cp_navbar_search_class.split)
+      end
+
       it "hides the search outline only where the focus ring shows, keeping it in forced-colors mode" do
         expect(search_input).to include("outline-hidden")
       end
@@ -152,6 +174,11 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
 
       it "writes the user name in the theme's navbar_text color" do
         expect(user_name).to include("text-zinc-600")
+      end
+
+      # The 56px bar cannot wrap a long name, which would squeeze the search box.
+      it "hides the user name on phones and truncates it at 256px from sm" do
+        expect(user_name).to include("hidden", "sm:block", "max-w-64", "truncate")
       end
     end
 
@@ -256,6 +283,14 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
         importmap = IronAdmin::Engine.root.join("config/importmap.rb").read
 
         expect(importmap).to include(%(pin "iron_admin/controllers/cp_search_shortcut_controller"))
+      end
+
+      # A source guard, as the suite runs no JavaScript. Trix opens its link dialog on the same
+      # shortcut and calls preventDefault: taking the focus too would submit the URL to search.
+      it "leaves alone a shortcut the focused field already handled" do
+        source = IronAdmin::Engine.root.join("app/javascript/iron_admin/controllers/cp_search_shortcut_controller.js").read
+
+        expect(source).to include("if (event.defaultPrevented ||")
       end
     end
   end

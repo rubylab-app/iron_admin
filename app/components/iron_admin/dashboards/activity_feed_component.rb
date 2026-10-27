@@ -66,13 +66,14 @@ module IronAdmin
         end
 
         # Only a row with an href is a link, so only it highlights on hover and shows a focus ring.
+        # It uses table_row_hover, not item_hover, so the muted time keeps AA contrast.
         #
         # @api private
         # @return [String] Classes of the row
         def row_classes
           return "flex items-center gap-3 px-5 py-3" unless href
 
-          "flex items-center gap-3 px-5 py-3 transition-colors #{theme.item_hover} #{theme.focus_ring}"
+          "flex items-center gap-3 px-5 py-3 transition-colors #{theme.table_row_hover} #{theme.focus_ring}"
         end
 
         # @api private

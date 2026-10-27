@@ -56,10 +56,15 @@ module IronAdmin
       # @return [String] Input focus state classes
       attr_accessor :input_focus
 
-      # @return [String] Checked checkbox classes
+      # @return [String] Border and background color of checked checkboxes and radio buttons, and
+      #   their focus ring. The check mark and the radio dot are always white (engine.css), in
+      #   every color_scheme, so the checked background needs 3:1 contrast against white
+      #   (WCAG 1.4.11)
       attr_accessor :checkbox_checked
 
-      # @return [String] Border color of unchecked checkboxes and radio buttons
+      # @return [String] Border color of unchecked checkboxes and radio buttons. It is all that
+      #   shows an unchecked control, so keep 3:1 against {#card_bg} (WCAG 1.4.11): Neutral's
+      #   zinc-500 is 4.8:1 on white, while zinc-300 and zinc-400 are below 3:1
       attr_accessor :checkbox_border
 
       # @return [String] Radius of checkboxes (radio buttons are always round)
@@ -165,7 +170,8 @@ module IronAdmin
       # @return [String] Edge shadow of the sticky actions column of index tables (empty = none)
       attr_accessor :table_sticky_shadow
 
-      # @return [String] Table row hover classes
+      # @return [String] Hover of table rows and of the dashboard's quick links and activity feed
+      #   rows. These rows hold {#muted_text}, so keep AA contrast for it on this background
       attr_accessor :table_row_hover
 
       # @return [String] Table border/divider classes
@@ -239,7 +245,10 @@ module IronAdmin
       # @return [String] Border radius of cards and panels (inputs and buttons use {#control_radius})
       attr_accessor :border_radius
 
-      # @return [String] Border width used with every border color property
+      # @return [String] Border width of the outline of cards, panels, popovers, modals, alerts, inputs,
+      #   checkboxes and pagination links. One-sided dividers (navbar bottom, panel and modal headers,
+      #   form and bulk action footers, table rows, scope tabs) keep the width their template sets,
+      #   and {#sidebar_border} and {#btn_secondary} carry their own width
       attr_accessor :border_width
 
       # @return [String] "light" or "dark": the CSS color scheme of browser UI and scrollbars
@@ -249,10 +258,12 @@ module IronAdmin
       # @return [String] Classes of this theme's swatch in the theme switcher
       attr_accessor :swatch
 
-      # @return [String] Secondary backgrounds (readonly inputs, nested rows, empty state icon, file button)
+      # @return [String] Secondary backgrounds: readonly and disabled inputs, nested form rows,
+      #   file previews, the empty state icon and audit change details
       attr_accessor :surface_muted
 
-      # @return [String] Hover of menu items, list rows and pagination links
+      # @return [String] Hover of dropdown and switcher items, search result rows and pagination
+      #   links. Rows that hold {#muted_text} use {#table_row_hover}, a lighter background
       attr_accessor :item_hover
 
       # @return [String] Background of the listbox option that the arrow keys highlight
@@ -380,7 +391,7 @@ module IronAdmin
         @btn_secondary = "bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300"
         @btn_danger = "bg-red-600 text-white hover:bg-red-700"
         @btn_ghost = "bg-transparent text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
-        @link = "text-indigo-600 hover:text-indigo-500"
+        @link = "text-indigo-600 hover:text-indigo-700"
         @link_muted = "text-zinc-500 hover:text-zinc-900"
         @focus_ring = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
         @control_radius = "rounded-md"
@@ -391,7 +402,7 @@ module IronAdmin
         @input_border = "border-zinc-200 hover:border-zinc-300"
         @input_focus = "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15"
         @checkbox_checked = "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15"
-        @checkbox_border = "border-zinc-300"
+        @checkbox_border = "border-zinc-500"
         @checkbox_radius = "rounded-sm"
         @input_error = "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20"
         @placeholder_text = "placeholder:text-zinc-500"
