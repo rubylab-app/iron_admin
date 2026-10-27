@@ -16,10 +16,13 @@ RSpec.describe IronAdmin::Configuration::Theme do
     input_border: "border-zinc-200 hover:border-zinc-300",
     input_focus: "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15",
     checkbox_checked: "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15",
+    checkbox_border: "border-zinc-300",
+    checkbox_radius: "rounded-sm",
     input_error: "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20",
     placeholder_text: "placeholder:text-zinc-500",
     disabled_text: "text-zinc-300",
     control_radius: "rounded-md",
+    control_shadow: "shadow-xs",
     scope_active: "border-zinc-900 text-zinc-900",
     scope_inactive: "border-transparent text-zinc-500 hover:text-zinc-900 hover:border-zinc-300",
     badge_count: "bg-zinc-100 text-zinc-700",
@@ -42,11 +45,13 @@ RSpec.describe IronAdmin::Configuration::Theme do
     table_header_text: "text-xs font-medium text-zinc-500",
     table_cell_padding: "px-4 py-2.5",
     table_frame: "",
+    table_sticky_shadow: "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]",
     table_row_hover: "hover:bg-zinc-50",
     table_border: "divide-zinc-200",
     card_bg: "bg-white",
     card_border: "border-zinc-200",
     card_shadow: "shadow-xs",
+    popover_shadow: "shadow-lg",
     card_title: "text-sm font-semibold text-zinc-900",
     font_family: "font-[family-name:Inter,ui-sans-serif,system-ui,sans-serif]",
     font_stylesheet_url: "https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap",
@@ -66,6 +71,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     swatch: "bg-white ring-1 ring-inset ring-zinc-300",
     surface_muted: "bg-zinc-50",
     item_hover: "hover:bg-zinc-100",
+    item_active: "bg-zinc-100",
     icon_muted: "text-zinc-400",
     overlay_bg: "bg-zinc-900/40",
     badge_shape: "rounded-md font-medium",
@@ -124,33 +130,13 @@ RSpec.describe IronAdmin::Configuration::Theme do
     end
   end
 
-  describe "Neutral defaults of the form control additions" do
-    {
-      control_shadow: "shadow-xs",
-      checkbox_border: "border-zinc-300",
-      checkbox_radius: "rounded-sm",
-      item_active: "bg-zinc-100",
-      popover_shadow: "shadow-lg",
-    }.each do |property, value|
-      it "sets #{property}" do
-        expect(theme.public_send(property)).to eq(value)
-      end
+  describe "property list" do
+    let(:properties) do
+      described_class.public_instance_methods(false).grep(/\A[a-z_]+=\z/).map { |writer| writer.to_s.chomp("=").to_sym }
     end
 
-    context "with an empty control_shadow" do
-      before { theme.control_shadow = "" }
-
-      it "keeps it, so controls get no shadow" do
-        expect(theme.control_shadow).to eq("")
-      end
-    end
-
-    context "with a copy" do
-      before { theme.checkbox_radius = "rounded-none" }
-
-      it "keeps the value set on the original" do
-        expect(theme.dup.checkbox_radius).to eq("rounded-none")
-      end
+    it "sets every property in #initialize, so copies and registered themes carry its value" do
+      expect(properties.map { |property| :"@#{property}" } - theme.instance_variables).to be_empty
     end
   end
 
@@ -306,29 +292,14 @@ RSpec.describe IronAdmin::Configuration::Theme do
     end
   end
 
-  # Chrome package additions.
-  describe "#popover_shadow" do
-    it "is a large shadow in Neutral" do
-      expect(theme.popover_shadow).to eq("shadow-lg")
-    end
+  describe "shadow properties" do
+    %i[control_shadow popover_shadow table_sticky_shadow].each do |property|
+      context "with an empty #{property}" do
+        before { theme.public_send(:"#{property}=", "") }
 
-    context "when set" do
-      before { theme.popover_shadow = "shadow-[4px_4px_0_0_var(--color-zinc-950)]" }
-
-      it "returns the new classes" do
-        expect(theme.popover_shadow).to eq("shadow-[4px_4px_0_0_var(--color-zinc-950)]")
-      end
-
-      it "keeps them in a copy" do
-        expect(theme.dup.popover_shadow).to eq("shadow-[4px_4px_0_0_var(--color-zinc-950)]")
-      end
-    end
-
-    context "when set to an empty String" do
-      before { theme.popover_shadow = "" }
-
-      it "draws no shadow" do
-        expect(theme.popover_shadow).to eq("")
+        it "keeps it, so the theme draws no shadow there" do
+          expect(theme.public_send(property)).to eq("")
+        end
       end
     end
   end
