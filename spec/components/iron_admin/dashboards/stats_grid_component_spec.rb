@@ -53,7 +53,7 @@ RSpec.describe IronAdmin::Dashboards::StatsGridComponent, type: :component do
     end
 
     it "spaces the cards like the dashboard's metric grid" do
-      expect(grid[:class].split).to include("gap-6")
+      expect(grid[:class].split).to include("gap-4")
     end
   end
 
@@ -85,14 +85,42 @@ RSpec.describe IronAdmin::Dashboards::StatsGridComponent::StatComponent, type: :
   end
 
   describe "#change_classes" do
-    it "returns green for positive" do
-      component = described_class.new(label: "Users", value: 100, change_type: :positive)
-      expect(component.change_classes).to include("green")
+    subject(:change_classes) { described_class.new(label: "Users", value: 100, change_type: change_type).change_classes }
+
+    context "with a positive change" do
+      let(:change_type) { :positive }
+
+      it "uses the theme's success_text" do
+        expect(change_classes).to eq(IronAdmin.current_theme.success_text)
+      end
     end
 
-    it "returns red for negative" do
-      component = described_class.new(label: "Users", value: 100, change_type: :negative)
-      expect(component.change_classes).to include("red")
+    context "with a negative change" do
+      let(:change_type) { :negative }
+
+      it "uses the theme's error_text" do
+        expect(change_classes).to eq(IronAdmin.current_theme.error_text)
+      end
+    end
+
+    context "with a neutral change" do
+      let(:change_type) { :neutral }
+
+      it "uses the theme's muted_text" do
+        expect(change_classes).to eq(IronAdmin.current_theme.muted_text)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      let(:change_type) { :positive }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) { |t| t.success_text = "text-lime-300" }
+      end
+
+      it "uses that theme's success_text" do
+        expect(change_classes).to eq("text-lime-300")
+      end
     end
   end
 
@@ -124,12 +152,64 @@ RSpec.describe IronAdmin::Dashboards::StatsGridComponent::StatComponent, type: :
       expect(classes).not_to include("break-words")
     end
 
-    it "uses the metric cards' smaller value size at the xl breakpoint, where four cards share the row" do
-      expect(value[:class].split).to include("xl:text-2xl", "2xl:text-3xl")
+    it "shows the value like the metric cards, in the theme's metric_value" do
+      expect(value[:class].split).to include(*IronAdmin.current_theme.metric_value.split)
     end
 
     it "still renders the change below the value" do
       expect(card.text.squish).to end_with("$123,456.78 +3")
+    end
+  end
+
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(label: "Signups", value: "1,284", change: "+12%", icon: "users")).at_css("div") }
+
+    let(:label) { card.css("p").find { |paragraph| paragraph.text.strip == "Signups" } }
+    let(:value) { card.css("p").find { |paragraph| paragraph.text.strip == "1,284" } }
+    let(:tile) { card.at_css("svg").parent }
+
+    context "with the default theme" do
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "puts the label on top in the theme's metric_label" do
+        expect(label[:class].split).to include(*IronAdmin.current_theme.metric_label.split)
+      end
+
+      it "draws the icon tile in the theme's metric_icon" do
+        expect(tile[:class].split).to include(*IronAdmin.current_theme.metric_icon.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.card_border = "border-slate-700"
+          t.border_width = "border-2"
+          t.metric_label = "text-sm font-bold text-slate-300"
+          t.label_transform = "uppercase tracking-widest"
+          t.metric_value = "text-4xl font-black text-white"
+          t.metric_icon = "bg-sky-500/10 text-sky-300"
+        end
+      end
+
+      it "frames the card with that theme's border color and width" do
+        expect(card[:class].split).to include("border-slate-700", "border-2")
+      end
+
+      it "styles the label with that theme's metric_label and label_transform" do
+        expect(label[:class].split).to include(*%w[text-sm font-bold text-slate-300 uppercase tracking-widest])
+      end
+
+      # Tailwind does not guarantee which of two font sizes wins, so only the theme sets one.
+      it "leaves the value's size and color to that theme's metric_value" do
+        expect(value[:class].split.grep(/text-/)).to eq(%w[text-4xl text-white])
+      end
+
+      it "draws the icon tile in that theme's metric_icon" do
+        expect(tile[:class].split).to include("bg-sky-500/10", "text-sky-300")
+      end
     end
   end
 

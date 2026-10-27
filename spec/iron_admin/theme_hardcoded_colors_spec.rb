@@ -50,16 +50,6 @@ module ThemeHardcodedColors
     "app/views/iron_admin/resources/action_form.html.haml",
     "app/views/iron_admin/resources/bulk_action_form.html.haml",
     "app/views/iron_admin/tools/action_form.html.haml",
-
-    # dashboard package
-    "app/components/iron_admin/dashboards/activity_feed_component.rb",
-    "app/components/iron_admin/dashboards/activity_feed_component/item_component.html.haml",
-    "app/components/iron_admin/dashboards/metric_card_component.html.haml",
-    "app/components/iron_admin/dashboards/progress_component.html.haml",
-    "app/components/iron_admin/dashboards/quick_links_component/link_component.html.haml",
-    "app/components/iron_admin/dashboards/recent_table_component.html.haml",
-    "app/components/iron_admin/dashboards/stats_grid_component.rb",
-    "app/components/iron_admin/dashboards/stats_grid_component/stat_component.html.haml",
   ].freeze
 
   # Utilities whose value is a color.

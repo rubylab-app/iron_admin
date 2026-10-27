@@ -4,6 +4,8 @@ module IronAdmin
   module Dashboards
     # Renders a quick links section on the dashboard.
     class QuickLinksComponent < ViewComponent::Base
+      include Concerns::ThemedCard
+
       renders_many :links, "LinkComponent"
 
       # @return [String] Section title
@@ -15,12 +17,6 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme of the current request
-      def theme
-        IronAdmin.current_theme
-      end
-
-      # @api private
       # @return [Boolean] Whether to render the component
       def render?
         links.any?
@@ -29,6 +25,8 @@ module IronAdmin
       # Individual quick link item component.
       # @api private
       class LinkComponent < ViewComponent::Base
+        include Concerns::ThemedCard
+
         # @return [String] Link label
         attr_reader :label
 
@@ -50,12 +48,6 @@ module IronAdmin
           @href = href
           @icon = icon
           @description = description
-        end
-
-        # @api private
-        # @return [IronAdmin::Configuration::Theme] Theme of the current request
-        def theme
-          IronAdmin.current_theme
         end
       end
     end

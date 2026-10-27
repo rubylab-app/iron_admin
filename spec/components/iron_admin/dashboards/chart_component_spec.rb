@@ -275,4 +275,50 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([%w[h2 Revenue]])
     end
   end
+
+  describe "canvas" do
+    subject(:canvas) { render_inline(described_class.new(title: "Revenue", data: [1], labels: ["Jan"])).at_css("canvas") }
+
+    it "is an image named after the chart title" do
+      expect([canvas[:role], canvas["aria-label"]]).to eq(%w[img Revenue])
+    end
+  end
+
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(title: "Revenue", data: [1], labels: ["Jan"])).at_css("div") }
+
+    context "with the default theme" do
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "titles the card with the theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*IronAdmin.current_theme.card_title.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.card_bg = "bg-slate-900"
+          t.border_width = "border-2"
+          t.card_title = "text-base font-bold text-white"
+          t.heading_font = "font-serif"
+        end
+      end
+
+      it "frames the card with that theme's surface and border width" do
+        expect(card[:class].split).to include("bg-slate-900", "border-2")
+      end
+
+      it "titles the card with that theme's card_title and heading_font" do
+        expect(card.at_css("h2")[:class].split).to include(*%w[text-base font-bold text-white font-serif])
+      end
+
+      # Tailwind does not guarantee which of two font sizes wins, so only the theme sets one.
+      it "leaves the title's size and color to that theme's card_title" do
+        expect(card.at_css("h2")[:class].split.grep(/text-/)).to eq(%w[text-base text-white])
+      end
+    end
+  end
 end

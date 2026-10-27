@@ -234,6 +234,108 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
     end
   end
 
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(resource_name: :document, records: [document])).at_css("div") }
+
+    let(:document) { create(:document, title: "Launch plan") }
+    let(:theme) { IronAdmin.current_theme }
+    let(:header) { card.at_css("th") }
+    let(:id_cell) { card.at_css("tbody td") }
+    let(:title_cell) { card.css("tbody td")[1] }
+
+    before do
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource)
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    context "with the default theme" do
+      # HAML's dot syntax reads ".py-3.5" as the classes "py-3" and "5".
+      it "keeps fractional sizes such as py-3.5 whole" do
+        expect(card.css("[class]").flat_map { |node| node[:class].split }).not_to include(match(/\A\d+\z/))
+      end
+
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "titles the card with the theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*theme.card_title.split)
+      end
+
+      # The title starts where the first column does, whatever the theme's density.
+      it "pads the title row like the cells" do
+        expect(card.at_css("h2").parent[:class].split).to include(*theme.table_cell_padding.split)
+      end
+
+      it "styles the header cells with the theme's table_header_text and table_cell_padding" do
+        expect(header[:class].split).to include(*theme.table_header_text.split, *theme.table_cell_padding.split)
+      end
+
+      it "leaves the header case to the theme's label_transform" do
+        expect(header[:class].split).not_to include("uppercase")
+      end
+
+      it "marks the header cells as column headers" do
+        expect(header[:scope]).to eq("col")
+      end
+
+      it "pads the body cells with the theme's table_cell_padding" do
+        expect(title_cell[:class].split).to include(*theme.table_cell_padding.split)
+      end
+
+      it "aligns the digits of numeric cells" do
+        expect(id_cell[:class].split).to include("tabular-nums")
+      end
+
+      it "keeps proportional digits in text cells" do
+        expect(title_cell[:class].split).not_to include("tabular-nums")
+      end
+
+      it "highlights rows with the theme's table_row_hover" do
+        expect(card.at_css("tbody tr")[:class].split).to include(*theme.table_row_hover.split)
+      end
+
+      it "colors the row dividers with the theme's table_border" do
+        expect(card.at_css("tbody")[:class].split).to include("divide-y", *theme.table_border.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.border_width = "border-2"
+          t.table_header_bg = "bg-slate-800"
+          t.table_header_text = "text-xs font-bold text-slate-400"
+          t.label_transform = "uppercase tracking-wider"
+          t.table_cell_padding = "px-3 py-1.5"
+          t.table_frame = "max-h-96"
+        end
+      end
+
+      it "frames the card with that theme's border width" do
+        expect(card[:class].split).to include("border-2")
+      end
+
+      it "fills the header row with that theme's table_header_bg" do
+        expect(card.at_css("thead")[:class].split).to include("bg-slate-800")
+      end
+
+      it "styles the header cells with that theme's text and label_transform" do
+        expect(header[:class].split).to include(*%w[text-xs font-bold text-slate-400 uppercase tracking-wider])
+      end
+
+      it "pads the cells with that theme's table_cell_padding" do
+        expect(title_cell[:class].split).to include("px-3", "py-1.5")
+      end
+
+      it "adds that theme's table_frame to the table container" do
+        expect(card.at_css("table").parent[:class].split).to include("max-h-96")
+      end
+    end
+  end
+
   # The dashboard page title is the h1, so a widget title is an h2.
   describe "widget title" do
     subject(:headings) do

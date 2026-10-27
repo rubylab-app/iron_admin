@@ -5,6 +5,8 @@ module IronAdmin
   module Dashboards
     # Renders a chart on the dashboard.
     class ChartComponent < ViewComponent::Base
+      include Concerns::ThemedCard
+
       # @return [String] Chart title
       attr_reader :title
 
@@ -66,12 +68,6 @@ module IronAdmin
         @labels = labels
         @colors = colors
         @height = height
-      end
-
-      # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme of the current request
-      def theme
-        IronAdmin.current_theme
       end
 
       # @api private

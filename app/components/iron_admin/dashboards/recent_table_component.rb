@@ -7,6 +7,7 @@ module IronAdmin
       include IronAdmin::ApplicationHelper
       include IronAdmin::FieldDisplayHelper
       include IronAdmin::ThemeHelper
+      include Concerns::ThemedCard
 
       # Number of columns shown when the resource declares no index fields.
       DEFAULT_COLUMN_COUNT = 4
@@ -16,6 +17,9 @@ module IronAdmin
 
       # Field types too long or too sensitive for a compact table.
       SKIPPED_TYPES = %i[textarea rich_text markdown code json key_value boolean_group file files password hidden].freeze
+
+      # Field types whose cells align their digits.
+      NUMERIC_TYPES = %i[number currency].freeze
 
       # @param resource_name [Symbol, String] Resource name
       # @param records [ActiveRecord::Relation, Array] Records to display. An unordered
@@ -61,6 +65,22 @@ module IronAdmin
       # @return [String, nil] Formatted field value for display
       def display_value(record, field)
         display_index_field_value(record, field)
+      end
+
+      # Case and letter spacing come from label_transform, as in every small label.
+      #
+      # @api private
+      # @return [String] Classes of a header cell
+      def header_cell_classes
+        "#{theme.table_header_text} #{theme.label_transform} #{theme.table_cell_padding}"
+      end
+
+      # @api private
+      # @param field [IronAdmin::Field] The cell's field
+      # @return [String] Classes of a body cell; numeric cells align their digits
+      def cell_classes(field)
+        classes = "#{theme.table_cell_padding} #{theme.body_text}"
+        NUMERIC_TYPES.include?(field.type) ? "#{classes} tabular-nums" : classes
       end
 
       # Delegate route helpers to the view context so included helpers work
