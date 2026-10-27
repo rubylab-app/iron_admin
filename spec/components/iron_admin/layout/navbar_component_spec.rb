@@ -103,6 +103,79 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
     end
   end
 
+  describe "theme" do
+    subject(:rendered) do
+      with_controller_class(IronAdmin::ResourcesController) do
+        with_request_url("/admin/users") { render_inline(described_class.new(current_user: user)) }
+      end
+    end
+
+    let(:user) { instance_double(User, name: "Ada Lovelace") }
+    let(:header) { rendered.at_css("header")[:class].split }
+    let(:search_input) { rendered.at_css("header input[name='q']")[:class].split }
+    let(:search_icon) { rendered.at_css("header form svg")[:class].split }
+    let(:menu_button) { rendered.at_css("button[aria-label='Open menu']")[:class].split }
+    let(:user_name) { rendered.css("header span").find { |span| span.text.strip == "Ada Lovelace" }[:class].split }
+
+    context "with the default theme" do
+      it "is a 56px bar with the theme's background and bottom border" do
+        expect(header).to include("h-14", "bg-white", "border-b", "border-zinc-200")
+      end
+
+      it "makes the search input 36px high" do
+        expect(search_input).to include("h-9")
+      end
+
+      it "styles the search input with the theme's border, radius and backgrounds" do
+        expect(search_input).to include("border", "border-zinc-200", "rounded-md", "bg-zinc-50", "focus:bg-white")
+      end
+
+      it "colors the search placeholder and focus ring from the theme" do
+        expect(search_input).to include("placeholder:text-zinc-500", "focus:ring-indigo-500/15")
+      end
+
+      it "mutes the search icon" do
+        expect(search_icon).to include("text-zinc-400")
+      end
+
+      it "styles the menu button as a ghost icon button" do
+        expect(menu_button).to include("hover:bg-zinc-100", "rounded-md", "focus-visible:outline-indigo-500")
+      end
+
+      it "writes the user name in the theme's navbar_text color" do
+        expect(user_name).to include("text-zinc-600")
+      end
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.navbar_bg = "bg-zinc-900"
+          t.navbar_border = "border-zinc-800"
+          t.navbar_search_bg = "bg-zinc-800"
+          t.navbar_text = "text-zinc-300"
+          t.control_radius = "rounded-full"
+        end
+      end
+
+      it "uses that theme's navbar background and border" do
+        expect(header).to include("bg-zinc-900", "border-zinc-800")
+      end
+
+      it "drops the default theme's navbar background" do
+        expect(header).not_to include("bg-white")
+      end
+
+      it "styles the search input with that theme" do
+        expect(search_input).to include("bg-zinc-800", "rounded-full")
+      end
+
+      it "writes the user name in that theme's navbar_text color" do
+        expect(user_name).to include("text-zinc-300")
+      end
+    end
+  end
+
   describe "component class" do
     it "inherits from ViewComponent::Base" do
       expect(described_class.superclass).to eq(ViewComponent::Base)

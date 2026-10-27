@@ -1,13 +1,13 @@
-%header.py-3.flex.items-center.justify-between.gap-3.border-b{ class: "px-4 sm:px-6 #{helpers.t.navbar_bg} #{helpers.t.navbar_border}" }
-  %button.p-2.-ml-2.shrink-0{ type: "button", class: "lg:hidden #{helpers.t.body_text}", "aria-label": "Open menu", "aria-controls": "cp-sidebar-panel", "aria-expanded": "false", data: { action: "cp-sidebar#toggle", cp_sidebar_target: "toggle" } }
-    = helpers.heroicon "bars-3", variant: :outline, options: { class: "h-6 w-6" }
-  = form_with url: helpers.iron_admin.search_path, method: :get, class: "flex-1 max-w-lg" do
+%header.flex.h-14.shrink-0.items-center.gap-3.border-b.px-4{ class: "sm:px-6 lg:px-8 #{theme.navbar_bg} #{theme.navbar_border}" }
+  %button.-ml-2.inline-flex.h-9.w-9.shrink-0.items-center.justify-center{ type: "button", class: "lg:hidden #{theme.control_radius} #{theme.btn_ghost} #{theme.focus_ring}", "aria-label": "Open menu", "aria-controls": "cp-sidebar-panel", "aria-expanded": "false", data: { action: "cp-sidebar#toggle", cp_sidebar_target: "toggle" } }
+    = helpers.heroicon "bars-3", variant: :outline, options: { class: "h-5 w-5" }
+  = form_with url: helpers.iron_admin.search_path, method: :get, class: "flex-1 max-w-md", html: { role: "search" } do
     .relative
-      .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center{ class: "pl-3.5" }
-        = helpers.heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 text-gray-400" }
-      %input.block.w-full.appearance-none.pl-10.pr-4.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search across all resources...", class: "#{helpers.t.border_radius} border #{helpers.t.input_border} #{helpers.t.navbar_search_bg} #{helpers.t.body_text} placeholder:text-gray-400 #{helpers.t.input_focus} #{helpers.t.navbar_search_focus_bg}" }
-  .flex.items-center.gap-4
+      .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3
+        = helpers.heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{theme.icon_muted}" }
+      %input.block.h-9.w-full.appearance-none.pl-9.pr-3.text-sm.outline-none.transition.duration-150.ease-in-out{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search…", class: "#{theme.border_width} #{theme.control_radius} #{theme.input_border} #{theme.navbar_search_bg} #{theme.body_text} #{theme.placeholder_text} #{theme.input_focus} #{theme.navbar_search_focus_bg}" }
+  .ml-auto.flex.shrink-0.items-center.gap-3
     - if theme_switcher
       = render theme_switcher
     - if @current_user
-      %span.text-sm.text-gray-600= @current_user.try(:name) || @current_user.try(:email)
+      %span.text-sm.font-medium{ class: theme.navbar_text }= @current_user.try(:name) || @current_user.try(:email)

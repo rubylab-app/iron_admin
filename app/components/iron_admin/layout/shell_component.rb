@@ -19,6 +19,12 @@ module IronAdmin
       end
 
       # @api private
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
+      def theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
       # @return [ViewComponent::Base] The +flash+ slot's component, given the request's flash
       def flash_messages
         IronAdmin.configuration.components.build(:flash, flash: helpers.flash, current_user: @current_user)

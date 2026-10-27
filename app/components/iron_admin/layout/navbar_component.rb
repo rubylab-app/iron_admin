@@ -2,11 +2,18 @@
 
 module IronAdmin
   module Layout
-    # Renders the top navigation bar.
+    # Renders the top navigation bar: the global search box, the theme switcher
+    # and the current user's name.
     class NavbarComponent < ViewComponent::Base
       # @param current_user [Object, nil] Current user
       def initialize(current_user: nil)
         @current_user = current_user
+      end
+
+      # @api private
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
+      def theme
+        IronAdmin.current_theme
       end
 
       # @api private

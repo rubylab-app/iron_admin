@@ -8,8 +8,6 @@ module ThemeHardcodedColors
   # Files still being migrated to theme properties; each package removes its own.
   PENDING = [
     # chrome package
-    "app/components/iron_admin/layout/navbar_component.html.haml",
-    "app/components/iron_admin/layout/shell_component.html.haml",
     "app/components/iron_admin/ui/alert_component.rb",
     "app/components/iron_admin/ui/dropdown_component.rb",
     "app/components/iron_admin/ui/empty_state_component.html.haml",
