@@ -16,7 +16,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     input_border: "border-zinc-200 hover:border-zinc-300",
     input_focus: "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15",
     checkbox_checked: "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15",
-    input_error: "border-red-400 focus:border-red-500 focus:ring-red-500/20",
+    input_error: "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20",
     placeholder_text: "placeholder:text-zinc-500",
     disabled_text: "text-zinc-300",
     control_radius: "rounded-md",
@@ -121,6 +121,20 @@ RSpec.describe IronAdmin::Configuration::Theme do
 
     it "sets the green badge dot" do
       expect(theme.badge_dot_palette[:green]).to eq("bg-emerald-500")
+    end
+  end
+
+  describe "Neutral defaults of the form control additions" do
+    {
+      control_shadow: "shadow-xs",
+      checkbox_border: "border-zinc-300",
+      checkbox_radius: "rounded-sm",
+      item_active: "bg-zinc-100",
+      popover_shadow: "shadow-lg",
+    }.each do |property, value|
+      it "sets #{property}" do
+        expect(theme.public_send(property)).to eq(value)
+      end
     end
   end
 

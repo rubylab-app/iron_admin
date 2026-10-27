@@ -59,7 +59,8 @@ module IronAdmin
       # @return [String] Checked checkbox classes
       attr_accessor :checkbox_checked
 
-      # @return [String] Border color and focus ring of inputs with validation errors
+      # @return [String] Border color and focus state (ring width included) of inputs with
+      #   validation errors, used instead of {#input_border} and {#input_focus}
       attr_accessor :input_error
 
       # @return [String] Color of input placeholders (with the +placeholder:+ variant)
@@ -311,6 +312,28 @@ module IronAdmin
 
       # @!endgroup
 
+      # --- forms additions ---
+      # @!group Form Control Styles
+
+      # @return [String] Shadow of inputs, selects, textareas and buttons other than ghost ones (empty = none)
+      attr_accessor :control_shadow
+
+      # @return [String] Border color of unchecked checkboxes and radio buttons
+      attr_accessor :checkbox_border
+
+      # @return [String] Radius of checkboxes (radio buttons are always round)
+      attr_accessor :checkbox_radius
+
+      # @return [String] Background of the listbox option that the arrow keys highlight
+      #   (belongs-to autocomplete results)
+      attr_accessor :item_active
+
+      # @return [String] Shadow of floating panels such as the belongs-to autocomplete results
+      attr_accessor :popover_shadow
+
+      # @!endgroup
+      # --- end forms additions ---
+
       # Creates a Theme with the values of the Neutral look.
       #
       # @param name [Symbol, String] Name the theme is registered under
@@ -326,6 +349,7 @@ module IronAdmin
         init_feedback_defaults
         init_palette_defaults
         init_chart_defaults
+        init_form_control_defaults
       end
 
       # Copies Array and Hash values (chart colors, palettes) too, so a copy never shares them.
@@ -368,7 +392,7 @@ module IronAdmin
         @input_border = "border-zinc-200 hover:border-zinc-300"
         @input_focus = "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15"
         @checkbox_checked = "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15"
-        @input_error = "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+        @input_error = "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20"
         @placeholder_text = "placeholder:text-zinc-500"
         @disabled_text = "text-zinc-300"
       end
@@ -485,6 +509,16 @@ module IronAdmin
         @chart_grid_color = "rgba(228, 228, 231, 1)"
         @chart_text_color = "rgb(113, 113, 122)"
       end
+
+      # --- forms additions ---
+      def init_form_control_defaults
+        @control_shadow = "shadow-xs"
+        @checkbox_border = "border-zinc-300"
+        @checkbox_radius = "rounded-sm"
+        @item_active = "bg-zinc-100"
+        @popover_shadow = "shadow-lg"
+      end
+      # --- end forms additions ---
     end
   end
 end
