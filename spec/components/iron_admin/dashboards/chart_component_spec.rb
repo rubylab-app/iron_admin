@@ -144,6 +144,23 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       end
     end
 
+    context "with a doughnut chart" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Plans", type: :doughnut, data: [1, 2], labels: %w[A B]).chart_config)["data"]["datasets"].first }
+
+      # One border color would ring every slice, and every legend box, in the line color.
+      it "outlines each slice in its own color" do
+        expect(dataset["borderColor"]).to eq(IronAdmin.current_theme.chart_colors)
+      end
+    end
+
+    context "with per-chart colors on a pie chart" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Split", type: :pie, data: [1, 2], labels: %w[A B], colors: ["#111", "#222"]).chart_config)["data"]["datasets"].first }
+
+      it "outlines each slice in its own per-chart color" do
+        expect(dataset["borderColor"]).to eq(["#111", "#222"])
+      end
+    end
+
     context "with theme border color" do
       before do
         IronAdmin.configuration.theme.chart_border_color = "rgb(34, 197, 94)"
@@ -182,6 +199,18 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       it "colors the legend labels" do
         expect(options["plugins"]["legend"]["labels"]["color"]).to eq(text)
       end
+
+      it "draws grid lines across the value axis only" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["grid"]["display"] }).to eq([false, nil])
+      end
+    end
+
+    context "with a horizontal bar chart" do
+      let(:type) { :horizontal_bar }
+
+      it "draws grid lines across the value axis, which is x, only" do
+        expect(options["scales"].values_at("x", "y").map { |axis| axis["grid"]["display"] }).to eq([nil, false])
+      end
     end
 
     context "with a radial chart" do
@@ -205,6 +234,10 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
       it "adds no scales, which would draw axes" do
         expect(options).not_to have_key("scales")
+      end
+
+      it "marks the legend entries with dots, like the badges" do
+        expect(options["plugins"]["legend"]["labels"]).to include("usePointStyle" => true, "pointStyle" => "circle")
       end
 
       it "colors the legend labels" do

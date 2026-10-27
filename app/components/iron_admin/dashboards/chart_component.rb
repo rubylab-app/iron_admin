@@ -86,7 +86,7 @@ module IronAdmin
             labels: labels,
             datasets: [{
               data: data,
-              borderColor: border,
+              borderColor: dataset_border(border),
               backgroundColor: dataset_background(border),
               fill: filled?,
               tension: 0.3,
@@ -137,25 +137,35 @@ module IronAdmin
           maintainAspectRatio: false,
           indexAxis: index_axis,
           plugins: {
-            legend: { display: legend?, labels: { color: theme.chart_text_color } },
+            legend: { display: legend?, labels: { color: theme.chart_text_color, usePointStyle: true, pointStyle: "circle" } },
           },
         }
         scales = scale_options
         scales ? options.merge(scales: scales) : options
       end
 
-      # Pie and doughnut charts get no scales: Chart.js would draw axes for them.
+      # Pie and doughnut charts get no scales: Chart.js would draw axes for them. Cartesian
+      # charts draw grid lines across the value axis only, as the category axis needs none.
       # @return [Hash, nil] Chart.js scale options in the theme's colors
       def scale_options
         grid = theme.chart_grid_color
         text = theme.chart_text_color
         if CARTESIAN_TYPES.include?(type)
-          axis = { grid: { color: grid }, border: { color: grid }, ticks: { color: text } }
-          { x: axis, y: axis }
+          value = { grid: { color: grid }, border: { color: grid }, ticks: { color: text } }
+          category = value.merge(grid: { color: grid, display: false })
+          index_axis == "y" ? { x: value, y: category } : { x: category, y: value }
         elsif RADIAL_TYPES.include?(type)
           ticks = { color: text, backdropColor: "transparent" }
           { r: { grid: { color: grid }, angleLines: { color: grid }, pointLabels: { color: text }, ticks: ticks } }
         end
+      end
+
+      # Multi-slice charts outline each slice in its own color: a single border
+      # color would ring every slice, and every legend entry, in the line color.
+      # @param border [String] Resolved border color
+      # @return [String, Array<String>] Border color(s) for the dataset
+      def dataset_border(border)
+        legend? ? resolved_colors : border
       end
 
       # Resolves the dataset background: a single semi-transparent fill for
