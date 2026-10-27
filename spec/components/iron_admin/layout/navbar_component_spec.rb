@@ -176,6 +176,82 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
     end
   end
 
+  describe "search shortcut" do
+    subject(:form) do
+      with_controller_class(IronAdmin::ResourcesController) do
+        with_request_url("/admin/users") { render_inline(described_class.new) }
+      end.at_css("header form[role='search']")
+    end
+
+    let(:hint) { form.at_css("kbd") }
+
+    it "attaches the cp-search-shortcut controller to the search form" do
+      expect(form["data-controller"]).to eq("cp-search-shortcut")
+    end
+
+    it "listens for the shortcut anywhere on the page" do
+      expect(form["data-action"]).to eq("keydown@window->cp-search-shortcut#focus")
+    end
+
+    it "focuses the search input" do
+      expect(form.at_css("input[name='q']")["data-cp-search-shortcut-target"]).to eq("input")
+    end
+
+    it "shows the shortcut in a keyboard hint" do
+      expect(hint["data-cp-search-shortcut-target"]).to eq("hint")
+    end
+
+    it "reads ⌘K until the controller names the platform's shortcut" do
+      expect(hint.text.strip).to eq("⌘K")
+    end
+
+    it "hides the hint until the controller connects, as the shortcut needs it" do
+      expect(hint.key?("hidden")).to be(true)
+    end
+
+    it "hides the hint from screen readers" do
+      expect(hint["aria-hidden"]).to eq("true")
+    end
+
+    it "hides the hint below the sm breakpoint" do
+      expect(hint[:class].split).to include("hidden", "sm:inline-flex")
+    end
+
+    it "styles the hint with the theme's kbd classes" do
+      expect(hint[:class].split).to include("border-zinc-200", "bg-white", "text-zinc-500")
+    end
+
+    it "leaves room for the hint in the search input" do
+      expect(form.at_css("input[name='q']")[:class].split).to include("sm:pr-16")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.kbd = "border-zinc-700 bg-zinc-800 text-zinc-300"
+        end
+      end
+
+      it "styles the hint with that theme's kbd classes" do
+        expect(hint[:class].split).to include("border-zinc-700", "bg-zinc-800", "text-zinc-300")
+      end
+    end
+
+    describe "controller" do
+      it "is registered under the identifier the template uses" do
+        entry_point = IronAdmin::Engine.root.join("app/javascript/iron_admin/index.js").read
+
+        expect(entry_point).to include(%(application.register("cp-search-shortcut", CpSearchShortcutController)))
+      end
+
+      it "is pinned in the engine's import map" do
+        importmap = IronAdmin::Engine.root.join("config/importmap.rb").read
+
+        expect(importmap).to include(%(pin "iron_admin/controllers/cp_search_shortcut_controller"))
+      end
+    end
+  end
+
   describe "component class" do
     it "inherits from ViewComponent::Base" do
       expect(described_class.superclass).to eq(ViewComponent::Base)
