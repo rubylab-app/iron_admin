@@ -17,7 +17,7 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
   # The messages shown with the given ARIA role on the page the redirect leads to.
   def messages_after_redirect(role)
     follow_redirect!
-    Nokogiri::HTML(response.body).css(".overflow-auto [role='#{role}']").map { |alert| alert.text.squish }
+    response.parsed_body.css(".overflow-auto [role='#{role}']").map { |alert| alert.text.squish }
   end
 
   def upload(contents, filename, content_type)
@@ -95,7 +95,7 @@ RSpec.describe "Flash messages in the admin layout", type: :request do
       license
       get iron_admin.resources_path("licenses")
 
-      expect(Nokogiri::HTML(response.body).at_css("form#bulk-actions-form")["data-turbo-frame"]).to eq("_top")
+      expect(response.parsed_body.at_css("form#bulk-actions-form")["data-turbo-frame"]).to eq("_top")
     end
   end
 

@@ -38,7 +38,7 @@ module IronAdmin
         end
 
         format.json do
-          data = records.map { |r| fields.each_with_object({}) { |f, h| h[f.name] = safe_field_value(r, f, :json) } }
+          data = records.map { |r| fields.to_h { |f| [f.name, safe_field_value(r, f, :json)] } }
           render json: data
         end
       end
@@ -47,7 +47,7 @@ module IronAdmin
     private
 
     def set_resource_class
-      @resource_class = ResourceRegistry.find(params[:resource_name])
+      @resource_class = ResourceRegistry.find(params.expect(:resource_name))
       render_not_found unless @resource_class
     end
 

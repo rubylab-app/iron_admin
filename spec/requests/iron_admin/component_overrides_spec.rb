@@ -51,7 +51,7 @@ RSpec.describe "Component overrides", type: :request do
   end
 
   def probe_payload(dom_id)
-    JSON.parse(Nokogiri::HTML(response.body).at_css("##{dom_id}").text)
+    JSON.parse(response.parsed_body.at_css("##{dom_id}").text)
   end
 
   describe "GET /:resource_name" do
@@ -68,7 +68,7 @@ RSpec.describe "Component overrides", type: :request do
       end
 
       it "renders the built-in search form" do
-        expect(Nokogiri::HTML(response.body).at_css("input[type=text][name=q]")).to be_present
+        expect(response.parsed_body.at_css("input[type=text][name=q]")).to be_present
       end
 
       it "renders the built-in filter dropdown" do
@@ -95,7 +95,7 @@ RSpec.describe "Component overrides", type: :request do
       end
 
       it "keeps the records frame around the override" do
-        expect(Nokogiri::HTML(response.body).at_css("turbo-frame#records #custom-table")).to be_present
+        expect(response.parsed_body.at_css("turbo-frame#records #custom-table")).to be_present
       end
     end
 
@@ -149,7 +149,7 @@ RSpec.describe "Component overrides", type: :request do
       end
 
       it "replaces the built-in search form" do
-        expect(Nokogiri::HTML(response.body).at_css("input[type=text][name=q]")).to be_nil
+        expect(response.parsed_body.at_css("input[type=text][name=q]")).to be_nil
       end
     end
 
@@ -238,7 +238,7 @@ RSpec.describe "Component overrides", type: :request do
       before { get iron_admin.resources_path("licenses", q: "KEY", filters: date_range) }
 
       it "keeps both ends of the range as hidden fields in the search form" do
-        search_form = Nokogiri::HTML(response.body).at_css("input[type=text][name=q]").ancestors("form").first
+        search_form = response.parsed_body.at_css("input[type=text][name=q]").ancestors("form").first
         hidden = search_form.css("input[type=hidden]").to_h { |input| [input[:name], input[:value]] }
 
         expect(hidden).to include("filters[created_at_from]" => "2024-01-01", "filters[created_at_to]" => "2024-12-31")
@@ -384,7 +384,7 @@ RSpec.describe "Component overrides", type: :request do
       end
 
       it "points the field label at the override's input" do
-        expect(Nokogiri::HTML5(response.body).at_css("label[for=record_user]")).to be_present
+        expect(response.parsed_body.at_css("label[for=record_user]")).to be_present
       end
 
       it "names the override's input and points every label at a control" do
@@ -408,7 +408,7 @@ RSpec.describe "Component overrides", type: :request do
       end
 
       it "labels the override's input instead of a radio group" do
-        expect(Nokogiri::HTML5(response.body).at_css("label[for=record_status]")).to be_present
+        expect(response.parsed_body.at_css("label[for=record_status]")).to be_present
       end
 
       it "names the override's input and points every label at a control" do
@@ -464,7 +464,7 @@ RSpec.describe "Component overrides", type: :request do
       end
 
       it "wraps the page in the override" do
-        expect(Nokogiri::HTML(response.body).at_css("#custom-shell turbo-frame#records")).to be_present
+        expect(response.parsed_body.at_css("#custom-shell turbo-frame#records")).to be_present
       end
 
       it "replaces the built-in shell" do

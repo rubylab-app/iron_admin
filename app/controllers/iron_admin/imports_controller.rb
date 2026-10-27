@@ -63,7 +63,7 @@ module IronAdmin
     private
 
     def set_resource_class
-      @resource_class = ResourceRegistry.find(params[:resource_name])
+      @resource_class = ResourceRegistry.find(params.expect(:resource_name))
       render_not_found unless @resource_class
     end
 

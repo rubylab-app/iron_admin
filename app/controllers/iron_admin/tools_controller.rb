@@ -42,7 +42,7 @@ module IronAdmin
     private
 
     def set_tool
-      @tool_class = ToolRegistry.find(params[:tool_name])
+      @tool_class = ToolRegistry.find(params.expect(:tool_name))
       render_not_found unless @tool_class
     end
 
