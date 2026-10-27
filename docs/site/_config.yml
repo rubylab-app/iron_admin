@@ -69,3 +69,18 @@ exclude:
   - README.md
   - vendor
   - .bundle
+
+# Every page gets the just-the-docs layout unless its front matter sets one
+# (the home page uses `layout: home`). Without this, pages that omit `layout`
+# are published as bare HTML fragments: no styles, no sidebar.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+  # Files under assets/ are not pages: the theme's just-the-docs-head-nav.css
+  # has front matter (for Liquid) but must not be wrapped in the page layout.
+  - scope:
+      path: "assets"
+    values:
+      layout: null
