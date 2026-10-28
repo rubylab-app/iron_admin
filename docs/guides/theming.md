@@ -169,8 +169,8 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `control_radius` | `rounded-md` | Radius of buttons, inputs, selects, dropdown and switcher items, sidebar links, pagination links, icon tiles and tooltips |
 | `control_shadow` | `shadow-xs` | Shadow of inputs, selects, textareas, checkboxes, radio buttons and every button except ghost ones. Empty = none |
 | `disabled_text` | `text-zinc-300` | Unavailable pagination links (Previous on the first page, Next on the last) |
-| `rich_text_editor` | `""` | The rich text editor box (Action Text's `<trix-editor>`): border width and color, radius, background, text color, shadow and focus state, written as for an input. Empty = the look of Trix's own stylesheet (see [Rich text](#rich-text)) |
-| `rich_text_toolbar` | `""` | Classes of the box around the rich text toolbar and editor, which style the toolbar's buttons, groups and link dialog with descendant variants and the important modifier, such as `[&_.trix-button-group]:border-zinc-700!`. Empty = Trix's look (see [Rich text](#rich-text)) |
+| `rich_text_editor` | `border rounded-md border-zinc-500/80 hover:border-zinc-500 bg-white text-zinc-900 shadow-xs focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15` | The rich text editor box (Action Text's `<trix-editor>`): border width and color, radius, background, text color, shadow and focus state, written as for an input. Neutral outlines it like its inputs. Empty = the look of Trix's own stylesheet (see [Rich text](#rich-text)) |
+| `rich_text_toolbar` | `[&_.trix-button-group]:border-zinc-200! [&_.trix-button-group]:rounded-md! [&_.trix-button-group]:overflow-hidden! [&_.trix-button]:border-zinc-200! [&_.trix-button]:border-b-0! [&_.trix-button.trix-active]:bg-zinc-100! [&_.trix-dialog]:border! [&_.trix-dialog]:border-zinc-200! [&_.trix-dialog]:rounded-lg! [&_.trix-dialog]:shadow-lg! [&_.trix-input--dialog]:border-zinc-500/80! [&_.trix-input--dialog]:rounded-md!` | Classes of the box around the rich text toolbar and editor, which style the toolbar's buttons, groups and link dialog with descendant variants and the important modifier, such as `[&_.trix-button-group]:border-zinc-700!`. Empty = Trix's look (see [Rich text](#rich-text)) |
 
 ### Scope tabs and counts
 
@@ -809,7 +809,9 @@ values and the column names on import pages use `chip` with `badge_shape`. The a
 
 `:rich_text` fields use Action Text's Trix editor, and the layout links Trix's stylesheet
 (`trix.css`). That stylesheet is not in a cascade layer, so its rules win over every Tailwind
-utility, whatever their order. Neutral leaves the editor to it. Two properties restyle it:
+utility, whatever their order. Two properties restyle it, and Neutral sets both: its editor is
+outlined like its inputs, and its toolbar groups take its borders and radii. Set them to `""`
+for Trix's own look.
 
 - `rich_text_editor` holds the classes of the editor box, written as for an input, for
   example `border border-zinc-700 rounded-md bg-zinc-900 text-zinc-100 focus:border-violet-500
@@ -832,6 +834,12 @@ The parts are `.trix-button-group` (a group of buttons, with a border and radius
 
 The toolbar icons are black images. Under `color_scheme = "dark"` the engine's stylesheet
 inverts them, so they show on a dark background.
+
+Whatever the theme, the field's template and the engine's stylesheet own the rest: the editor's
+text is `text-sm`, like the other inputs; the editor takes its accessible name from the field's
+label (`aria-labelledby`, since a `<label for>` cannot name a `<trix-editor>`); and the box
+around the toolbar carries a `cp-rich-text-field` mark, which makes the toolbar's button groups
+wrap onto more rows on a narrow screen instead of scrolling out of reach.
 
 ## Tailwind: literal classes and source scanning
 

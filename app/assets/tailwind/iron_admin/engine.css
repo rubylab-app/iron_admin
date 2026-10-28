@@ -51,6 +51,19 @@ trix-editor.cp-rich-text {
   border-radius: revert-layer;
 }
 
+/* Trix scrolls its row of button groups sideways when it is wider than the field, and its */
+/* buttons are not focusable, so keyboard users could not reach the groups past the edge. */
+/* In IronAdmin's rich text field (cp-rich-text-field) the groups wrap onto more rows instead. */
+.cp-rich-text-field trix-toolbar .trix-button-row {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  column-gap: 0.5rem;
+}
+
+.cp-rich-text-field trix-toolbar .trix-button-group:not(:first-child) {
+  margin-left: 0;
+}
+
 .scheme-dark trix-toolbar .trix-button--icon::before {
   filter: invert(1);
 }

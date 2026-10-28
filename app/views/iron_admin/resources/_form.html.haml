@@ -19,7 +19,8 @@
         - if group_label_id
           %span{ id: group_label_id, class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform} mb-1.5" }= field.name.to_s.humanize
         - else
-          = f.label label_target, field.name.to_s.humanize,
+          -# trix-editor is not labelable: the rich text editor takes its name from the label's id.
+          = f.label label_target, field.name.to_s.humanize, id: (f.field_id(field.name, :label) if field.type == :rich_text),
             class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform} mb-1.5"
         - case field.type
         - when *iron_admin_field_component_types
@@ -125,10 +126,12 @@
           = f.text_area field.name, rows: 8, placeholder: I18n.t("iron_admin.fields.markdown_placeholder"),
             class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :rich_text
-          -# Trix inserts its toolbar before the editor, inside this box (rich_text_toolbar). The
-          -# cp-rich-text mark makes engine.css hand Trix's border and radius to rich_text_editor.
-          %div{ class: t.rich_text_toolbar.presence }
-            = f.rich_text_area field.name, class: t.rich_text_editor.present? ? "trix-content cp-rich-text #{t.rich_text_editor}" : "trix-content"
+          -# Trix inserts its toolbar before the editor, inside this box (rich_text_toolbar). Its
+          -# cp-rich-text-field mark makes engine.css wrap the toolbar's buttons on narrow screens, and the
+          -# editor's cp-rich-text mark makes it hand Trix's border and radius to rich_text_editor.
+          %div{ class: "cp-rich-text-field #{t.rich_text_toolbar}" }
+            = f.rich_text_area field.name, "aria-labelledby": f.field_id(field.name, :label),
+              class: t.rich_text_editor.present? ? "trix-content text-sm cp-rich-text #{t.rich_text_editor}" : "trix-content text-sm"
         - when :polymorphic_belongs_to
           - types = field.options[:types] || []
           - type_col = field.options[:type_column]

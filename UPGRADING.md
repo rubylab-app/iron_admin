@@ -144,6 +144,8 @@ IronAdmin.configure do |config|
     t.kbd = "border-gray-200 bg-white text-gray-500"
     t.skip_link = "focus:bg-white focus:text-gray-900 focus:shadow-lg focus:ring-2 focus:ring-indigo-500"
     t.popover_shadow = "shadow-lg"
+    t.rich_text_editor = "" # Trix's own look
+    t.rich_text_toolbar = ""
     t.surface_muted = "bg-gray-50"
     t.item_hover = "hover:bg-gray-50"
     t.item_active = "bg-gray-100"
@@ -222,6 +224,7 @@ None of this changes an app that registers no theme: with a single theme, the na
 - Scope tabs keep the search, the filters and the sort, and go back to the first page.
 - The import preview formats each cell as the show page does ("Yes"/"No", dates, currency, masked secrets).
 - With database storage, audit entries without a user show "Unknown" in the User column.
+- The rich text editor's label has an id (`record_<field>_label`) that the editor's `aria-labelledby` points to, the box around the editor has a `cp-rich-text-field` class, and the editor's text is `text-sm`.
 
 **Action required:** Update host CSS and system specs that select these titles as `h3`, expect a `404` for a blank name, or expect raw ids in foreign key filters or raw values in the import preview.
 

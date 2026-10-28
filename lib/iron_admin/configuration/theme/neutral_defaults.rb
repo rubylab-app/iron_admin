@@ -31,8 +31,20 @@ module IronAdmin
         @input_error = "border-red-500 focus:border-red-600 focus:ring-3 focus:ring-red-500/20"
         @placeholder_text = "placeholder:text-zinc-500"
         @disabled_text = "text-zinc-300"
-        @rich_text_editor = ""
-        @rich_text_toolbar = ""
+        init_rich_text_defaults
+      end
+
+      # The rich text editor is outlined like the inputs; the toolbar's groups, buttons and link dialog
+      # take Neutral's borders, radii and shadow (with ! to win over trix.css).
+      def init_rich_text_defaults
+        @rich_text_editor = "border rounded-md border-zinc-500/80 hover:border-zinc-500 bg-white text-zinc-900 shadow-xs " \
+                            "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15"
+        @rich_text_toolbar = "[&_.trix-button-group]:border-zinc-200! [&_.trix-button-group]:rounded-md! " \
+                             "[&_.trix-button-group]:overflow-hidden! [&_.trix-button]:border-zinc-200! " \
+                             "[&_.trix-button]:border-b-0! [&_.trix-button.trix-active]:bg-zinc-100! " \
+                             "[&_.trix-dialog]:border! [&_.trix-dialog]:border-zinc-200! [&_.trix-dialog]:rounded-lg! " \
+                             "[&_.trix-dialog]:shadow-lg! [&_.trix-input--dialog]:border-zinc-500/80! " \
+                             "[&_.trix-input--dialog]:rounded-md!"
       end
 
       def init_navigation_defaults

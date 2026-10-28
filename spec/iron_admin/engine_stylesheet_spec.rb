@@ -27,6 +27,14 @@ RSpec.describe IronAdmin::Engine do
       expect(unlayered).to match(/trix-editor\.cp-rich-text\s*\{[^}]*border:\s*revert-layer;[^}]*border-radius:\s*revert-layer;/)
     end
 
+    it "wraps the rich text toolbar's buttons onto more rows, where Trix would scroll them out of reach" do
+      expect(unlayered).to match(/\.cp-rich-text-field trix-toolbar \.trix-button-row\s*\{[^}]*flex-wrap:\s*wrap;[^}]*overflow-x:\s*visible;/)
+    end
+
+    it "spaces the wrapped button groups evenly instead of with Trix's left margin" do
+      expect(unlayered).to match(/\.cp-rich-text-field trix-toolbar \.trix-button-group:not\(:first-child\)\s*\{\s*margin-left:\s*0;/)
+    end
+
     it "draws the toolbar icons light under a dark color scheme" do
       expect(unlayered).to match(/\.scheme-dark trix-toolbar \.trix-button--icon::before\s*\{\s*filter:\s*invert\(1\);/)
     end

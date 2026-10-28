@@ -86,8 +86,14 @@ RSpec.describe IronAdmin::Configuration::Theme do
     tooltip: "bg-zinc-900 text-white",
     code_block: "bg-zinc-950 text-zinc-100",
     code_font: "font-mono",
-    rich_text_editor: "",
-    rich_text_toolbar: "",
+    rich_text_editor: "border rounded-md border-zinc-500/80 hover:border-zinc-500 bg-white text-zinc-900 shadow-xs " \
+                      "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15",
+    rich_text_toolbar: "[&_.trix-button-group]:border-zinc-200! [&_.trix-button-group]:rounded-md! " \
+                       "[&_.trix-button-group]:overflow-hidden! [&_.trix-button]:border-zinc-200! " \
+                       "[&_.trix-button]:border-b-0! [&_.trix-button.trix-active]:bg-zinc-100! " \
+                       "[&_.trix-dialog]:border! [&_.trix-dialog]:border-zinc-200! [&_.trix-dialog]:rounded-lg! " \
+                       "[&_.trix-dialog]:shadow-lg! [&_.trix-input--dialog]:border-zinc-500/80! " \
+                       "[&_.trix-input--dialog]:rounded-md!",
     progress_track: "bg-zinc-200",
     pagination_active: "bg-zinc-900 text-white border-zinc-900",
     metric_label: "text-xs font-medium text-zinc-500",
