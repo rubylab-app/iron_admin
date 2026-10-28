@@ -17,10 +17,10 @@
       - label_target = overridden ? field.name : { belongs_to: field.options[:foreign_key], polymorphic_belongs_to: field.options[:type_column] }.fetch(field.type, field.name)
       %div{ class: span_full ? "md:col-span-2 2xl:col-span-3" : nil }
         - if group_label_id
-          %span{ id: group_label_id, class: "block text-sm font-medium #{cp_label_text} mb-1.5" }= field.name.to_s.humanize
+          %span{ id: group_label_id, class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform} mb-1.5" }= field.name.to_s.humanize
         - else
           = f.label label_target, field.name.to_s.humanize,
-            class: "block text-sm font-medium #{cp_label_text} mb-1.5"
+            class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform} mb-1.5"
         - case field.type
         - when *iron_admin_field_component_types
           = render iron_admin_field_component(f, field)
@@ -282,7 +282,7 @@
   - @resource_class.habtm_associations.each do |assoc|
     - ids_attribute = "#{assoc[:name].to_s.singularize}_ids"
     .md:col-span-2.2xl:col-span-3.mt-4
-      %span.block.text-sm.font-medium.mb-2{ id: f.field_id(ids_attribute, :label), class: cp_label_text }= assoc[:name].to_s.humanize
+      %span.block.text-sm.font-medium.mb-2{ id: f.field_id(ids_attribute, :label), class: "#{cp_label_text} #{t.field_label_transform}" }= assoc[:name].to_s.humanize
       - all_options = assoc[:reflection].klass.all
       - selected_ids = @record.public_send(assoc[:name]).pluck(:id)
       .flex.flex-wrap.gap-3{ role: "group", "aria-labelledby": f.field_id(ids_attribute, :label) }

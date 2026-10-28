@@ -86,6 +86,7 @@ module IronAdmin
         @heading_weight = "font-semibold"
         @page_title = "text-xl font-semibold tracking-tight text-zinc-900"
         @label_transform = ""
+        @field_label_transform = ""
         @body_text = "text-zinc-900"
         @muted_text = "text-zinc-500"
         @label_text = "text-zinc-700"

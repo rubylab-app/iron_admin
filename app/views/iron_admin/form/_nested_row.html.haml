@@ -31,7 +31,7 @@
       - textarea_class = controls.textarea(t, error: has_error)
       %div
         = child_f.label(field.type == :belongs_to ? field.options[:foreign_key] : field.name, field.name.to_s.humanize,
-          class: "block text-xs font-medium mb-1 #{t.label_text}")
+          class: "block text-xs font-medium mb-1 #{t.label_text} #{t.field_label_transform}")
         - case field.type
         - when :belongs_to
           - fk = field.options[:foreign_key]

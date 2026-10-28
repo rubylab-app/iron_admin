@@ -226,6 +226,10 @@ module IronAdmin
       #   table headers, metric labels); empty = as written
       attr_accessor :label_transform
 
+      # @return [String] Text transform and letter spacing of field labels: form and import form
+      #   labels, action form labels and the field names of show pages; empty = as written
+      attr_accessor :field_label_transform
+
       # @return [String] Body text color classes
       attr_accessor :body_text
 

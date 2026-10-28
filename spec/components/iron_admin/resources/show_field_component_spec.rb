@@ -134,5 +134,17 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
         expect(row.at_css("dd")[:class].split).to include("text-zinc-100")
       end
     end
+
+    context "with a theme that transforms field labels" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:loud) do |t|
+          t.field_label_transform = "uppercase tracking-wider"
+        end
+      end
+
+      it "transforms the label" do
+        expect(row.at_css("dt")[:class].split).to include("uppercase", "tracking-wider")
+      end
+    end
   end
 end

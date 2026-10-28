@@ -2,7 +2,7 @@
 - input_id = "#{scope}_#{field.name}"
 - input_name = "#{scope}[#{field.name}]"
 %div{ class: "space-y-1.5" }
-  %label.block.text-sm.font-medium{ class: cp_label_text, for: input_id }
+  %label.block.text-sm.font-medium{ class: "#{cp_label_text} #{t.field_label_transform}", for: input_id }
     = field.label
     - if field.required
       %span{ class: t.error_text } *

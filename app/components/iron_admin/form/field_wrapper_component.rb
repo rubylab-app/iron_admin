@@ -63,7 +63,7 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for label element
       def label_classes
-        "block text-sm font-medium #{theme.label_text} mb-1.5"
+        "block text-sm font-medium #{theme.label_text} #{theme.field_label_transform} mb-1.5"
       end
 
       # @api private

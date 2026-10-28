@@ -19,7 +19,7 @@
       - @fields.each do |field|
         - next unless field.visible?(iron_admin_current_user)
         %div{ class: styles::DETAIL_ROW }
-          %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text}" }= field.name.to_s.humanize
+          %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text} #{t.field_label_transform}" }= field.name.to_s.humanize
           %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_field_value(@record, field)
 
   - @resource_class.has_one_associations.each do |assoc|
@@ -36,7 +36,7 @@
           - next if field.name == :id
           - next unless field.visible?(iron_admin_current_user)
           %div{ class: styles::DETAIL_ROW }
-            %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text}" }= field.name.to_s.humanize
+            %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text} #{t.field_label_transform}" }= field.name.to_s.humanize
             %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_field_value(related_record, field)
 
   - @resource_class.habtm_associations.each do |assoc|

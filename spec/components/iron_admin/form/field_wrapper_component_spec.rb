@@ -97,6 +97,18 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
       component = described_class.new(name: :email)
       expect(component.label_classes).to include("mb-1.5")
     end
+
+    context "with a theme that transforms field labels" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:loud) do |t|
+          t.field_label_transform = "uppercase tracking-wider"
+        end
+      end
+
+      it "uses that theme's field_label_transform" do
+        expect(described_class.new(name: :email).label_classes.split).to include("uppercase", "tracking-wider")
+      end
+    end
   end
 
   describe "#error_classes" do

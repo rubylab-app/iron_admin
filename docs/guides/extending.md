@@ -9,7 +9,7 @@ IronAdmin is designed to be extended at every level.
 3. **Component overrides** - Replace the shell, navbar, sidebar, flash messages, index table, form, filter bar, search box or a field type's form input with your own ViewComponent (see [Components](components.md#overriding-components))
 4. **Custom field types** - Register new field renderers
 5. **Dashboard customization** - Metrics, charts, recent records
-6. **Theme system** - Named themes with 85 properties, picked per request
+6. **Theme system** - Named themes with 86 properties, picked per request
 7. **Route mounting** - Mount at any path
 
 ## MongoDB / Mongoid Support

@@ -9,16 +9,16 @@
     = form_tag resource_import_preview_path(@resource_class.resource_name),
       multipart: true, class: "space-y-5", data: { turbo: false } do
       %div{ class: "space-y-1.5" }
-        = label_tag :file, I18n.t("iron_admin.imports.new.file_label"), class: "block text-sm font-medium #{cp_label_text}"
+        = label_tag :file, I18n.t("iron_admin.imports.new.file_label"), class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform}"
         = file_field_tag :file, required: true, class: cp_file_input_class
       %div{ class: "space-y-1.5" }
-        = label_tag :import_format, I18n.t("iron_admin.imports.new.format_label"), class: "block text-sm font-medium #{cp_label_text}"
+        = label_tag :import_format, I18n.t("iron_admin.imports.new.format_label"), class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform}"
         = select_tag :import_format,
           options_for_select(@formats.map { |format| [format.to_s.upcase, format] }),
           class: cp_select_class
       - if @fields.any?
         .space-y-2
-          %p.text-sm.font-medium{ class: cp_label_text }= I18n.t("iron_admin.imports.new.fields_label")
+          %p.text-sm.font-medium{ class: "#{cp_label_text} #{t.field_label_transform}" }= I18n.t("iron_admin.imports.new.fields_label")
           .flex.flex-wrap.gap-2
             - @fields.each do |field|
               %span.inline-flex.items-center.px-2.text-xs{ class: "py-0.5 #{t.badge_shape} #{t.chip}" }

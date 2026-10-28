@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 85 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 86 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -233,6 +233,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `heading_weight` | `font-semibold` | Weight of the sidebar brand and of the `cp_heading` helper |
 | `page_title` | `text-xl font-semibold tracking-tight text-zinc-900` | Page titles (h1): size, weight, tracking and color |
 | `label_transform` | `""` | Case and letter spacing of small labels: sidebar group labels, table headers, metric labels and filter labels. Empty = as written. `uppercase tracking-wider` gives the 0.7 look |
+| `field_label_transform` | `""` | Case and letter spacing of field labels: the labels of resource, nested record, import and action forms, and the field names on show pages. Empty = as written. Separate from `label_transform`, so the 0.7 look keeps sentence-case form labels |
 | `body_text` | `text-zinc-900` | Main text color: the page, table cells, inputs, dropdown items |
 | `muted_text` | `text-zinc-500` | Secondary text: hints, timestamps, record ids, empty states, pagination summaries |
 | `label_text` | `text-zinc-700` | Form and filter labels |
