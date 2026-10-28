@@ -238,7 +238,7 @@ class PostResource < IronAdmin::Resource
 end
 ```
 
-Renders a monospace text area on forms with a markdown placeholder. On show pages, the raw markdown content is displayed.
+Renders a monospace text area on forms with a markdown placeholder. On show pages, the content is rendered as HTML with [Redcarpet](https://github.com/vmg/redcarpet) when the app bundles it (raw HTML in the markdown is filtered out), and shown as plain text otherwise. Rendered markdown and rich text use Trix's content styles (`trix-content`) for headings, lists, quotes and code when the app loads Action Text.
 
 ## Color Field
 

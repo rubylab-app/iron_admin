@@ -170,6 +170,25 @@ RSpec.describe "IronAdmin::Imports", type: :request do
         .to all(include(*theme.table_header_text.split, *theme.table_cell_padding.split))
     end
 
+    describe "the table frame, which scrolls sideways on a narrow screen" do
+      subject(:frame) do
+        preview_csv("Name,Email\nJane,jane@example.com\n")
+        html.at_css("table").parent
+      end
+
+      it "is in the keyboard's tab order, so a keyboard can scroll it" do
+        expect(frame[:tabindex]).to eq("0")
+      end
+
+      it "is a region named after the rows it holds" do
+        expect([frame[:role], frame["aria-label"]]).to eq(["region", I18n.t("iron_admin.imports.preview.table_label")])
+      end
+
+      it "shows the theme's focus ring when it has the focus" do
+        expect(frame[:class].split).to include(*IronAdmin.current_theme.focus_ring.split)
+      end
+    end
+
     it "writes the errors of an invalid row in the theme's error color" do
       preview_csv("Name,Email\n,nameless@example.com\n")
 

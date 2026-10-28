@@ -30,6 +30,10 @@ RSpec.describe "Color field type", type: :request do
       expect(page.css("#record_color_hex").size).to eq(1)
     end
 
+    it "gives the color picker the shadow of the hex input next to it" do
+      expect(picker[:class].split).to include(*IronAdmin.current_theme.control_shadow.split)
+    end
+
     it "labels the color picker for assistive technology" do
       expect(picker["aria-label"]).to eq("Color hex picker")
     end

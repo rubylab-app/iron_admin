@@ -99,7 +99,7 @@ module IronAdmin
       content = record.public_send(field.name)
       return if content.blank?
 
-      content_tag(:div, sanitize(content.to_s), class: "prose prose-sm max-w-none")
+      content_tag(:div, sanitize(content.to_s), class: "trix-content")
     end
 
     def display_markdown(record, field)
@@ -110,7 +110,7 @@ module IronAdmin
         require "redcarpet"
         renderer = Redcarpet::Render::HTML.new(hard_wrap: true, filter_html: true)
         markdown = Redcarpet::Markdown.new(renderer, autolink: true, tables: true, fenced_code_blocks: true)
-        content_tag(:div, markdown.render(content).html_safe, class: "prose prose-sm max-w-none") # rubocop:disable Rails/OutputSafety
+        content_tag(:div, markdown.render(content).html_safe, class: "trix-content") # rubocop:disable Rails/OutputSafety
       rescue LoadError
         content_tag(:pre, content, class: "text-sm whitespace-pre-wrap #{cp_body_text}")
       end

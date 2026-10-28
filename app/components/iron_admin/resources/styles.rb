@@ -9,9 +9,10 @@ module IronAdmin
       # @return [Array<Symbol>]
       NUMERIC_TYPES = %i[number currency].freeze
 
-      # A label and value row of a show page panel.
+      # A label and value row of a show page panel. The label sits at the top of the row, beside
+      # the first line of a long value.
       # @return [String]
-      DETAIL_ROW = "flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center"
+      DETAIL_ROW = "flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-start"
 
       module_function
 

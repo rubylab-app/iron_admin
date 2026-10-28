@@ -21,7 +21,9 @@
         %span.inline-flex.items-center.px-2.text-xs{ class: "py-0.5 #{t.badge_shape} #{t.chip}" }
           = "#{header} -> #{field_name.to_s.humanize}"
 
-  .overflow-x-auto{ class: "#{cp_card} #{t.table_frame}" }
+  -# The table scrolls sideways on a narrow screen and its rows hold nothing focusable, so the
+  -# frame takes the focus itself: a keyboard can then scroll it with the arrow keys.
+  .overflow-x-auto{ tabindex: 0, role: "region", "aria-label": I18n.t("iron_admin.imports.preview.table_label"), class: "#{cp_card} #{t.table_frame} #{t.focus_ring}" }
     %table.min-w-full.divide-y{ class: t.table_head_divider }
       %thead{ class: cp_table_header_bg }
         %tr

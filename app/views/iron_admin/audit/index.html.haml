@@ -36,7 +36,7 @@
           = date_field_tag :to, params[:to], class: controls.input(t)
         .flex.gap-2
           %button{ type: "submit", class: controls.apply_button(t) } Filter
-          = link_to "Clear", audit_path, class: styles.ghost_button(t)
+          = link_to "Clear", audit_path, class: styles.secondary_button(t)
 
   - if @entries.any?
     %div{ class: styles.table_frame(t) }
@@ -73,7 +73,7 @@
               %td{ class: "text-sm #{t.table_cell_padding} #{t.body_text}" }
                 - if entry.record_changes.present? && entry.record_changes.any?
                   %details
-                    %summary.cursor-pointer{ class: "#{t.link} #{t.focus_ring}" }
+                    %summary.cursor-pointer.whitespace-nowrap{ class: "#{t.link} #{t.focus_ring}" }
                       = pluralize(entry.record_changes.keys.count, "field")
                       changed
                     .mt-2.p-2.max-w-md.overflow-auto.text-xs{ class: "#{t.control_radius} #{t.surface_muted} #{t.code_font}" }

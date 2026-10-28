@@ -15,6 +15,16 @@ RSpec.describe IronAdmin::Resources::Styles do
     end
   end
 
+  describe "DETAIL_ROW" do
+    it "lines the label up with the first line of a long value instead of its middle" do
+      expect(described_class::DETAIL_ROW.split).to include("sm:items-start")
+    end
+
+    it "does not center the label on the row" do
+      expect(described_class::DETAIL_ROW.split).not_to include("sm:items-center")
+    end
+  end
+
   describe ".page_title" do
     it "uses the theme's page title and heading font" do
       expect(described_class.page_title(midnight).split).to eq(%w[text-2xl font-black text-white font-[family-name:Space_Grotesk]])

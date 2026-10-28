@@ -78,6 +78,12 @@ RSpec.describe "IronAdmin::Audit", type: :request do
         expect(response.body).to include("UserResource")
       end
 
+      it "keeps each changes summary on one line, so a table narrower than its columns keeps short rows" do
+        get iron_admin.audit_path
+
+        expect(response.parsed_body.css("td details > summary").map { |summary| summary[:class].split }).to all(include("whitespace-nowrap"))
+      end
+
       it "displays IP addresses" do
         get iron_admin.audit_path
 
@@ -244,6 +250,10 @@ RSpec.describe "IronAdmin::Audit", type: :request do
     it "gives the selects, date inputs, Filter button and Clear link one height, so they line up" do
       controls = filter_row.css("select, input[type=date], button, a")
       expect(controls.map { |control| control[:class].split.include?("h-9") }).to all(be(true))
+    end
+
+    it "draws the Clear link as a secondary button, like the forms' Cancel" do
+      expect(filter_row.at_css("a")[:class].split).to eq(IronAdmin::Resources::Styles.secondary_button(IronAdmin.current_theme).split)
     end
 
     it "insets the text of the date inputs like the selects" do

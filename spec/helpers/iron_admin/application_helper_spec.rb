@@ -531,7 +531,7 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
 
         result = helper.display_field_value(document, field)
 
-        expect(result).to include("prose")
+        expect(result).to start_with('<div class="trix-content">')
       end
 
       it "strips unsafe markup" do

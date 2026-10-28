@@ -70,6 +70,7 @@ en:
           one: "%{count} row detected."
           other: "%{count} rows detected."
         mapping_title: "Column mapping"
+        table_label: "Rows to import"
         status_column: "Status"
         valid_status: "Valid"
         back_button: "Back"

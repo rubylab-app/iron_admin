@@ -82,7 +82,7 @@
           .flex.items-center.gap-3{ data: { controller: "cp-color-field" } }
             = f.color_field field.name, name: nil, id: "#{f.field_id(field.name)}_picker",
               "aria-label": I18n.t("iron_admin.fields.color_picker_label", field: field.name.to_s.humanize),
-              class: "h-9 w-14 shrink-0 cursor-pointer p-0.5 #{t.control_radius} #{t.border_width} #{t.input_border} #{t.card_bg}",
+              class: "h-9 w-14 shrink-0 cursor-pointer p-0.5 #{t.control_radius} #{t.border_width} #{t.input_border} #{t.card_bg} #{t.control_shadow}",
               data: { cp_color_field_target: "picker", action: "input->cp-color-field#fromPicker" }
             = f.text_field field.name, placeholder: I18n.t("iron_admin.fields.color_placeholder"),
               pattern: "#(?:[0-9a-fA-F]{3}){1,2}", title: I18n.t("iron_admin.fields.color_invalid"),

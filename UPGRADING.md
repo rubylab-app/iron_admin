@@ -224,6 +224,7 @@ None of this changes an app that registers no theme: with a single theme, the na
 - Scope tabs keep the search, the filters and the sort, and go back to the first page.
 - The import preview formats each cell as the show page does ("Yes"/"No", dates, currency, masked secrets).
 - With database storage, audit entries without a user show "Unknown" in the User column.
+- Show page rows align their label to the top of the row (`sm:items-start`), the audit log's Clear link is a secondary button, the import preview table's frame is a focusable region, and `:markdown` and `:rich_text` values on show pages are wrapped in `trix-content` instead of `prose prose-sm max-w-none`.
 - The rich text editor's label has an id (`record_<field>_label`) that the editor's `aria-labelledby` points to, the box around the editor has a `cp-rich-text-field` class, and the editor's text is `text-sm`.
 
 **Action required:** Update host CSS and system specs that select these titles as `h3`, expect a `404` for a blank name, or expect raw ids in foreign key filters or raw values in the import preview.
