@@ -88,6 +88,7 @@ en:
       boolean_enable: "Enable %{field}"
       boolean_true: "Yes"
       boolean_false: "No"
+      empty_value: "Not set"
       url_placeholder: "https://"
       email_placeholder: "user@example.com"
       file_remove: "Remove"

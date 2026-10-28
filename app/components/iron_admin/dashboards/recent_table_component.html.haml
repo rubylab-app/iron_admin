@@ -3,7 +3,8 @@
   -# Padded like the cells, so the title starts where the first column does.
   .border-b{ class: "#{theme.card_border} #{theme.table_cell_padding}" }
     %h2{ class: title_classes }= "Recent #{label}"
-  .overflow-x-auto{ class: theme.table_frame }
+  -# A table wider than the card scrolls sideways; cp-scroll-fade fades the edge it can scroll toward.
+  .overflow-x-auto.cp-scroll-fade{ class: theme.table_frame }
     -# divide-y takes its color from table_head_border (else table_border): a border color on the table would leave the dividers in currentColor.
     %table.min-w-full.divide-y{ class: theme.table_head_divider }
       %thead{ class: theme.table_header_bg }

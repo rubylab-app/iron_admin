@@ -67,3 +67,40 @@ trix-editor.cp-rich-text {
 .scheme-dark trix-toolbar .trix-button--icon::before {
   filter: invert(1);
 }
+
+/* Scroll frames (cp-scroll-fade): a table or a row of tabs wider than its frame scrolls sideways, */
+/* and phones hide the scrollbar. The frame fades out at each edge it can still scroll toward. */
+/* A scroll timeline drives the fade, so a frame that fits, or a browser without scroll */
+/* timelines, shows none. The fade is a mask, so it suits any theme's colors; a mask also hides */
+/* focus outlines, so it lifts while the frame or a control in it has the keyboard focus. */
+@property --cp-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --cp-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes cp-scroll-fade {
+  0% { --cp-fade-start: 0px; --cp-fade-end: 2rem; }
+  8% { --cp-fade-start: 2rem; }
+  92% { --cp-fade-end: 2rem; }
+  100% { --cp-fade-start: 2rem; --cp-fade-end: 0px; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .cp-scroll-fade {
+    mask-image: linear-gradient(to right, transparent, #000 var(--cp-fade-start), #000 calc(100% - var(--cp-fade-end)), transparent);
+    animation: cp-scroll-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+
+  .cp-scroll-fade:focus-visible,
+  .cp-scroll-fade:has(:focus-visible) {
+    mask-image: none;
+  }
+}

@@ -221,4 +221,21 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
       end
     end
   end
+
+  describe ".clear_button" do
+    subject(:classes) { described_class.clear_button(theme).split }
+
+    # The audit log's Clear link and the forms' Cancel link are secondary buttons too.
+    it "matches the secondary buttons of the forms" do
+      expect(classes).to eq(IronAdmin::Form::ControlClasses.button(theme, :secondary).split)
+    end
+
+    context "with another theme" do
+      subject(:classes) { described_class.clear_button(midnight).split }
+
+      it "uses that theme's secondary button" do
+        expect(classes).to include("bg-zinc-800", "text-zinc-100")
+      end
+    end
+  end
 end

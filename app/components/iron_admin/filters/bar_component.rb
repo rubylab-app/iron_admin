@@ -97,6 +97,12 @@ module IronAdmin
       def apply_classes
         ControlStyles.apply_button(theme)
       end
+
+      # @api private
+      # @return [String] CSS classes of the Clear link
+      def clear_classes
+        ControlStyles.clear_button(theme)
+      end
     end
   end
 end

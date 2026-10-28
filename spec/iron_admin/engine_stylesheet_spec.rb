@@ -35,6 +35,16 @@ RSpec.describe IronAdmin::Engine do
       expect(unlayered).to match(/\.cp-rich-text-field trix-toolbar \.trix-button-group:not\(:first-child\)\s*\{\s*margin-left:\s*0;/)
     end
 
+    # The fade follows a scroll timeline, so it shows only while the frame can scroll that way.
+    it "fades the edges of a cp-scroll-fade frame by its sideways scroll" do
+      expect(unlayered).to match(/\.cp-scroll-fade\s*\{[^}]*mask-image:[^}]*animation-timeline:\s*scroll\(self inline\);/)
+    end
+
+    # A mask also hides the frame's own focus outline, and a focused link near the edge.
+    it "lifts the fade while the frame or a control in it has the keyboard focus" do
+      expect(unlayered).to match(/\.cp-scroll-fade:focus-visible,\s*\.cp-scroll-fade:has\(:focus-visible\)\s*\{\s*mask-image:\s*none;/)
+    end
+
     it "draws the toolbar icons light under a dark color scheme" do
       expect(unlayered).to match(/\.scheme-dark trix-toolbar \.trix-button--icon::before\s*\{\s*filter:\s*invert\(1\);/)
     end

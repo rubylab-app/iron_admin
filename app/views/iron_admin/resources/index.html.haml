@@ -21,7 +21,7 @@
       - if @resource_class.all_scopes.any?
         -# A tab keeps the search, filters and sort, and starts back at the first page.
         - scope_tab_state = iron_admin_index_state.except("scope", "page").symbolize_keys
-        .flex.gap-1.border-b.overflow-x-auto{ class: t.card_border }
+        .flex.gap-1.border-b.overflow-x-auto.cp-scroll-fade{ class: t.card_border }
           - @resource_class.all_scopes.each do |scope|
             - active = @current_scope == scope[:name].to_s
             = link_to scope[:name].to_s.humanize,
@@ -78,15 +78,20 @@
                       - filter_options_for(@resource_class, filter).each do |label, value|
                         %option{ value: value, selected: iron_admin_filter_param(filter[:name]) == value.to_s }= label
                   - when :date_range
+                    -# The inputs' names say which end each holds; the markers say it on screen.
                     .space-y-2
-                      = date_field_tag "filters[#{filter[:name]}_from]", iron_admin_filter_param("#{filter[:name]}_from"),
-                        class: controls.input(t),
-                        "aria-label": I18n.t("iron_admin.filters.from_label", filter: filter_label),
-                        placeholder: I18n.t("iron_admin.filters.from")
-                      = date_field_tag "filters[#{filter[:name]}_to]", iron_admin_filter_param("#{filter[:name]}_to"),
-                        class: controls.input(t),
-                        "aria-label": I18n.t("iron_admin.filters.to_label", filter: filter_label),
-                        placeholder: I18n.t("iron_admin.filters.to")
+                      .flex.items-center.gap-2
+                        %span{ "aria-hidden": "true", class: controls.range_marker(t) }= I18n.t("iron_admin.filters.from")
+                        = date_field_tag "filters[#{filter[:name]}_from]", iron_admin_filter_param("#{filter[:name]}_from"),
+                          class: controls.input(t),
+                          "aria-label": I18n.t("iron_admin.filters.from_label", filter: filter_label),
+                          placeholder: I18n.t("iron_admin.filters.from")
+                      .flex.items-center.gap-2
+                        %span{ "aria-hidden": "true", class: controls.range_marker(t) }= I18n.t("iron_admin.filters.to")
+                        = date_field_tag "filters[#{filter[:name]}_to]", iron_admin_filter_param("#{filter[:name]}_to"),
+                          class: controls.input(t),
+                          "aria-label": I18n.t("iron_admin.filters.to_label", filter: filter_label),
+                          placeholder: I18n.t("iron_admin.filters.to")
                   - when :string
                     - string_ops = %w[contains equals starts_with ends_with]
                     - current_op = iron_admin_filter_param(filter[:name].to_s, "op") || "contains"
@@ -119,7 +124,7 @@
               %button{ type: "submit", class: controls.apply_button(t) }= I18n.t("iron_admin.resources.index.apply_button")
               = link_to I18n.t("iron_admin.resources.index.clear_button"),
                 resources_path(@resource_class.resource_name, scope: @current_scope, q: params[:q], **iron_admin_index_state.slice("sort", "direction").symbolize_keys),
-                class: "text-sm #{cp_link_muted}"
+                class: controls.clear_button(t)
 
   - has_bulk_actions = @resource_class.defined_bulk_actions.any?
   = turbo_frame_tag "records", data: { turbo_action: "advance" } do

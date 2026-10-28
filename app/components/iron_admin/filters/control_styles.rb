@@ -64,6 +64,19 @@ module IronAdmin
       def apply_button(theme)
         Form::ControlClasses.button(theme, :primary)
       end
+
+      # @param theme [IronAdmin::Configuration::Theme]
+      # @return [String] The Clear link, a secondary button like the audit log's Clear and the
+      #   forms' Cancel
+      def clear_button(theme)
+        Form::ControlClasses.button(theme, :secondary)
+      end
+
+      # @param theme [IronAdmin::Configuration::Theme]
+      # @return [String] "From" or "To" beside a date range input, which says which end it holds
+      def range_marker(theme)
+        "w-10 shrink-0 text-xs #{theme.muted_text} #{theme.label_transform}"
+      end
     end
   end
 end

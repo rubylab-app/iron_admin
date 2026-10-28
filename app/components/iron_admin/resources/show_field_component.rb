@@ -47,9 +47,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String, nil] Formatted field value
+      # @return [String] Formatted field value, or the empty value marker
       def value
-        helpers.display_field_value(record, field)
+        helpers.display_show_field_value(record, field)
       end
     end
   end

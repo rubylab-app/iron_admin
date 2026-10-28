@@ -20,7 +20,7 @@
         - next unless field.visible?(iron_admin_current_user)
         %div{ class: styles::DETAIL_ROW }
           %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text} #{t.field_label_transform}" }= field.name.to_s.humanize
-          %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_field_value(@record, field)
+          %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_show_field_value(@record, field)
 
   - @resource_class.has_one_associations.each do |assoc|
     - related_record = @record.public_send(assoc[:name])
@@ -37,7 +37,7 @@
           - next unless field.visible?(iron_admin_current_user)
           %div{ class: styles::DETAIL_ROW }
             %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text} #{t.field_label_transform}" }= field.name.to_s.humanize
-            %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_field_value(related_record, field)
+            %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_show_field_value(related_record, field)
 
   - @resource_class.habtm_associations.each do |assoc|
     - related_records = @record.public_send(assoc[:name])
@@ -70,5 +70,5 @@
             data: action[:confirm] ? { turbo_confirm: confirm } : {},
             class: styles.secondary_button(t) do
             - if action[:icon]
-              = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4" }
+              = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
             = action[:name].to_s.humanize

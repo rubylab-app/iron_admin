@@ -5,7 +5,7 @@
     %p.min-w-0.break-words{ class: label_classes }= label
     - if icon
       .flex.h-8.w-8.shrink-0.items-center.justify-center{ class: icon_tile_classes }
-        = heroicon icon, variant: :outline, options: { class: "h-4 w-4" }
+        = heroicon icon, variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
   %p.mt-2{ class: theme.metric_value }= value
   - if change
     .mt-1.flex.items-center.gap-1.text-sm.font-medium{ class: change_classes }

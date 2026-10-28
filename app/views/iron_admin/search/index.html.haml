@@ -1,7 +1,13 @@
 - styles = IronAdmin::Resources::Styles
 
 .px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
-  %h1.mb-6{ class: styles.page_title(t) }= @query.present? ? "Search results for \"#{@query}\"" : "Search results"
+  %h1.mb-6{ class: styles.page_title(t) }
+    - if @query.present?
+      -# <q> draws the language's quotation marks; the query keeps the case it was typed in.
+      Search results for
+      %q.normal-case= @query
+    - else
+      Search results
   - if @results&.any?
     - @results.each do |group|
       %section.mb-6
@@ -9,6 +15,7 @@
         %div{ class: "#{styles.panel(t)} #{styles.divided(t)}" }
           - group[:records].each do |record|
             = link_to resource_path(group[:resource].resource_name, record), class: styles.list_row(t) do
-              = display_record_label(record)
+              -# In the link color, like the related records of a show page.
+              %span{ class: t.link }= display_record_label(record)
   - elsif @query.present?
     .text-center.py-12.text-sm{ class: t.muted_text } No results found.

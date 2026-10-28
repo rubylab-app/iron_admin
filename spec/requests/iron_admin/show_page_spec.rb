@@ -169,4 +169,44 @@ RSpec.describe "Resource show page", type: :request do
       end
     end
   end
+
+  describe "empty values" do
+    subject(:value_cell) do
+      get iron_admin.resource_path("users", user), as: :html
+      response.parsed_body.css("dl > div").find { |row| row.at_css("dt").text.strip == label }.at_css("dd")
+    end
+
+    let(:user) { create(:user, name: "Ada", role: nil) }
+    let(:label) { "Role" }
+
+    # A blank cell reads as a value that did not load.
+    it "marks an empty value with a dash" do
+      expect(value_cell.at_css("[aria-hidden=true]").text).to eq("\u2014")
+    end
+
+    it "mutes the dash with the theme's muted_text" do
+      expect(value_cell.at_css("[aria-hidden=true]")[:class].split).to include(*IronAdmin.current_theme.muted_text.split)
+    end
+
+    it "names the empty value for screen readers" do
+      expect(value_cell.at_css(".sr-only").text).to eq(I18n.t("iron_admin.fields.empty_value"))
+    end
+
+    context "with a value" do
+      let(:label) { "Name" }
+
+      it "shows the value" do
+        expect(value_cell.text.strip).to eq("Ada")
+      end
+    end
+
+    context "with a false boolean" do
+      let(:user) { create(:user, active: false) }
+      let(:label) { "Active" }
+
+      it "shows the false icon, not the dash" do
+        expect(value_cell.at_css(".sr-only").text).to eq(I18n.t("iron_admin.fields.boolean_false"))
+      end
+    end
+  end
 end

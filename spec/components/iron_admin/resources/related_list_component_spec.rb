@@ -109,6 +109,10 @@ RSpec.describe IronAdmin::Resources::RelatedListComponent, type: :component do
       expect(render_list.css(".overflow-x-auto table")).not_to be_empty
     end
 
+    it "fades the edge the table can still scroll toward" do
+      expect(render_list.at_css("table").parent[:class].split).to include("cp-scroll-fade")
+    end
+
     it "labels the View all link from the locale" do
       allow(I18n).to receive(:t).and_call_original
       allow(I18n).to receive(:t).with("iron_admin.resources.show.view_all").and_return("Every license")

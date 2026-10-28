@@ -44,6 +44,12 @@ RSpec.describe "Engine layout", type: :request do
     it "declares the page language" do
       expect(Nokogiri::HTML(body).at_css("html")["lang"]).to eq(I18n.locale.to_s)
     end
+
+    # A 24px outline icon drawn at 16px turns its 1.5 stroke into a blurred 1px line.
+    it "draws the sidebar's 16px outline icons with a 1.75 stroke" do
+      icons = Nokogiri::HTML(body).css("nav#cp-sidebar-panel svg.h-4")
+      expect(icons.pluck("stroke-width").uniq).to eq(["1.75"])
+    end
   end
 
   describe "theme" do

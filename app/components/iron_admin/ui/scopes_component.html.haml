@@ -1,3 +1,3 @@
-.flex.gap-1.overflow-x-auto.border-b{ class: theme.card_border }
+.flex.gap-1.overflow-x-auto.cp-scroll-fade.border-b{ class: theme.card_border }
   - scopes.each do |scope|
     = link_to scope[:name].to_s.humanize, scope_url(scope[:name]), class: scope_classes(scope), aria: { current: ("page" if active?(scope)) }

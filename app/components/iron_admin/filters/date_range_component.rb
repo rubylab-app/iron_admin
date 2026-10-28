@@ -68,6 +68,12 @@ module IronAdmin
       def input_classes
         ControlStyles.input(theme)
       end
+
+      # @api private
+      # @return [String] CSS classes of the From and To markers beside the inputs
+      def marker_classes
+        ControlStyles.range_marker(theme)
+      end
     end
   end
 end

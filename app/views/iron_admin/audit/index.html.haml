@@ -39,56 +39,59 @@
           = link_to "Clear", audit_path, class: styles.secondary_button(t)
 
   - if @entries.any?
-    %div{ class: styles.table_frame(t) }
-      %table{ class: styles.table(t) }
-        %thead{ class: t.table_header_bg }
-          %tr
-            - ["Timestamp", "User", "Action", "Resource", "Record ID", "IP Address", "Changes"].each do |heading|
-              %th{ scope: "col", class: styles.header_cell(t) }= heading
-        %tbody{ class: styles.divided(t) }
-          - @entries.each do |entry|
-            %tr{ class: t.table_row_hover }
-              %td{ class: "#{styles.cell(t)} tabular-nums" }
-                = entry.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-              %td{ class: styles.cell(t) }
-                - user_label = @user_labels[IronAdmin::AuditLog.user_identifier(entry.user)]
-                - if user_label
-                  = user_label
-                - elsif entry.user.respond_to?(:email)
-                  = entry.user.email
-                - elsif entry.user.respond_to?(:name)
-                  = entry.user.name
-                - elsif entry.user.present?
-                  = entry.user.to_s
-                - else
-                  %span{ class: t.muted_text } Unknown
-              %td{ class: styles.cell(t) }
-                = render IronAdmin::Ui::BadgeComponent.new(text: entry.action.to_s.humanize, color: action_colors.fetch(entry.action.to_sym, :gray))
-              %td{ class: styles.cell(t) }
-                = @resource_labels.fetch(entry.resource.to_s, entry.resource)
-              %td{ class: "#{styles.cell(t)} tabular-nums" }
-                = entry.record_id
-              %td{ class: "#{styles.muted_cell(t)} tabular-nums" }
-                = entry.ip_address || "-"
-              %td{ class: "text-sm #{t.table_cell_padding} #{t.body_text}" }
-                - if entry.record_changes.present? && entry.record_changes.any?
-                  %details
-                    %summary.cursor-pointer.whitespace-nowrap{ class: "#{t.link} #{t.focus_ring}" }
-                      = pluralize(entry.record_changes.keys.count, "field")
-                      changed
-                    .mt-2.p-2.max-w-md.overflow-auto.text-xs{ class: "#{t.control_radius} #{t.surface_muted} #{t.code_font}" }
-                      - entry.record_changes.each do |field, values|
-                        .mb-1
-                          %strong= field
-                          \:
-                          - if values.is_a?(Array) && values.length == 2
-                            %span.line-through{ class: t.error_text }= values[0].to_s.truncate(30)
-                            = heroicon "arrow-right", variant: :mini, options: { class: "h-3 w-3 inline mx-1 #{t.icon_muted}" }
-                            %span{ class: t.success_text }= values[1].to_s.truncate(30)
-                          - else
-                            = values.to_s.truncate(50)
-                - else
-                  %span{ class: t.muted_text } -
+    %div{ class: styles.table_panel(t) }
+      %div{ class: styles::SCROLL_FRAME }
+        %table{ class: styles.table(t) }
+          %thead{ class: t.table_header_bg }
+            %tr
+              - ["Timestamp", "User", "Action", "Resource", "Record ID", "IP Address", "Changes"].each do |heading|
+                %th{ scope: "col", class: styles.header_cell(t) }= heading
+          %tbody{ class: styles.divided(t) }
+            - @entries.each do |entry|
+              %tr{ class: t.table_row_hover }
+                %td{ class: styles.cell(t) }
+                  -# Dated like the other pages' datetime fields; the exact time is in the attributes.
+                  %time{ datetime: entry.timestamp.utc.iso8601, title: entry.timestamp.utc.to_s }
+                    = entry.timestamp.strftime(IronAdmin::FieldDisplayHelper::DATETIME_FORMAT).squish
+                %td{ class: styles.cell(t) }
+                  - user_label = @user_labels[IronAdmin::AuditLog.user_identifier(entry.user)]
+                  - if user_label
+                    = user_label
+                  - elsif entry.user.respond_to?(:email)
+                    = entry.user.email
+                  - elsif entry.user.respond_to?(:name)
+                    = entry.user.name
+                  - elsif entry.user.present?
+                    = entry.user.to_s
+                  - else
+                    %span{ class: t.muted_text } Unknown
+                %td{ class: styles.cell(t) }
+                  = render IronAdmin::Ui::BadgeComponent.new(text: entry.action.to_s.humanize, color: action_colors.fetch(entry.action.to_sym, :gray))
+                %td{ class: styles.cell(t) }
+                  = @resource_labels.fetch(entry.resource.to_s, entry.resource)
+                %td{ class: "#{styles.cell(t)} tabular-nums" }
+                  = entry.record_id
+                %td{ class: "#{styles.muted_cell(t)} tabular-nums" }
+                  = entry.ip_address || "-"
+                %td{ class: "text-sm #{t.table_cell_padding} #{t.body_text}" }
+                  - if entry.record_changes.present? && entry.record_changes.any?
+                    %details
+                      %summary.cursor-pointer.whitespace-nowrap{ class: "#{t.link} #{t.focus_ring}" }
+                        = pluralize(entry.record_changes.keys.count, "field")
+                        changed
+                      .mt-2.p-2.max-w-md.overflow-auto.text-xs{ class: "#{t.control_radius} #{t.surface_muted} #{t.code_font}" }
+                        - entry.record_changes.each do |field, values|
+                          .mb-1
+                            %strong= field
+                            \:
+                            - if values.is_a?(Array) && values.length == 2
+                              %span.line-through{ class: t.error_text }= values[0].to_s.truncate(30)
+                              = heroicon "arrow-right", variant: :mini, options: { class: "h-3 w-3 inline mx-1 #{t.icon_muted}" }
+                              %span{ class: t.success_text }= values[1].to_s.truncate(30)
+                            - else
+                              = values.to_s.truncate(50)
+                  - else
+                    %span{ class: t.muted_text } -
 
   - else
     .text-center.py-12

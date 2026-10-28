@@ -1,9 +1,31 @@
 # frozen_string_literal: true
 
 module IronAdmin
-  # Private helper methods for rendering specific field types.
-  # Extracted from ApplicationHelper for organization.
+  # Helper methods for rendering specific field types, all private but the show page's
+  # display_show_field_value. Extracted from ApplicationHelper for organization.
   module FieldDisplayHelper # rubocop:disable Metrics/ModuleLength
+    # strftime format of datetime values, such as "Oct 25, 2026 at 6:30 PM" (squished, since
+    # %l pads one-digit hours), unless a field sets its own +format+. The audit log uses it too.
+    # @return [String]
+    DATETIME_FORMAT = "%b %d, %Y at %l:%M %p"
+
+    # Displays a field value on a show page: the formatted value, or, when the field is empty, a
+    # muted dash with a name for screen readers, so an empty row does not read as a value that
+    # did not load. A false value is not empty.
+    #
+    # @param record [ActiveRecord::Base] The record
+    # @param field [IronAdmin::Field] Field configuration
+    # @return [String, Object] Formatted value, or the empty value marker
+    def display_show_field_value(record, field)
+      value = display_field_value(record, field)
+      return value if value.equal?(false) || value.present?
+
+      content_tag(:span, class: "relative") do
+        content_tag(:span, "\u2014", class: cp_muted_text, "aria-hidden": "true") +
+          content_tag(:span, I18n.t("iron_admin.fields.empty_value"), class: "sr-only")
+      end
+    end
+
     private
 
     def display_hidden(_record, _field)
@@ -200,7 +222,7 @@ module IronAdmin
       value = record.public_send(field.name)
       return if value.nil?
 
-      fmt = field.options[:format] || "%b %d, %Y at %l:%M %p"
+      fmt = field.options[:format] || DATETIME_FORMAT
       value.strftime(fmt).squish
     end
 

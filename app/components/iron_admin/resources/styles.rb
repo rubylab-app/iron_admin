@@ -14,6 +14,12 @@ module IronAdmin
       # @return [String]
       DETAIL_ROW = "flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-start"
 
+      # The box a table scrolls sideways in, inside its {.table_panel}: rounded like the panel, with
+      # the engine's fade at the edge it can still scroll toward. The fade masks this box, so the
+      # panel's border, on the box around it, keeps its color.
+      # @return [String]
+      SCROLL_FRAME = "overflow-x-auto rounded-[inherit] cp-scroll-fade"
+
       module_function
 
       # @param theme [IronAdmin::Configuration::Theme]
@@ -44,6 +50,12 @@ module IronAdmin
       # @return [String] The panel a table scrolls in
       def table_frame(theme)
         "overflow-x-auto #{panel(theme)} #{theme.table_frame}"
+      end
+
+      # @param theme [IronAdmin::Configuration::Theme]
+      # @return [String] The panel of a table that scrolls in a {SCROLL_FRAME} inside it
+      def table_panel(theme)
+        "#{panel(theme)} #{theme.table_frame}"
       end
 
       # @param theme [IronAdmin::Configuration::Theme]

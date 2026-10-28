@@ -199,6 +199,19 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       it "shows the theme's focus ring when it has the focus" do
         expect(frame[:class].split).to include(*IronAdmin.current_theme.focus_ring.split)
       end
+
+      it "fades the edge the table can still scroll toward" do
+        expect(frame[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+      end
+
+      # The fade masks the scrolling box, so the card's border sits on a box that does not scroll.
+      it "sits in the card, whose border the fade leaves alone" do
+        expect(frame.parent[:class].split).to include(*IronAdmin.current_theme.card_border.split, *IronAdmin.current_theme.border_radius.split)
+      end
+
+      it "rounds its corners like the card" do
+        expect(frame[:class].split).to include("rounded-[inherit]")
+      end
     end
 
     it "frames the page like the upload step, so the title does not move between the two" do

@@ -179,6 +179,11 @@ RSpec.describe IronAdmin::Filters::BarComponent, type: :component do
       it "clears the filters to the form URL" do
         expect(rendered.css("a").find { |link| link.text.squish == "Clear" }[:href]).to eq("/admin/users")
       end
+
+      it "draws the Clear link as a secondary button, like the audit log's" do
+        expect(rendered.css("a").find { |link| link.text.squish == "Clear" }[:class].split)
+          .to eq(IronAdmin::Filters::ControlStyles.clear_button(IronAdmin.current_theme).split)
+      end
     end
   end
 end

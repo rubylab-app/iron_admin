@@ -79,6 +79,29 @@ RSpec.describe IronAdmin::Resources::Styles do
     end
   end
 
+  describe ".table_panel" do
+    subject(:classes) { described_class.table_panel(midnight).split }
+
+    it "is a panel with the theme's table frame" do
+      expect(classes).to include("bg-zinc-900", "border-2", "ring-1", "ring-zinc-700")
+    end
+
+    # The SCROLL_FRAME inside it scrolls, so the fade it masks leaves the panel's border alone.
+    it "does not scroll itself" do
+      expect(classes).not_to include("overflow-x-auto")
+    end
+  end
+
+  describe "SCROLL_FRAME" do
+    it "scrolls the table sideways with the engine's edge fade" do
+      expect(described_class::SCROLL_FRAME.split).to include("overflow-x-auto", "cp-scroll-fade")
+    end
+
+    it "rounds its corners like the panel around it" do
+      expect(described_class::SCROLL_FRAME.split).to include("rounded-[inherit]")
+    end
+  end
+
   describe ".table" do
     it "divides the head from the body in the theme's table border color" do
       expect(described_class.table(theme).split).to include("min-w-full", "divide-y", "divide-zinc-200")

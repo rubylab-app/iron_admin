@@ -21,6 +21,10 @@ module IronAdmin
       # Field types whose cells align their digits.
       NUMERIC_TYPES = %i[number currency].freeze
 
+      # Long text and association labels: from the xl breakpoint these cells wrap, so the short
+      # columns keep their single line; below it every cell keeps one line and the table scrolls.
+      WRAPPING_TYPES = %i[textarea rich_text markdown belongs_to polymorphic_belongs_to].freeze
+
       # @param resource_name [Symbol, String] Resource name
       # @param records [ActiveRecord::Relation, Array] Records to display. An unordered
       #   relation is listed newest first.
@@ -77,9 +81,11 @@ module IronAdmin
 
       # @api private
       # @param field [IronAdmin::Field] The cell's field
-      # @return [String] Classes of a body cell; numeric cells align their digits
+      # @return [String] Classes of a body cell: one line (long text and associations wrap from
+      #   the xl breakpoint), and numeric cells align their digits
       def cell_classes(field)
-        classes = "#{theme.table_cell_padding} #{theme.body_text}"
+        classes = "whitespace-nowrap #{theme.table_cell_padding} #{theme.body_text}"
+        classes = "#{classes} xl:whitespace-normal" if WRAPPING_TYPES.include?(field.type)
         NUMERIC_TYPES.include?(field.type) ? "#{classes} tabular-nums" : classes
       end
 

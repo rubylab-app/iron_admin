@@ -4,7 +4,7 @@
       = title
     = link_to I18n.t("iron_admin.resources.show.view_all"), view_all_url, class: "text-sm #{theme.link}"
 
-  .overflow-x-auto
+  .overflow-x-auto.cp-scroll-fade
     %table.min-w-full
       %tbody{ class: body_classes }
         - records.each do |record|

@@ -78,6 +78,26 @@ RSpec.describe "IronAdmin::Audit", type: :request do
         expect(response.body).to include("UserResource")
       end
 
+      describe "the table frame, which scrolls sideways on a narrow screen" do
+        subject(:frame) do
+          get iron_admin.audit_path
+          response.parsed_body.at_css("table").parent
+        end
+
+        it "fades the edge the table can still scroll toward" do
+          expect(frame[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+        end
+
+        # The fade masks the scrolling box, so the card's border sits on a box that does not scroll.
+        it "sits in the card, whose border the fade leaves alone" do
+          expect(frame.parent[:class].split).to include(*IronAdmin.current_theme.card_border.split, *IronAdmin.current_theme.border_radius.split)
+        end
+
+        it "rounds its corners like the card" do
+          expect(frame[:class].split).to include("rounded-[inherit]")
+        end
+      end
+
       it "keeps each changes summary on one line, so a table narrower than its columns keeps short rows" do
         get iron_admin.audit_path
 
@@ -290,8 +310,14 @@ RSpec.describe "IronAdmin::Audit", type: :request do
       expect(page).to have_http_status(:ok)
     end
 
-    it "shows when each entry happened" do
-      expect(page.body).to include("2026-10-25 18:30:00")
+    # The format of the other dates of the admin, such as a datetime field's.
+    it "shows when each entry happened, as the other pages show dates" do
+      expect(page.parsed_body.css("tbody time").map { |time| time.text.strip }).to include("Oct 25, 2026 at 6:30 PM")
+    end
+
+    it "gives the exact time to machines and on hover" do
+      time = page.parsed_body.css("tbody time").find { |node| node.text.include?("Oct 25") }
+      expect([time[:datetime], time[:title]]).to eq(["2026-10-25T18:30:00Z", "2026-10-25 18:30:00 UTC"])
     end
 
     it "shows the stored user identifier" do

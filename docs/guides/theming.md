@@ -879,6 +879,14 @@ string literals at a space between classes. Don't split one class, and in partic
 arbitrary value such as `shadow-[0_1px_2px_rgba(0,0,0,0.05)]`, across two string literals or
 lines.
 
+**Tables and tab rows that scroll sideways fade at the edge.** The engine stylesheet's
+`cp-scroll-fade` class masks a frame whose content is wider than it: the frame fades out toward
+each edge it can still scroll to, driven by a CSS scroll timeline, so a frame that fits, or a
+browser without scroll timelines, shows no fade. The mask works on any theme's colors and lifts
+while the frame or a control in it has the keyboard focus. Put the border of a scrolling table
+on a box around the masked one, as `Resources::Styles.table_panel` and
+`Resources::Styles::SCROLL_FRAME` do, or the fade takes the border with it.
+
 **Use Tailwind v4 utilities.** Utilities that v4 removed, such as `bg-opacity-50` (use
 `bg-black/50`) and `flex-grow` (use `grow`), generate nothing, and some names changed size:
 v4's `shadow-xs` is v3's `shadow-sm`, and v4's `shadow-sm` is v3's `shadow`. Variants such as `hover:`, `focus:`, `focus-visible:`, `before:`, `lg:` and

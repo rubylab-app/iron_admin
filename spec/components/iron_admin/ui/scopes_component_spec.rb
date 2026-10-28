@@ -140,6 +140,10 @@ RSpec.describe IronAdmin::Ui::ScopesComponent, type: :component do
     it "scrolls the row of tabs sideways instead of the page" do
       expect(tabs.first.parent[:class].split).to include("overflow-x-auto")
     end
+
+    it "fades the edge the row can still scroll toward" do
+      expect(tabs.first.parent[:class].split).to include("cp-scroll-fade")
+    end
   end
 
   describe "#render?" do

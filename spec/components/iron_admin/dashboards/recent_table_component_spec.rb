@@ -231,6 +231,12 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
       it "shows its plain text without the content's markup" do
         expect(cell.inner_html.strip).to eq("Agenda Plan the launch")
       end
+
+      # Long text and association labels share the card's width on a wide screen, where the
+      # short columns keep their single line.
+      it "wraps it only from the xl breakpoint" do
+        expect(cell[:class].split).to include("whitespace-nowrap", "xl:whitespace-normal")
+      end
     end
   end
 
@@ -291,6 +297,19 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
 
       it "keeps proportional digits in text cells" do
         expect(title_cell[:class].split).not_to include("tabular-nums")
+      end
+
+      # On a narrow screen the table scrolls sideways instead of squeezing its columns.
+      it "keeps text cells on one line" do
+        expect(title_cell[:class].split).to include("whitespace-nowrap")
+      end
+
+      it "keeps text cells on one line on wide screens too" do
+        expect(title_cell[:class].split).not_to include("xl:whitespace-normal")
+      end
+
+      it "fades the edge the table can still scroll toward" do
+        expect(card.at_css("table").parent[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
       end
 
       it "highlights rows with the theme's table_row_hover" do

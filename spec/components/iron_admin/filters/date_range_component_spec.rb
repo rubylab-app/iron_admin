@@ -111,5 +111,12 @@ RSpec.describe IronAdmin::Filters::DateRangeComponent, type: :component do
     it "names the to input after the filter" do
       expect(document.at_css("input[name='filters[created_at_to]']")["aria-label"]).to eq("Created at to")
     end
+
+    # Two date inputs look the same, so each says which end of the range it holds; the
+    # inputs' names already say it to screen readers.
+    it "shows From and To beside the two inputs" do
+      markers = %w[from to].map { |edge| document.at_css("input[name='filters[created_at_#{edge}]']").parent.at_css("[aria-hidden=true]").text.strip }
+      expect(markers).to eq(%w[From To])
+    end
   end
 end

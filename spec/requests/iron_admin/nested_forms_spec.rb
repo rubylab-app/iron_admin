@@ -254,6 +254,44 @@ RSpec.describe "Nested Forms", type: :request do
     end
   end
 
+  describe "GET edit with a nested textarea" do
+    subject(:textarea_classes) do
+      get iron_admin.edit_resource_path("noted_nested_users", user), as: :html
+      response.parsed_body.at_css("textarea[name='record[licenses_attributes][0][license_key]']")[:class].split
+    end
+
+    let(:user) { create(:user) }
+
+    before do
+      # The licenses table has no text column, so the inferred key field stands in for one.
+      allow(IronAdmin::FieldInferrer).to receive(:call).and_call_original
+      allow(IronAdmin::FieldInferrer).to receive(:call).with(License).and_return([IronAdmin::Field.new(:license_key, type: :textarea)])
+      IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name = "NotedNestedUserResource"
+
+        def self.resource_name = "noted_nested_users"
+
+        has_many :licenses, nested: true, fields: %i[license_key]
+      end)
+      create(:license, user: user)
+    end
+
+    # Two fixed rows showed a third line cut in half by the bottom padding.
+    it "grows with its text, so no line shows cut in half" do
+      expect(textarea_classes).to include("field-sizing-content")
+    end
+
+    it "starts about two lines high" do
+      expect(textarea_classes).to include("min-h-16")
+    end
+
+    it "stops growing at 16rem and scrolls from there" do
+      expect(textarea_classes).to include("max-h-64")
+    end
+  end
+
   describe "nested permits security" do
     let(:user) { create(:user) }
 

@@ -7,5 +7,5 @@
         data: action[:confirm] ? { turbo_confirm: confirm_message(action) } : {},
         class: button_classes do
         - if action[:icon]
-          = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4" }
+          = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
         = action[:name].to_s.humanize

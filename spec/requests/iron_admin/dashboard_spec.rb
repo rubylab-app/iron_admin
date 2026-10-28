@@ -138,6 +138,11 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
       it "spaces the cards like the stats grid" do
         expect(grid_classes).to include("gap-4")
       end
+
+      it "draws the 16px metric icon with a 1.75 stroke, which stays sharp at that size" do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        expect(response.parsed_body.at_css("#metric_total_users svg")["stroke-width"]).to eq("1.75")
+      end
     end
 
     context "with a registered theme chosen by the theme cookie" do

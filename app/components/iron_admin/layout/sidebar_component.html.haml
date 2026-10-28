@@ -10,7 +10,7 @@
 
   .flex-1.pb-6{ class: "px-2.5" }
     = link_to helpers.iron_admin.root_path, **link_options(dashboard_active?) do
-      = helpers.heroicon "home", variant: :outline, options: { class: ICON_CLASSES }
+      = helpers.heroicon "home", variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
       = I18n.t("iron_admin.navigation.dashboard")
 
     - grouped_resources.each do |group, resources|
@@ -20,7 +20,7 @@
           - resources.sort_by { |r| r.menu_options[:priority] || 999 }.each do |resource|
             = link_to helpers.iron_admin.resources_path(resource.resource_name), **link_options(resource_active?(resource)) do
               - if resource.menu_options[:icon]
-                = helpers.heroicon resource.menu_options[:icon], variant: :outline, options: { class: ICON_CLASSES }
+                = helpers.heroicon resource.menu_options[:icon], variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
               = resource.label
 
     - grouped_tools.each do |group, tools_list|
@@ -30,7 +30,7 @@
           - tools_list.sort_by { |tool| tool.menu_options[:priority] || 999 }.each do |tool|
             = link_to helpers.iron_admin.tool_path(tool.tool_name), **link_options(tool_active?(tool)) do
               - if tool.menu_options[:icon]
-                = helpers.heroicon tool.menu_options[:icon], variant: :outline, options: { class: ICON_CLASSES }
+                = helpers.heroicon tool.menu_options[:icon], variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
               = tool.label
 
     - grouped_menu_items.each do |group, items|
@@ -40,5 +40,5 @@
           - items.each do |item|
             = link_to item.path, **link_options(menu_item_active?(item)) do
               - if item.icon
-                = helpers.heroicon item.icon, variant: :outline, options: { class: ICON_CLASSES }
+                = helpers.heroicon item.icon, variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
               = item.label

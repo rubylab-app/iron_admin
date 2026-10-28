@@ -21,6 +21,11 @@ module IronAdmin
     # Field types that show compact summaries on index pages.
     INDEX_COMPACT_TYPES = %i[key_value boolean_group].freeze
 
+    # Stroke width of a 24px outline heroicon drawn at 16px (h-4 w-4), as in the sidebar and
+    # the dashboard's metric cards: its own 1.5 would come out as a blurred 1px line.
+    # @return [String]
+    SMALL_ICON_STROKE = "1.75"
+
     # Maps field types to their display method names.
     # @return [Hash{Symbol => Symbol}]
     FIELD_DISPLAY_METHODS = {

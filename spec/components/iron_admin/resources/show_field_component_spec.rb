@@ -29,6 +29,24 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
     end
   end
 
+  describe "rendering an empty value" do
+    subject(:value) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(field: role_field, record: create(:user, role: nil))).at_css("dd")
+      end
+    end
+
+    let(:role_field) { IronAdmin::Resources::UserResource.resolved_fields.find { |f| f.name == :role } }
+
+    it "marks it with a muted dash, as the show page does" do
+      expect(value.at_css("[aria-hidden=true]").text).to eq("\u2014")
+    end
+
+    it "names it for screen readers" do
+      expect(value.at_css(".sr-only").text).to eq(I18n.t("iron_admin.fields.empty_value"))
+    end
+  end
+
   describe "field visibility" do
     let(:current_user) { create(:user) }
 
