@@ -103,7 +103,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     chart_grid_color: "rgba(228, 228, 231, 1)",
     chart_text_color: "rgb(113, 113, 122)",
     chart_point_style: "circle",
-    chart_slice_border_color: nil,
+    chart_slice_border_color: "#ffffff",
     chart_border_width: nil,
   }
 
@@ -116,11 +116,25 @@ RSpec.describe IronAdmin::Configuration::Theme do
       end
     end
 
-    it "sets chart_colors to six translucent CSS colors that stay apart next to each other, the last beside the first" do
-      expect(theme.chart_colors).to eq(%w[
-                                         rgba(99,102,241,0.85) rgba(5,150,105,0.85) rgba(217,119,6,0.85)
-                                         rgba(217,70,239,0.85) rgba(244,63,94,0.85) rgba(6,182,212,0.85)
-                                       ])
+    it "sets chart_colors to six muted CSS colors that stay apart next to each other, the last beside the first" do
+      expect(theme.chart_colors).to eq(%w[#6366f1 #0d9488 #b446c3 #d07d34 #2584c0 #d43b51])
+    end
+
+    # WCAG 1.4.11: a slice is a graphical object, so it needs 3:1 against the white card it sits on.
+    it "keeps every chart color at 3:1 contrast or more on white" do
+      # A hex color, or an rgba() one blended onto the white card.
+      on_white = lambda do |color|
+        next color.delete("#").scan(/../).map { |pair| pair.to_i(16) } if color.start_with?("#")
+
+        *rgb, alpha = color.scan(/[\d.]+/).map(&:to_f)
+        rgb.map { |channel| (channel * alpha) + (255 * (1 - alpha)) }
+      end
+      luminance = lambda do |channels|
+        linear = channels.map { |c| c / 255.0 }.map { |c| c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055)**2.4 }
+        (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2])
+      end
+
+      expect(theme.chart_colors.map { |color| 1.05 / (luminance.call(on_white.call(color)) + 0.05) }).to all(be >= 3.0)
     end
 
     it "sets alert_palette for every alert type" do

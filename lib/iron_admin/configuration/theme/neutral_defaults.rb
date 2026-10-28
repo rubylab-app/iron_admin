@@ -161,18 +161,17 @@ module IronAdmin
       end
 
       def init_chart_defaults
-        # indigo-500, emerald-600, amber-600, fuchsia-500, rose-500 and cyan-500: each color stays
-        # apart from the next one, and the last from the first (pie slices close the circle), for
-        # normal vision and the common color vision deficiencies
-        @chart_colors = %w[
-          rgba(99,102,241,0.85) rgba(5,150,105,0.85) rgba(217,119,6,0.85)
-          rgba(217,70,239,0.85) rgba(244,63,94,0.85) rgba(6,182,212,0.85)
-        ]
+        # Indigo-500 (the accent), teal-600, then muted fuchsia, amber, sky and rose: each one has
+        # 3:1 contrast or more on the white cards (WCAG 1.4.11) and stays apart from the next one,
+        # and the last from the first (pie slices close the circle), for normal vision and the
+        # common color vision deficiencies
+        @chart_colors = %w[#6366f1 #0d9488 #b446c3 #d07d34 #2584c0 #d43b51]
         @chart_border_color = "rgb(99, 102, 241)"
         @chart_grid_color = "rgba(228, 228, 231, 1)"
         @chart_text_color = "rgb(113, 113, 122)"
         @chart_point_style = "circle"
-        @chart_slice_border_color = nil
+        # The white of the cards: a gap between neighboring slices
+        @chart_slice_border_color = "#ffffff"
         @chart_border_width = nil
       end
     end

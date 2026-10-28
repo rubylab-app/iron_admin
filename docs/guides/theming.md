@@ -293,12 +293,12 @@ These hold CSS colors and Chart.js values, not Tailwind classes, because Chart.j
 
 | Property | Neutral value | Controls |
 |----------|---------------|----------|
-| `chart_colors` | `rgba(99,102,241,0.85)`, `rgba(5,150,105,0.85)`, `rgba(217,119,6,0.85)`, `rgba(217,70,239,0.85)`, `rgba(244,63,94,0.85)`, `rgba(6,182,212,0.85)` (indigo, emerald, amber, fuchsia, rose and cyan) | Slice colors of the dashboard charts, in order (an Array). Bar charts fill every bar with the first one. Neutral's order keeps each color apart from the next, and the last from the first, for normal vision and the common color vision deficiencies |
+| `chart_colors` | `#6366f1`, `#0d9488`, `#b446c3`, `#d07d34`, `#2584c0`, `#d43b51` (indigo, teal and muted fuchsia, amber, sky and rose) | Slice colors of the dashboard charts, in order (an Array). Bar charts fill every bar with the first one. Each Neutral color has 3:1 contrast or more on the white cards, which WCAG 1.4.11 asks of graphical objects, and Neutral's order keeps each color apart from the next, and the last from the first, for normal vision and the common color vision deficiencies |
 | `chart_border_color` | `rgb(99, 102, 241)` | Line color of line, area and radar charts, and the fill of progress bars without a color of their own |
 | `chart_grid_color` | `rgba(228, 228, 231, 1)` | Grid lines and axis lines |
 | `chart_text_color` | `rgb(113, 113, 122)` | Tick labels, radar point labels and the legend |
 | `chart_point_style` | `circle` | Shape of the legend markers, a Chart.js point style: `circle`, `rect`, `rectRounded`, `triangle` and so on |
-| `chart_slice_border_color` | `nil` | Outline of the slices of pie, doughnut and polar area charts (a CSS color). `nil` = each slice in its own color |
+| `chart_slice_border_color` | `#ffffff` | Outline of the slices of pie, doughnut and polar area charts (a CSS color). Neutral's is the white of its cards, so a gap sets each slice apart from the next; a theme with other cards sets their color. `nil` = each slice in its own color |
 | `chart_border_width` | `nil` | Width in pixels (an Integer) of slice and bar outlines and of lines. Bars are outlined in `chart_border_color`. `nil` = the Chart.js defaults (no bar outline) |
 
 A theme also has a `name` (a Symbol, the value its cookie stores) and a `label` (the text in
@@ -442,6 +442,8 @@ IronAdmin.configure do |config|
     t.chart_border_color = "rgb(129, 140, 248)"
     t.chart_grid_color = "rgba(63, 63, 70, 1)"
     t.chart_text_color = "rgb(161, 161, 170)"
+    # The gap between pie and doughnut slices, in the color of the cards (zinc-900)
+    t.chart_slice_border_color = "rgb(24, 24, 27)"
   end
 end
 ```
@@ -727,17 +729,19 @@ end
 `color_scheme` doesn't recolor anything else: a dark theme sets dark classes in its properties,
 as the [Midnight example](#a-complete-dark-theme) does. Charts don't read `color_scheme`
 either. Chart.js draws on a canvas, so the chart properties hold CSS colors (hex, `rgb()` or
-`rgba()`) and a dark theme sets all four:
+`rgba()`) and a dark theme sets all five:
 
 - `chart_colors`: the slices of pie, doughnut and polar area charts, in order. A bar chart's
   bars are one series, so it fills them all with the first color;
 - `chart_border_color`: the line of line, area and radar charts, whose fill is the same color
   at 10% opacity. It also fills progress bars that have no color of their own;
 - `chart_grid_color`: grid and axis lines;
-- `chart_text_color`: tick labels, radar point labels and the legend.
+- `chart_text_color`: tick labels, radar point labels and the legend;
+- `chart_slice_border_color`: the outline of every slice. Neutral's is white, the color of its
+  cards, which draws a gap between neighboring slices; a dark theme sets its own card color
+  (or another outline, such as black), or white gaps show on its dark cards.
 
-Three more chart properties shape the marks: `chart_point_style` (the legend markers),
-`chart_slice_border_color` (one outline color for every slice, such as black) and
+Two more chart properties shape the marks: `chart_point_style` (the legend markers) and
 `chart_border_width` (the outline width of slices and bars, and the width of lines).
 
 A chart's own colors win over the theme: `chart :revenue, type: :bar, colors: ["#0ea5e9"]` in

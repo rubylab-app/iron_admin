@@ -165,9 +165,22 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
     context "with a doughnut chart" do
       subject(:dataset) { JSON.parse(described_class.new(title: "Plans", type: :doughnut, data: [1, 2], labels: %w[A B]).chart_config)["data"]["datasets"].first }
 
-      # One border color would ring every slice, and every legend box, in the line color.
-      it "outlines each slice in its own color" do
-        expect(dataset["borderColor"]).to eq(IronAdmin.current_theme.chart_colors)
+      # Neutral's white cards: a white outline sets each slice apart from the next.
+      it "separates the slices with the white of Neutral's cards" do
+        expect(dataset["borderColor"]).to eq("#ffffff")
+      end
+
+      context "with a theme that sets no slice outline" do
+        before do
+          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:plain) do |t|
+            t.chart_slice_border_color = nil
+          end
+        end
+
+        # One border color would ring every slice, and every legend box, in the line color.
+        it "outlines each slice in its own color" do
+          expect(dataset["borderColor"]).to eq(IronAdmin.current_theme.chart_colors)
+        end
       end
     end
 
@@ -215,8 +228,24 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
     context "with per-chart colors on a pie chart" do
       subject(:dataset) { JSON.parse(described_class.new(title: "Split", type: :pie, data: [1, 2], labels: %w[A B], colors: ["#111", "#222"]).chart_config)["data"]["datasets"].first }
 
-      it "outlines each slice in its own per-chart color" do
-        expect(dataset["borderColor"]).to eq(["#111", "#222"])
+      it "fills each slice with its per-chart color" do
+        expect(dataset["backgroundColor"]).to eq(["#111", "#222"])
+      end
+
+      it "separates the slices with the theme's slice outline" do
+        expect(dataset["borderColor"]).to eq(IronAdmin.current_theme.chart_slice_border_color)
+      end
+
+      context "with a theme that sets no slice outline" do
+        before do
+          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:plain) do |t|
+            t.chart_slice_border_color = nil
+          end
+        end
+
+        it "outlines each slice in its own per-chart color" do
+          expect(dataset["borderColor"]).to eq(["#111", "#222"])
+        end
       end
     end
 

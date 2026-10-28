@@ -91,6 +91,30 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
       end
     end
 
+    context "with charts" do
+      subject(:grid_classes) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("canvas").ancestors(".grid").first[:class].split
+      end
+
+      before do
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) do
+          chart(:signups, type: :bar) { { "Mon" => 1, "Tue" => 2 } }
+          chart(:plans, type: :pie) { { "Free" => 3, "Pro" => 1 } }
+          chart(:status, type: :doughnut) { { "Open" => 2, "Closed" => 5 } }
+        end
+      end
+
+      it "sets the charts two to a row from the lg breakpoint" do
+        expect(grid_classes).to include("lg:grid-cols-2")
+      end
+
+      # Three charts would leave the right half of the last row empty.
+      it "stretches a last chart left alone in its row across both columns" do
+        expect(grid_classes).to include("lg:[&>*:last-child:nth-child(odd)]:col-span-2")
+      end
+    end
+
     context "with metrics" do
       subject(:grid_classes) do
         get iron_admin.root_path, headers: { "Accept" => "text/html" }
