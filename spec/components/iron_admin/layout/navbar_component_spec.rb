@@ -209,6 +209,20 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
         expect(user_name).to include("text-zinc-300")
       end
     end
+
+    context "with a theme that sets navbar_border_width" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:heavy) { |t| t.navbar_border_width = "border-b-3" }
+      end
+
+      it "draws the bottom border in that width" do
+        expect(header).to include("border-b-3")
+      end
+
+      it "drops the template's 1px bottom border" do
+        expect(header).not_to include("border-b")
+      end
+    end
   end
 
   describe "search shortcut" do

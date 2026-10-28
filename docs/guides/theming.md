@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 88 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 89 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -194,6 +194,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 |----------|---------------|----------|
 | `navbar_bg` | `bg-white` | Navbar background |
 | `navbar_border` | `border-zinc-200` | Color of the navbar's bottom border |
+| `navbar_border_width` | `border-b` | Side and width of that border, such as `border-b-3` for a heavy rule |
 | `navbar_search_bg` | `bg-zinc-50` | Background of the navbar search box |
 | `navbar_search_focus_bg` | `focus:bg-white` | Its background while it has the focus |
 | `navbar_text` | `text-zinc-600` | Navbar text, such as the current user's name |
@@ -248,7 +249,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 |----------|---------------|----------|
 | `main_bg` | `bg-zinc-50` | Page background (`<body>` and the main area) |
 | `border_radius` | `rounded-lg` | Radius of cards, panels, alerts, dropdowns and modals. Buttons and inputs use `control_radius` |
-| `border_width` | `border` | Width of the outline of cards, panels, popovers, modals, alerts, inputs, checkboxes and pagination links. One-sided dividers (navbar bottom, panel headers, footers, table rows, scope tabs) keep their template width; `sidebar_border` and `btn_secondary` carry their own |
+| `border_width` | `border` | Width of the outline of cards, panels, popovers, modals, alerts, inputs, checkboxes and pagination links. One-sided dividers (panel headers, footers, table rows, scope tabs) keep their template width; `sidebar_border` and `btn_secondary` carry their own, and `navbar_border_width` sets the navbar's |
 | `color_scheme` | `"light"` | `"light"` or `"dark"`: the CSS color scheme of the page (see [Color scheme](#color-scheme-dark-themes-and-charts)). Not a Tailwind class |
 | `swatch` | `bg-white ring-1 ring-inset ring-zinc-300` | This theme's dot in the theme switcher |
 | `surface_muted` | `bg-zinc-50` | Secondary backgrounds: readonly and disabled inputs, nested form rows, file previews, the empty state icon, audit change details |

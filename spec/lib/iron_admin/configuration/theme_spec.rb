@@ -36,6 +36,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     sidebar_group_label: "text-zinc-500",
     navbar_bg: "bg-white",
     navbar_border: "border-zinc-200",
+    navbar_border_width: "border-b",
     navbar_search_bg: "bg-zinc-50",
     navbar_search_focus_bg: "focus:bg-white",
     navbar_text: "text-zinc-600",

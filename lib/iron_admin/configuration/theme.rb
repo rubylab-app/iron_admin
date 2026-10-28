@@ -138,6 +138,9 @@ module IronAdmin
       # @return [String] Navbar border classes
       attr_accessor :navbar_border
 
+      # @return [String] Side and width of the navbar's border (the color is {#navbar_border})
+      attr_accessor :navbar_border_width
+
       # @return [String] Navbar search input background
       attr_accessor :navbar_search_bg
 
@@ -266,9 +269,10 @@ module IronAdmin
       attr_accessor :border_radius
 
       # @return [String] Border width of the outline of cards, panels, popovers, modals, alerts, inputs,
-      #   checkboxes and pagination links. One-sided dividers (navbar bottom, panel and modal headers,
-      #   form and bulk action footers, table rows, scope tabs) keep the width their template sets,
-      #   and {#sidebar_border} and {#btn_secondary} carry their own width
+      #   checkboxes and pagination links. One-sided dividers (panel and modal headers, form and
+      #   bulk action footers, table rows, scope tabs) keep the width their template sets,
+      #   {#sidebar_border} and {#btn_secondary} carry their own width, and {#navbar_border_width}
+      #   sets the navbar's
       attr_accessor :border_width
 
       # @return [String] "light" or "dark": the CSS color scheme of browser UI and scrollbars
