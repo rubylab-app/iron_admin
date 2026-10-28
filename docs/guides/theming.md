@@ -251,7 +251,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `border_radius` | `rounded-lg` | Radius of cards, panels, alerts, dropdowns and modals. Buttons and inputs use `control_radius` |
 | `border_width` | `border` | Width of the outline of cards, panels, popovers, modals, alerts, inputs, checkboxes and pagination links. One-sided dividers (panel headers, footers, table rows, scope tabs) keep their template width; `sidebar_border` and `btn_secondary` carry their own, and `navbar_border_width` sets the navbar's |
 | `color_scheme` | `"light"` | `"light"` or `"dark"`: the CSS color scheme of the page (see [Color scheme](#color-scheme-dark-themes-and-charts)). Not a Tailwind class |
-| `swatch` | `bg-white ring-1 ring-inset ring-zinc-300` | This theme's dot in the theme switcher |
+| `swatch` | `rounded-full bg-white ring-1 ring-inset ring-zinc-300` | This theme's 12px swatch in the theme switcher: its shape (Neutral's is a dot), fill and ring |
 | `surface_muted` | `bg-zinc-50` | Secondary backgrounds: readonly and disabled inputs, nested form rows, file previews, the empty state icon, audit change details |
 | `item_hover` | `hover:bg-zinc-100` | Hover of dropdown and switcher items, search result rows and pagination links (rows with `muted_text` use `table_row_hover`) |
 | `item_active` | `bg-zinc-100` | The belongs-to autocomplete option that the arrow keys highlight |
@@ -325,7 +325,7 @@ Neutral values.
 IronAdmin.configure do |config|
   config.register_theme(:midnight, label: "Midnight") do |t|
     t.color_scheme = "dark"
-    t.swatch = "bg-zinc-900 ring-1 ring-inset ring-zinc-600"
+    t.swatch = "rounded-full bg-zinc-900 ring-1 ring-inset ring-zinc-600"
 
     # Page, sidebar and navbar
     t.main_bg = "bg-zinc-950"

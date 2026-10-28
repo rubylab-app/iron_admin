@@ -74,7 +74,7 @@ module IronAdmin
         @border_radius = "rounded-lg"
         @border_width = "border"
         @color_scheme = "light"
-        @swatch = "bg-white ring-1 ring-inset ring-zinc-300"
+        @swatch = "rounded-full bg-white ring-1 ring-inset ring-zinc-300"
         @surface_muted = "bg-zinc-50"
         @item_hover = "hover:bg-zinc-100"
         @item_active = "bg-zinc-100"

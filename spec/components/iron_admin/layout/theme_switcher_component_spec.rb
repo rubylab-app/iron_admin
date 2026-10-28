@@ -61,6 +61,14 @@ RSpec.describe IronAdmin::Layout::ThemeSwitcherComponent, type: :component do
     expect(swatches).to match([include("bg-white", "ring-zinc-300"), include("bg-zinc-950", "ring-zinc-700")])
   end
 
+  it "rounds Neutral's swatch with its own classes" do
+    expect(buttons.first.at_css("span[aria-hidden='true']")[:class].split).to include("rounded-full")
+  end
+
+  it "takes the shape of each swatch from its theme" do
+    expect(buttons.last.at_css("span[aria-hidden='true']")[:class].split).not_to include("rounded-full")
+  end
+
   describe "styles" do
     let(:summary) { rendered.at_css("details > summary")[:class].split }
     let(:panel) { rendered.at_css("details > div")[:class].split }

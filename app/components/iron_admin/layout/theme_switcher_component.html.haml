@@ -9,7 +9,7 @@
         = hidden_field_tag :return_to, return_path, id: nil
       - themes.each do |option|
         %button.flex.h-8.w-full.cursor-pointer.items-center.gap-2.px-2.text-left.text-sm{ type: "submit", name: "theme", value: option.name, "aria-pressed": current?(option).to_s, class: "#{theme.control_radius} #{theme.body_text} #{theme.item_hover} #{theme.focus_ring}" }
-          %span.h-3.w-3.shrink-0.rounded-full{ "aria-hidden": "true", class: option.swatch }
+          %span.h-3.w-3.shrink-0{ "aria-hidden": "true", class: option.swatch }
           %span.flex-1.truncate= option.label
           - if current?(option)
             = heroicon "check", variant: :mini, options: { class: "h-4 w-4 shrink-0", "aria-hidden": "true" }

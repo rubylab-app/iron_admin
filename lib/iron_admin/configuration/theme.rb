@@ -279,7 +279,7 @@ module IronAdmin
       #   (charts take {#chart_grid_color} and {#chart_text_color})
       attr_accessor :color_scheme
 
-      # @return [String] Classes of this theme's swatch in the theme switcher
+      # @return [String] Classes of this theme's 12px swatch in the theme switcher: shape, fill and ring
       attr_accessor :swatch
 
       # @return [String] Secondary backgrounds: readonly and disabled inputs, nested form rows,
