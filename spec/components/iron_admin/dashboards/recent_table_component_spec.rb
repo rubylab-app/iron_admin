@@ -232,10 +232,39 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
         expect(cell.inner_html.strip).to eq("Agenda Plan the launch")
       end
 
-      # Long text and association labels share the card's width on a wide screen, where the
-      # short columns keep their single line.
-      it "wraps it only from the xl breakpoint" do
-        expect(cell[:class].split).to include("whitespace-nowrap", "xl:whitespace-normal")
+      # In a card 64rem wide or more, long text keeps one line in a column that takes the room
+      # left, so it neither widens the table nor makes the rows taller.
+      it "truncates it to one line in a wide card" do
+        expect(cell[:class].split).to include("whitespace-nowrap", "@5xl:max-w-0", "@5xl:min-w-48", "@5xl:truncate")
+      end
+
+      it "does not wrap it" do
+        expect(cell[:class].split).not_to include("@5xl:whitespace-normal")
+      end
+    end
+
+    context "when the index fields include an association" do
+      subject(:cell) do
+        render_inline(described_class.new(resource_name: :keyed_license, records: [license])).at_css("tbody td:last-child")
+      end
+
+      let(:license) { create(:license) }
+
+      before do
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.resource_name = "keyed_licenses"
+
+          belongs_to :user, display: :email
+          index_fields :license_key, :user
+        end)
+      end
+
+      # An association label is short or long; in a wide card it wraps instead of widening the table.
+      it "wraps it only in a wide card" do
+        expect(cell[:class].split).to include("whitespace-nowrap", "@5xl:whitespace-normal")
       end
     end
   end
@@ -300,16 +329,26 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
       end
 
       # On a narrow screen the table scrolls sideways instead of squeezing its columns.
-      it "keeps text cells on one line" do
-        expect(title_cell[:class].split).to include("whitespace-nowrap")
+      it "keeps every cell on one line" do
+        expect([id_cell, title_cell].map { |cell| cell[:class].split }).to all(include("whitespace-nowrap"))
       end
 
-      it "keeps text cells on one line on wide screens too" do
-        expect(title_cell[:class].split).not_to include("xl:whitespace-normal")
+      it "keeps short cells such as numbers on one line in a wide card too" do
+        expect(id_cell[:class].split).not_to include("@5xl:whitespace-normal")
+      end
+
+      # The label column (a name or a title) is the one that gives way in a wide card.
+      it "lets the label column wrap in a wide card" do
+        expect(title_cell[:class].split).to include("@5xl:whitespace-normal")
       end
 
       it "fades the edge the table can still scroll toward" do
         expect(card.at_css("table").parent[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+      end
+
+      # The cells fit the card's own width, wherever a dashboard layout puts it.
+      it "makes the card a size container for its cells" do
+        expect(card[:class].split).to include("@container")
       end
 
       it "highlights rows with the theme's table_row_hover" do

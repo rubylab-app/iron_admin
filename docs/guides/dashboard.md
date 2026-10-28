@@ -148,10 +148,12 @@ Recent records render using `IronAdmin::Dashboards::RecentTableComponent`:
 user; without it, the procs receive `nil`. An unordered relation is listed newest first, so
 `User.order(created_at: :desc).limit(5)` is not needed, but still works.
 
-Every cell keeps one line, so on a narrow screen the table scrolls sideways inside the card,
-and the engine's `cp-scroll-fade` class fades out the edge it can still scroll toward. From the
-`xl` breakpoint, long text (`:textarea`, `:rich_text`, `:markdown`) and association cells wrap,
-so the short columns, such as names and dates, keep their line.
+Every cell keeps one line, so in a narrow card the table scrolls sideways, and the engine's
+`cp-scroll-fade` class fades out the edge it can still scroll toward. The card is a size
+container, so the table fits the card's own width wherever a layout puts it: in a card 64rem
+wide or more (`@5xl`), association cells and the label column (`name`, `title` or `label`) wrap,
+long text (`:textarea`, `:rich_text`, `:markdown`) is cut to one line with an ellipsis, and the
+other columns, such as dates and emails, keep their line.
 
 ## Stats Grid
 

@@ -1,5 +1,6 @@
--# overflow-hidden keeps the row hover inside the card's rounded corners.
-%div{ class: "#{card_classes} overflow-hidden" }
+-# overflow-hidden keeps the row hover inside the card's rounded corners. The card is a size
+-# container: its cells fit its own width, wherever a dashboard layout puts it.
+%div{ class: "#{card_classes} overflow-hidden @container" }
   -# Padded like the cells, so the title starts where the first column does.
   .border-b{ class: "#{theme.card_border} #{theme.table_cell_padding}" }
     %h2{ class: title_classes }= "Recent #{label}"
