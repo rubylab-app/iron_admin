@@ -45,6 +45,18 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       expect(response.body).to include("JSON")
     end
 
+    it "frames the page like the other admin pages, so its title lines up with theirs" do
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      expect(html.at_css("h1").ancestors("div").map { |div| div[:class].to_s.split }).to include(include("max-w-7xl", "mx-auto"))
+    end
+
+    it "keeps the upload card narrow, at the start of the page" do
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      expect(html.at_css("form").parent[:class].split).to include("max-w-3xl")
+    end
+
     it "returns not found for resources without imports enabled" do
       get iron_admin.resource_import_path("users"), as: :html
 
@@ -187,6 +199,19 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       it "shows the theme's focus ring when it has the focus" do
         expect(frame[:class].split).to include(*IronAdmin.current_theme.focus_ring.split)
       end
+    end
+
+    it "frames the page like the upload step, so the title does not move between the two" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(html.at_css("h1").ancestors("div").map { |div| div[:class].to_s.split }).to include(include("max-w-7xl", "mx-auto"))
+    end
+
+    it "marks a valid row with a green badge, as the other pages show states" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      badge = html.at_css("tbody tr td:last-child span")
+      expect([badge.text.strip, badge[:class].split]).to match([I18n.t("iron_admin.imports.preview.valid_status"), include(*IronAdmin.current_theme.badge_palette[:green].split)])
     end
 
     it "writes the errors of an invalid row in the theme's error color" do

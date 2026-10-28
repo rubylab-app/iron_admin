@@ -1,9 +1,10 @@
-.px-4.sm:px-6.lg:px-8.py-6.max-w-3xl.mx-auto
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
   .mb-6
     %h1{ class: "#{t.page_title} #{t.heading_font}" }= I18n.t("iron_admin.imports.new.title", model: @resource_class.label)
     %p.mt-1.text-sm{ class: cp_muted_text }= I18n.t("iron_admin.imports.new.subtitle")
 
-  .p-6{ class: cp_card }
+  -# The page is framed like the others; the form card stays narrow at its start.
+  .p-6.max-w-3xl{ class: cp_card }
     -# The preview is rendered in reply to this POST. Turbo Drive only accepts a
     -# redirect after a form submission, so the upload is a full page request.
     = form_tag resource_import_preview_path(@resource_class.resource_name),

@@ -1,4 +1,4 @@
-.px-4.sm:px-6.lg:px-8.py-6.max-w-5xl.mx-auto
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
   .flex.items-center.justify-between.gap-3.flex-wrap.mb-6
     %div
       %h1{ class: "#{t.page_title} #{t.heading_font}" }= I18n.t("iron_admin.imports.preview.title", model: @resource_class.label)
@@ -39,4 +39,4 @@
               - if row.errors.any?
                 = row.errors.map(&:message).join(", ")
               - else
-                = I18n.t("iron_admin.imports.preview.valid_status")
+                = render IronAdmin::Ui::BadgeComponent.new(text: I18n.t("iron_admin.imports.preview.valid_status"), color: :green)
