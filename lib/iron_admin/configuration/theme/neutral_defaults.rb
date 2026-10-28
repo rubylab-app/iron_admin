@@ -153,6 +153,9 @@ module IronAdmin
         @chart_border_color = "rgb(99, 102, 241)"
         @chart_grid_color = "rgba(228, 228, 231, 1)"
         @chart_text_color = "rgb(113, 113, 122)"
+        @chart_point_style = "circle"
+        @chart_slice_border_color = nil
+        @chart_border_width = nil
       end
     end
   end

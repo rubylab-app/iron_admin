@@ -84,13 +84,7 @@ module IronAdmin
           type: chart_js_type,
           data: {
             labels: labels,
-            datasets: [{
-              data: data,
-              borderColor: dataset_border(border),
-              backgroundColor: dataset_background(border),
-              fill: filled?,
-              tension: 0.3,
-            }],
+            datasets: [dataset(border)],
           },
           options: chart_options,
         }.to_json
@@ -129,6 +123,21 @@ module IronAdmin
 
       private
 
+      # The outline width is left out unless the theme sets one, so Chart.js keeps its defaults.
+      # @param border [String] Resolved border color
+      # @return [Hash] The chart's one dataset
+      def dataset(border)
+        set = {
+          data: data,
+          borderColor: dataset_border(border),
+          backgroundColor: dataset_background(border),
+          fill: filled?,
+          tension: 0.3,
+        }
+        width = theme.chart_border_width
+        width ? set.merge(borderWidth: width) : set
+      end
+
       # Grid, tick and legend colors come from the theme, so dark themes get readable charts.
       # @return [Hash] Chart.js options
       def chart_options
@@ -137,11 +146,16 @@ module IronAdmin
           maintainAspectRatio: false,
           indexAxis: index_axis,
           plugins: {
-            legend: { display: legend?, labels: { color: theme.chart_text_color, usePointStyle: true, pointStyle: "circle" } },
+            legend: { display: legend?, labels: legend_labels },
           },
         }
         scales = scale_options
         scales ? options.merge(scales: scales) : options
+      end
+
+      # @return [Hash] Chart.js legend label options: the theme's text color and point style
+      def legend_labels
+        { color: theme.chart_text_color, usePointStyle: true, pointStyle: theme.chart_point_style }
       end
 
       # Pie and doughnut charts get no scales: Chart.js would draw axes for them. Cartesian
@@ -160,12 +174,14 @@ module IronAdmin
         end
       end
 
-      # Multi-slice charts outline each slice in its own color: a single border
-      # color would ring every slice, and every legend entry, in the line color.
+      # Multi-slice charts outline each slice in its own color, unless the theme sets a
+      # chart_slice_border_color: the line color would ring every slice, and every legend entry.
       # @param border [String] Resolved border color
       # @return [String, Array<String>] Border color(s) for the dataset
       def dataset_border(border)
-        legend? ? resolved_colors : border
+        return border unless legend?
+
+        theme.chart_slice_border_color.presence || resolved_colors
       end
 
       # Resolves the dataset background: a single semi-transparent fill for

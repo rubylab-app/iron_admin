@@ -6,10 +6,10 @@ tables list every property with its Neutral value and what it controls.
 
 ## Properties
 
-A theme has 91 properties, each with a reader and a writer (`theme.card_bg`,
+A theme has 94 properties, each with a reader and a writer (`theme.card_bg`,
 `theme.card_bg = "bg-white"`). They hold Tailwind classes, except `font_stylesheet_url` (a URL
-or `nil`), `color_scheme` (`"light"` or `"dark"`), the chart properties (CSS colors) and the
-palettes (Hashes).
+or `nil`), `color_scheme` (`"light"` or `"dark"`), the chart properties (CSS colors, a Chart.js point
+style and a width in pixels) and the palettes (Hashes).
 
 | Group | Properties |
 |-------|------------|
@@ -24,7 +24,7 @@ palettes (Hashes).
 | Layout and surfaces | `main_bg`, `border_radius`, `border_width`, `color_scheme`, `swatch`, `surface_muted`, `item_hover`, `item_active`, `icon_muted`, `overlay_bg` |
 | Feedback | `alert_palette`, `alert_shadow`, `badge_palette`, `badge_dot_palette`, `badge_shape`, `chip`, `danger_item`, `tooltip`, `code_block`, `code_font`, `progress_track`, `pagination_active` |
 | Dashboard | `metric_label`, `metric_value`, `metric_icon` |
-| Charts | `chart_colors`, `chart_border_color`, `chart_grid_color`, `chart_text_color` |
+| Charts | `chart_colors`, `chart_border_color`, `chart_grid_color`, `chart_text_color`, `chart_point_style`, `chart_slice_border_color`, `chart_border_width` |
 
 ## `IronAdmin::Configuration::Theme`
 

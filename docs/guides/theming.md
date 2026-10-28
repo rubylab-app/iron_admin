@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 91 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 94 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -285,7 +285,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 
 ### Charts
 
-These hold CSS colors, not Tailwind classes, because Chart.js draws on a canvas.
+These hold CSS colors and Chart.js values, not Tailwind classes, because Chart.js draws on a canvas.
 
 | Property | Neutral value | Controls |
 |----------|---------------|----------|
@@ -293,6 +293,9 @@ These hold CSS colors, not Tailwind classes, because Chart.js draws on a canvas.
 | `chart_border_color` | `rgb(99, 102, 241)` | Line color of line, area and radar charts, and the fill of progress bars without a color of their own |
 | `chart_grid_color` | `rgba(228, 228, 231, 1)` | Grid lines and axis lines |
 | `chart_text_color` | `rgb(113, 113, 122)` | Tick labels, radar point labels and the legend |
+| `chart_point_style` | `circle` | Shape of the legend markers, a Chart.js point style: `circle`, `rect`, `rectRounded`, `triangle` and so on |
+| `chart_slice_border_color` | `nil` | Outline of the slices of pie, doughnut and polar area charts (a CSS color). `nil` = each slice in its own color |
+| `chart_border_width` | `nil` | Width in pixels (an Integer) of slice and bar outlines and of lines. Bars are outlined in `chart_border_color`. `nil` = the Chart.js defaults (no bar outline) |
 
 A theme also has a `name` (a Symbol, the value its cookie stores) and a `label` (the text in
 the switcher), set when the theme is registered. `dark?` and `scheme_class` read `color_scheme`.
@@ -728,6 +731,10 @@ either. Chart.js draws on a canvas, so the chart properties hold CSS colors (hex
   at 10% opacity. It also fills progress bars that have no color of their own;
 - `chart_grid_color`: grid and axis lines;
 - `chart_text_color`: tick labels, radar point labels and the legend.
+
+Three more chart properties shape the marks: `chart_point_style` (the legend markers),
+`chart_slice_border_color` (one outline color for every slice, such as black) and
+`chart_border_width` (the outline width of slices and bars, and the width of lines).
 
 A chart's own colors win over the theme: `chart :revenue, type: :bar, colors: ["#0ea5e9"]` in
 a dashboard (or `colors:` on `ChartComponent`) replaces `chart_colors`, and its first color

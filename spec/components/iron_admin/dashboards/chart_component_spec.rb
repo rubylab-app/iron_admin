@@ -153,6 +153,47 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       end
     end
 
+    context "with the default theme" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Plans", type: :bar, data: [1, 2], labels: %w[A B]).chart_config)["data"]["datasets"].first }
+
+      it "leaves the outline width to Chart.js" do
+        expect(dataset).not_to have_key("borderWidth")
+      end
+    end
+
+    context "with a theme that outlines slices" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Plans", type: type, data: [1, 2], labels: %w[A B]).chart_config)["data"]["datasets"].first }
+
+      let(:type) { :pie }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |t|
+          t.chart_slice_border_color = "#000000"
+          t.chart_border_width = 3
+        end
+      end
+
+      it "outlines every slice in chart_slice_border_color" do
+        expect(dataset["borderColor"]).to eq("#000000")
+      end
+
+      it "outlines them chart_border_width pixels wide" do
+        expect(dataset["borderWidth"]).to eq(3)
+      end
+
+      context "with a bar chart" do
+        let(:type) { :bar }
+
+        it "outlines the bars chart_border_width pixels wide" do
+          expect(dataset["borderWidth"]).to eq(3)
+        end
+
+        it "outlines them in chart_border_color" do
+          expect(dataset["borderColor"]).to eq(IronAdmin.current_theme.chart_border_color)
+        end
+      end
+    end
+
     context "with per-chart colors on a pie chart" do
       subject(:dataset) { JSON.parse(described_class.new(title: "Split", type: :pie, data: [1, 2], labels: %w[A B], colors: ["#111", "#222"]).chart_config)["data"]["datasets"].first }
 
@@ -242,6 +283,18 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
       it "colors the legend labels" do
         expect(options["plugins"]["legend"]["labels"]["color"]).to eq(text)
+      end
+    end
+
+    context "with a theme that marks legend entries with squares" do
+      let(:type) { :pie }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:print) { |t| t.chart_point_style = "rect" }
+      end
+
+      it "uses that theme's chart_point_style" do
+        expect(options["plugins"]["legend"]["labels"]["pointStyle"]).to eq("rect")
       end
     end
 

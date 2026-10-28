@@ -5,8 +5,8 @@ require_relative "theme/neutral_defaults"
 module IronAdmin
   class Configuration
     # A named look of the admin panel. A new Theme holds the values of the built-in
-    # Neutral look. Properties hold Tailwind classes, except the chart colors, the
-    # font stylesheet URL and the color scheme.
+    # Neutral look. Properties hold Tailwind classes, except the chart properties (CSS
+    # colors, a Chart.js point style and a width), the font stylesheet URL and the color scheme.
     #
     # @see IronAdmin::Configuration#theme
     # @see IronAdmin::Configuration#register_theme
@@ -372,6 +372,18 @@ module IronAdmin
 
       # @return [String] Chart ticks and legend (CSS color value)
       attr_accessor :chart_text_color
+
+      # @return [String] Chart.js point style of the legend markers ("circle", "rect", "rectRounded",
+      #   "triangle" and so on)
+      attr_accessor :chart_point_style
+
+      # @return [String, nil] Outline of pie, doughnut and polar area slices (CSS color value;
+      #   nil = each slice in its own color)
+      attr_accessor :chart_slice_border_color
+
+      # @return [Integer, nil] Width in pixels of slice and bar outlines and of lines (nil = the
+      #   Chart.js defaults)
+      attr_accessor :chart_border_width
 
       # @!endgroup
 
