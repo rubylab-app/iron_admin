@@ -11,7 +11,7 @@
       = heroicon "exclamation-triangle", variant: :mini, options: { class: "h-5 w-5 shrink-0" }
       %p.text-sm
         Audit logging is currently disabled. Enable it in your IronAdmin configuration:
-        %code.ml-1.px-1.font-mono{ class: "py-0.5 bg-current/10 #{t.control_radius}" } config.audit_enabled = true
+        %code.ml-1.px-1{ class: "py-0.5 bg-current/10 #{t.control_radius} #{t.code_font}" } config.audit_enabled = true
 
   - if @entries.any? || @filters_applied
     .mb-4
@@ -76,7 +76,7 @@
                     %summary.cursor-pointer{ class: "#{t.link} #{t.focus_ring}" }
                       = pluralize(entry.record_changes.keys.count, "field")
                       changed
-                    .mt-2.p-2.max-w-md.overflow-auto.text-xs.font-mono{ class: "#{t.control_radius} #{t.surface_muted}" }
+                    .mt-2.p-2.max-w-md.overflow-auto.text-xs{ class: "#{t.control_radius} #{t.surface_muted} #{t.code_font}" }
                       - entry.record_changes.each do |field, values|
                         .mb-1
                           %strong= field

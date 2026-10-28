@@ -334,6 +334,10 @@ module IronAdmin
       # @return [String] JSON/code display background and text color
       attr_accessor :code_block
 
+      # @return [String] Font family of code-like text: code blocks, code, JSON, key/value, markdown
+      #   and hex color inputs, and audit change details
+      attr_accessor :code_font
+
       # @return [String] Progress bar track
       attr_accessor :progress_track
 

@@ -23,7 +23,7 @@ module IronAdmin
 
       lang = field.options[:language].presence || ""
       content_tag(:pre, class: "overflow-x-auto p-4 text-sm #{t.border_radius} #{t.code_block}") do
-        content_tag(:code, value, class: "font-mono language-#{lang}")
+        content_tag(:code, value, class: "#{t.code_font} language-#{lang}")
       end
     end
 

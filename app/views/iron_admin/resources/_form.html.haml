@@ -85,7 +85,7 @@
               data: { cp_color_field_target: "picker", action: "input->cp-color-field#fromPicker" }
             = f.text_field field.name, placeholder: I18n.t("iron_admin.fields.color_placeholder"),
               pattern: "#(?:[0-9a-fA-F]{3}){1,2}", title: I18n.t("iron_admin.fields.color_invalid"),
-              class: "#{cp_input_class(error: has_error)} flex-1 font-mono",
+              class: "#{cp_input_class(error: has_error)} flex-1 #{t.code_font}",
               data: { cp_color_field_target: "text", action: "input->cp-color-field#fromText" }
         - when :currency
           .relative
@@ -123,7 +123,7 @@
           = f.file_field field.name, multiple: true, class: cp_file_input_class(error: has_error)
         - when :markdown
           = f.text_area field.name, rows: 8, placeholder: I18n.t("iron_admin.fields.markdown_placeholder"),
-            class: "#{cp_textarea_class(error: has_error)} font-mono"
+            class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :rich_text
           = f.rich_text_area field.name, class: "trix-content"
         - when :polymorphic_belongs_to
@@ -210,14 +210,14 @@
         - when :key_value
           = f.text_area field.name, rows: field.options[:rows] || 6,
             placeholder: '{"key": "value"}',
-            class: "#{cp_textarea_class(error: has_error)} font-mono"
+            class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :json
           - raw_json_value = @record.public_send(field.name)
           - submitted_json = @invalid_json_values&.[](field.name)
           - json_str = submitted_json || (raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value))
           = text_area_tag "record[#{field.name}]", json_str,
             id: "record_#{field.name}", rows: field.options[:rows] || 8, placeholder: "{}",
-            class: "#{cp_textarea_class(error: has_error)} font-mono"
+            class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :boolean_group
           - choices = field.options[:choices] || []
           - current_values = @record.public_send(field.name).to_s.split(",").map(&:strip)
@@ -252,7 +252,7 @@
           = f.number_field field.name, min: field.options[:min] || 0, max: field.options[:max] || 100,
             placeholder: "0", class: cp_input_class(error: has_error)
         - when :code
-          = f.text_area field.name, rows: field.options[:rows] || 10, class: "#{cp_textarea_class(error: has_error)} font-mono"
+          = f.text_area field.name, rows: field.options[:rows] || 10, class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :radio
           - layout = field.options[:layout] == :vertical ? "flex-col space-y-2" : "flex flex-wrap gap-4"
           - choices = field.options[:choices] || []

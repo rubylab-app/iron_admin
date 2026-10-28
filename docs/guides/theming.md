@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 90 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 91 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -271,6 +271,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `danger_item` | `text-red-600 hover:bg-red-50 hover:text-red-700` | Destructive dropdown items, with their hover |
 | `tooltip` | `bg-zinc-900 text-white` | Tooltip background and text color |
 | `code_block` | `bg-zinc-950 text-zinc-100` | Background and text color of `:code` and `:json` values |
+| `code_font` | `font-mono` | Font family of code-like text: `:code` values, the inputs of `:code`, `:json`, `:key_value`, `:markdown` and `:color` fields, and the audit log's change details |
 | `progress_track` | `bg-zinc-200` | Track of progress bars (`:progress` fields and dashboard progress widgets) |
 | `pagination_active` | `bg-zinc-900 text-white border-zinc-900` | The current page in the pagination |
 
@@ -634,11 +635,13 @@ checkbox.
 
 ## Fonts
 
-Three properties set the type:
+Four properties set the type:
 
 - `font_family`: the font family class of every page, on `<body>`;
 - `heading_font`: extra font family classes for page titles, card titles and the sidebar
   brand. Leave it empty to use `font_family`;
+- `code_font`: the font family of code-like text (code blocks, code, JSON and markdown
+  inputs, audit change details). Neutral uses Tailwind's `font-mono` stack;
 - `font_stylesheet_url`: a stylesheet the layout links in `<head>` to load the fonts.
 
 When `font_stylesheet_url` is present, the layout links it with `<link rel="stylesheet">`. When
