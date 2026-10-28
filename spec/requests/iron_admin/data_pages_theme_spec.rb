@@ -56,8 +56,17 @@ RSpec.describe "Theme of the data pages", type: :request do
         expect(header_cell[:class]).to eq(styles.header_cell(neutral))
       end
 
-      it "casts the theme's sticky column shadow from the actions column" do
+      it "sticks the actions column's header cell to the right edge" do
         expect(classes_of(sticky_header_cell)).to include(*styles.sticky_header_cell(neutral).split)
+      end
+
+      # A table cell's own box-shadow is not painted in a table with collapsed borders.
+      it "casts the theme's sticky column shadow from an edge inside the header cell" do
+        expect(classes_of(sticky_header_cell.at_css("span[aria-hidden=true]"))).to eq(styles.sticky_edge(neutral).split)
+      end
+
+      it "casts it from an edge inside each actions cell too" do
+        expect(classes_of(document.at_css("tbody tr td:last-child > span[aria-hidden=true]"))).to eq(styles.sticky_edge(neutral).split)
       end
 
       it "renders the status as a badge in the theme's palette" do
@@ -104,7 +113,7 @@ RSpec.describe "Theme of the data pages", type: :request do
       end
 
       it "uses that theme's sticky column shadow" do
-        expect(classes_of(sticky_header_cell)).to include("shadow-none")
+        expect(classes_of(sticky_header_cell.at_css("span[aria-hidden=true]"))).to include("shadow-none")
       end
 
       it "uses that theme's badge palette" do

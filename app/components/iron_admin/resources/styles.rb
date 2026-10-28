@@ -99,15 +99,25 @@ module IronAdmin
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
-      # @return [String] The header cell of the sticky actions column
+      # @return [String] The header cell of the sticky actions column; its shadow is on a {.sticky_edge}
       def sticky_header_cell(theme)
-        "sticky right-0 z-10 #{theme.table_header_bg} #{theme.table_sticky_shadow}"
+        "sticky right-0 z-10 #{theme.table_header_bg}"
       end
 
       # @param theme [IronAdmin::Configuration::Theme]
-      # @return [String] A body cell of the sticky actions column
+      # @return [String] A body cell of the sticky actions column; its shadow is on a {.sticky_edge}
       def sticky_cell(theme)
-        "sticky right-0 z-10 #{theme.card_bg} #{theme.table_sticky_row_hover} #{theme.table_sticky_shadow}"
+        "sticky right-0 z-10 #{theme.card_bg} #{theme.table_sticky_row_hover}"
+      end
+
+      # Browsers do not paint the box-shadow of a table cell in a table that collapses its borders,
+      # as IronAdmin's tables do (Tailwind's preflight), so a box laid over each sticky cell casts
+      # the theme's table_sticky_shadow. It has no background, so only the shadow outside it shows.
+      #
+      # @param theme [IronAdmin::Configuration::Theme]
+      # @return [String] The box inside a sticky actions cell that casts the column's edge shadow
+      def sticky_edge(theme)
+        "pointer-events-none absolute inset-0 #{theme.table_sticky_shadow}"
       end
 
       # @param theme [IronAdmin::Configuration::Theme]

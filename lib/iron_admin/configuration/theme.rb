@@ -189,7 +189,8 @@ module IronAdmin
       # @return [String] Extra classes of the table container (empty = none)
       attr_accessor :table_frame
 
-      # @return [String] Edge shadow of the sticky actions column of index tables (empty = none)
+      # @return [String] Edge shadow of the sticky actions column of index tables, cast by a box
+      #   over each sticky cell (see Resources::Styles.sticky_edge); empty = none
       attr_accessor :table_sticky_shadow
 
       # @return [String] Hover of table rows and of the dashboard's quick links and activity feed

@@ -213,7 +213,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `table_header_text` | `text-xs font-medium text-zinc-500` | Header cells: size, weight and color. Their case comes from `label_transform` |
 | `table_cell_padding` | `px-4 py-2.5` | Padding of header and body cells, which sets how dense tables are |
 | `table_frame` | `""` | Extra classes for the panel a table scrolls in, such as a ring. Empty = none |
-| `table_sticky_shadow` | `shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]` | Edge shadow of the sticky actions column of index tables (`config.sticky_actions_column`). Empty = none |
+| `table_sticky_shadow` | `shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]` | Edge shadow of the sticky actions column of index tables (`config.sticky_actions_column`), cast by a box laid over each sticky cell (browsers do not paint a cell's own shadow in a table with collapsed borders). A hard shadow such as `shadow-[-1px_0_0_#000]` draws a rule. Empty = none |
 | `table_row_hover` | `hover:bg-zinc-50` | Hover of table rows and of the dashboard's quick links and activity feed rows. These rows hold `muted_text`, which keeps AA contrast on it |
 | `table_sticky_row_hover` | `""` | Background of the sticky actions cell while its row is hovered. Each index row is a `group/row`, so use `group-hover/row:` variants in the color of `table_row_hover`, such as `group-hover/row:bg-zinc-50`. Empty = the cell keeps `card_bg` |
 | `table_border` | `divide-zinc-200` | Lines between table rows and between the items of divided lists (dashboard lists, key/value fields). Use `divide-*` classes |

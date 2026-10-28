@@ -192,8 +192,34 @@ RSpec.describe IronAdmin::Resources::Styles do
       expect(classes).to include("sticky", "right-0", "z-10", "bg-zinc-50")
     end
 
+    # A browser does not paint a table cell's own box-shadow when the table collapses its
+    # borders, so the shadow is on the sticky_edge inside the cell.
+    it "leaves the sticky column shadow to sticky_edge" do
+      expect(classes).not_to include("shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]")
+    end
+  end
+
+  describe ".sticky_edge" do
+    subject(:classes) { described_class.sticky_edge(theme).split }
+
+    it "covers its sticky cell" do
+      expect(classes).to include("absolute", "inset-0")
+    end
+
+    it "lets clicks through to the cell's links" do
+      expect(classes).to include("pointer-events-none")
+    end
+
     it "casts the theme's sticky column shadow" do
       expect(classes).to include("shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]")
+    end
+
+    context "with another theme" do
+      subject(:classes) { described_class.sticky_edge(midnight).split }
+
+      it "casts that theme's sticky column shadow" do
+        expect(classes).to include("shadow-none")
+      end
     end
   end
 
@@ -202,8 +228,8 @@ RSpec.describe IronAdmin::Resources::Styles do
       expect(described_class.sticky_cell(theme).split).to include("sticky", "right-0", "z-10", "bg-white")
     end
 
-    it "casts the sticky column shadow of the theme" do
-      expect(described_class.sticky_cell(midnight).split).to include("shadow-none")
+    it "leaves the sticky column shadow to sticky_edge" do
+      expect(described_class.sticky_cell(midnight).split).not_to include("shadow-none")
     end
 
     context "with a theme that sets table_sticky_row_hover" do

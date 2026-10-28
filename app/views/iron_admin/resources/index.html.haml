@@ -172,6 +172,9 @@
                         = heroicon "chevron-up-down", variant: :mini, options: { class: "h-3.5 w-3.5 opacity-0 group-hover:opacity-50 transition-opacity" }
                 -# sticky or relative keeps the absolutely positioned sr-only text inside the scrolling table.
                 %th{ scope: "col", class: "#{t.table_cell_padding} #{sticky ? styles.sticky_header_cell(t) : 'relative'}" }
+                  -# The cell's own box-shadow would not be painted: an edge box inside it casts it.
+                  - if sticky
+                    %span{ "aria-hidden": "true", class: styles.sticky_edge(t) }
                   %span.sr-only= I18n.t("iron_admin.resources.show.actions_label")
             %tbody{ class: styles.divided(t) }
               - if @records.empty?
@@ -190,6 +193,8 @@
                     %td{ class: styles.cell(t, field) }
                       = display_index_field_value(record, field)
                   %td{ class: "whitespace-nowrap text-right text-sm #{t.table_cell_padding} #{sticky ? styles.sticky_cell(t) : ''}" }
+                    - if sticky
+                      %span{ "aria-hidden": "true", class: styles.sticky_edge(t) }
                     = link_to I18n.t("iron_admin.resources.index.view_link"), resource_path(@resource_class.resource_name, record),
                       class: cp_link, data: { turbo_frame: "_top" }
 
