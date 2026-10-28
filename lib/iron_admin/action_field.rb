@@ -53,10 +53,15 @@ module IronAdmin
       @options = options
     end
 
+    # A required :boolean must be checked: "0", "false" and "off" count as missing.
+    #
     # @param value [Object, nil] The submitted value
     # @return [Boolean] Whether the field is required and the value is blank, so the action must not run
     def missing?(value)
-      required.present? && value.blank?
+      return false if required.blank?
+      return true if value.blank?
+
+      type == :boolean && !ActiveModel::Type::Boolean.new.cast(value)
     end
   end
 end

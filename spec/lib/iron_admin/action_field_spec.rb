@@ -145,5 +145,42 @@ RSpec.describe IronAdmin::ActionField do
         expect(field.missing?(nil)).to be(false)
       end
     end
+
+    # A required checkbox must be checked: "0" and "false" are values, but not a checked box.
+    context "with a required boolean field" do
+      subject(:field) { described_class.new(name: :i_understand, type: :boolean, required: true) }
+
+      it "is missing when the box was not checked" do
+        expect(field.missing?(nil)).to be(true)
+      end
+
+      it "is missing with \"0\"" do
+        expect(field.missing?("0")).to be(true)
+      end
+
+      it "is missing with \"false\"" do
+        expect(field.missing?("false")).to be(true)
+      end
+
+      it "is missing with blank text" do
+        expect(field.missing?("  ")).to be(true)
+      end
+
+      it "is not missing with \"1\"" do
+        expect(field.missing?("1")).to be(false)
+      end
+
+      it "is not missing with \"true\"" do
+        expect(field.missing?("true")).to be(false)
+      end
+    end
+
+    context "with an optional boolean field" do
+      subject(:field) { described_class.new(name: :notify, type: :boolean) }
+
+      it "is not missing with \"0\"" do
+        expect(field.missing?("0")).to be(false)
+      end
+    end
   end
 end

@@ -19,4 +19,6 @@
         - confirm = @action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
         .flex.items-center.gap-3.pt-5.border-t{ class: t.card_border }
           %button{ type: "submit", class: cp_btn_primary, data: @action[:confirm] ? { turbo_confirm: confirm } : {} }= I18n.t("iron_admin.resources.action_form.submit", default: "Execute")
-          = link_to I18n.t("iron_admin.form.cancel_button"), resources_path(@resource_class.resource_name, **iron_admin_index_state.symbolize_keys), class: cp_btn_secondary
+          -# A whole-page visit: the index has no action-form-modal frame to load into.
+          = link_to I18n.t("iron_admin.form.cancel_button"), resources_path(@resource_class.resource_name, **iron_admin_index_state.symbolize_keys),
+            class: cp_btn_secondary, data: { turbo_frame: "_top" }

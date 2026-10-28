@@ -26,7 +26,8 @@
       placeholder: field.placeholder, step: "any", required: field.required, aria: invalid
   - when :boolean
     .flex.items-center.gap-2
-      = check_box_tag input_name, "1", ActiveModel::Type::Boolean.new.cast(value), id: input_id, class: cp_checkbox_class, aria: invalid
+      = check_box_tag input_name, "1", ActiveModel::Type::Boolean.new.cast(value), id: input_id, class: cp_checkbox_class,
+        required: field.required, aria: invalid
       %span.text-sm{ class: cp_body_text }= field.label
   - when :date
     = date_field_tag input_name, value, id: input_id, class: cp_input_class(error: has_error), required: field.required, aria: invalid

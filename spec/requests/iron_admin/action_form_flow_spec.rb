@@ -44,13 +44,54 @@ RSpec.describe "Action form flow", type: :request do
         license.update!(status: :expired)
       end
 
+      action :purge, form_fields: [action_field(:i_understand, type: :boolean, required: true)] do |license, _params|
+        license.update!(license_type: "purged")
+      end
+
+      action :review, form_fields: [
+        action_field(:tag, type: :text, default: "renewal"),
+        action_field(:priority, type: :select, options: %w[low medium high], default: "medium"),
+        action_field(:notify_customer, type: :boolean, default: true),
+      ] do |license, params|
+        license.update!(license_type: params[:tag])
+      end
+
+      action :triage, form_fields: [
+        action_field(:priority, type: :select, options: %w[low high], required: true),
+        action_field(:reason, type: :textarea),
+        action_field(:level, type: :select, options: %w[one two]),
+        action_field(:notify, type: :boolean),
+        action_field(:escalate, type: :boolean, default: true),
+        action_field(:count, type: :number),
+        action_field(:due_on, type: :date),
+        action_field(:due_at, type: :datetime),
+      ] do |license, params|
+        license.update!(license_type: params[:priority])
+      end
+
       bulk_action :bulk_annotate, icon: "pencil-square", confirm: true,
                                   form_fields: [action_field(:note, type: :textarea, required: true)] do |licenses, params|
         licenses.update_all(license_type: params[:note])
       end
 
+      bulk_action :bulk_review, form_fields: [
+        action_field(:note, type: :textarea, required: true),
+        action_field(:tag, type: :text, default: "renewal"),
+        action_field(:notify_customer, type: :boolean, default: true),
+      ] do |licenses, params|
+        licenses.update_all(license_type: params[:note])
+      end
+
       bulk_action :bulk_expire, icon: "clock" do |licenses|
         licenses.update_all(status: License.statuses[:expired])
+      end
+
+      bulk_action :bulk_purge, confirm: true do |licenses|
+        licenses.update_all(license_type: "purged")
+      end
+
+      bulk_action :bulk_revoke, confirm: true, confirm_message: "Revoke these licenses?" do |licenses|
+        licenses.update_all(status: License.statuses[:revoked])
       end
     end
   end
@@ -74,6 +115,10 @@ RSpec.describe "Action form flow", type: :request do
   def hidden_fields(form)
     form.css("input[type=hidden]").reject { |input| input[:name] == "authenticity_token" }
       .map { |input| [input[:name], input[:value]] }
+  end
+
+  def cancel_link
+    document.css("a").find { |link| link.text.strip == I18n.t("iron_admin.form.cancel_button") }
   end
 
   before { IronAdmin::ResourceRegistry.register(flow_resource) }
@@ -132,13 +177,41 @@ RSpec.describe "Action form flow", type: :request do
     end
 
     it "links Cancel to the record" do
-      cancel = document.css("a").find { |link| link.text.strip == I18n.t("iron_admin.form.cancel_button") }
-      expect(cancel[:href]).to eq(iron_admin.resource_path("flow_licenses", license))
+      expect(cancel_link[:href]).to eq(iron_admin.resource_path("flow_licenses", license))
+    end
+
+    # The form is inside a Turbo frame that the record's page does not have.
+    it "opens the record from Cancel as a whole page, outside the form's frame" do
+      expect(cancel_link["data-turbo-frame"]).to eq("_top")
     end
 
     it "leaves out the ids of a bulk selection" do
       get form_path(action_name), params: { ids: [license.id] }, as: :html
       expect(document.css("input[name='ids[]']")).to be_empty
+    end
+
+    context "with fields that have defaults" do
+      let(:action_name) { :review }
+
+      it "fills a text field with its default" do
+        expect(document.at_css("input#action_form_tag")[:value]).to eq("renewal")
+      end
+
+      it "selects the default option of a select" do
+        expect(document.at_css("select#action_form_priority option[selected]")[:value]).to eq("medium")
+      end
+
+      it "checks a boolean whose default is true" do
+        expect(document.at_css("input#action_form_notify_customer")[:checked]).to be_present
+      end
+    end
+
+    context "with a required boolean" do
+      let(:action_name) { :purge }
+
+      it "makes the browser ask for its checkbox" do
+        expect(document.at_css("input#action_form_i_understand")[:required]).to be_present
+      end
     end
 
     context "with confirm and no confirm_message" do
@@ -190,6 +263,22 @@ RSpec.describe "Action form flow", type: :request do
       expect(bar_button(bulk_execute_path(:bulk_expire))[:formmethod]).to be_nil
     end
 
+    it "asks for confirmation before a confirm: true bulk action without form fields runs" do
+      expect(bar_button(bulk_execute_path(:bulk_purge))["data-turbo-confirm"]).to eq(I18n.t("iron_admin.resources.action.confirm"))
+    end
+
+    it "asks with the bulk action's confirm_message" do
+      expect(bar_button(bulk_execute_path(:bulk_revoke))["data-turbo-confirm"]).to eq("Revoke these licenses?")
+    end
+
+    it "runs a bulk action without confirm without asking" do
+      expect(bar_button(bulk_execute_path(:bulk_expire))["data-turbo-confirm"]).to be_nil
+    end
+
+    it "opens the form of a confirm: true bulk action with form fields without asking, since the form asks" do
+      expect(bar_button(bulk_form_path(:bulk_annotate))["data-turbo-confirm"]).to be_nil
+    end
+
     it "leaves the CSRF token out of a GET submission, so it stays out of the URL" do
       expect(bar_form["data-action"]).to eq("submit->cp-bulk-select#omitTokenFromGet")
     end
@@ -223,8 +312,11 @@ RSpec.describe "Action form flow", type: :request do
     end
 
     it "links Cancel to the index it came from" do
-      cancel = document.css("a").find { |link| link.text.strip == I18n.t("iron_admin.form.cancel_button") }
-      expect(cancel[:href]).to eq(iron_admin.resources_path("flow_licenses", state))
+      expect(cancel_link[:href]).to eq(iron_admin.resources_path("flow_licenses", state))
+    end
+
+    it "opens the index from Cancel as a whole page, outside the form's frame" do
+      expect(cancel_link["data-turbo-frame"]).to eq("_top")
     end
 
     context "with one selected record" do
@@ -251,6 +343,18 @@ RSpec.describe "Action form flow", type: :request do
       it "goes back to the index it came from" do
         expect(response).to redirect_to(iron_admin.resources_path("flow_licenses", state))
       end
+    end
+  end
+
+  describe "GET /:resource_name/bulk_actions/:action_name/form with fields that have defaults" do
+    before { get bulk_form_path(:bulk_review), params: { ids: [license.id] }, as: :html }
+
+    it "fills a text field with its default" do
+      expect(document.at_css("input#action_form_tag")[:value]).to eq("renewal")
+    end
+
+    it "checks a boolean whose default is true" do
+      expect(document.at_css("input#action_form_notify_customer")[:checked]).to be_present
     end
   end
 
@@ -372,6 +476,10 @@ RSpec.describe "Action form flow", type: :request do
         expect(document.at_css("button[type=submit]")["data-turbo-confirm"]).to eq("Annotate this license?")
       end
 
+      it "still opens the record from Cancel as a whole page" do
+        expect(cancel_link["data-turbo-frame"]).to eq("_top")
+      end
+
       it "names every control of the form" do
         expect(form_accessibility_problems(document)).to be_empty
       end
@@ -398,6 +506,86 @@ RSpec.describe "Action form flow", type: :request do
 
       it "goes to the record" do
         expect(response).to redirect_to(iron_admin.resource_path("flow_licenses", license))
+      end
+    end
+
+    # The form comes back with what was submitted in every kind of input, not with the defaults.
+    context "when it is left blank and the other fields are filled" do
+      before do
+        post execute_path(:triage), params: {
+          action_form: {
+            priority: "", reason: "Typed reason", level: "two", notify: "1",
+            count: "7", due_on: "2026-11-03", due_at: "2026-11-03T10:30",
+          },
+        }, as: :html
+      end
+
+      it "renders the form again as unprocessable" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "keeps the text of a textarea" do
+        expect(document.at_css("#action_form_reason").text.strip).to eq("Typed reason")
+      end
+
+      it "keeps the option picked in a select" do
+        expect(document.at_css("#action_form_level option[selected]")[:value]).to eq("two")
+      end
+
+      it "keeps a checked checkbox checked" do
+        expect(document.at_css("#action_form_notify")[:checked]).to be_present
+      end
+
+      it "keeps an unchecked checkbox unchecked, even when its default is true" do
+        expect(document.at_css("#action_form_escalate")[:checked]).to be_nil
+      end
+
+      it "keeps the number" do
+        expect(document.at_css("#action_form_count")[:value]).to eq("7")
+      end
+
+      it "keeps the date" do
+        expect(document.at_css("#action_form_due_on")[:value]).to eq("2026-11-03")
+      end
+
+      it "keeps the date and time" do
+        expect(document.at_css("#action_form_due_at")[:value]).to start_with("2026-11-03T10:30")
+      end
+    end
+  end
+
+  describe "POST /:resource_name/:id/actions/:action_name with a required boolean" do
+    let(:ran) { license.reload.license_type == "purged" }
+
+    context "when its box is not checked" do
+      before { post execute_path(:purge), params: { action_form: { i_understand: "0" } }, as: :html }
+
+      it "does not run the action" do
+        expect(ran).to be(false)
+      end
+
+      it "renders the form again as unprocessable" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "says under the checkbox that it can't be blank" do
+        expect(document.at_css("#action_form_i_understand_error").text.strip).to eq(I18n.t("errors.messages.blank"))
+      end
+    end
+
+    context "when a direct POST sends \"false\"" do
+      before { post execute_path(:purge), params: { action_form: { i_understand: "false" } }, as: :html }
+
+      it "does not run the action" do
+        expect(ran).to be(false)
+      end
+    end
+
+    context "when its box is checked" do
+      before { post execute_path(:purge), params: { action_form: { i_understand: "1" } }, as: :html }
+
+      it "runs the action" do
+        expect(ran).to be(true)
       end
     end
   end
@@ -431,6 +619,25 @@ RSpec.describe "Action form flow", type: :request do
 
       it "still says how many records the action applies to" do
         expect(form.text.squish).to include(I18n.t("iron_admin.resources.bulk_action_form.selected", count: 2))
+      end
+
+      it "still opens the index from Cancel as a whole page" do
+        expect(cancel_link["data-turbo-frame"]).to eq("_top")
+      end
+    end
+
+    context "when it is left blank and the other fields are filled" do
+      before do
+        post bulk_execute_path(:bulk_review),
+             params: { "ids" => licenses.map(&:id), "action_form" => { "note" => "", "tag" => "kept" } }, as: :html
+      end
+
+      it "keeps what was typed in the other fields" do
+        expect(document.at_css("#action_form_tag")[:value]).to eq("kept")
+      end
+
+      it "keeps an unchecked checkbox unchecked, even when its default is true" do
+        expect(document.at_css("#action_form_notify_customer")[:checked]).to be_nil
       end
     end
 

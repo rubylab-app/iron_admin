@@ -276,8 +276,9 @@ module IronAdmin
       # @param form_fields [Array<IronAdmin::ActionField, Hash>] Inputs of the action's form
       # @param options [Hash] Configuration options
       # @option options [String] :icon Heroicon name
-      # @option options [Boolean] :confirm Whether the action's form asks for confirmation on submit
-      #   (the bulk bar itself does not ask)
+      # @option options [Boolean] :confirm Whether to show a confirmation dialog (on the form's
+      #   submit when the action has form_fields)
+      # @option options [String] :confirm_message Custom confirmation message
       # @yield [records, params] Block executed when action is triggered
       # @yieldparam records [ActiveRecord::Relation] The selected records
       # @yieldparam params [Hash{Symbol => String}] The form's values (two-argument blocks only)

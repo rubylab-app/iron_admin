@@ -78,6 +78,40 @@ RSpec.describe IronAdmin::Resources::BulkActionsComponent, type: :component do
     end
   end
 
+  describe "confirmation" do
+    subject(:rendered) do
+      render_inline(described_class.new(actions: [
+                                          { name: :purge, confirm: true },
+                                          { name: :revoke, confirm: true, confirm_message: "Revoke them?" },
+                                          { name: :lock },
+                                          { name: :suspend, confirm: true, form_fields: [IronAdmin::ActionField.new(name: :reason)] },
+                                        ], resource_class: IronAdmin::Resources::UserResource))
+    end
+
+    let(:routes) { IronAdmin::Engine.routes.url_helpers }
+
+    def button(path)
+      rendered.at_css("form[action='#{path}'] button")
+    end
+
+    it "asks before a confirm: true bulk action without form fields runs" do
+      expect(button(routes.resource_bulk_action_path("users", :purge))["data-turbo-confirm"])
+        .to eq(I18n.t("iron_admin.resources.action.confirm"))
+    end
+
+    it "asks with the action's confirm_message" do
+      expect(button(routes.resource_bulk_action_path("users", :revoke))["data-turbo-confirm"]).to eq("Revoke them?")
+    end
+
+    it "runs a bulk action without confirm without asking" do
+      expect(button(routes.resource_bulk_action_path("users", :lock))["data-turbo-confirm"]).to be_nil
+    end
+
+    it "opens the form of a bulk action with form fields without asking, since the form asks" do
+      expect(button(routes.resource_bulk_action_form_path("users", :suspend))["data-turbo-confirm"]).to be_nil
+    end
+  end
+
   describe "theme" do
     subject(:rendered) do
       render_inline(described_class.new(actions: [{ name: :archive, icon: "archive-box" }],

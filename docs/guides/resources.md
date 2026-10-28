@@ -313,7 +313,7 @@ The flow:
 2. **Form.** The form page loads the record the way the action does: the policy, the action's
    `condition`, the tenant scope and soft-deleted rows (only `restore` reaches them) apply,
    so a user who cannot run the action gets a 403 or a 404 instead of the form. Cancel goes
-   back to the record.
+   back to the record, as a whole-page visit.
 3. **Submit.** Execute posts the values to the action. With `confirm: true`, the confirmation
    (`confirm_message`, or `iron_admin.resources.action.confirm`) is asked when the form is
    submitted, not before it opens. After the action, the browser goes to the record and shows
@@ -322,9 +322,10 @@ The flow:
 **Required fields.** The browser asks for a `required: true` field before it submits. The
 server checks it too: when a required field is blank (or a direct POST leaves it out), the
 action does not run, and the form comes back (422) with the values that were typed and "can't
-be blank" (`errors.messages.blank`) under the field. Optional fields can be left blank; the
-block then gets `nil` (or an empty string) for them, and a boolean that is not checked is
-missing from `params`.
+be blank" (`errors.messages.blank`) under the field. A required `:boolean` must be checked:
+an unchecked box, or a direct POST that sends `"0"` or `"false"`, counts as blank. Optional
+fields can be left blank; the block then gets `nil` (or an empty string) for them, and a
+boolean that is not checked is missing from `params`.
 
 **Bulk actions** take form fields too. In the index's bulk bar, the button of a bulk action
 with form fields takes the selected ids to `GET /admin/:resource/bulk_actions/:name/form`.
@@ -347,6 +348,10 @@ class UserResource < IronAdmin::Resource
   end
 end
 ```
+
+With `confirm: true`, the bulk bar's button asks for confirmation before the action runs, with the
+action's `confirm_message` or `iron_admin.resources.action.confirm` ("Are you sure?"). A bulk action
+with form fields asks when its form is submitted instead (see [Action Forms](#action-forms)).
 
 Bulk actions validate that all selected records are accessible to the current user (respecting tenant scope). After a bulk action, the index comes back with the scope, search, filters, sort and page it was run from.
 

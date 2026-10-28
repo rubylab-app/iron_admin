@@ -5,9 +5,10 @@
 
   .flex.flex-wrap.gap-2
     - actions.each do |action|
-      -# A bulk action with form fields takes the selected ids to its form with a GET, which has no CSRF token.
+      -# A bulk action with form fields takes the selected ids to its form with a GET, which has no CSRF token,
+      -# and the form asks for the confirmation on submit.
       = button_to form?(action) ? form_url(action) : action_url(action), method: form?(action) ? :get : :post,
-        form: { data: { bulk_actions_target: "form" } }, class: button_classes do
+        form: { data: { bulk_actions_target: "form" } }, data: confirm_data(action), class: button_classes do
         - if action[:icon]
           = heroicon action[:icon], variant: :mini, options: { class: "h-4 w-4" }
         = action[:name].to_s.humanize

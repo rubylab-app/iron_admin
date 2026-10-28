@@ -152,6 +152,9 @@ Each action is a small form with a `data-bulk-actions-target="form"` attribute, 
 Stimulus controller (`bulk-actions`) that adds the selected `ids[]` to it. An action without
 `form_fields` posts to the bulk action; an action with `form_fields` opens its form with a GET
 (`resource_bulk_action_form_path`), which has no CSRF token, so the ids land in that form.
+With `confirm: true`, the button of an action without `form_fields` asks for confirmation
+(`data-turbo-confirm`, with the action's `confirm_message` or
+`iron_admin.resources.action.confirm`); an action with `form_fields` asks on its form's submit.
 
 **Example:**
 

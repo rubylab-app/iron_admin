@@ -140,9 +140,13 @@
             = I18n.t("iron_admin.resources.index.selected_label", default: "selected")
           .flex.flex-wrap.items-center.gap-2
             - @resource_class.defined_bulk_actions.each do |action|
-              -# A bulk action with form fields takes the selection to its form instead of running.
-              - submission = { formaction: resource_bulk_action_path(@resource_class.resource_name, action[:name]) }
-              - submission = { formaction: resource_bulk_action_form_path(@resource_class.resource_name, action[:name]), formmethod: "get" } if action[:form_fields].present?
+              -# A bulk action with form fields takes the selection to its form instead of running, and the
+              -# form asks for the confirmation on submit. Turbo reads data-turbo-confirm from the button.
+              - if action[:form_fields].present?
+                - submission = { formaction: resource_bulk_action_form_path(@resource_class.resource_name, action[:name]), formmethod: "get" }
+              - else
+                - submission = { formaction: resource_bulk_action_path(@resource_class.resource_name, action[:name]) }
+                - submission[:data] = { turbo_confirm: action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm") } if action[:confirm]
               %button{ type: "submit", class: styles.secondary_button(t), **submission }
                 - if action[:icon]
                   = heroicon action[:icon], variant: :mini, options: { class: "h-4 w-4" }
