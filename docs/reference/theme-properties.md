@@ -6,7 +6,7 @@ tables list every property with its Neutral value and what it controls.
 
 ## Properties
 
-A theme has 94 properties, each with a reader and a writer (`theme.card_bg`,
+A theme has 96 properties, each with a reader and a writer (`theme.card_bg`,
 `theme.card_bg = "bg-white"`). They hold Tailwind classes, except `font_stylesheet_url` (a URL
 or `nil`), `color_scheme` (`"light"` or `"dark"`), the chart properties (CSS colors, a Chart.js point
 style and a width in pixels) and the palettes (Hashes).
@@ -14,7 +14,7 @@ style and a width in pixels) and the palettes (Hashes).
 | Group | Properties |
 |-------|------------|
 | Buttons and links | `btn_primary`, `btn_secondary`, `btn_danger`, `btn_ghost`, `link`, `link_muted` |
-| Forms and controls | `focus_ring`, `input_border`, `input_focus`, `input_error`, `placeholder_text`, `checkbox_checked`, `checkbox_border`, `checkbox_radius`, `control_radius`, `control_shadow`, `disabled_text` |
+| Forms and controls | `focus_ring`, `input_border`, `input_focus`, `input_error`, `placeholder_text`, `checkbox_checked`, `checkbox_border`, `checkbox_radius`, `control_radius`, `control_shadow`, `disabled_text`, `rich_text_editor`, `rich_text_toolbar` |
 | Scope tabs and counts | `scope_active`, `scope_inactive`, `badge_count` |
 | Sidebar | `sidebar_bg`, `sidebar_border`, `sidebar_title`, `sidebar_link`, `sidebar_link_hover`, `sidebar_link_active`, `sidebar_group_label` |
 | Navbar | `navbar_bg`, `navbar_border`, `navbar_border_width`, `navbar_search_bg`, `navbar_search_focus_bg`, `navbar_text`, `kbd`, `skip_link` |

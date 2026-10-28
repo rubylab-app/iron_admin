@@ -41,3 +41,16 @@
     background-size: 100% 100%;
   }
 }
+
+/* Rich text (Action Text's Trix). Trix's stylesheet is not in a cascade layer, so its rules win */
+/* over every Tailwind utility; these rules are not in a layer either. A theme's rich_text_editor */
+/* marks the editor with cp-rich-text, and revert-layer hands the border and radius that Trix sets */
+/* back to the theme's classes. Under a dark color scheme the toolbar's black icons are inverted. */
+trix-editor.cp-rich-text {
+  border: revert-layer;
+  border-radius: revert-layer;
+}
+
+.scheme-dark trix-toolbar .trix-button--icon::before {
+  filter: invert(1);
+}

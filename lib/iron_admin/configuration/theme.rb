@@ -88,6 +88,18 @@ module IronAdmin
       # @return [String] Shadow of inputs, selects, textareas and buttons other than ghost ones (empty = none)
       attr_accessor :control_shadow
 
+      # @return [String] Classes of the rich text editor box (Action Text's +<trix-editor>+): border
+      #   width and color, radius, background, text color, shadow and focus state, as for an input.
+      #   Empty = the look of Trix's own stylesheet; when set, the engine's stylesheet hands Trix's
+      #   border and radius back to these classes
+      attr_accessor :rich_text_editor
+
+      # @return [String] Classes of the box around the rich text toolbar and editor, which style
+      #   the toolbar's parts with descendant variants and the important modifier, such as
+      #   +[&_.trix-button-group]:border-zinc-700!+ (Trix's stylesheet is not in a cascade layer,
+      #   so it wins over utilities without +!+). Empty = Trix's look
+      attr_accessor :rich_text_toolbar
+
       # @!endgroup
 
       # @!group Tab/Scope Styles

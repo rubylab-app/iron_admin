@@ -125,7 +125,10 @@
           = f.text_area field.name, rows: 8, placeholder: I18n.t("iron_admin.fields.markdown_placeholder"),
             class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :rich_text
-          = f.rich_text_area field.name, class: "trix-content"
+          -# Trix inserts its toolbar before the editor, inside this box (rich_text_toolbar). The
+          -# cp-rich-text mark makes engine.css hand Trix's border and radius to rich_text_editor.
+          %div{ class: t.rich_text_toolbar.presence }
+            = f.rich_text_area field.name, class: t.rich_text_editor.present? ? "trix-content cp-rich-text #{t.rich_text_editor}" : "trix-content"
         - when :polymorphic_belongs_to
           - types = field.options[:types] || []
           - type_col = field.options[:type_column]

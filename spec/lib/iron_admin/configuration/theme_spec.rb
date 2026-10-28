@@ -86,6 +86,8 @@ RSpec.describe IronAdmin::Configuration::Theme do
     tooltip: "bg-zinc-900 text-white",
     code_block: "bg-zinc-950 text-zinc-100",
     code_font: "font-mono",
+    rich_text_editor: "",
+    rich_text_toolbar: "",
     progress_track: "bg-zinc-200",
     pagination_active: "bg-zinc-900 text-white border-zinc-900",
     metric_label: "text-xs font-medium text-zinc-500",

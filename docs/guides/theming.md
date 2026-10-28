@@ -22,6 +22,7 @@ Sections:
 - [Fonts](#fonts)
 - [Color scheme, dark themes and charts](#color-scheme-dark-themes-and-charts)
 - [Badges, alerts and chips](#badges-alerts-and-chips)
+- [Rich text](#rich-text)
 - [Tailwind: literal classes and source scanning](#tailwind-literal-classes-and-source-scanning)
 - [For contributors: the theme guards](#for-contributors-the-theme-guards)
 
@@ -124,7 +125,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 94 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 96 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -167,6 +168,8 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `control_radius` | `rounded-md` | Radius of buttons, inputs, selects, dropdown and switcher items, sidebar links, pagination links, icon tiles and tooltips |
 | `control_shadow` | `shadow-xs` | Shadow of inputs, selects, textareas, checkboxes, radio buttons and every button except ghost ones. Empty = none |
 | `disabled_text` | `text-zinc-300` | Unavailable pagination links (Previous on the first page, Next on the last) |
+| `rich_text_editor` | `""` | The rich text editor box (Action Text's `<trix-editor>`): border width and color, radius, background, text color, shadow and focus state, written as for an input. Empty = the look of Trix's own stylesheet (see [Rich text](#rich-text)) |
+| `rich_text_toolbar` | `""` | Classes of the box around the rich text toolbar and editor, which style the toolbar's buttons, groups and link dialog with descendant variants and the important modifier, such as `[&_.trix-button-group]:border-zinc-700!`. Empty = Trix's look (see [Rich text](#rich-text)) |
 
 ### Scope tabs and counts
 
@@ -800,6 +803,34 @@ type uses the `:info` entry:
 **Chips.** Tags, has-and-belongs-to-many records on show pages, file names, boolean group
 values and the column names on import pages use `chip` with `badge_shape`. The activity feed tints its icons from `badge_palette`
 (an item's `icon_color` is one of its color names).
+
+## Rich text
+
+`:rich_text` fields use Action Text's Trix editor, and the layout links Trix's stylesheet
+(`trix.css`). That stylesheet is not in a cascade layer, so its rules win over every Tailwind
+utility, whatever their order. Neutral leaves the editor to it. Two properties restyle it:
+
+- `rich_text_editor` holds the classes of the editor box, written as for an input, for
+  example `border border-zinc-700 rounded-md bg-zinc-900 text-zinc-100 focus:border-violet-500
+  focus:ring-3 focus:ring-violet-500/30`. Include a border width class: once the property is
+  set, the engine's stylesheet hands Trix's border and radius over to these classes.
+- `rich_text_toolbar` holds classes of the box around the toolbar and the editor. Trix builds
+  the toolbar in JavaScript, so style its parts through descendant variants, and end each class
+  with Tailwind's important modifier `!`, which lets it win over Trix's stylesheet:
+
+```ruby
+t.rich_text_toolbar = "[&_.trix-button-group]:border-zinc-700! [&_.trix-button]:border-zinc-700! " \
+                      "[&_.trix-button.trix-active]:bg-violet-500/20! [&_.trix-dialog]:bg-zinc-800! " \
+                      "[&_.trix-input--dialog]:bg-zinc-900! [&_.trix-input--dialog]:border-zinc-600!"
+```
+
+The parts are `.trix-button-group` (a group of buttons, with a border and radius),
+`.trix-button` (a button; its left border separates it from the previous one),
+`.trix-button.trix-active` (a pressed button), `.trix-dialog` (the link dialog) and
+`.trix-input--dialog` (its URL field). Parts the theme leaves alone keep Trix's look.
+
+The toolbar icons are black images. Under `color_scheme = "dark"` the engine's stylesheet
+inverts them, so they show on a dark background.
 
 ## Tailwind: literal classes and source scanning
 

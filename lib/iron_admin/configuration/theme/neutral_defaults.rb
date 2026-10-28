@@ -30,6 +30,8 @@ module IronAdmin
         @input_error = "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20"
         @placeholder_text = "placeholder:text-zinc-500"
         @disabled_text = "text-zinc-300"
+        @rich_text_editor = ""
+        @rich_text_toolbar = ""
       end
 
       def init_navigation_defaults
