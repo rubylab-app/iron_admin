@@ -275,6 +275,7 @@ RSpec.describe "Action Forms", type: :request do
     describe "GET bulk_action_form" do
       it "renders the bulk form page" do
         get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"),
+            params: { ids: licenses.map(&:id) },
             as: :html
 
         expect(response).to have_http_status(:ok)
@@ -291,7 +292,8 @@ RSpec.describe "Action Forms", type: :request do
       end
 
       it "renders the textarea as a theme textarea" do
-        get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"), as: :html
+        get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"),
+            params: { ids: licenses.map(&:id) }, as: :html
 
         expect(response.parsed_body.at_css("#action_form_note")[:class].split)
           .to eq(IronAdmin::Form::ControlClasses.textarea(IronAdmin.configuration.theme).split)

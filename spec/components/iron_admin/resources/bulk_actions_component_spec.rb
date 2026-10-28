@@ -32,6 +32,52 @@ RSpec.describe IronAdmin::Resources::BulkActionsComponent, type: :component do
     end
   end
 
+  describe "a bulk action with form fields" do
+    subject(:rendered) do
+      render_inline(described_class.new(actions: [form_action, { name: :lock }],
+                                        resource_class: IronAdmin::Resources::UserResource))
+    end
+
+    let(:routes) { IronAdmin::Engine.routes.url_helpers }
+    let(:form_action) { { name: :suspend, icon: "pause", form_fields: [IronAdmin::ActionField.new(name: :reason)] } }
+    let(:form) { rendered.at_css("form[action='#{routes.resource_bulk_action_form_path("users", :suspend)}']") }
+
+    it "opens the action's form with a GET, which carries the ids the bulk-actions controller adds" do
+      expect(form[:method]).to eq("get")
+    end
+
+    it "lets the bulk-actions controller add the selected ids" do
+      expect(form["data-bulk-actions-target"]).to eq("form")
+    end
+
+    context "with forgery protection on" do
+      around do |example|
+        original = ActionController::Base.allow_forgery_protection
+        ActionController::Base.allow_forgery_protection = true
+        example.run
+      ensure
+        ActionController::Base.allow_forgery_protection = original
+      end
+
+      it "keeps the CSRF token out of the form's URL" do
+        expect(form.at_css("input[name=authenticity_token]")).to be_nil
+      end
+
+      it "sends the CSRF token with a bulk action without form fields" do
+        post_form = rendered.at_css("form[action='#{routes.resource_bulk_action_path("users", :lock)}']")
+        expect(post_form.at_css("input[name=authenticity_token]")[:value]).to be_present
+      end
+    end
+
+    it "styles the button as the other bulk buttons" do
+      expect(form.at_css("button")[:class]).to eq(IronAdmin::Resources::Styles.secondary_button(IronAdmin.current_theme))
+    end
+
+    it "keeps the direct POST of a bulk action without form fields" do
+      expect(rendered.at_css("form[action='#{routes.resource_bulk_action_path("users", :lock)}']")[:method]).to eq("post")
+    end
+  end
+
   describe "theme" do
     subject(:rendered) do
       render_inline(described_class.new(actions: [{ name: :archive, icon: "archive-box" }],

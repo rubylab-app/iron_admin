@@ -31,6 +31,10 @@ en:
         not_completed: "Bulk action was not completed"
         failure: "Action failed: %{error}"
         inaccessible: "Some records are not accessible"
+      bulk_action_form:
+        selected:
+          one: "Applies to 1 selected record."
+          other: "Applies to %{count} selected records."
       index:
         new_button: "New %{model}"
         import_button: "Import"

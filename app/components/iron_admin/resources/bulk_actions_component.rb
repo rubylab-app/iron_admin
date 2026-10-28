@@ -43,6 +43,20 @@ module IronAdmin
       end
 
       # @api private
+      # @param action [Hash] Bulk action configuration
+      # @return [Boolean] Whether the action has form fields, so its button opens the form
+      def form?(action)
+        action[:form_fields].present?
+      end
+
+      # @api private
+      # @param action [Hash] Bulk action configuration
+      # @return [String] URL of the bulk action's form
+      def form_url(action)
+        helpers.iron_admin.resource_bulk_action_form_path(resource_class.resource_name, action[:name])
+      end
+
+      # @api private
       # @return [Boolean] Whether to render the component
       def render?
         actions.any?
