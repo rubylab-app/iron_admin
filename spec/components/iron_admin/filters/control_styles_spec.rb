@@ -46,7 +46,7 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
     end
 
     it "uses the theme's border width, input border and control radius" do
-      expect(classes).to include("border", "border-zinc-200", "hover:border-zinc-300", "rounded-md")
+      expect(classes).to include("border", "border-zinc-500/80", "hover:border-zinc-500", "rounded-md")
     end
 
     it "uses the theme's surface, text, placeholder and focus classes" do
@@ -86,7 +86,7 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
     end
 
     it "is 36px high with the theme's input classes" do
-      expect(classes).to include("h-9", "border", "border-zinc-200", "rounded-md", "bg-white")
+      expect(classes).to include("h-9", "border", "border-zinc-500/80", "rounded-md", "bg-white")
     end
 
     it "matches the selects of the forms" do
@@ -102,7 +102,7 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
     end
 
     it "is 36px high with the theme's input classes" do
-      expect(classes).to include("h-9", "border", "border-zinc-200", "rounded-md", "bg-white", "placeholder:text-zinc-500")
+      expect(classes).to include("h-9", "border", "border-zinc-500/80", "rounded-md", "bg-white", "placeholder:text-zinc-500")
     end
 
     it "matches the inputs of the forms" do

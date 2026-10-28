@@ -31,7 +31,8 @@ Sections:
 Neutral is a minimal light look in the style of current developer tools:
 
 - a `zinc-50` page and sidebar, with a white navbar and white cards, panels and tables,
-- 1px `zinc-200` borders, 8px corners on cards and panels (`rounded-lg`), 6px corners on
+- 1px `zinc-200` borders on cards and panels, input outlines that keep 3:1 contrast
+  (`zinc-500` at 80%), 8px corners on cards and panels (`rounded-lg`), 6px corners on
   buttons and inputs (`rounded-md`), and almost no shadow (`shadow-xs`),
 - the [Inter](https://rsms.me/inter/) typeface, loaded from Google Fonts (see [Fonts](#fonts)),
 - a black primary button and an indigo accent for links, focus outlines, the current sidebar
@@ -111,7 +112,7 @@ helpers return ready-made class strings:
 ```ruby
 t.link            # => "text-indigo-600 hover:text-indigo-700"
 cp_btn_primary    # => "inline-flex h-9 shrink-0 items-center … bg-zinc-900 text-white hover:bg-zinc-700 …"
-cp_input_class    # => "block w-full h-9 px-3 text-sm … border-zinc-200 hover:border-zinc-300 …"
+cp_input_class    # => "block w-full h-9 px-3 text-sm … border-zinc-500/80 hover:border-zinc-500 …"
 cp_input_class(error: true) # input_error replaces input_border and input_focus
 cp_card           # => "bg-white border border-zinc-200 rounded-lg shadow-xs"
 cp_sidebar_link   # => "text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900"
@@ -158,9 +159,9 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | Property | Neutral value | Controls |
 |----------|---------------|----------|
 | `focus_ring` | `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500` | Keyboard focus outline of every interactive element except text inputs (which use `input_focus`) and primary buttons: secondary, danger and ghost buttons, sidebar links, scope tabs, pagination, dropdown and switcher items, list rows. Use `focus-visible:` variants |
-| `input_border` | `border-zinc-200 hover:border-zinc-300` | Border color, with hover, of inputs, selects, textareas, the file input and the navbar search |
+| `input_border` | `border-zinc-500/80 hover:border-zinc-500` | Border color, with hover, of inputs, selects, textareas, the file input and the navbar search. An empty input shows nothing but this outline, so it keeps 3:1 contrast against `card_bg` (WCAG 1.4.11): zinc-500 at 80% is 3.3:1 on white, zinc-200 to zinc-400 are below 3:1 |
 | `input_focus` | `focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15` | Focus state of those controls: border color and ring |
-| `input_error` | `border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20` | Used **instead of** `input_border` and `input_focus` on a control whose value failed validation, so include the focus ring |
+| `input_error` | `border-red-500 focus:border-red-600 focus:ring-3 focus:ring-red-500/20` | Used **instead of** `input_border` and `input_focus` on a control whose value failed validation, so include the focus ring. Its border keeps 3:1 too: red-500 is 3.8:1 on white, red-400 2.9:1 |
 | `placeholder_text` | `placeholder:text-zinc-500` | Placeholder color, with the `placeholder:` variant |
 | `checkbox_checked` | `checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15` | Checked checkboxes and radio buttons: border and background color, and their focus ring. The check mark and the dot are always white, in light and dark themes, so pick a checked background with at least 3:1 contrast against white (not zinc-50, 100 or 200 in a dark theme) |
 | `checkbox_border` | `border-zinc-500` | Border color of unchecked checkboxes and radio buttons. It is all that shows an unchecked control, so it keeps 3:1 contrast against `card_bg` (WCAG 1.4.11): zinc-500 is 4.8:1 on white, zinc-300 and zinc-400 are below 3:1. They don't use `input_border`, whose hover color would cover the checked border |
@@ -254,7 +255,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `border_radius` | `rounded-lg` | Radius of cards, panels, alerts, dropdowns and modals. Buttons and inputs use `control_radius` |
 | `border_width` | `border` | Width of the outline of cards, panels, popovers, modals, alerts, inputs, checkboxes and pagination links. One-sided dividers (panel headers, footers, table rows, scope tabs) keep their template width; `sidebar_border` and `btn_secondary` carry their own, and `navbar_border_width` sets the navbar's |
 | `color_scheme` | `"light"` | `"light"` or `"dark"`: the CSS color scheme of the page (see [Color scheme](#color-scheme-dark-themes-and-charts)). Not a Tailwind class |
-| `swatch` | `rounded-full bg-white ring-1 ring-inset ring-zinc-300` | This theme's 12px swatch in the theme switcher: its shape (Neutral's is a dot), fill and ring |
+| `swatch` | `rounded-full bg-white ring-1 ring-inset ring-zinc-500/80` | This theme's 12px swatch in the theme switcher: its shape (Neutral's is a dot), fill and ring |
 | `surface_muted` | `bg-zinc-50` | Secondary backgrounds: readonly and disabled inputs, nested form rows, file previews, the empty state icon, audit change details |
 | `item_hover` | `hover:bg-zinc-100` | Hover of dropdown and switcher items, search result rows and pagination links (rows with `muted_text` use `table_row_hover`) |
 | `item_active` | `bg-zinc-100` | The belongs-to autocomplete option that the arrow keys highlight |
@@ -365,7 +366,7 @@ IronAdmin.configure do |config|
     t.focus_ring = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
 
     # Inputs
-    t.input_border = "border-zinc-700 hover:border-zinc-600"
+    t.input_border = "border-zinc-500 hover:border-zinc-400" # 3.7:1 on the zinc-900 cards
     t.input_focus = "focus:border-indigo-400 focus:ring-3 focus:ring-indigo-400/25"
     t.input_error = "border-red-500 focus:border-red-400 focus:ring-3 focus:ring-red-400/25"
     t.placeholder_text = "placeholder:text-zinc-400"

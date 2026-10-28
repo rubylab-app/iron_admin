@@ -11,7 +11,7 @@ Every page is restyled:
 - **Colors:** zinc grays instead of gray, a light `zinc-50` sidebar with a thin border instead of the `gray-900` sidebar, a black primary button, and indigo only as the accent (links, focus outlines, the current sidebar link, charts).
 - **Type:** Inter, loaded from Google Fonts (see section 5). Page titles are `text-xl font-semibold` (they were `text-2xl` in the heading weight, `font-bold`), and card titles `text-sm font-semibold` (they were `text-lg`).
 - **Sizes:** buttons, inputs and selects are 36px high (`h-9`), the navbar is 56px (`h-14`) and its search box shows a ⌘K hint, and sidebar icons are 16px.
-- **Surfaces:** cards and panels have a 1px `zinc-200` border, `rounded-lg` corners and `shadow-xs`; buttons and inputs have `rounded-md` corners.
+- **Surfaces:** cards and panels have a 1px `zinc-200` border, `rounded-lg` corners and `shadow-xs`; buttons and inputs have `rounded-md` corners. Inputs, selects and textareas are outlined in `zinc-500` at 80%, which keeps 3:1 contrast on white (WCAG 1.4.11), and in `red-500` when their value failed validation.
 - **Tables:** header cells are sentence case (no `uppercase tracking-wider`), cells are `px-4 py-2.5` (they were `px-6 py-4`), and number and currency columns use tabular digits.
 - **Badges:** tinted, `rounded-md`, with a colored dot, in every place a badge appears (`:badge` fields, the audit log, `BadgeComponent`). The default badge size is `px-2 py-0.5 text-xs` (it was `px-2.5 py-0.5 text-sm`).
 - **Dashboard:** metric cards put the label on top, the figure below and the icon in a small tile. Pie and doughnut slices are outlined in their own colors, and charts draw their text in the page font.

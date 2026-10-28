@@ -22,12 +22,13 @@ module IronAdmin
       end
 
       def init_form_defaults
-        @input_border = "border-zinc-200 hover:border-zinc-300"
+        # zinc-500 at 80% keeps an empty input's outline at 3:1 on white and zinc-50 (WCAG 1.4.11)
+        @input_border = "border-zinc-500/80 hover:border-zinc-500"
         @input_focus = "focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15"
         @checkbox_checked = "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-3 focus:ring-indigo-500/15"
         @checkbox_border = "border-zinc-500"
         @checkbox_radius = "rounded-sm"
-        @input_error = "border-red-400 focus:border-red-500 focus:ring-3 focus:ring-red-500/20"
+        @input_error = "border-red-500 focus:border-red-600 focus:ring-3 focus:ring-red-500/20"
         @placeholder_text = "placeholder:text-zinc-500"
         @disabled_text = "text-zinc-300"
         @rich_text_editor = ""
@@ -76,7 +77,7 @@ module IronAdmin
         @border_radius = "rounded-lg"
         @border_width = "border"
         @color_scheme = "light"
-        @swatch = "rounded-full bg-white ring-1 ring-inset ring-zinc-300"
+        @swatch = "rounded-full bg-white ring-1 ring-inset ring-zinc-500/80"
         @surface_muted = "bg-zinc-50"
         @item_hover = "hover:bg-zinc-100"
         @item_active = "bg-zinc-100"

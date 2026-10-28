@@ -52,7 +52,10 @@ module IronAdmin
       # @return [String] Focus indicator of interactive elements other than inputs
       attr_accessor :focus_ring
 
-      # @return [String] Input border color classes
+      # @return [String] Border color, with hover, of inputs, selects, textareas, the file input and
+      #   the navbar search. An empty input shows nothing but this outline, so keep 3:1 against
+      #   {#card_bg} (WCAG 1.4.11): Neutral's zinc-500 at 80% is 3.3:1 on white, while zinc-200 to
+      #   zinc-400 are below 3:1
       attr_accessor :input_border
 
       # @return [String] Input focus state classes
@@ -73,7 +76,8 @@ module IronAdmin
       attr_accessor :checkbox_radius
 
       # @return [String] Border color and focus state (ring width included) of inputs with
-      #   validation errors, used instead of {#input_border} and {#input_focus}
+      #   validation errors, used instead of {#input_border} and {#input_focus}. Keep the border at
+      #   3:1 too: Neutral's red-500 is 3.8:1 on white, red-400 is 2.9:1
       attr_accessor :input_error
 
       # @return [String] Color of input placeholders (with the +placeholder:+ variant)

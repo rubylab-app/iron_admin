@@ -58,7 +58,7 @@ RSpec.describe IronAdmin::Layout::ThemeSwitcherComponent, type: :component do
   it "draws each theme's swatch" do
     swatches = buttons.map { |button| button.at_css("span[aria-hidden='true']")[:class].split }
 
-    expect(swatches).to match([include("bg-white", "ring-zinc-300"), include("bg-zinc-950", "ring-zinc-700")])
+    expect(swatches).to match([include("bg-white", "ring-zinc-500/80"), include("bg-zinc-950", "ring-zinc-700")])
   end
 
   it "rounds Neutral's swatch with its own classes" do

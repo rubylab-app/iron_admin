@@ -145,7 +145,7 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
       end
 
       it "styles the search input with the theme's border, radius and backgrounds" do
-        expect(search_input).to include("border", "border-zinc-200", "rounded-md", "bg-zinc-50", "focus:bg-white")
+        expect(search_input).to include("border", "border-zinc-500/80", "rounded-md", "bg-zinc-50", "focus:bg-white")
       end
 
       it "colors the search placeholder and focus ring from the theme" do
