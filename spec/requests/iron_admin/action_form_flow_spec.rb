@@ -457,6 +457,59 @@ RSpec.describe "Action form flow", type: :request do
     end
   end
 
+  describe "action forms in a dark theme picked by the theme cookie" do
+    let(:night) do
+      IronAdmin.configuration.register_theme(:night) do |night|
+        night.color_scheme = "dark"
+        night.card_bg = "bg-zinc-900"
+        night.label_text = "text-zinc-200"
+        night.muted_text = "text-zinc-400"
+        night.input_border = "border-zinc-700"
+        night.input_error = "border-red-400"
+        night.error_text = "text-red-400"
+      end
+    end
+    let(:controls) { IronAdmin::Form::ControlClasses }
+
+    before do
+      night
+      cookies["iron_admin_theme"] = "night"
+    end
+
+    context "with a member form that came back with an error" do
+      before { post execute_path(:annotate), params: { action_form: { note: "" } }, as: :html }
+
+      it "outlines the field with that theme's error classes" do
+        expect(document.at_css("#action_form_note")[:class].split).to eq(controls.textarea(night, error: true).split)
+      end
+
+      it "writes the error in that theme's error color" do
+        expect(document.at_css("#action_form_note_error")[:class].split).to include("text-red-400")
+      end
+
+      it "writes the labels in that theme's label color" do
+        expect(document.at_css("label[for=action_form_tag]")[:class].split).to include("text-zinc-200")
+      end
+
+      it "renders the other fields as that theme's inputs" do
+        expect(document.at_css("#action_form_tag")[:class].split).to eq(controls.input(night).split)
+      end
+    end
+
+    context "with a bulk form" do
+      before { get bulk_form_path(:bulk_annotate), params: { ids: [license.id] }, as: :html }
+
+      it "writes the record count in that theme's muted text color" do
+        count = document.css("p").find { |line| line.text.include?(I18n.t("iron_admin.resources.bulk_action_form.selected", count: 1)) }
+        expect(count[:class].split).to include("text-zinc-400")
+      end
+
+      it "renders the field as that theme's textarea" do
+        expect(document.at_css("#action_form_note")[:class].split).to eq(controls.textarea(night).split)
+      end
+    end
+  end
+
   describe "authorization of GET /:resource_name/:id/actions/:action_name/form" do
     context "with a record outside the tenant scope" do
       let(:outsider) { create(:license) }
