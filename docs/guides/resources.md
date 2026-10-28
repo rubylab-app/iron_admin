@@ -246,6 +246,7 @@ end
 
 With `confirm: true`, the button asks for confirmation first. The dialog shows the action's
 `confirm_message`, or `iron_admin.resources.action.confirm` ("Are you sure?") when it has none.
+An action with form fields asks when its form is submitted instead (see [Action Forms](#action-forms)).
 
 The show page lists the actions the current user can run on that record: the ones the policy
 allows (see [Custom Action Authorization](authentication.md#custom-action-authorization)),
@@ -273,11 +274,14 @@ again." (`iron_admin.errors.unexpected`).
 
 ### Action Forms
 
-Actions can collect user input before executing by specifying `form_fields:`. The form is displayed in a modal when the action is triggered.
+Actions can collect user input before executing by specifying `form_fields:`. A two-argument
+block receives the record and the submitted values, keyed by field name.
 
 ```ruby
 class OrderResource < IronAdmin::Resource
   action :reject,
+    icon: "x-circle",
+    confirm: true,
     form_fields: [
       action_field(:reason, type: :textarea, required: true),
       action_field(:notify_customer, type: :boolean, default: true)
@@ -295,12 +299,40 @@ ActionField options:
 | Option | Type | Description |
 |--------|------|-------------|
 | `type` | Symbol | Input type (see list above) |
+| `label` | String | Label of the input (defaults to the humanized name) |
 | `required` | Boolean | Whether the field must be filled |
-| `default` | Object | Default value for the input |
-| `choices` | Array | Options for `:select` type |
+| `default` | Object | Value of the input when the form opens |
+| `placeholder` | String | Placeholder of the input |
+| `options` | Array | Options for `:select` type |
 
-Action forms work with both record actions and bulk actions. After Execute, the browser goes to
-the record (or, for a bulk action, back to the index) and shows the result as a flash message.
+The flow:
+
+1. **Link.** On the show page (and in `ActionsComponent`), an action with form fields is a link
+   to its form, `GET /admin/:resource/:id/actions/:name/form`, styled like the other action
+   buttons. Actions without form fields stay buttons that run the action right away.
+2. **Form.** The form page loads the record the way the action does: the policy, the action's
+   `condition`, the tenant scope and soft-deleted rows (only `restore` reaches them) apply,
+   so a user who cannot run the action gets a 403 or a 404 instead of the form. Cancel goes
+   back to the record.
+3. **Submit.** Execute posts the values to the action. With `confirm: true`, the confirmation
+   (`confirm_message`, or `iron_admin.resources.action.confirm`) is asked when the form is
+   submitted, not before it opens. After the action, the browser goes to the record and shows
+   the result as a flash message, as for any action.
+
+**Required fields.** The browser asks for a `required: true` field before it submits. The
+server checks it too: when a required field is blank (or a direct POST leaves it out), the
+action does not run, and the form comes back (422) with the values that were typed and "can't
+be blank" (`errors.messages.blank`) under the field. Optional fields can be left blank; the
+block then gets `nil` (or an empty string) for them, and a boolean that is not checked is
+missing from `params`.
+
+**Bulk actions** take form fields too. In the index's bulk bar, the button of a bulk action
+with form fields takes the selected ids to `GET /admin/:resource/bulk_actions/:name/form`.
+That form says how many records it applies to, carries the ids and the index's scope, search,
+filters, sort and page, and asks for the confirmation on submit. The selection is checked as
+the bulk action checks it: with no ids, or with an id that is gone or outside the tenant
+scope, the form sends the user back to the index with the same alert. After Execute, the
+index comes back with the state it was run from.
 
 ### Bulk Actions
 

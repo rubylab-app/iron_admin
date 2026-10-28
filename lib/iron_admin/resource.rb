@@ -232,17 +232,22 @@ module IronAdmin
 
       # Defines a custom action for individual records.
       #
-      # Actions appear in the actions dropdown on show and index pages.
-      # They execute arbitrary code when triggered.
+      # Actions appear on the show page. They execute arbitrary code when triggered.
+      # An action with form_fields opens its form first: the show page links to it,
+      # the form posts to the action, and the action does not run while a required
+      # field is blank.
       #
       # @param name [Symbol] The action name
+      # @param form_fields [Array<IronAdmin::ActionField, Hash>] Inputs of the action's form
       # @param options [Hash] Configuration options
       # @option options [String] :icon Heroicon name (e.g., "lock-closed", "trash")
-      # @option options [Boolean] :confirm Whether to show a confirmation dialog
+      # @option options [Boolean] :confirm Whether to show a confirmation dialog (on the form's
+      #   submit when the action has form_fields)
       # @option options [String] :confirm_message Custom confirmation message
       # @option options [Symbol] :method HTTP method (:post, :patch, :delete)
-      # @yield [record] Block executed when action is triggered
+      # @yield [record, params] Block executed when action is triggered
       # @yieldparam record [ActiveRecord::Base] The record to act upon
+      # @yieldparam params [Hash{Symbol => String}] The form's values (two-argument blocks only)
       #
       # @example Simple action
       #   action :publish do |record|
@@ -262,16 +267,20 @@ module IronAdmin
 
       # Defines a bulk action for multiple selected records.
       #
-      # Bulk actions appear in the bulk actions dropdown when records
+      # Bulk actions appear in the bulk actions bar when records
       # are selected on the index page. All records are processed in
-      # a single database transaction.
+      # a single database transaction. A bulk action with form_fields
+      # takes the selection to its form, which posts to the action.
       #
       # @param name [Symbol] The action name
+      # @param form_fields [Array<IronAdmin::ActionField, Hash>] Inputs of the action's form
       # @param options [Hash] Configuration options
       # @option options [String] :icon Heroicon name
-      # @option options [Boolean] :confirm Whether to show a confirmation dialog
-      # @yield [records] Block executed when action is triggered
+      # @option options [Boolean] :confirm Whether the action's form asks for confirmation on submit
+      #   (the bulk bar itself does not ask)
+      # @yield [records, params] Block executed when action is triggered
       # @yieldparam records [ActiveRecord::Relation] The selected records
+      # @yieldparam params [Hash{Symbol => String}] The form's values (two-argument blocks only)
       # @yieldreturn [Boolean, nil] Return false to rollback the transaction
       #
       # @example Bulk deactivate
