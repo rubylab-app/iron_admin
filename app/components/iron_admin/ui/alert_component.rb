@@ -63,11 +63,11 @@ module IronAdmin
 
       # @api private
       # @return [String] CSS classes for alert container: the theme's palette
-      #   entry for the type (else its +:info+ entry), border width and radius
+      #   entry for the type (else its +:info+ entry), border width, radius and alert shadow
       def alert_classes
         palette = theme.alert_palette.to_h
         colors = palette[palette_type] || palette[:info]
-        "#{colors} #{theme.border_width} #{theme.border_radius} px-4 py-3"
+        "#{colors} #{theme.border_width} #{theme.border_radius} #{theme.alert_shadow} px-4 py-3"
       end
 
       # @api private

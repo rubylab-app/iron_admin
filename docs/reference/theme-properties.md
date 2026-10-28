@@ -6,7 +6,7 @@ tables list every property with its Neutral value and what it controls.
 
 ## Properties
 
-A theme has 89 properties, each with a reader and a writer (`theme.card_bg`,
+A theme has 90 properties, each with a reader and a writer (`theme.card_bg`,
 `theme.card_bg = "bg-white"`). They hold Tailwind classes, except `font_stylesheet_url` (a URL
 or `nil`), `color_scheme` (`"light"` or `"dark"`), the chart properties (CSS colors) and the
 palettes (Hashes).
@@ -22,7 +22,7 @@ palettes (Hashes).
 | Cards and panels | `card_bg`, `card_border`, `card_shadow`, `popover_shadow`, `popover_bg`, `card_title` |
 | Typography | `font_family`, `font_stylesheet_url`, `heading_font`, `heading_weight`, `page_title`, `label_transform`, `field_label_transform`, `body_text`, `muted_text`, `label_text`, `error_text`, `success_text` |
 | Layout and surfaces | `main_bg`, `border_radius`, `border_width`, `color_scheme`, `swatch`, `surface_muted`, `item_hover`, `item_active`, `icon_muted`, `overlay_bg` |
-| Feedback | `alert_palette`, `badge_palette`, `badge_dot_palette`, `badge_shape`, `chip`, `danger_item`, `tooltip`, `code_block`, `progress_track`, `pagination_active` |
+| Feedback | `alert_palette`, `alert_shadow`, `badge_palette`, `badge_dot_palette`, `badge_shape`, `chip`, `danger_item`, `tooltip`, `code_block`, `progress_track`, `pagination_active` |
 | Dashboard | `metric_label`, `metric_value`, `metric_icon` |
 | Charts | `chart_colors`, `chart_border_color`, `chart_grid_color`, `chart_text_color` |
 

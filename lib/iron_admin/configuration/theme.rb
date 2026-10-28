@@ -308,6 +308,9 @@ module IronAdmin
       #   color, text color) by type: +:success+, +:error+, +:warning+, +:info+
       attr_accessor :alert_palette
 
+      # @return [String] Shadow of alerts, flash messages and warning panels (empty = none)
+      attr_accessor :alert_shadow
+
       # @return [Hash{Symbol => String}] Badge classes by color name (+:green+, +:red+, +:yellow+,
       #   +:blue+, +:indigo+, +:purple+, +:pink+, +:orange+, +:teal+, +:gray+)
       attr_accessor :badge_palette

@@ -80,6 +80,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     icon_muted: "text-zinc-400",
     overlay_bg: "bg-zinc-900/40",
     badge_shape: "rounded-md font-medium",
+    alert_shadow: "",
     chip: "bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200",
     danger_item: "text-red-600 hover:bg-red-50 hover:text-red-700",
     tooltip: "bg-zinc-900 text-white",

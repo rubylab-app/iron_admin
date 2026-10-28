@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 89 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 90 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -263,6 +263,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | Property | Neutral value | Controls |
 |----------|---------------|----------|
 | `alert_palette` | Hash, see [below](#badges-alerts-and-chips) | Classes (background, border color, text color) of alerts by type: `:success`, `:error`, `:warning`, `:info`. Flash messages, form errors and the audit log's warning use it |
+| `alert_shadow` | `""` | Shadow of those alerts, flash messages, form errors and the audit log's warning. Empty = none |
 | `badge_palette` | Hash, see [below](#badges-alerts-and-chips) | Badge classes by color name: status badges, `:badge` fields, audit actions and activity feed icons |
 | `badge_dot_palette` | Hash, see [below](#badges-alerts-and-chips) | Classes of the dot inside each badge, by color name. An empty Hash (`{}`) draws no dots |
 | `badge_shape` | `rounded-md font-medium` | Radius and weight of badges, chips and count bubbles |

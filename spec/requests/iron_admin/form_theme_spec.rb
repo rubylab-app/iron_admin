@@ -59,6 +59,18 @@ RSpec.describe "Form theme", type: :request do
     it "shows it in the theme's error alert" do
       expect(classes_at("form [role=alert]")).to include(*theme.alert_palette[:error].split, theme.border_width)
     end
+
+    context "with a theme that sets alert_shadow" do
+      before do
+        theme.alert_shadow = "shadow-md"
+        patch iron_admin.resource_path("users", user),
+              params: { record: { name: user.name, email: user.email, preferences: "{not valid json" } }, as: :html
+      end
+
+      it "gives the error alert that shadow" do
+        expect(classes_at("form [role=alert]")).to include("shadow-md")
+      end
+    end
   end
 
   describe "GET /:resource_name/:id/edit with a tags field" do

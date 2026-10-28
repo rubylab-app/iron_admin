@@ -7,7 +7,7 @@
     %h1{ class: styles.page_title(t) } Audit Log
 
   - unless IronAdmin.configuration.audit_enabled
-    .flex.gap-3.p-4.mb-6{ class: "#{t.border_width} #{t.border_radius} #{t.alert_palette[:warning]}" }
+    .flex.gap-3.p-4.mb-6{ class: "#{t.border_width} #{t.border_radius} #{t.alert_shadow} #{t.alert_palette[:warning]}" }
       = heroicon "exclamation-triangle", variant: :mini, options: { class: "h-5 w-5 shrink-0" }
       %p.text-sm
         Audit logging is currently disabled. Enable it in your IronAdmin configuration:

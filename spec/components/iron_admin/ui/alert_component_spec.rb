@@ -124,6 +124,14 @@ RSpec.describe IronAdmin::Ui::AlertComponent, type: :component do
       end
     end
 
+    context "with a themed alert shadow" do
+      before { IronAdmin.configuration.theme.alert_shadow = "shadow-[4px_4px_0_#000]" }
+
+      it "uses the theme's alert_shadow" do
+        expect(alert[:class].split).to include("shadow-[4px_4px_0_#000]")
+      end
+    end
+
     context "with a themed border radius" do
       before { IronAdmin.configuration.theme.border_radius = "rounded-none" }
 

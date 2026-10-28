@@ -1,6 +1,6 @@
 = form_with model: @record, url: form_url, scope: :record, html: { multipart: true } do |f|
   - if @record.errors[:base].any?
-    .mb-6.px-4.py-3.text-sm{ role: "alert", class: "#{t.border_width} #{t.border_radius} #{t.alert_palette[:error]}" }= @record.errors[:base].to_sentence
+    .mb-6.px-4.py-3.text-sm{ role: "alert", class: "#{t.border_width} #{t.border_radius} #{t.alert_shadow} #{t.alert_palette[:error]}" }= @record.errors[:base].to_sentence
   .grid.grid-cols-1.md:grid-cols-2.2xl:grid-cols-3.gap-x-6.gap-y-5
     - @fields.each do |field|
       - if field.type == :hidden

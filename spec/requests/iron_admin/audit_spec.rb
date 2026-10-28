@@ -24,6 +24,13 @@ RSpec.describe "IronAdmin::Audit", type: :request do
       expect(response.body).to include("Audit logging is currently disabled")
     end
 
+    it "gives the disabled warning the theme's alert_shadow" do
+      IronAdmin.configuration.theme.alert_shadow = "shadow-md"
+      get iron_admin.audit_path
+
+      expect(response.parsed_body.at_css("div.gap-3.p-4.mb-6")[:class].split).to include("shadow-md")
+    end
+
     it "does not show disabled warning when audit is enabled" do
       IronAdmin.configure { |c| c.audit_enabled = true }
 
