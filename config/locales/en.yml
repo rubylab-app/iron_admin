@@ -31,6 +31,9 @@ en:
         not_completed: "Bulk action was not completed"
         failure: "Action failed: %{error}"
         inaccessible: "Some records are not accessible"
+      action_form:
+        record: "Applies to %{model} #%{id}."
+        record_with_label: "Applies to %{model} #%{id} (%{label})."
       bulk_action_form:
         selected:
           one: "Applies to 1 selected record."

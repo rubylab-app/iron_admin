@@ -326,7 +326,7 @@ ActionField options:
 | Option | Type | Description |
 |--------|------|-------------|
 | `type` | Symbol | Input type (see list above) |
-| `label` | String | Label of the input (defaults to the humanized name) |
+| `label` | String | Label of the input (defaults to the humanized name); a `:boolean` field's label is the text beside its checkbox |
 | `required` | Boolean | Whether the field must be filled |
 | `default` | Object | Value of the input when the form opens |
 | `placeholder` | String | Placeholder of the input |
@@ -339,8 +339,10 @@ The flow:
    buttons. Actions without form fields stay buttons that run the action right away.
 2. **Form.** The form page loads the record the way the action does: the policy, the action's
    `condition`, the tenant scope and soft-deleted rows (only `restore` reaches them) apply,
-   so a user who cannot run the action gets a 403 or a 404 instead of the form. Cancel goes
-   back to the record, as a whole-page visit.
+   so a user who cannot run the action gets a 403 or a 404 instead of the form. The form
+   names the record it applies to by model, id and label ("Applies to Article #16 (Slow
+   news).", or "Applies to License #3." for a record without a `name`, `title`, `email`,
+   `label` or `slug`). Cancel goes back to the record, as a whole-page visit.
 3. **Submit.** Execute posts the values to the action. With `confirm: true`, the confirmation
    (`confirm_message`, or `iron_admin.resources.action.confirm`) is asked when the form is
    submitted, not before it opens. After the action, the browser goes to the record and shows

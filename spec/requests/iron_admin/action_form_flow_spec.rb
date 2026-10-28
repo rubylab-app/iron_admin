@@ -165,11 +165,16 @@ RSpec.describe "Action form flow", type: :request do
     subject(:submit) { document.at_css("form[action='#{execute_path(action_name)}'] button[type=submit]") }
 
     let(:action_name) { :annotate }
+    let(:form) { document.at_css("form[action='#{execute_path(action_name)}']") }
 
     before { get form_path(action_name), as: :html }
 
     it "renders the form" do
       expect(response).to have_http_status(:ok)
+    end
+
+    it "says which record the action applies to" do
+      expect(form.text.squish).to include("Applies to License ##{license.id}.")
     end
 
     it "asks for confirmation on the submit, with the action's confirm_message" do
@@ -204,6 +209,14 @@ RSpec.describe "Action form flow", type: :request do
       it "checks a boolean whose default is true" do
         expect(document.at_css("input#action_form_notify_customer")[:checked]).to be_present
       end
+
+      it "writes a boolean's label once" do
+        expect(form.text.scan("Notify customer").size).to eq(1)
+      end
+
+      it "labels a boolean's checkbox with the text beside it" do
+        expect(document.at_css("input#action_form_notify_customer + label[for=action_form_notify_customer]")).to be_present
+      end
     end
 
     context "with a required boolean" do
@@ -211,6 +224,10 @@ RSpec.describe "Action form flow", type: :request do
 
       it "makes the browser ask for its checkbox" do
         expect(document.at_css("input#action_form_i_understand")[:required]).to be_present
+      end
+
+      it "marks the text beside its checkbox as required, in the theme's error color" do
+        expect(document.at_css("input#action_form_i_understand + label span")[:class].split).to include(theme.error_text)
       end
     end
 
@@ -355,6 +372,51 @@ RSpec.describe "Action form flow", type: :request do
 
     it "checks a boolean whose default is true" do
       expect(document.at_css("input#action_form_notify_customer")[:checked]).to be_present
+    end
+
+    it "writes a boolean's label once" do
+      expect(document.at_css("form[action='#{bulk_execute_path(:bulk_review)}']").text.scan("Notify customer").size).to eq(1)
+    end
+  end
+
+  describe "record named by GET /:resource_name/:id/actions/:action_name/form" do
+    let(:user_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "FlowUserResource"
+        end
+
+        def self.resource_name
+          "flow_users"
+        end
+
+        action :rename, form_fields: [action_field(:name, type: :text, required: true)] do |user, params|
+          user.update!(name: params[:name])
+        end
+      end
+    end
+    let(:user) { create(:user, name: "Ana García") }
+    let(:form) { document.at_css("form[action='#{iron_admin.resource_action_path("flow_users", user, :rename)}']") }
+
+    before do
+      IronAdmin::ResourceRegistry.register(user_resource)
+      get iron_admin.resource_action_form_path("flow_users", user, :rename), as: :html
+    end
+
+    it "names the record by its label after its model and id" do
+      expect(form.text.squish).to include("Applies to User ##{user.id} (Ana García).")
+    end
+
+    context "when the form comes back with an error" do
+      before do
+        post iron_admin.resource_action_path("flow_users", user, :rename), params: { action_form: { name: "" } }, as: :html
+      end
+
+      it "still names the record" do
+        expect(form.text.squish).to include("Applies to User ##{user.id} (Ana García).")
+      end
     end
   end
 

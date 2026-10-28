@@ -4,6 +4,8 @@
 
     .p-6{ class: cp_card }
       = form_tag @form_url, method: :post, class: "space-y-5", data: { turbo_frame: "_top" } do
+        -# The record is named here, as the bulk form counts its records: the page may be opened on its own.
+        %p.text-sm{ class: cp_muted_text }= action_form_record_text(@resource_class, @record)
         - @form_fields.each do |field|
           = render "iron_admin/form/action_field", field: field, scope: "action_form",
             value: @form_values[field.name], errors: @form_errors[field.name]
