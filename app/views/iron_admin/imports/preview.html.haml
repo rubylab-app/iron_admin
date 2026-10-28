@@ -22,7 +22,7 @@
           = "#{header} -> #{field_name.to_s.humanize}"
 
   .overflow-x-auto{ class: "#{cp_card} #{t.table_frame}" }
-    %table.min-w-full.divide-y{ class: cp_table_border }
+    %table.min-w-full.divide-y{ class: t.table_head_divider }
       %thead{ class: cp_table_header_bg }
         %tr
           - @preview.mapping.values.each do |field_name|

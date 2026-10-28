@@ -61,6 +61,7 @@ module IronAdmin
         @table_sticky_shadow = "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]"
         @table_row_hover = "hover:bg-zinc-50"
         @table_border = "divide-zinc-200"
+        @table_head_border = ""
         @card_bg = "bg-white"
         @card_border = "border-zinc-200"
         @card_shadow = "shadow-xs"

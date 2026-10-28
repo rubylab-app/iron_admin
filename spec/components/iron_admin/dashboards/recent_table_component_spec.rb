@@ -334,6 +334,18 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
         expect(card.at_css("table").parent[:class].split).to include("max-h-96")
       end
     end
+
+    context "with a theme that sets table_head_border" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:print) do |t|
+          t.table_head_border = "divide-stone-900"
+        end
+      end
+
+      it "draws the line under the head in that color" do
+        expect(card.at_css("table")[:class].split).to include("divide-stone-900")
+      end
+    end
   end
 
   # The dashboard page title is the h1, so a widget title is an h2.

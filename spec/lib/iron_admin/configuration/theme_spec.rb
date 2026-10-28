@@ -48,6 +48,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     table_sticky_shadow: "shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]",
     table_row_hover: "hover:bg-zinc-50",
     table_border: "divide-zinc-200",
+    table_head_border: "",
     card_bg: "bg-white",
     card_border: "border-zinc-200",
     card_shadow: "shadow-xs",
@@ -199,6 +200,20 @@ RSpec.describe IronAdmin::Configuration::Theme do
 
       it "follows card_bg" do
         expect(theme.popover_background).to eq("bg-stone-50")
+      end
+    end
+  end
+
+  describe "#table_head_divider" do
+    it "returns table_border while table_head_border is empty" do
+      expect(theme.table_head_divider).to eq("divide-zinc-200")
+    end
+
+    context "with a table_head_border" do
+      before { theme.table_head_border = "divide-stone-900" }
+
+      it "returns it" do
+        expect(theme.table_head_divider).to eq("divide-stone-900")
       end
     end
   end

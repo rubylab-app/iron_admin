@@ -179,6 +179,11 @@ module IronAdmin
       # @return [String] Table border/divider classes
       attr_accessor :table_border
 
+      # @return [String, nil] Color of the line between a table's head and its body, such as a
+      #   darker rule above hairline row dividers (+divide-*+ classes; empty = {#table_border};
+      #   read it through {#table_head_divider})
+      attr_accessor :table_head_border
+
       # @!endgroup
 
       # @!group Card Styles
@@ -386,6 +391,12 @@ module IronAdmin
       # @return [String] Background of floating surfaces: {#popover_bg}, or {#card_bg} while it is empty
       def popover_background
         popover_bg.presence || card_bg
+      end
+
+      # @return [String] Color of the line between a table's head and body: {#table_head_border},
+      #   or {#table_border} while it is empty
+      def table_head_divider
+        table_head_border.presence || table_border
       end
 
       # @return [Boolean] Whether {#color_scheme} is "dark"

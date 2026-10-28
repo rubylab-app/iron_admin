@@ -6,7 +6,7 @@ tables list every property with its Neutral value and what it controls.
 
 ## Properties
 
-A theme has 86 properties, each with a reader and a writer (`theme.card_bg`,
+A theme has 87 properties, each with a reader and a writer (`theme.card_bg`,
 `theme.card_bg = "bg-white"`). They hold Tailwind classes, except `font_stylesheet_url` (a URL
 or `nil`), `color_scheme` (`"light"` or `"dark"`), the chart properties (CSS colors) and the
 palettes (Hashes).
@@ -18,7 +18,7 @@ palettes (Hashes).
 | Scope tabs and counts | `scope_active`, `scope_inactive`, `badge_count` |
 | Sidebar | `sidebar_bg`, `sidebar_border`, `sidebar_title`, `sidebar_link`, `sidebar_link_hover`, `sidebar_link_active`, `sidebar_group_label` |
 | Navbar | `navbar_bg`, `navbar_border`, `navbar_search_bg`, `navbar_search_focus_bg`, `navbar_text`, `kbd`, `skip_link` |
-| Tables | `table_header_bg`, `table_header_text`, `table_cell_padding`, `table_frame`, `table_sticky_shadow`, `table_row_hover`, `table_border` |
+| Tables | `table_header_bg`, `table_header_text`, `table_cell_padding`, `table_frame`, `table_sticky_shadow`, `table_row_hover`, `table_border`, `table_head_border` |
 | Cards and panels | `card_bg`, `card_border`, `card_shadow`, `popover_shadow`, `popover_bg`, `card_title` |
 | Typography | `font_family`, `font_stylesheet_url`, `heading_font`, `heading_weight`, `page_title`, `label_transform`, `field_label_transform`, `body_text`, `muted_text`, `label_text`, `error_text`, `success_text` |
 | Layout and surfaces | `main_bg`, `border_radius`, `border_width`, `color_scheme`, `swatch`, `surface_muted`, `item_hover`, `item_active`, `icon_muted`, `overlay_bg` |
@@ -35,6 +35,7 @@ palettes (Hashes).
 | `#label` | The String the theme switcher shows |
 | `#dark?` | Whether `color_scheme` is `"dark"` |
 | `#popover_background` | `popover_bg`, or `card_bg` while `popover_bg` is empty: the background of floating surfaces |
+| `#table_head_divider` | `table_head_border`, or `table_border` while `table_head_border` is empty: the line under a table's header row |
 | `#scheme_class` | `"scheme-dark"` for a dark theme, else `"scheme-light"` (`Theme::SCHEME_CLASSES`) |
 | `#dup` | A copy whose Arrays and Hashes (`chart_colors`, the palettes) are copies too |
 

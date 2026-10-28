@@ -48,7 +48,7 @@ module IronAdmin
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] The table, its head divided from its body
       def table(theme)
-        "min-w-full divide-y #{theme.table_border}"
+        "min-w-full divide-y #{theme.table_head_divider}"
       end
 
       # @param theme [IronAdmin::Configuration::Theme]

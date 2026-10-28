@@ -73,6 +73,18 @@ RSpec.describe IronAdmin::Resources::Styles do
     it "divides the head from the body in the theme's table border color" do
       expect(described_class.table(theme).split).to include("min-w-full", "divide-y", "divide-zinc-200")
     end
+
+    context "with a theme that sets table_head_border" do
+      before { theme.table_head_border = "divide-stone-900" }
+
+      it "divides the head from the body in that color" do
+        expect(described_class.table(theme).split).to include("divide-stone-900")
+      end
+
+      it "does not use table_border for that line" do
+        expect(described_class.table(theme).split).not_to include("divide-zinc-200")
+      end
+    end
   end
 
   describe ".divided" do
