@@ -9,6 +9,26 @@ RSpec.describe "Table theme", type: :request do
     document.at_css(selector)[:class].split
   end
 
+  context "with a theme that hovers the sticky actions cell" do
+    before do
+      IronAdmin.configuration.register_theme(:night) do |t|
+        t.table_row_hover = "hover:bg-zinc-800"
+        t.table_sticky_row_hover = "group-hover/row:bg-zinc-800"
+      end
+      cookies["iron_admin_theme"] = "night"
+      create(:user)
+      get iron_admin.resources_path("users"), as: :html
+    end
+
+    it "names each body row as a group" do
+      expect(classes_at("table tbody tr")).to include("group/row", "hover:bg-zinc-800")
+    end
+
+    it "gives the sticky actions cell that theme's table_sticky_row_hover" do
+      expect(classes_at("table tbody tr td.sticky")).to include("group-hover/row:bg-zinc-800")
+    end
+  end
+
   context "with a theme that rules table heads apart" do
     before do
       IronAdmin.configuration.register_theme(:print) do |t|

@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 87 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 88 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -210,6 +210,7 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 | `table_frame` | `""` | Extra classes for the panel a table scrolls in, such as a ring. Empty = none |
 | `table_sticky_shadow` | `shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.08)]` | Edge shadow of the sticky actions column of index tables (`config.sticky_actions_column`). Empty = none |
 | `table_row_hover` | `hover:bg-zinc-50` | Hover of table rows and of the dashboard's quick links and activity feed rows. These rows hold `muted_text`, which keeps AA contrast on it |
+| `table_sticky_row_hover` | `""` | Background of the sticky actions cell while its row is hovered. Each index row is a `group/row`, so use `group-hover/row:` variants in the color of `table_row_hover`, such as `group-hover/row:bg-zinc-50`. Empty = the cell keeps `card_bg` |
 | `table_border` | `divide-zinc-200` | Lines between table rows and between the items of divided lists (dashboard lists, key/value fields). Use `divide-*` classes |
 | `table_head_border` | `""` | The line between a table's header row and its body, for example a black rule over hairline row lines. Use `divide-*` classes. Empty = `table_border` |
 

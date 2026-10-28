@@ -94,7 +94,7 @@ module IronAdmin
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] A body cell of the sticky actions column
       def sticky_cell(theme)
-        "sticky right-0 z-10 #{theme.card_bg} #{theme.table_sticky_shadow}"
+        "sticky right-0 z-10 #{theme.card_bg} #{theme.table_sticky_row_hover} #{theme.table_sticky_shadow}"
       end
 
       # @param theme [IronAdmin::Configuration::Theme]

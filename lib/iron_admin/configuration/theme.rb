@@ -176,6 +176,11 @@ module IronAdmin
       #   rows. These rows hold {#muted_text}, so keep AA contrast for it on this background
       attr_accessor :table_row_hover
 
+      # @return [String] Background of the sticky actions cell of index tables while its row is
+      #   hovered: the row is the +group/row+, so use +group-hover/row:+ variants in the color of
+      #   {#table_row_hover} (empty = the cell keeps {#card_bg})
+      attr_accessor :table_sticky_row_hover
+
       # @return [String] Table border/divider classes
       attr_accessor :table_border
 

@@ -172,6 +172,14 @@ RSpec.describe IronAdmin::Resources::Styles do
     it "casts the sticky column shadow of the theme" do
       expect(described_class.sticky_cell(midnight).split).to include("shadow-none")
     end
+
+    context "with a theme that sets table_sticky_row_hover" do
+      before { theme.table_sticky_row_hover = "group-hover/row:bg-zinc-50" }
+
+      it "follows the hover of its row" do
+        expect(described_class.sticky_cell(theme).split).to include("group-hover/row:bg-zinc-50")
+      end
+    end
   end
 
   {
