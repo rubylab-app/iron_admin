@@ -9,6 +9,12 @@ and a color scheme. IronAdmin ships one theme, **Neutral**, and uses it by defau
 - choose which theme each request uses with `config.theme_resolver`. By default the resolver
   reads a cookie that the theme switcher in the navbar sets.
 
+![The Meridian Magazine dashboard in four themes: Neutral, light with black buttons; Midnight, dark with a violet accent; Editorial, cream paper with black rules and serif headings; Brutalist, monospace with thick black borders, hard shadows and yellow accents](../site/assets/images/themes.png)
+
+The [Meridian Magazine demo](https://github.com/rubylab-app/meridian_magazine) registers three
+themes beside Neutral: Midnight, Editorial and Brutalist. Each is one `config.register_theme`
+block, and the switcher in its navbar moves between the four.
+
 Sections:
 
 - [Neutral, the default look](#neutral-the-default-look)
