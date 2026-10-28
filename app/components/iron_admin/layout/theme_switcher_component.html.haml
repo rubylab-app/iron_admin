@@ -3,7 +3,7 @@
     = heroicon "swatch", variant: :outline, options: { class: "h-5 w-5" }
     %span.sr-only= summary_label
   -# A dropdown surface, like IronAdmin::Ui::DropdownComponent's menu.
-  .absolute.right-0.z-40.w-52.origin-top-right.p-1{ class: "mt-1.5 #{theme.card_bg} #{theme.border_width} #{theme.card_border} #{theme.border_radius} #{theme.popover_shadow}" }
+  .absolute.right-0.z-40.w-52.origin-top-right.p-1{ class: "mt-1.5 #{theme.popover_background} #{theme.border_width} #{theme.card_border} #{theme.border_radius} #{theme.popover_shadow}" }
     = form_with url: helpers.iron_admin.theme_path, method: :post, data: { turbo: false }, html: { role: "group", "aria-label": menu_label } do
       - if return_path
         = hidden_field_tag :return_to, return_path, id: nil

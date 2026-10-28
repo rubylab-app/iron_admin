@@ -159,6 +159,22 @@ RSpec.describe IronAdmin::Filters::ControlStyles do
       it "uses that theme's popover shadow" do
         expect(classes).to include("shadow-2xl")
       end
+
+      it "follows that theme's card_bg while popover_bg is empty" do
+        expect(classes).to include("bg-zinc-900")
+      end
+    end
+
+    context "with a theme that sets popover_bg" do
+      subject(:classes) { described_class.panel(midnight.tap { |t| t.popover_bg = "bg-zinc-800" }).split }
+
+      it "draws the panel on popover_bg" do
+        expect(classes).to include("bg-zinc-800")
+      end
+
+      it "does not draw it on card_bg" do
+        expect(classes).not_to include("bg-zinc-900")
+      end
     end
   end
 

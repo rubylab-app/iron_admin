@@ -86,6 +86,25 @@ RSpec.describe IronAdmin::Ui::DropdownComponent, type: :component do
         expect(classes).to include("shadow-none", "rounded-none")
       end
     end
+
+    context "with a theme that sets popover_bg" do
+      subject(:classes) { described_class.new.dropdown_classes.split }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:raised) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.popover_bg = "bg-zinc-800"
+        end
+      end
+
+      it "draws the menu on popover_bg" do
+        expect(classes).to include("bg-zinc-800")
+      end
+
+      it "does not draw it on card_bg" do
+        expect(classes).not_to include("bg-zinc-900")
+      end
+    end
   end
 
   describe "slots" do

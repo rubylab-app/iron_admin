@@ -50,7 +50,7 @@ module IronAdmin
       #   by the theme's +popover_shadow+
       def dropdown_classes
         position = ALIGNMENTS[align.to_sym] || ALIGNMENTS[:right]
-        "absolute #{position} z-50 mt-1.5 #{WIDTHS.fetch(width, "w-48")} p-1 #{theme.card_bg} " \
+        "absolute #{position} z-50 mt-1.5 #{WIDTHS.fetch(width, "w-48")} p-1 #{theme.popover_background} " \
           "#{theme.border_width} #{theme.card_border} #{theme.border_radius} #{theme.popover_shadow}"
       end
 

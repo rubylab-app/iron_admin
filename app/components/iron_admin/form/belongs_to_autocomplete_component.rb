@@ -81,7 +81,7 @@ module IronAdmin
       # @return [String] CSS classes for autocomplete dropdown panel
       def dropdown_classes
         "absolute z-50 mt-1 w-full max-h-60 overflow-auto p-1 #{theme.border_radius} #{theme.border_width} " \
-          "#{theme.card_border} #{theme.card_bg} #{theme.popover_shadow}"
+          "#{theme.card_border} #{theme.popover_background} #{theme.popover_shadow}"
       end
 
       # @api private

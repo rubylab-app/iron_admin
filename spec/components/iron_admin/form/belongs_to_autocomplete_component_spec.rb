@@ -293,4 +293,23 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
       expect(render_inline(described_class.new(name: :user_id, resource_name: "users")).at_css("input[type='text']")[:class].split).to include("rounded-none")
     end
   end
+
+  context "with a theme that sets popover_bg" do
+    subject(:classes) { described_class.new(name: :user_id, resource_name: "users").dropdown_classes.split }
+
+    before do
+      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:raised) do |theme|
+        theme.card_bg = "bg-zinc-900"
+        theme.popover_bg = "bg-zinc-800"
+      end
+    end
+
+    it "draws the results on popover_bg" do
+      expect(classes).to include("bg-zinc-800")
+    end
+
+    it "does not draw them on card_bg" do
+      expect(classes).not_to include("bg-zinc-900")
+    end
+  end
 end

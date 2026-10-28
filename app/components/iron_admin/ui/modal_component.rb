@@ -53,7 +53,7 @@ module IronAdmin
       # @return [String] CSS classes for modal container: a theme surface lifted
       #   by the theme's +popover_shadow+
       def modal_classes
-        "relative w-full #{size_classes} #{theme.card_bg} #{theme.border_width} #{theme.card_border} " \
+        "relative w-full #{size_classes} #{theme.popover_background} #{theme.border_width} #{theme.card_border} " \
           "#{theme.border_radius} #{theme.popover_shadow}"
       end
 

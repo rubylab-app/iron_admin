@@ -102,6 +102,23 @@ RSpec.describe IronAdmin::Layout::ThemeSwitcherComponent, type: :component do
       end
     end
 
+    context "with a current theme that sets popover_bg" do
+      let(:midnight) do
+        IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.popover_bg = "bg-zinc-800"
+        end
+      end
+
+      it "draws the panel on popover_bg" do
+        expect(panel).to include("bg-zinc-800")
+      end
+
+      it "does not draw it on card_bg" do
+        expect(panel).not_to include("bg-zinc-900")
+      end
+    end
+
     it "checks the current theme in the row's own text color" do
       expect(check[:class].split).not_to include("text-zinc-400")
     end

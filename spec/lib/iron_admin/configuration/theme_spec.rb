@@ -52,6 +52,7 @@ RSpec.describe IronAdmin::Configuration::Theme do
     card_border: "border-zinc-200",
     card_shadow: "shadow-xs",
     popover_shadow: "shadow-lg",
+    popover_bg: "",
     card_title: "text-sm font-semibold text-zinc-900",
     font_family: "font-[family-name:Inter,ui-sans-serif,system-ui,sans-serif]",
     font_stylesheet_url: "https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap",
@@ -172,6 +173,31 @@ RSpec.describe IronAdmin::Configuration::Theme do
 
       it "returns it" do
         expect(theme.label).to eq("Late night")
+      end
+    end
+  end
+
+  describe "#popover_background" do
+    it "returns card_bg while popover_bg is empty" do
+      expect(theme.popover_background).to eq("bg-white")
+    end
+
+    context "with a popover_bg" do
+      before { theme.popover_bg = "bg-zinc-800" }
+
+      it "returns it" do
+        expect(theme.popover_background).to eq("bg-zinc-800")
+      end
+    end
+
+    context "with a nil popover_bg and another card_bg" do
+      before do
+        theme.popover_bg = nil
+        theme.card_bg = "bg-stone-50"
+      end
+
+      it "follows card_bg" do
+        expect(theme.popover_background).to eq("bg-stone-50")
       end
     end
   end

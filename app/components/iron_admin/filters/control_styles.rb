@@ -42,7 +42,7 @@ module IronAdmin
       # @param theme [IronAdmin::Configuration::Theme]
       # @return [String] The floating filter panel
       def panel(theme)
-        "absolute right-0 top-full z-20 mt-2 w-72 #{theme.card_bg} #{theme.border_width} " \
+        "absolute right-0 top-full z-20 mt-2 w-72 #{theme.popover_background} #{theme.border_width} " \
           "#{theme.card_border} #{theme.border_radius} #{theme.popover_shadow}"
       end
 

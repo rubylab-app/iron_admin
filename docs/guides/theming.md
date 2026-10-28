@@ -124,7 +124,7 @@ radio buttons 16px.
 
 ## Theme properties
 
-A theme has 84 properties. Most hold Tailwind classes. The table lists each one with its
+A theme has 85 properties. Most hold Tailwind classes. The table lists each one with its
 Neutral value and what it controls.
 
 **What a property may hold.** A CSS property is set either by a template or by a theme
@@ -216,10 +216,11 @@ spacing. A few properties are complete recipes that also set a size, weight or p
 
 | Property | Neutral value | Controls |
 |----------|---------------|----------|
-| `card_bg` | `bg-white` | Background of cards, panels, tables, dropdowns, modals, the filter panel and inputs |
+| `card_bg` | `bg-white` | Background of cards, panels, tables and inputs, and of floating surfaces while `popover_bg` is empty |
 | `card_border` | `border-zinc-200` | Border color of those surfaces, and of the lines inside them (panel headers, the scope tab bar, modal sections) |
 | `card_shadow` | `shadow-xs` | Shadow of cards and panels |
 | `popover_shadow` | `shadow-lg` | Shadow of floating surfaces: dropdown menus, the filter panel, belongs-to autocomplete results, the theme switcher panel and modals. Empty = none |
+| `popover_bg` | `""` | Background of those floating surfaces, such as a raised tone that sets them apart from the cards under them in a dark theme. Empty = `card_bg`, so a theme that changes `card_bg` keeps its popovers on it. Pick an `item_hover` that shows on it |
 | `card_title` | `text-sm font-semibold text-zinc-900` | Titles (h2) of cards, panels, dashboard widgets and modals: size, weight and color |
 
 ### Typography

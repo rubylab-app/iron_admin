@@ -196,6 +196,10 @@ module IronAdmin
       #   autocomplete results, the theme switcher panel and modals (empty = none)
       attr_accessor :popover_shadow
 
+      # @return [String, nil] Background of those floating surfaces, such as a raised tone in a dark
+      #   theme (empty = {#card_bg}; read it through {#popover_background})
+      attr_accessor :popover_bg
+
       # @return [String] Card and section titles (h2): size, weight and color
       attr_accessor :card_title
 
@@ -373,6 +377,11 @@ module IronAdmin
           value = instance_variable_get(variable)
           instance_variable_set(variable, value.deep_dup) if value.is_a?(Array) || value.is_a?(Hash)
         end
+      end
+
+      # @return [String] Background of floating surfaces: {#popover_bg}, or {#card_bg} while it is empty
+      def popover_background
+        popover_bg.presence || card_bg
       end
 
       # @return [Boolean] Whether {#color_scheme} is "dark"

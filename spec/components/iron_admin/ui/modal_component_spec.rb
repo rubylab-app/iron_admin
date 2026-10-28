@@ -107,6 +107,25 @@ RSpec.describe IronAdmin::Ui::ModalComponent, type: :component do
         expect(classes).to include("shadow-[6px_6px_0_0_var(--color-zinc-950)]", "border-2")
       end
     end
+
+    context "with a theme that sets popover_bg" do
+      subject(:classes) { described_class.new.modal_classes.split }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:raised) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.popover_bg = "bg-zinc-800"
+        end
+      end
+
+      it "draws the panel on popover_bg" do
+        expect(classes).to include("bg-zinc-800")
+      end
+
+      it "does not draw it on card_bg" do
+        expect(classes).not_to include("bg-zinc-900")
+      end
+    end
   end
 
   describe "header" do

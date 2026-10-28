@@ -65,6 +65,7 @@ module IronAdmin
         @card_border = "border-zinc-200"
         @card_shadow = "shadow-xs"
         @popover_shadow = "shadow-lg"
+        @popover_bg = ""
         @card_title = "text-sm font-semibold text-zinc-900"
         @main_bg = "bg-zinc-50"
         @border_radius = "rounded-lg"
