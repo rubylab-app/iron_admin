@@ -837,7 +837,8 @@ Several specs keep it that way:
   `bg-transparent`, `border-transparent`, `fill-current`, `stroke-current` and `inherit` are
   allowed, and so are styles built from theme values or record data. Each failure names the
   file, the line and the class. Take the color from a theme property instead. Colors belong in
-  `lib/iron_admin/configuration/theme.rb`, which the guard doesn't scan.
+  the Neutral values (`lib/iron_admin/configuration/theme/neutral_defaults.rb`), which the guard
+  doesn't scan.
 - `spec/iron_admin/engine_theme_reads_spec.rb` fails when `app/` or `lib/` reads
   `IronAdmin.configuration.theme`. Read `IronAdmin.current_theme` (or `t` in views).
 - `spec/iron_admin/engine_tailwind_classes_spec.rb` fails on utilities Tailwind v4 removed, on
@@ -848,5 +849,6 @@ Several specs keep it that way:
   property is not set in `Theme#initialize`, so copies and registered themes always carry it.
 
 To add a property: add an `attr_accessor` with YARD to its group in `theme.rb`, set its Neutral
-value in the matching `init_*_defaults` method, add it to the Neutral catalog in `theme_spec.rb`,
-add a row to the tables in this guide, and add a CHANGELOG entry.
+value in the matching `init_*_defaults` method of `theme/neutral_defaults.rb`, add it to the
+Neutral catalog in `theme_spec.rb`, add a row to the tables in this guide, and add a CHANGELOG
+entry.
