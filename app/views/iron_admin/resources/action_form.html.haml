@@ -7,10 +7,8 @@
         - @form_fields.each do |field|
           = render "iron_admin/form/action_field", field: field, scope: "action_form"
 
-        - if params[:ids].present?
-          - Array(params[:ids]).each do |id|
-            = hidden_field_tag "ids[]", id
-
+        -# The action's confirmation comes here, once the form is filled in.
+        - confirm = @action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
         .flex.items-center.gap-3.pt-5.border-t{ class: t.card_border }
-          %button{ type: "submit", class: cp_btn_primary }= I18n.t("iron_admin.resources.action_form.submit", default: "Execute")
-          = link_to I18n.t("iron_admin.form.cancel_button"), "javascript:history.back()", class: cp_btn_secondary
+          %button{ type: "submit", class: cp_btn_primary, data: @action[:confirm] ? { turbo_confirm: confirm } : {} }= I18n.t("iron_admin.resources.action_form.submit", default: "Execute")
+          = link_to I18n.t("iron_admin.form.cancel_button"), resource_path(@resource_class.resource_name, @record), class: cp_btn_secondary

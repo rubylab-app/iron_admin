@@ -3,9 +3,16 @@
     Actions
   .flex.flex-wrap.gap-2
     - actions.each do |action|
-      = button_to action_url(action), method: :post,
-        data: action[:confirm] ? { turbo_confirm: confirm_message(action) } : {},
-        class: button_classes do
-        - if action[:icon]
-          = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
-        = action[:name].to_s.humanize
+      -# An action with form fields opens its form, which asks for the confirmation on submit.
+      - if form?(action)
+        = link_to form_url(action), class: button_classes do
+          - if action[:icon]
+            = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+          = action[:name].to_s.humanize
+      - else
+        = button_to action_url(action), method: :post,
+          data: action[:confirm] ? { turbo_confirm: confirm_message(action) } : {},
+          class: button_classes do
+          - if action[:icon]
+            = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+          = action[:name].to_s.humanize
