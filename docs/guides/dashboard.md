@@ -91,10 +91,12 @@ Charts render using `IronAdmin::Dashboards::ChartComponent`:
 
 ### Chart Colors
 
-Charts take their colors from the current theme: `chart_colors` for slices and bars,
+Charts take their colors from the current theme: `chart_colors` for slices (bar charts fill
+every bar with its first color),
 `chart_border_color` for lines, and `chart_grid_color` and `chart_text_color` for grid lines,
 ticks and legends. These are CSS colors, not Tailwind classes, because Chart.js draws on a
-canvas. A chart's own colors win over the theme:
+canvas. A chart's own colors win over the theme, and a bar chart given its own colors fills its
+bars with them one by one:
 
 ```ruby
 chart :revenue, type: :bar, colors: ["#0ea5e9", "#6366f1"] do

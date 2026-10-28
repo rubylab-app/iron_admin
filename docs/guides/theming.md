@@ -293,7 +293,7 @@ These hold CSS colors and Chart.js values, not Tailwind classes, because Chart.j
 
 | Property | Neutral value | Controls |
 |----------|---------------|----------|
-| `chart_colors` | `rgba(99,102,241,0.85)`, `rgba(14,165,233,0.85)`, `rgba(16,185,129,0.85)`, `rgba(245,158,11,0.85)`, `rgba(244,63,94,0.85)`, `rgba(139,92,246,0.85)` (indigo, sky, emerald, amber, rose and violet) | Slice and bar colors of the dashboard charts (an Array) |
+| `chart_colors` | `rgba(99,102,241,0.85)`, `rgba(5,150,105,0.85)`, `rgba(217,119,6,0.85)`, `rgba(217,70,239,0.85)`, `rgba(244,63,94,0.85)`, `rgba(6,182,212,0.85)` (indigo, emerald, amber, fuchsia, rose and cyan) | Slice colors of the dashboard charts, in order (an Array). Bar charts fill every bar with the first one. Neutral's order keeps each color apart from the next, and the last from the first, for normal vision and the common color vision deficiencies |
 | `chart_border_color` | `rgb(99, 102, 241)` | Line color of line, area and radar charts, and the fill of progress bars without a color of their own |
 | `chart_grid_color` | `rgba(228, 228, 231, 1)` | Grid lines and axis lines |
 | `chart_text_color` | `rgb(113, 113, 122)` | Tick labels, radar point labels and the legend |
@@ -729,8 +729,8 @@ as the [Midnight example](#a-complete-dark-theme) does. Charts don't read `color
 either. Chart.js draws on a canvas, so the chart properties hold CSS colors (hex, `rgb()` or
 `rgba()`) and a dark theme sets all four:
 
-- `chart_colors`: the slices of pie, doughnut and polar area charts, and the bars of bar
-  charts;
+- `chart_colors`: the slices of pie, doughnut and polar area charts, in order. A bar chart's
+  bars are one series, so it fills them all with the first color;
 - `chart_border_color`: the line of line, area and radar charts, whose fill is the same color
   at 10% opacity. It also fills progress bars that have no color of their own;
 - `chart_grid_color`: grid and axis lines;
@@ -742,7 +742,8 @@ Three more chart properties shape the marks: `chart_point_style` (the legend mar
 
 A chart's own colors win over the theme: `chart :revenue, type: :bar, colors: ["#0ea5e9"]` in
 a dashboard (or `colors:` on `ChartComponent`) replaces `chart_colors`, and its first color
-replaces `chart_border_color`. A dashboard `progress` widget's `color:` is a CSS color, and a
+replaces `chart_border_color`. A bar chart given its own colors fills its bars with them one by
+one. A dashboard `progress` widget's `color:` is a CSS color, and a
 `:progress` field's `color:` option is a Tailwind class such as `bg-emerald-600`. Both replace
 `chart_border_color` for that bar.
 

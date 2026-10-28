@@ -378,7 +378,9 @@ module IronAdmin
 
       # @!group Chart Styles
 
-      # @return [Array<String>] Default chart color palette (CSS color values: hex, rgb, rgba)
+      # @return [Array<String>] Default chart color palette (CSS color values: hex, rgb, rgba): the
+      #   slices of pie, doughnut and polar area charts in order; bar charts fill every bar with the
+      #   first color
       attr_accessor :chart_colors
 
       # @return [String] Default chart border/line color (CSS color value)

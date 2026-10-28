@@ -161,9 +161,12 @@ module IronAdmin
       end
 
       def init_chart_defaults
+        # indigo-500, emerald-600, amber-600, fuchsia-500, rose-500 and cyan-500: each color stays
+        # apart from the next one, and the last from the first (pie slices close the circle), for
+        # normal vision and the common color vision deficiencies
         @chart_colors = %w[
-          rgba(99,102,241,0.85) rgba(14,165,233,0.85) rgba(16,185,129,0.85)
-          rgba(245,158,11,0.85) rgba(244,63,94,0.85) rgba(139,92,246,0.85)
+          rgba(99,102,241,0.85) rgba(5,150,105,0.85) rgba(217,119,6,0.85)
+          rgba(217,70,239,0.85) rgba(244,63,94,0.85) rgba(6,182,212,0.85)
         ]
         @chart_border_color = "rgb(99, 102, 241)"
         @chart_grid_color = "rgba(228, 228, 231, 1)"

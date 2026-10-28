@@ -116,10 +116,10 @@ RSpec.describe IronAdmin::Configuration::Theme do
       end
     end
 
-    it "sets chart_colors to six translucent CSS colors" do
+    it "sets chart_colors to six translucent CSS colors that stay apart next to each other, the last beside the first" do
       expect(theme.chart_colors).to eq(%w[
-                                         rgba(99,102,241,0.85) rgba(14,165,233,0.85) rgba(16,185,129,0.85)
-                                         rgba(245,158,11,0.85) rgba(244,63,94,0.85) rgba(139,92,246,0.85)
+                                         rgba(99,102,241,0.85) rgba(5,150,105,0.85) rgba(217,119,6,0.85)
+                                         rgba(217,70,239,0.85) rgba(244,63,94,0.85) rgba(6,182,212,0.85)
                                        ])
     end
 

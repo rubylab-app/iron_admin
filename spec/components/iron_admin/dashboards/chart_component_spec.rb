@@ -74,6 +74,24 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       end
     end
 
+    context "with a bar chart in the theme's colors" do
+      subject(:dataset) { JSON.parse(described_class.new(title: "Signups", type: type, data: [5, 10, 7], labels: %w[A B C]).chart_config)["data"]["datasets"].first }
+
+      let(:type) { :bar }
+
+      it "fills every bar of its one series with the theme's first chart color" do
+        expect(dataset["backgroundColor"]).to eq(IronAdmin.current_theme.chart_colors.first)
+      end
+
+      context "with a horizontal bar chart" do
+        let(:type) { :horizontal_bar }
+
+        it "fills every bar with the theme's first chart color too" do
+          expect(dataset["backgroundColor"]).to eq(IronAdmin.current_theme.chart_colors.first)
+        end
+      end
+    end
+
     context "with per-chart colors on line chart" do
       it "uses first color as borderColor and transparent fill" do
         custom = ["#10b981", "#3b82f6"]

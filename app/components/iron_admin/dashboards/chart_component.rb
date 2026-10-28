@@ -37,6 +37,11 @@ module IronAdmin
       # @return [Array<Symbol>]
       SINGLE_SERIES_TYPES = %i[line area radar].freeze
 
+      # Bar types: their bars are one series, so they share one color unless the chart
+      # passes its own `colors:`.
+      # @return [Array<Symbol>]
+      BAR_TYPES = %i[bar horizontal_bar].freeze
+
       # Types whose area is filled by default. `:line` stays filled for
       # backward compatibility (it was filled before `:area` was introduced);
       # `:area` is the explicit, intention-revealing name for a filled line.
@@ -184,12 +189,17 @@ module IronAdmin
         theme.chart_slice_border_color.presence || resolved_colors
       end
 
-      # Resolves the dataset background: a single semi-transparent fill for
-      # single-series charts, or the full color palette for multi-slice charts.
+      # Resolves the dataset background: a single semi-transparent fill for line,
+      # area and radar charts, the theme's first chart color for the bars of a bar
+      # chart (one series: a color per bar would suggest categories), or the full
+      # palette for multi-slice charts and for bars given their own `colors:`.
       # @param border [String] Resolved border color
       # @return [String, Array<String>] Background color(s) for the dataset
       def dataset_background(border)
-        SINGLE_SERIES_TYPES.include?(type) ? line_fill_color(border) : resolved_colors
+        return line_fill_color(border) if SINGLE_SERIES_TYPES.include?(type)
+        return theme.chart_colors.first if BAR_TYPES.include?(type) && @colors.nil?
+
+        resolved_colors
       end
 
       # @return [Array<String>] Color palette resolved from per-chart, theme, or default
