@@ -47,6 +47,10 @@ RSpec.describe "Action Forms", type: :request do
                ] do |lic, params|
           lic.update!(status: :revoked, license_type: params[:reason])
         end
+
+        action :revoke_quietly, form_fields: [action_field(:notify, type: :boolean)] do |lic, params|
+          lic.update!(status: :revoked, license_type: params.inspect)
+        end
       end
     end
 
@@ -139,11 +143,18 @@ RSpec.describe "Action Forms", type: :request do
       end
 
       context "without action_form param" do
-        it "passes empty hash to the block" do
+        it "passes empty hash to the block of an action without required fields" do
+          post iron_admin.resource_action_path("form_exec_licenses", license, "revoke_quietly"),
+               as: :html
+
+          expect(license.reload.license_type).to eq({}.inspect)
+        end
+
+        it "does not run an action whose field is required" do
           post iron_admin.resource_action_path("form_exec_licenses", license, "revoke_with_reason"),
                as: :html
 
-          expect(license.reload.status).to eq("revoked")
+          expect(license.reload.status).to eq("active")
         end
       end
     end

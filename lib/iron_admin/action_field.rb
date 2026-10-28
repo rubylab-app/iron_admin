@@ -52,5 +52,11 @@ module IronAdmin
       @placeholder = placeholder
       @options = options
     end
+
+    # @param value [Object, nil] The submitted value
+    # @return [Boolean] Whether the field is required and the value is blank, so the action must not run
+    def missing?(value)
+      required.present? && value.blank?
+    end
   end
 end

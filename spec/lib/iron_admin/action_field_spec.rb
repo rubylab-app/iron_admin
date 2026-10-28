@@ -120,4 +120,30 @@ RSpec.describe IronAdmin::ActionField do
       end
     end
   end
+
+  describe "#missing?" do
+    context "with a required field" do
+      subject(:field) { described_class.new(name: :reason, required: true) }
+
+      it "is missing without a value" do
+        expect(field.missing?(nil)).to be(true)
+      end
+
+      it "is missing with blank text" do
+        expect(field.missing?("  ")).to be(true)
+      end
+
+      it "is not missing with a value" do
+        expect(field.missing?("Spam")).to be(false)
+      end
+    end
+
+    context "with an optional field" do
+      subject(:field) { described_class.new(name: :reason) }
+
+      it "is not missing without a value" do
+        expect(field.missing?(nil)).to be(false)
+      end
+    end
+  end
 end

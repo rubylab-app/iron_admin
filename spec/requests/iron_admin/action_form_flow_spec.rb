@@ -317,6 +317,146 @@ RSpec.describe "Action form flow", type: :request do
     end
   end
 
+  describe "POST /:resource_name/:id/actions/:action_name with a required field" do
+    let(:events) { [] }
+    let(:controls) { IronAdmin::Form::ControlClasses }
+    let(:note) { document.at_css("#action_form_note") }
+
+    before { IronAdmin.configure { |config| config.on_action { |event| events << event } } }
+
+    context "when it is left blank in the form" do
+      before { post execute_path(:annotate), params: { action_form: { note: "  ", tag: "kept" } }, as: :html }
+
+      it "does not run the action" do
+        expect(license.reload.license_type).to eq("standard")
+      end
+
+      it "does not report the action to on_action" do
+        expect(events).to be_empty
+      end
+
+      it "renders the form again as unprocessable" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "still posts the form to the action" do
+        expect(document.at_css("form[action='#{execute_path(:annotate)}']")).to be_present
+      end
+
+      it "says under the field that it can't be blank" do
+        expect(document.at_css("#action_form_note_error").text.strip).to eq(I18n.t("errors.messages.blank"))
+      end
+
+      it "writes the error in the theme's error color" do
+        expect(document.at_css("#action_form_note_error")[:class].split).to include(theme.error_text)
+      end
+
+      it "outlines the field as invalid, as resource forms do" do
+        expect(note[:class].split).to eq(controls.textarea(theme, error: true).split)
+      end
+
+      it "tells screen readers the field is invalid and why" do
+        expect(note.attributes.slice("aria-invalid", "aria-describedby").transform_values(&:value))
+          .to eq("aria-invalid" => "true", "aria-describedby" => "action_form_note_error")
+      end
+
+      it "keeps what was typed in the other fields" do
+        expect(document.at_css("#action_form_tag")[:value]).to eq("kept")
+      end
+
+      it "leaves a field without an error as it was" do
+        expect(document.at_css("#action_form_tag")[:class].split).to eq(controls.input(theme).split)
+      end
+
+      it "still asks for confirmation on the submit" do
+        expect(document.at_css("button[type=submit]")["data-turbo-confirm"]).to eq("Annotate this license?")
+      end
+
+      it "names every control of the form" do
+        expect(form_accessibility_problems(document)).to be_empty
+      end
+    end
+
+    context "when a direct POST leaves it out" do
+      before { post execute_path(:annotate), as: :html }
+
+      it "does not run the action" do
+        expect(license.reload.license_type).to eq("standard")
+      end
+
+      it "renders the form with the error" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    context "when it is filled and an optional field is left blank" do
+      before { post execute_path(:annotate), params: { action_form: { note: "Checked", tag: "" } }, as: :html }
+
+      it "runs the action" do
+        expect(license.reload.license_type).to eq("Checked")
+      end
+
+      it "goes to the record" do
+        expect(response).to redirect_to(iron_admin.resource_path("flow_licenses", license))
+      end
+    end
+  end
+
+  describe "POST /:resource_name/bulk_actions/:action_name with a required field" do
+    let(:licenses) { create_list(:license, 2, status: :active) }
+    let(:state) { { "sort" => "license_key", "direction" => "desc" } }
+    let(:form) { document.at_css("form[action='#{bulk_execute_path(:bulk_annotate)}']") }
+
+    context "when it is left blank in the form" do
+      before do
+        post bulk_execute_path(:bulk_annotate),
+             params: state.merge("ids" => licenses.map(&:id), "action_form" => { "note" => "" }), as: :html
+      end
+
+      it "does not run the action" do
+        expect(licenses.map { |selected| selected.reload.license_type }).to eq(%w[standard standard])
+      end
+
+      it "renders the form again as unprocessable" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "says under the field that it can't be blank" do
+        expect(form.at_css("#action_form_note_error").text.strip).to eq(I18n.t("errors.messages.blank"))
+      end
+
+      it "keeps the selection and the index state" do
+        expect(hidden_fields(form)).to contain_exactly(*licenses.map { |selected| ["ids[]", selected.id.to_s] }, *state.to_a)
+      end
+
+      it "still says how many records the action applies to" do
+        expect(form.text.squish).to include(I18n.t("iron_admin.resources.bulk_action_form.selected", count: 2))
+      end
+    end
+
+    context "when a direct POST leaves it out" do
+      before { post bulk_execute_path(:bulk_annotate), params: { ids: licenses.map(&:id) }, as: :html }
+
+      it "does not run the action" do
+        expect(licenses.map { |selected| selected.reload.license_type }).to eq(%w[standard standard])
+      end
+
+      it "renders the form with the error" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    context "when the selection is out of reach" do
+      before do
+        post bulk_execute_path(:bulk_annotate), params: { ids: [licenses.first.id, 999_999] }, as: :html
+      end
+
+      it "goes back to the index before checking the form" do
+        expect(flash[:alert]).to eq(I18n.t("iron_admin.resources.bulk_action.inaccessible"))
+      end
+    end
+  end
+
   describe "authorization of GET /:resource_name/:id/actions/:action_name/form" do
     context "with a record outside the tenant scope" do
       let(:outsider) { create(:license) }

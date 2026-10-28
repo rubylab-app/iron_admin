@@ -5,7 +5,8 @@
     .p-6{ class: cp_card }
       = form_tag @form_url, method: :post, class: "space-y-5", data: { turbo_frame: "_top" } do
         - @form_fields.each do |field|
-          = render "iron_admin/form/action_field", field: field, scope: "action_form"
+          = render "iron_admin/form/action_field", field: field, scope: "action_form",
+            value: @form_values[field.name], errors: @form_errors[field.name]
 
         -# The action's confirmation comes here, once the form is filled in.
         - confirm = @action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
