@@ -11,35 +11,27 @@ module IronAdmin
   # it automatically registers itself as the active dashboard.
   #
   # @example Basic dashboard
-  #   class AdminDashboard < IronAdmin::Dashboard
-  #     metric :total_users, format: :number do
-  #       User.count
-  #     end
+  #   module IronAdmin
+  #     module Dashboards
+  #       class AdminDashboard < IronAdmin::Dashboard
+  #         metric :total_users, format: :number do
+  #           User.count
+  #         end
   #
-  #     metric :revenue, format: :currency do
-  #       Order.sum(:total)
-  #     end
+  #         metric :revenue, format: :currency do
+  #           Order.sum(:total)
+  #         end
   #
-  #     chart :signups_by_month, type: :bar do
-  #       User.group_by_month(:created_at).count
-  #     end
+  #         # The block returns a Hash of label => value. groupdate is not a dependency.
+  #         # group_by keeps row order, so sort the YYYY-MM keys. Zero-fill empty months if you need all twelve.
+  #         chart :signups_by_month, type: :bar do
+  #           signups = User.where(created_at: 11.months.ago.beginning_of_month..).pluck(:created_at)
+  #           signups.group_by { |created_at| created_at.strftime("%Y-%m") }.transform_values(&:count).sort.to_h
+  #         end
   #
-  #     recent :orders, limit: 10
-  #     recent :users, limit: 5
-  #   end
-  #
-  # @example Dashboard with custom layout
-  #   class AdminDashboard < IronAdmin::Dashboard
-  #     metric :active_users do
-  #       User.where(active: true).count
-  #     end
-  #
-  #     chart :orders_by_day, type: :line do
-  #       Order.group_by_day(:created_at).count
-  #     end
-  #
-  #     layout do
-  #       # Define custom grid layout
+  #         recent :orders, limit: 10
+  #         recent :users, limit: 5
+  #       end
   #     end
   #   end
   class Dashboard
@@ -106,7 +98,7 @@ module IronAdmin
       # @param label [String, nil] Custom display title for the chart.
       #   Defaults to `name.to_s.humanize` when not provided.
       # @yield Block that computes and returns the chart data
-      # @yieldreturn [Hash, Array] Data for the chart (format depends on type)
+      # @yieldreturn [Hash] Labels (+keys+) and values (+values+). An Array has no +keys+.
       #
       # @example Chart with custom label
       #   chart :projects_by_status, type: :bar, label: "Projects by Status" do
@@ -184,18 +176,10 @@ module IronAdmin
         self.defined_recents = defined_recents + [{ resource_name: resource_name, limit: limit, scope: scope }]
       end
 
-      # Defines a custom layout for the dashboard.
+      # Stores a block. Nothing reads it, so the block has no effect yet.
+      # The page renders metrics, then charts, then progress bars, then recent lists.
       #
-      # Use this to control the arrangement of metrics, charts, and
-      # recent record lists on the dashboard page.
-      #
-      # @yield Block that defines the layout structure
-      #
-      # @example Custom two-column layout
-      #   layout do
-      #     # Layout definition
-      #   end
-      #
+      # @yield Block stored on the class and not called
       # @return [void]
       def layout(&block)
         self._layout_block = block

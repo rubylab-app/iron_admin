@@ -7,24 +7,36 @@ IronAdmin provides built-in CSV and JSON export.
 Enabled by default with CSV and JSON:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  exports :csv, :json
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      exports :csv, :json
+    end
+  end
 end
 ```
 
 Only CSV:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  exports :csv
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      exports :csv
+    end
+  end
 end
 ```
 
 Disable:
 
 ```ruby
-class SecretResource < IronAdmin::Resource
-  exports
+module IronAdmin
+  module Resources
+    class SecretResource < IronAdmin::Resource
+      exports
+    end
+  end
 end
 ```
 
@@ -33,8 +45,12 @@ A format the resource does not enable returns `404`.
 ## Custom Export Fields
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  export_fields :id, :name, :email, :role, :created_at
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      export_fields :id, :name, :email, :role, :created_at
+    end
+  end
 end
 ```
 

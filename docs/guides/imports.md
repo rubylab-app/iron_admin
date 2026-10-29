@@ -8,8 +8,12 @@ a preview, and then import it.
 Imports are off by default. Enable them per resource with the formats to accept:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  imports :csv, :json
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      imports :csv, :json
+    end
+  end
 end
 ```
 
@@ -20,18 +24,22 @@ follow the `:create` permission: a policy that does not allow `:create`, or
 ## Import Options
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  imports :csv
-  import_fields :email, :name, :role          # Columns that can be imported
-  import_upsert_key :email                    # Update the record with the same email
-  import_options max_rows: 1_000, preview_rows: 10
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      imports :csv
+      import_fields :email, :name, :role          # Columns that can be imported
+      import_upsert_key :email                    # Update the record with the same email
+      import_options max_rows: 1_000, preview_rows: 10
 
-  import_transform do |attributes, context|
-    attributes.merge(invited_by_id: context.current_user.id)
-  end
+      import_transform do |attributes, context|
+        attributes.merge(invited_by_id: context.current_user.id)
+      end
 
-  import_validate do |attributes|
-    "Role is not allowed" if attributes[:role] == "superadmin"
+      import_validate do |attributes|
+        "Role is not allowed" if attributes[:role] == "superadmin"
+      end
+    end
   end
 end
 ```
@@ -57,7 +65,7 @@ an array of objects, or an object with a `records` array.
    `POST /admin/:resource_name/import/preview` as a full-page request (`data-turbo="false"`).
 2. **Preview.** The preview page shows how the headers map to fields and the first
    `preview_rows` rows, with their values as they will be saved, formatted as the show page
-   displays each field: "Yes" or "No" for a boolean, the field's `format:` for a date or time,
+   displays each field: "Yes" or "No" for a boolean, a strftime `format:` for a date or datetime,
    the symbol and precision of a `:currency` field, the humanized value of a `:badge` or
    `:radio` field, and a mask for `:password` and `:hidden` fields. The import saves the values
    from the file, not these texts. Each row is validated like the

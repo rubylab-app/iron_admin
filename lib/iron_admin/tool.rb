@@ -19,21 +19,25 @@ module IronAdmin
   # +config.strict_tool_actions+ to turn the fallback off for every tool.
   #
   # @example Simple tool with declarative actions
-  #   class CacheManagerTool < IronAdmin::Tool
-  #     menu icon: "server", label: "Cache Manager", group: "System"
+  #   module IronAdmin
+  #     module Tools
+  #       class CacheManagerTool < IronAdmin::Tool
+  #         menu icon: "server", label: "Cache Manager", group: "System"
   #
-  #     tool_action :clear_all, icon: "trash", confirm: true
-  #     tool_action :flush_key,
-  #       form_fields: [{ name: :cache_key, type: :text, required: true }]
+  #         tool_action :clear_all, icon: "trash", confirm: true
+  #         tool_action :flush_key,
+  #           form_fields: [{ name: :cache_key, type: :text, required: true }]
   #
-  #     def clear_all(ctx)
-  #       Rails.cache.clear
-  #       ctx.flash[:notice] = "Cache cleared!"
-  #     end
+  #         def clear_all(ctx)
+  #           Rails.cache.clear
+  #           ctx.flash[:notice] = "Cache cleared!"
+  #         end
   #
-  #     def flush_key(ctx)
-  #       key = ctx.action_params(:cache_key)[:cache_key]
-  #       Rails.cache.delete(key)
+  #         def flush_key(ctx)
+  #           key = ctx.action_params(:cache_key)[:cache_key]
+  #           Rails.cache.delete(key)
+  #         end
+  #       end
   #     end
   #   end
   class Tool

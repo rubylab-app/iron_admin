@@ -7,15 +7,16 @@ module IronAdmin
   # then customized via the {Resource.field} DSL. Each Field instance holds
   # the configuration for how a column/attribute should be displayed and edited.
   #
-  # @example Field from database schema
-  #   # Automatically inferred for a string column
-  #   Field.new(:name, type: :string)
+  # @example Field from a string column
+  #   # Inferred type for a string column. :string is not a field type.
+  #   Field.new(:name, type: :text)
   #
   # @example Field with visibility control
-  #   Field.new(:salary, type: :integer, visible: ->(user) { user.hr? })
+  #   Field.new(:salary, type: :number, visible: ->(user) { user.hr? })
   #
-  # @example Field with multiple options
-  #   Field.new(:status, type: :select, options: %w[pending active completed])
+  # @example Select field
+  #   # choices:, not options:. options: is the filter key.
+  #   Field.new(:status, type: :select, choices: %w[pending active completed])
   #
   # @see IronAdmin::Resource.field For the DSL to configure fields
   # @see IronAdmin::FieldInferrer For automatic field inference
@@ -28,8 +29,9 @@ module IronAdmin
     # @return [Symbol] The field/column name
     attr_reader :name
 
-    # @return [Symbol] The field type (:string, :text, :integer, :boolean,
-    #   :date, :datetime, :select, :belongs_to, etc.)
+    # @return [Symbol] The field type (:text, :textarea, :number, :boolean,
+    #   :date, :datetime, :select, :belongs_to, and the other types
+    #   {Resource.field} documents). :string and :integer are not types.
     attr_reader :type
 
     # @return [Boolean, Proc] Whether the field is visible
@@ -38,31 +40,36 @@ module IronAdmin
     # @return [Boolean, Proc] Whether the field is read-only
     attr_reader :readonly
 
-    # @return [Hash] Additional field options (e.g., :options, :format, :autocomplete)
+    # @return [Hash] Additional field options (e.g., :choices, :format, :autocomplete)
     attr_reader :options
 
     # Creates a new Field instance.
     #
     # @param name [Symbol] The field/column name
     # @param options [Hash] Configuration options
-    # @option options [Symbol] :type The field type
+    # @option options [Symbol] :type The field type. See {Resource.field} for the
+    #   types the inferrer and the form actually use. :string and :integer render
+    #   a text input.
     # @option options [Boolean, Proc] :visible Whether the field is visible
     #   (default: true). If a Proc, receives the current user.
     # @option options [Boolean, Proc] :readonly Whether the field is read-only
     #   (default: false). If a Proc, receives the current user.
-    # @option options [String] :label Custom display label
-    # @option options [Array] :options For select fields, available choices
+    # @option options [String] :label No effect on page labels, which humanize the
+    #   name. Import column matching uses it as an extra header candidate.
+    # @option options [Array] :choices Choices for a :select field. The form reads
+    #   :choices. :options is the filter key.
     # @option options [Boolean] :autocomplete For belongs_to, force autocomplete mode
-    # @option options [Proc] :format Custom formatting proc for display
+    # @option options [String] :format strftime pattern for a :date or :datetime.
+    #   A Proc is not called. See {Resource.field}.
     #
     # @example Basic field
-    #   Field.new(:email, type: :string)
+    #   Field.new(:email, type: :text)
     #
     # @example Conditional visibility
-    #   Field.new(:ssn, type: :string, visible: ->(user) { user.admin? })
+    #   Field.new(:ssn, type: :text, visible: ->(user) { user.admin? })
     #
-    # @example Select field with options
-    #   Field.new(:priority, type: :select, options: %w[low medium high])
+    # @example Select field
+    #   Field.new(:priority, type: :select, choices: %w[low medium high])
     def initialize(name, **options)
       @name = name
       @type = options.delete(:type)

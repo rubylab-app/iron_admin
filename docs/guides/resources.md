@@ -11,15 +11,23 @@ rails generate iron_admin:resource User
 Creates `app/iron_admin/resources/user_resource.rb`:
 
 ```ruby
-class UserResource < IronAdmin::Resource
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+    end
+  end
 end
 ```
 
 By convention, `UserResource` maps to the `User` model. To override:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  self.model_class_override = Account
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      self.model_class_override = Account
+    end
+  end
 end
 ```
 
@@ -36,14 +44,18 @@ Two resources that still compute the same name: the first one registered answers
 Fields are automatically inferred from the database schema. Override specific fields:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :status, type: :badge, colors: { active: :green, suspended: :red }
-  field :bio, type: :textarea
-  field :role, type: :select, choices: %w[user admin]
-  field :secret, visible: false
-  field :email, readonly: true
-  field :admin_notes, visible: ->(user) { user.admin? }
-  field :salary, readonly: ->(user) { !user.admin? }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :status, type: :badge, colors: { active: :green, suspended: :red }
+      field :bio, type: :textarea
+      field :role, type: :select, choices: %w[user admin]
+      field :secret, visible: false
+      field :email, readonly: true
+      field :admin_notes, visible: ->(user) { user.admin? }
+      field :salary, readonly: ->(user) { !user.admin? }
+    end
+  end
 end
 ```
 
@@ -60,10 +72,14 @@ end
 ### Controlling Field Visibility per View
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  index_fields :id, :name, :email, :role, :created_at
-  form_fields :role, :name, :email
-  export_fields :id, :name, :email, :role
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      index_fields :id, :name, :email, :role, :created_at
+      form_fields :role, :name, :email
+      export_fields :id, :name, :email, :role
+    end
+  end
 end
 ```
 
@@ -74,8 +90,12 @@ not resolve to a field (for example a has_many such as `:comments`) are ignored.
 ## Search
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  searchable :name, :email
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      searchable :name, :email
+    end
+  end
 end
 ```
 
@@ -108,10 +128,14 @@ one character at a time.
 ## Filters
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  filter :role, type: :select, options: User.roles.keys
-  filter :created_at, type: :date_range
-  filter :email_verified, type: :boolean
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      filter :role, type: :select, options: User.roles.keys
+      filter :created_at, type: :date_range
+      filter :email_verified, type: :boolean
+    end
+  end
 end
 ```
 
@@ -168,9 +192,13 @@ on a field the current user cannot see is neither shown nor applied, so a filter
 String and number filters provide an operator dropdown alongside the input:
 
 ```ruby
-class ProductResource < IronAdmin::Resource
-  filter :name, type: :string       # contains, equals, starts_with, ends_with
-  filter :price, type: :number      # equals, greater_than, less_than, between
+module IronAdmin
+  module Resources
+    class ProductResource < IronAdmin::Resource
+      filter :name, type: :string       # contains, equals, starts_with, ends_with
+      filter :price, type: :number      # equals, greater_than, less_than, between
+    end
+  end
 end
 ```
 
@@ -187,7 +215,11 @@ class Order < ApplicationRecord
 end
 
 # No filter definition needed - auto-generated from enum
-class OrderResource < IronAdmin::Resource
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+    end
+  end
 end
 ```
 
@@ -200,11 +232,15 @@ and takes the enum values when it has no `options`.
 Scopes are predefined query filters shown as tabs:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  scope :all, -> { all }, default: true
-  scope :admins, -> { where(role: :admin) }
-  scope :recent, -> { where("created_at > ?", 7.days.ago) }
-  scope :locked, -> { where.not(locked_at: nil) }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      scope :all, -> { all }, default: true
+      scope :admins, -> { where(role: :admin) }
+      scope :recent, -> { where("created_at > ?", 7.days.ago) }
+      scope :locked, -> { where.not(locked_at: nil) }
+    end
+  end
 end
 ```
 
@@ -220,10 +256,14 @@ IronAdmin auto-detects models with a `deleted_at` column and provides:
 
 ```ruby
 # If your model has deleted_at column, these are auto-registered:
-class PostResource < IronAdmin::Resource
-  # Auto: scope :with_deleted, -> { unscoped }
-  # Auto: scope :only_deleted, -> { only_deleted }
-  # Auto: action :restore { |r| r.update(deleted_at: nil) }
+module IronAdmin
+  module Resources
+    class PostResource < IronAdmin::Resource
+      # Auto: scope :with_deleted, -> { unscoped }
+      # Auto: scope :only_deleted, -> { only_deleted }
+      # Auto: action :restore { |r| r.update(deleted_at: nil) }
+    end
+  end
 end
 ```
 
@@ -237,17 +277,21 @@ show page says "Action was not completed" followed by the validation errors.
 ### Record Actions
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  action :lock, icon: "lock-closed", confirm: true do |record|
-    record.update!(locked_at: Time.current)
-  end
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      action :lock, icon: "lock-closed", confirm: true do |record|
+        record.update!(locked_at: Time.current)
+      end
 
-  action :send_reset, icon: "envelope" do |record|
-    AuthMailer.password_reset(record).deliver_later
-  end
+      action :send_reset, icon: "envelope" do |record|
+        AuthMailer.password_reset(record).deliver_later
+      end
 
-  action :purge_sessions, confirm: true, confirm_message: "Sign this user out everywhere?" do |record|
-    record.sessions.delete_all
+      action :purge_sessions, confirm: true, confirm_message: "Sign this user out everywhere?" do |record|
+        record.sessions.delete_all
+      end
+    end
   end
 end
 ```
@@ -286,17 +330,21 @@ Actions can collect user input before executing by specifying `form_fields:`. A 
 block receives the record and the submitted values, keyed by field name.
 
 ```ruby
-class OrderResource < IronAdmin::Resource
-  action :reject,
-    icon: "x-circle",
-    confirm: true,
-    form_fields: [
-      action_field(:reason, type: :textarea, required: true),
-      action_field(:notify_customer, type: :boolean, default: true)
-    ] do |record, params|
-      record.reject!(reason: params[:reason])
-      Mailer.rejection(record).deliver_later if params[:notify_customer]
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      action :reject,
+        icon: "x-circle",
+        confirm: true,
+        form_fields: [
+          action_field(:reason, type: :textarea, required: true),
+          action_field(:notify_customer, type: :boolean, default: true)
+        ] do |record, params|
+          record.reject!(reason: params[:reason])
+          Mailer.rejection(record).deliver_later if params[:notify_customer]
+        end
     end
+  end
 end
 ```
 
@@ -348,13 +396,17 @@ index comes back with the state it was run from.
 ### Bulk Actions
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  bulk_action :delete_many do |records|
-    records.each(&:destroy!)
-  end
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      bulk_action :delete_many do |records|
+        records.each(&:destroy!)
+      end
 
-  bulk_action :lock_all do |records|
-    records.update_all(locked_at: Time.current)
+      bulk_action :lock_all do |records|
+        records.update_all(locked_at: Time.current)
+      end
+    end
   end
 end
 ```
@@ -372,8 +424,12 @@ instead of "Bulk action completed".
 ## CRUD Restrictions
 
 ```ruby
-class AuditLogResource < IronAdmin::Resource
-  deny_actions :create, :update, :delete
+module IronAdmin
+  module Resources
+    class AuditLogResource < IronAdmin::Resource
+      deny_actions :create, :update, :delete
+    end
+  end
 end
 ```
 
@@ -385,11 +441,15 @@ their buttons.
 ## Associations
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  has_many :licenses, display: :license_key
-  has_many :subscriptions
-  belongs_to :organization
-  has_one :profile
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      has_many :licenses, display: :license_key
+      has_many :subscriptions
+      belongs_to :organization
+      has_one :profile
+    end
+  end
 end
 ```
 
@@ -398,8 +458,12 @@ link to the associated resource's index. To make that link open the index filter
 parent's records, declare a filter on the foreign key in the associated resource:
 
 ```ruby
-class LicenseResource < IronAdmin::Resource
-  filter :user_id, type: :select
+module IronAdmin
+  module Resources
+    class LicenseResource < IronAdmin::Resource
+      filter :user_id, type: :select
+    end
+  end
 end
 ```
 
@@ -411,8 +475,12 @@ opens the unfiltered index.
 IronAdmin auto-detects polymorphic `belongs_to` associations. You can also declare them explicitly with the `types` option to specify which models are allowed:
 
 ```ruby
-class CommentResource < IronAdmin::Resource
-  belongs_to :commentable, polymorphic: true, types: [Article, Photo, Video]
+module IronAdmin
+  module Resources
+    class CommentResource < IronAdmin::Resource
+      belongs_to :commentable, polymorphic: true, types: [Article, Photo, Video]
+    end
+  end
 end
 ```
 
@@ -425,8 +493,12 @@ The `FieldInferrer` automatically detects polymorphic associations when a model 
 `has_and_belongs_to_many` associations are supported with a checkbox UI on forms and badge display on show pages:
 
 ```ruby
-class ArticleResource < IronAdmin::Resource
-  has_and_belongs_to_many :tags
+module IronAdmin
+  module Resources
+    class ArticleResource < IronAdmin::Resource
+      has_and_belongs_to_many :tags
+    end
+  end
 end
 ```
 
@@ -439,8 +511,12 @@ IronAdmin automatically preloads associations to prevent N+1 queries:
 - Custom preloads can be added:
 
 ```ruby
-class OrderResource < IronAdmin::Resource
-  preload :customer, :line_items, :shipping_address
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      preload :customer, :line_items, :shipping_address
+    end
+  end
 end
 ```
 
@@ -449,11 +525,15 @@ end
 For `belongs_to` fields with many options (>100 records), IronAdmin automatically uses an autocomplete component instead of a dropdown:
 
 ```ruby
-class OrderResource < IronAdmin::Resource
-  field :customer_id, type: :belongs_to,
-        association: :customer,
-        display: :name
-  # Autocomplete is used automatically if Customer has >100 records
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      field :customer_id, type: :belongs_to,
+            association: :customer,
+            display: :name
+      # Autocomplete is used automatically if Customer has >100 records
+    end
+  end
 end
 ```
 
@@ -462,18 +542,22 @@ end
 For `has_many` and `has_one` associations, you can enable inline nested editing directly on the parent form. The model must declare `accepts_nested_attributes_for` for the association.
 
 ```ruby
-class OrderResource < IronAdmin::Resource
-  # has_many with nested editing
-  has_many :line_items, nested: true, allow_destroy: true
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      # has_many with nested editing
+      has_many :line_items, nested: true, allow_destroy: true
 
-  # Explicit field selection
-  has_many :addresses, nested: true, fields: [:street, :city, :zip]
+      # Explicit field selection
+      has_many :addresses, nested: true, fields: [:street, :city, :zip]
 
-  # With drag-and-drop ordering (via Stimulus)
-  has_many :sections, nested: true, position_field: :position
+      # With drag-and-drop ordering (via Stimulus)
+      has_many :sections, nested: true, position_field: :position
 
-  # has_one nested
-  has_one :profile, nested: true
+      # has_one nested
+      has_one :profile, nested: true
+    end
+  end
 end
 ```
 
@@ -491,17 +575,25 @@ Nested forms use the existing `create` and `update` endpoints -- no additional r
 ## Menu Configuration
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  menu priority: 1, icon: "users", group: "People"
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      menu priority: 1, icon: "users", group: "People"
+    end
+  end
 end
 ```
 
 ## Exports
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  exports :csv, :json
-  export_fields :id, :name, :email, :role, :created_at
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      exports :csv, :json
+      export_fields :id, :name, :email, :role, :created_at
+    end
+  end
 end
 ```
 
@@ -519,9 +611,13 @@ format that is not enabled returns `404`. See [Export](export.md).
 ## Imports
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  imports :csv, :json
-  import_upsert_key :email
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      imports :csv, :json
+      import_upsert_key :email
+    end
+  end
 end
 ```
 
@@ -531,10 +627,14 @@ and the other import options.
 ## Policies
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  policy do
-    allow :read, :update
-    deny :destroy, if: ->(user) { !user&.superadmin? }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      policy do
+        allow :read, :update
+        deny :destroy, if: ->(user) { !user&.superadmin? }
+      end
+    end
   end
 end
 ```
@@ -547,9 +647,13 @@ Replace the index table, the new/edit form, the filter bar or the search box of 
 resource with your own ViewComponent:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  component :table, CustomUserTableComponent
-  component :form, "CustomUserFormComponent"
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      component :table, CustomUserTableComponent
+      component :form, "CustomUserFormComponent"
+    end
+  end
 end
 ```
 

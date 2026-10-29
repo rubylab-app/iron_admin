@@ -250,8 +250,12 @@ The proc receives the current user, not the record.
 
 **Solution:** Add explicit preloading:
 ```ruby
-class OrderResource < IronAdmin::Resource
-  preload :customer, :line_items, :shipping_address
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      preload :customer, :line_items, :shipping_address
+    end
+  end
 end
 ```
 
