@@ -16,11 +16,12 @@ module IronAdmin
   #     config.per_page = 50
   #
   #     config.authenticate do |controller|
-  #       controller.redirect_to "/login" unless controller.current_user&.admin?
+  #       user = User.find_by(id: controller.session[:user_id])
+  #       controller.redirect_to "/login" unless user&.admin?
   #     end
   #
   #     config.current_user do |controller|
-  #       controller.current_user
+  #       User.find_by(id: controller.session[:user_id])
   #     end
   #   end
   #
@@ -225,22 +226,39 @@ module IronAdmin
 
     # Defines the authentication check for admin access.
     #
-    # The block receives the controller instance and should redirect
-    # unauthenticated users or return false to deny access.
+    # The block receives the controller and runs before each admin request.
+    # Redirect or render inside the block to customize the response. Make
+    # +false+ the block's last value to deny access with 403: HTML gets the
+    # error page without the admin shell, and other formats a bare 403.
+    # +nil+ or any other value allows the request. A block that has already
+    # redirected or rendered keeps that response, whatever its value is.
+    # Stop early with +next false+. Do not use +return+ inside the block:
+    # from an initializer it raises +LocalJumpError+.
+    #
+    # The controller inherits from ActionController::Base, not from the host
+    # application's ApplicationController, so helpers defined only there are
+    # missing. Read cookies with +controller.request.cookie_jar+;
+    # +controller.cookies+ is private.
     #
     # @yield [controller] Block executed before each admin request
     # @yieldparam controller [ActionController::Base] The current controller
+    # @yieldreturn [false, nil, Object] +false+ denies with 403; anything else allows the request
     #
     # @example Redirect unauthenticated users
     #   config.authenticate do |controller|
     #     controller.redirect_to "/login" unless controller.session[:user_id]
     #   end
     #
-    # @example Require admin role
+    # @example Deny with 403 unless the user is an admin
     #   config.authenticate do |controller|
-    #     unless controller.current_user&.admin?
-    #       controller.head :forbidden
-    #     end
+    #     # || false: a missing user makes &.admin? nil, and nil allows the request.
+    #     User.find_by(id: controller.session[:user_id])&.admin? || false
+    #   end
+    #
+    # @example Choose the response yourself
+    #   config.authenticate do |controller|
+    #     user = User.find_by(id: controller.session[:user_id])
+    #     controller.head :forbidden unless user&.admin?
     #   end
     #
     # @return [void]
@@ -259,12 +277,12 @@ module IronAdmin
     #
     # @example
     #   config.current_user do |controller|
-    #     controller.current_user
+    #     User.find_by(id: controller.session[:user_id])
     #   end
     #
-    # @example Using session
+    # @example With Devise
     #   config.current_user do |controller|
-    #     User.find_by(id: controller.session[:user_id])
+    #     controller.current_user
     #   end
     #
     # @return [void]

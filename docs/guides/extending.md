@@ -126,18 +126,24 @@ app/views/iron_admin/
     index.html.haml
   dashboard/
     index.html.haml
-  layouts/
-    application.html.haml
+app/views/layouts/iron_admin/
+  application.html.haml
+  minimal.html.haml
+  _document_head.html.haml
 ```
 
-Rails uses your app's views over the engine's views automatically.
+Rails uses your app's views over the engine's views automatically. Layouts live under
+`app/views/layouts`, not under `app/views/iron_admin`.
 
 An override replaces the engine's markup, so copy it from the IronAdmin version you run and
 keep what the controllers rely on:
 
 - `iron_admin/shared/error.html.haml` is the page for HTML `403` and `404` responses. It
-  receives the local `error` (`:forbidden` or `:not_found`); `@resource_class` is set when
-  the URL named a registered resource.
+  receives only the local `error` (`:forbidden` or `:not_found`). Policy denials and 404s
+  render it inside the admin layout (`layouts/iron_admin/application`), with `@resource_class`
+  set when the URL named a registered resource. An `authenticate` block whose value is `false`
+  renders it in `layouts/iron_admin/minimal`, with `iron_admin_error_navigation?` false and no
+  `@resource_class`. Links into the admin and policy calls belong behind that helper.
 - `iron_admin/resources/show.html.haml`: loop over `@member_actions` (the member actions the
   controller would run for this record) rather than `@resource_class.defined_actions`, and
   show the Edit button only when `@record_reachable` is true.

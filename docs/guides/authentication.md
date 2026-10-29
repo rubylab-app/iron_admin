@@ -45,6 +45,23 @@ config.current_user do |controller|
 end
 ```
 
+Devise defines `current_user` on every controller. A helper that exists only on the host application's `ApplicationController` is not available in the block: IronAdmin controllers inherit from `ActionController::Base`, not from that class, so calling it raises `NoMethodError` on every admin request. `controller.cookies` is private; read cookies with `controller.request.cookie_jar`. The `unless` above redirects a signed-out visitor, because `nil` is not an admin. Making `current_user&.admin?` itself the block's value would let that visitor in: add `|| false`, since `nil` allows the request.
+
+### With the Rails 8 authentication generator
+
+```ruby
+config.authenticate do |controller|
+  # || false: a signed-out visitor makes &.admin? nil, and nil allows the request.
+  Session.find_by(id: controller.request.cookie_jar.signed[:session_id])&.user&.admin? || false
+end
+
+config.current_user do |controller|
+  Session.find_by(id: controller.request.cookie_jar.signed[:session_id])&.user
+end
+```
+
+`Current.user` is not set in IronAdmin requests, because the host's `Authentication` concern does not run there.
+
 ### Multi-Environment Redirects
 
 ```ruby
@@ -58,6 +75,21 @@ config.authenticate do |controller|
     end
     controller.redirect_to login_url, allow_other_host: true
   end
+end
+```
+
+### Block value
+
+Redirect or render inside the block to choose the response. To deny the request with `403`, make `false` the block's last value. HTML gets the error page without the admin shell, and any other format gets a bare `403`. `nil`, `true` and any other value allow the request. A block that already redirected or rendered keeps that response, whatever its value is.
+
+Do not use `return` inside the block. The block runs from the controller, and `return` leaves the method that defined the block, which in an initializer raises `LocalJumpError`. To stop early, use `next false`.
+
+A block that ends with `redirect_to ... unless ...` has the value `nil` when it does not redirect, so the request continues. The initializer from `rails generate iron_admin:install` leaves the block body commented out, which also has the value `nil`.
+
+```ruby
+config.authenticate do |controller|
+  # || false: a signed-out visitor makes &.admin? nil, and nil allows the request.
+  User.find_by(id: controller.session[:user_id])&.admin? || false
 end
 ```
 
@@ -106,7 +138,7 @@ end
 
 Once a resource has a `policy` block, every CRUD action must be allowed explicitly. If `:read` is not allowed, the resource's index and show pages return `403`, and the resource is hidden from the sidebar and from global search. The New, Import, Edit, and Delete buttons are only shown when the policy (and `deny_actions`) allows the action.
 
-Policy `if:` conditions run on every admin page, not only on the resource's own pages: the sidebar and global search check `:read` for every resource. Make sure each condition handles every user it can receive, including `nil` when no `current_user` block is configured.
+Policy `if:` conditions run on every admin page, not only on the resource's own pages: the sidebar and global search check `:read` for every resource. Make sure each condition handles every user it can receive, including `nil` when no `current_user` block is configured. In an `allow ... if:` rule, a proc that returns `nil` does not allow the action, so `nil` denies there. In a `deny ... if:` rule, `nil` means the deny does not apply. In `config.authenticate`, `nil` allows the request.
 
 ### Conditional Policies
 
@@ -161,24 +193,37 @@ end
 
 ### Forbidden and Not Found Pages
 
-When a browser request ends in `403 Forbidden` (a policy or `deny_actions` denial, or a
-failing action `condition`) or `404 Not Found` (a missing or soft-deleted record, an unknown
-resource, action or tool, or an import or export format the resource does not enable),
-IronAdmin renders a page inside the admin layout. It shows a title, a message, and a link
-back to the resource index when the user may read the resource, or to the dashboard
-otherwise. Turbo form submissions also accept HTML and get the page. JSON and CSV requests,
-and requests that accept only Turbo Streams, get the bare status code with an empty body.
+A policy denial, a `deny_actions` denial, a failing action `condition`, or a `404 Not Found`
+(a missing or soft-deleted record, an unknown resource, action or tool, or an import or export
+format the resource does not enable) renders a page inside the admin layout. It shows a title,
+a message, and a link back to the resource index when the user may read the resource, or to the
+dashboard otherwise. Turbo form submissions also accept HTML and get the page. JSON and CSV
+requests, and requests that accept only Turbo Streams, get the bare status code with an empty
+body. On these pages `@resource_class` is set when the URL named a registered resource.
+
+An `authenticate` block whose value is `false` uses the same error template and the same bare
+status for other formats, but not the admin layout. HTML gets `layouts/iron_admin/minimal`:
+the document head, the stylesheets and the theme classes, without the sidebar, the navbar, the
+search or the theme switcher, and without a link back into the admin. `@resource_class` is not
+set, because the block runs before the controller looks up the resource. The shell is left out
+on purpose. It checks `:read` for every resource, and a condition such as
+`->(user) { user.admin? }` raises `NoMethodError` for a signed-out visitor, which would turn
+the 403 into a 500. A host can replace that layout with `app/views/layouts/iron_admin/minimal.html.haml`.
 
 To change the page, add your own template to the host app:
 
 ```haml
 -# app/views/iron_admin/shared/error.html.haml (or error.html.erb)
 %h1= error == :forbidden ? "Access denied" : "Not found"
-= link_to "Dashboard", root_path
+- if iron_admin_error_navigation?
+  = link_to "Dashboard", root_path
 ```
 
-The template receives the local `error` (`:forbidden` or `:not_found`), and `@resource_class`
-is set when the URL named a registered resource. The texts of the built-in page come from
+The template receives only the local `error` (`:forbidden` or `:not_found`).
+`iron_admin_error_navigation?` is true for policy denials and 404s, and false when an
+`authenticate` block denies the request. Keep any link into the admin, and any call that runs
+a policy, behind that helper: the built-in template does. A host template that declares strict
+locals for `error` only still renders. The texts of the built-in page come from
 these translation keys:
 
 | Key | Default |

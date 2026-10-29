@@ -1,0 +1,7 @@
+- theme = IronAdmin.current_theme
+!!!
+%html{ lang: I18n.locale, class: theme.scheme_class }
+  %head
+    = render "layouts/iron_admin/document_head", theme: theme
+  %body{ class: "antialiased #{theme.main_bg} #{theme.body_text} #{theme.font_family}" }
+    = yield

@@ -19,6 +19,7 @@ module IronAdmin
     rescue_from ActionController::ParameterMissing, with: :render_bad_request
 
     helper_method :iron_admin_current_user, :iron_admin_filter_param, :iron_admin_active_filter?
+    helper_method :iron_admin_error_navigation?
 
     private
 
@@ -27,11 +28,16 @@ module IronAdmin
       IronAdmin::Current.theme = IronAdmin.configuration.resolve_theme(request)
     end
 
+    # Only an exact false from the block denies access, with 403. nil and any
+    # other value allow the request. A redirect or render from the block is kept.
     # @api private
     def authenticate_iron_admin_user!
       return unless IronAdmin.configuration.authenticate_block
 
-      instance_exec(self, &IronAdmin.configuration.authenticate_block)
+      result = instance_exec(self, &IronAdmin.configuration.authenticate_block)
+      return if performed?
+
+      render_authentication_denied if result.equal?(false)
     end
 
     # @api private
@@ -71,6 +77,34 @@ module IronAdmin
 
     def render_forbidden
       render_error_page(:forbidden)
+    end
+
+    # The admin shell asks every resource whether the visitor may read it.
+    # A condition such as `user.admin?` raises when that visitor is nil, so
+    # this denial keeps the error page and the theme, without the shell or
+    # a link back into the admin. Policy denials still use {#render_forbidden}.
+    # The template's only local is +error+. Navigation is a helper, so a host
+    # override that declares strict locals for +error+ still renders.
+    def render_authentication_denied
+      @iron_admin_error_navigation = false
+
+      respond_to do |format|
+        format.html do
+          render template: "iron_admin/shared/error",
+                 layout: "iron_admin/minimal",
+                 status: :forbidden,
+                 locals: { error: :forbidden }
+        end
+        format.any { head(:forbidden) }
+      end
+    end
+
+    # True on policy denials and 404s, which render inside the admin layout.
+    # An authentication denial sets it false: the visitor is not signed in,
+    # so the error page must not link into the admin or run a policy.
+    # @return [Boolean]
+    def iron_admin_error_navigation?
+      @iron_admin_error_navigation != false
     end
 
     # A bare 403/404 makes the browser show its own error page, so HTML requests
