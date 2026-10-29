@@ -3,9 +3,34 @@
 module IronAdmin
   # Controller for rendering and executing admin tools.
   #
-  # Supports both legacy bare-method tools and enhanced tools with
-  # tool_action declarations, context injection, and authorization.
+  # A tool with one or more actions declared with +tool_action+ dispatches only
+  # those. A tool that declares none, and inherits none, still dispatches its own public methods.
+  # That fallback is deprecated and removed in 1.0. +config.strict_tool_actions+
+  # turns it off. Declared actions support context injection and authorization.
   class ToolsController < ApplicationController
+    @legacy_dispatch_mutex = Mutex.new
+    @legacy_dispatch_warnings = {}
+
+    class << self
+      # @api private
+      def with_legacy_dispatch_warning(tool_class, method_name)
+        key = [tool_class, method_name.to_sym]
+        @legacy_dispatch_mutex.synchronize do
+          unless @legacy_dispatch_warnings[key]
+            yield
+            @legacy_dispatch_warnings[key] = true
+          end
+        end
+      end
+
+      # Forgets warned legacy dispatches so a later one warns again.
+      # Pairs are stored only after +warn+ returns, under a mutex.
+      # @api private
+      def reset_legacy_dispatch_warnings!
+        @legacy_dispatch_mutex.synchronize { @legacy_dispatch_warnings = {} }
+      end
+    end
+
     before_action :set_tool
 
     def show
@@ -20,7 +45,7 @@ module IronAdmin
       if declared
         return render_forbidden unless declared.allowed?(iron_admin_current_user)
         return unless run_tool_action(declared)
-      elsif own_tool_method?(action_name)
+      elsif legacy_fallback?(action_name)
         run_legacy_action(action_name)
       else
         return render_not_found
@@ -47,7 +72,15 @@ module IronAdmin
     end
 
     def own_tool_method?(action_name)
-      @tool_class.method_defined?(action_name.to_sym, false)
+      @tool_class.public_method_defined?(action_name.to_sym, false)
+    end
+
+    # Legacy tools declare no actions. Mixed tools and +strict_tool_actions+ do not use this.
+    def legacy_fallback?(action_name)
+      return false if IronAdmin.configuration.strict_tool_actions
+      return false unless @tool_class.defined_tool_actions.empty?
+
+      own_tool_method?(action_name)
     end
 
     def run_tool_action(declared)
@@ -62,8 +95,23 @@ module IronAdmin
     end
 
     def run_legacy_action(action_name)
+      warn_legacy_dispatch(action_name)
       tool_instance = build_tool_instance
       dispatch_with_arity(tool_instance, action_name)
+    end
+
+    def warn_legacy_dispatch(action_name)
+      method_name = action_name.to_sym
+      callstack = caller_locations(1)
+      ToolsController.with_legacy_dispatch_warning(@tool_class, method_name) do
+        IronAdmin.deprecator.warn(
+          "#{@tool_class.name}##{method_name} was dispatched without a tool_action declaration. " \
+          "Declare it, and every other method this tool dispatches, with tool_action: " \
+          "a tool that declares one action dispatches only declared actions. " \
+          "Dispatching undeclared methods is removed in 1.0.",
+          callstack
+        )
+      end
     end
 
     def build_tool_instance

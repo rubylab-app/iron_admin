@@ -13,6 +13,7 @@ end
 
 RSpec.describe "Custom tools", type: :request do
   before do
+    allow(IronAdmin.deprecator).to receive(:warn)
     IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
     IronAdmin::ToolRegistry.register(SampleTool)
   end

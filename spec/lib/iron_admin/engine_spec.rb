@@ -3,6 +3,12 @@
 require "rails_helper"
 
 RSpec.describe IronAdmin::Engine do
+  describe "deprecators" do
+    it "registers IronAdmin.deprecator as :iron_admin" do
+      expect(Rails.application.deprecators[:iron_admin]).to equal(IronAdmin.deprecator)
+    end
+  end
+
   describe "config/importmap.rb" do
     subject(:pinned_modules) { engine_importmap.packages.keys }
 

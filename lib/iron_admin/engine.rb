@@ -23,6 +23,10 @@ module IronAdmin
   class Engine < ::Rails::Engine
     isolate_namespace IronAdmin
 
+    initializer "iron_admin.deprecator" do |app|
+      app.deprecators[:iron_admin] = IronAdmin.deprecator
+    end
+
     initializer "iron_admin.assets" do |app|
       if app.config.respond_to?(:assets) && app.config.assets
         # Sprockets hosts need this manifest (it link_trees app/javascript/iron_admin)

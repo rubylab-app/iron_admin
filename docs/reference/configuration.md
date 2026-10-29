@@ -11,6 +11,7 @@ IronAdmin.configure do |config|
   config.per_page = 25
   config.default_sort = :created_at
   config.default_sort_direction = :desc
+  config.strict_tool_actions = false # true: only tool_action names dispatch
 
   # --- Multi-Tenant Support ---
   config.tenant_scope do |scope|
@@ -73,6 +74,7 @@ end
 | `per_page` | Integer | `25` | Records per page |
 | `default_sort` | Symbol | `:created_at` | Default sort column |
 | `default_sort_direction` | Symbol | `:desc` | Default sort direction (`:asc` or `:desc`) |
+| `strict_tool_actions` | Boolean | `false` | When `true`, tools dispatch only actions declared with `tool_action`. Undeclared names return 404, including the legacy bare-method fallback. See [Custom Tools](../guides/extending.md#custom-tools) |
 
 ### Multi-Tenant Support
 

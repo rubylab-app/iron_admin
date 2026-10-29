@@ -107,6 +107,14 @@ module IronAdmin
     # @return [ActiveSupport::Duration] Minimum interval between live broadcasts
     attr_accessor :live_throttle
 
+    # When +true+, tools dispatch only actions declared with +tool_action+.
+    # The legacy fallback that runs a tool's own public methods is off, and
+    # undeclared names return 404. Declared actions are unchanged.
+    #
+    # @return [Boolean] whether undeclared tool actions are rejected (default: false)
+    # @see IronAdmin::Tool
+    attr_accessor :strict_tool_actions
+
     # @return [Proc, nil] Authentication block
     # @see #authenticate
     attr_reader :authenticate_block
@@ -222,6 +230,7 @@ module IronAdmin
       @live_updates = :disabled
       @live_poll_interval = 3.seconds
       @live_throttle = 0.5.seconds
+      @strict_tool_actions = false
     end
 
     # Defines the authentication check for admin access.

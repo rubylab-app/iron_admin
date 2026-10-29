@@ -323,6 +323,16 @@ shown. See [Flash Messages](components.md#flash-messages).
 
 **Form fields:** Actions with `form_fields:` render a form page before execution. Supported types: `:text`, `:textarea`, `:number`, `:boolean`, `:date`, `:datetime`, `:select`.
 
+Declare every action the tool should run with `tool_action`. A tool is affected when it, or any tool it inherits from, declares at least one action: it only dispatches those names. `POST /admin/tools/:tool/:action` to any other name, including a public method defined on a subclass, returns 404 and does not call the method. A declared action also appears as a button on the default tool page. Make helpers that are not actions `private`.
+
+A tool that declares no `tool_action`, and inherits none, still dispatches its own public methods. That fallback is deprecated and removed in 1.0. Each dispatch warns once per tool class and method through `IronAdmin.deprecator` (registered as `:iron_admin` on `Rails.application.deprecators`). Declare those methods with `tool_action` before 1.0. Set `strict_tool_actions` inside `IronAdmin.configure` to turn the fallback off for every tool (default `false`); undeclared names then return 404:
+
+```ruby
+IronAdmin.configure do |config|
+  config.strict_tool_actions = true
+end
+```
+
 ### Menu Options
 
 | Option | Type | Description |

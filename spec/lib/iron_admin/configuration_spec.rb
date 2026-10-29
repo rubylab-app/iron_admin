@@ -72,6 +72,10 @@ RSpec.describe IronAdmin::Configuration do
       expect(config.sticky_actions_column).to be true
     end
 
+    it "sets strict_tool_actions to false" do
+      expect(config.strict_tool_actions).to be false
+    end
+
     it "disables live updates by default" do
       expect(config.live_updates).to eq(:disabled)
     end

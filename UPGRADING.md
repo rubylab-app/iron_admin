@@ -1,6 +1,6 @@
 # Upgrading to IronAdmin 0.8.0 (themes and the Neutral look)
 
-Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). The [theming guide](docs/guides/theming.md) documents the theme system and every property.
+Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
 
 ## What changed
 
@@ -275,6 +275,56 @@ Make `false` the last value of the block. To stop early, write `next false`. Do 
   ```
 
 - If you override `iron_admin/shared/error`, `layouts/iron_admin/application` or its head: the error template now also renders for an authentication denial, inside `layouts/iron_admin/minimal`. It still receives only the local `error`. `iron_admin_error_navigation?` is false on that page; keep links into the admin and policy calls behind it. The minimal layout's head comes from `layouts/iron_admin/_document_head`, so a host that changed the head of the application layout should override `minimal` or `_document_head` too.
+
+### 10. Tools that declare actions only run those actions
+
+A tool that declares one or more `tool_action`s used to run any other public method defined on that tool when a request posted the method's name to `/admin/tools/:tool/:action`. That request did not check a `condition:`. It now returns 404 and does not call the method. Authentication and CSRF still apply, as they did before.
+
+You are affected when the tool, or any tool it inherits from, declares a `tool_action`. A subclass then only runs declared actions, including actions declared on the base class. Its own public methods that are not declared return 404, with no deprecation warning. The 0.7 guide told you to declare shared actions once on a base tool; that base declaration is what makes every subclass affected.
+
+Something is affected if it posts a method name that is not a declared action: a button in a custom tool view, a script, or a request spec.
+
+**Action required:** Declare all of a tool's actions at once, each with the same `condition:` as the tool's other actions. Declaring only the method named in a deprecation warning turns the tool's other public methods into silent 404s, because a tool that declares one action dispatches only declared actions. A declared action also appears as a button on the default tool page. Make helpers that are not actions `private`.
+
+```ruby
+class BaseTool < IronAdmin::Tool
+  tool_action :refresh, condition: ->(user) { user&.admin? }
+
+  def refresh
+  end
+end
+
+class ReportsTool < BaseTool
+  tool_action :export_csv, condition: ->(user) { user&.admin? }
+
+  def export_csv
+  end
+
+  private
+
+  def filename_for(report)
+  end
+end
+```
+
+A tool that declares no `tool_action`, and inherits none, still runs its own public methods. That fallback is deprecated and removed in 1.0. Each dispatch warns once per tool class and method through `IronAdmin.deprecator`, which is registered as `:iron_admin` on `Rails.application.deprecators`. Declare all of a tool's actions at once with `tool_action` before 1.0.
+
+`config.active_support.deprecation` is a Rails setting in the environment files (`config/environments/*.rb`). It applies to every deprecator registered on `Rails.application.deprecators`, including `:iron_admin`, so it silences them or makes them raise. Assigning it inside `IronAdmin.configure` raises `NoMethodError`, because that `config` is IronAdmin's configuration. To change only IronAdmin's warnings, set the deprecator in `config/initializers/iron_admin.rb`:
+
+```ruby
+Rails.application.deprecators[:iron_admin].behavior = :log
+# or
+Rails.application.deprecators[:iron_admin].silenced = true
+```
+
+To turn the fallback off now, set `strict_tool_actions` in an initializer. Undeclared names then return 404 for every tool:
+
+```ruby
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.strict_tool_actions = true
+end
+```
 
 ## What does NOT change
 
