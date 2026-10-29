@@ -360,7 +360,7 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
           t.sidebar_bg = "bg-yellow-300"
           t.sidebar_border = "lg:border-r-2 border-black"
           t.sidebar_group_label = "text-black"

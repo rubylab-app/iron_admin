@@ -14,6 +14,17 @@ module IronAdmin
         render_forbidden unless @resource_class.crud_allowed?(crud_action_name, iron_admin_current_user)
       end
 
+      # The index lists a bulk action only when its policy condition allows it.
+      # A condition that raises (for example `user.admin?` when the current
+      # user is nil) hides that action and is logged. Posting the action does
+      # not use this method, so it still runs the condition.
+      def listed_bulk_action?(action)
+        action_authorized?(action[:name])
+      rescue StandardError => e
+        log_iron_admin_error(e)
+        false
+      end
+
       def crud_action_name
         case action_name.to_sym
         when :index, :show, :autocomplete then :read

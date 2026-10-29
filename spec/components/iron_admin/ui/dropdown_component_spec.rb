@@ -76,7 +76,7 @@ RSpec.describe IronAdmin::Ui::DropdownComponent, type: :component do
       subject(:classes) { described_class.new.dropdown_classes.split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
           t.popover_shadow = "shadow-none"
           t.border_radius = "rounded-none"
         end
@@ -91,7 +91,7 @@ RSpec.describe IronAdmin::Ui::DropdownComponent, type: :component do
       subject(:classes) { described_class.new.dropdown_classes.split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:raised) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:raised) do |t|
           t.card_bg = "bg-zinc-900"
           t.popover_bg = "bg-zinc-800"
         end
@@ -162,7 +162,7 @@ RSpec.describe IronAdmin::Ui::DropdownComponent::ItemComponent, type: :component
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.item_hover = "hover:bg-zinc-800"
           t.danger_item = "text-red-400 hover:bg-red-950"
         end

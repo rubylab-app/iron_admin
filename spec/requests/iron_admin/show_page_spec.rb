@@ -140,6 +140,8 @@ RSpec.describe "Resource show page", type: :request do
       end
 
       before do
+        IronAdmin::ResourceRegistry.reset!
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
         IronAdmin::ResourceRegistry.register(filtered_license_resource)
         get iron_admin.resource_path("users", user), as: :html
       end

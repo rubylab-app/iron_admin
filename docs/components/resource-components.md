@@ -143,9 +143,25 @@ Actions for selected records.
 
 ```ruby
 IronAdmin::Resources::BulkActionsComponent.new(
-  actions: bulk_actions,         # Required: array of bulk action hashes
-  resource_class: UserResource   # Required: resource class
+  actions: @permitted_bulk_actions, # Required: the bulk actions the policy allows
+  resource_class: UserResource      # Required: resource class
 )
+```
+
+`@permitted_bulk_actions` is set on the index. On any other page it is nil, and `render?`
+treats a nil list as empty, so the component renders nothing until you pass a list. Build
+the actions the policy allows for the current user, and leave out a condition that raises:
+
+```ruby
+user = iron_admin_current_user
+actions = UserResource.defined_bulk_actions.select do |action|
+  policy = UserResource.resource_policy
+  next true unless policy
+
+  policy.action_allowed?(action[:name], user)
+rescue StandardError
+  false
+end
 ```
 
 Each action is a small form with a `data-bulk-actions-target="form"` attribute, for a host
@@ -160,7 +176,7 @@ With `confirm: true`, the button of an action without `form_fields` asks for con
 
 ```haml
 = render IronAdmin::Resources::BulkActionsComponent.new(
-  actions: UserResource.defined_bulk_actions,
+  actions: @permitted_bulk_actions,
   resource_class: UserResource
 )
 ```

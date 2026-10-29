@@ -40,7 +40,7 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.overlay_bg = "bg-black/60" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.overlay_bg = "bg-black/60" }
       end
 
       it "uses that theme's overlay background" do
@@ -70,7 +70,7 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.skip_link = "focus:bg-zinc-900 focus:text-white"
           t.control_radius = "rounded-none"
         end

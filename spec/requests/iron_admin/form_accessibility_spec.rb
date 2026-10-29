@@ -143,13 +143,13 @@ RSpec.describe "Form control accessible names", type: :request do
     end
 
     describe "on the new form" do
-      let(:path) { iron_admin.new_resource_path("notes") }
+      let(:path) { iron_admin.new_resource_path("auto_notes") }
 
       it_behaves_like "a page whose form controls are all named"
     end
 
     describe "on the edit form" do
-      let(:path) { iron_admin.edit_resource_path("notes", Note.create!(title: "Note", notable: create(:license))) }
+      let(:path) { iron_admin.edit_resource_path("auto_notes", Note.create!(title: "Note", notable: create(:license))) }
 
       it_behaves_like "a page whose form controls are all named"
     end

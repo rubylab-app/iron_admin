@@ -84,6 +84,99 @@ RSpec.describe IronAdmin::ResourceRegistry do
 
       expect(described_class.find("adapter_dependents")).to eq(adapter_dependent_resource)
     end
+
+    it "falls back to the full class path for a namespaced resource" do
+      namespaced = Class.new(IronAdmin::Resource) do
+        def self.name
+          "IronAdmin::Resources::Shop::NoteResource"
+        end
+      end
+      allow(namespaced).to receive(:resource_name).and_raise(NameError, "missing")
+
+      described_class.register(namespaced)
+
+      expect(described_class.find("shop_notes")).to eq(namespaced)
+    end
+  end
+
+  def named_registry_resource(class_name, resource_name)
+    Class.new(IronAdmin::Resource) do
+      self.model_class_override = User
+
+      define_singleton_method(:name) { class_name }
+      define_singleton_method(:resource_name) { resource_name }
+    end
+  end
+
+  context "when the same class name is registered again" do
+    let(:original) { named_registry_resource("IronAdmin::Resources::WidgetResource", "widgets") }
+    let(:reloaded) { named_registry_resource("IronAdmin::Resources::WidgetResource", "widgets") }
+
+    before do
+      described_class.register(original)
+      described_class.register(reloaded)
+    end
+
+    it "replaces the stale class in the registry" do
+      expect(described_class.find("widgets")).to equal(reloaded)
+    end
+
+    it "drops the stale class from the remembered list" do
+      described_class.finalize!
+
+      expect(described_class.find("widgets")).to equal(reloaded)
+    end
+
+    it "does not log a collision" do
+      allow(Rails.logger).to receive(:error)
+
+      described_class.finalize!
+
+      expect(Rails.logger).not_to have_received(:error)
+    end
+  end
+
+  context "when two different classes share a resource name" do
+    let(:first_resource) { named_registry_resource("IronAdmin::Resources::FirstWidgetResource", "shared_widgets") }
+    let(:second_resource) { named_registry_resource("IronAdmin::Resources::SecondWidgetResource", "shared_widgets") }
+
+    it "keeps the first class" do
+      described_class.register(first_resource)
+      described_class.register(second_resource)
+      described_class.finalize!
+
+      expect(described_class.find("shared_widgets")).to equal(first_resource)
+    end
+
+    it "leaves the second class out of the registry" do
+      described_class.register(first_resource)
+      described_class.register(second_resource)
+      described_class.finalize!
+
+      expect(described_class.all).not_to include(second_resource)
+    end
+
+    it "logs the collision once, at finalize" do
+      allow(Rails.logger).to receive(:error)
+      described_class.register(first_resource)
+      described_class.register(second_resource)
+
+      expect(Rails.logger).not_to have_received(:error)
+
+      described_class.finalize!
+
+      expect(Rails.logger).to have_received(:error).with(
+        /SecondWidgetResource.*shared_widgets.*FirstWidgetResource.*def self\.resource_name/m
+      ).once
+    end
+  end
+
+  context "when register cannot key an anonymous class" do
+    it "does not raise from a later finalize!" do
+      expect { described_class.register(Class.new(IronAdmin::Resource)) }.to raise_error(NoMethodError)
+
+      expect { described_class.finalize! }.not_to raise_error
+    end
   end
 
   describe ".finalize!" do

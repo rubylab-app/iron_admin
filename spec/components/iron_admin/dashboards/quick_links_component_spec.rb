@@ -85,7 +85,7 @@ RSpec.describe IronAdmin::Dashboards::QuickLinksComponent, type: :component do
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.card_bg = "bg-slate-900"
           t.border_width = "border-2"
           t.heading_font = "font-serif"
@@ -165,7 +165,7 @@ RSpec.describe IronAdmin::Dashboards::QuickLinksComponent::LinkComponent, type: 
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.table_row_hover = "hover:bg-slate-800"
           t.metric_icon = "bg-sky-500/10 text-sky-300"
         end

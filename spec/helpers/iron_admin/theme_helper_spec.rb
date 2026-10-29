@@ -16,7 +16,7 @@ RSpec.describe IronAdmin::ThemeHelper, type: :helper do
     context "when the request resolved a theme" do
       let(:midnight) { IronAdmin.configuration.register_theme(:midnight) }
 
-      before { IronAdmin::Current.theme = midnight }
+      before { IronAdmin::RequestContext.theme = midnight }
 
       it "returns that theme" do
         expect(helper.t).to equal(midnight)
@@ -141,7 +141,7 @@ RSpec.describe IronAdmin::ThemeHelper, type: :helper do
 
   context "with a registered theme active" do
     before do
-      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |blocky|
+      IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:blocky) do |blocky|
         blocky.btn_primary = "bg-black text-white"
         blocky.control_radius = "rounded-none"
       end

@@ -99,7 +99,7 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.card_bg = "bg-slate-900"
           t.border_width = "border-2"
           t.metric_label = "text-sm font-bold text-slate-300"

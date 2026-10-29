@@ -105,7 +105,7 @@ Per-resource access control:
 class UserResource < IronAdmin::Resource
   policy do
     allow :read, :create, :update
-    deny :destroy, if: ->(user) { !user.superadmin? }
+    deny :destroy, if: ->(user) { !user&.superadmin? }
   end
 end
 ```
@@ -149,8 +149,8 @@ Policy `if:` conditions run on every admin page, not only on the resource's own 
 ```ruby
 policy do
   allow :read
-  allow :update, if: ->(user) { user.admin? || user.manager? }
-  deny :destroy, if: ->(user) { !user.superadmin? }
+  allow :update, if: ->(user) { user&.admin? || user&.manager? }
+  deny :destroy, if: ->(user) { !user&.superadmin? }
 end
 ```
 
@@ -170,11 +170,13 @@ class UserResource < IronAdmin::Resource
 
   policy do
     allow :read, :update
-    allow :lock, if: ->(user) { user.admin? }      # Restrict the custom action
-    allow :archive, if: ->(user) { user.admin? }    # Restrict the bulk action
+    allow :lock, if: ->(user) { user&.admin? }      # Restrict the custom action
+    allow :archive, if: ->(user) { user&.admin? }   # Restrict the bulk action
   end
 end
 ```
+
+The index evaluates every bulk action's `if:` condition on each render, with the current user. That user is `nil` when the `current_user` block returns `nil`, or when no `current_user` block is configured, so the condition has to be nil-safe (`user&.admin?`). A condition that raises is logged and that action is hidden; the index still renders. The index hides the bulk actions the policy denies.
 
 The show page only shows the buttons of member actions the current user may run. An action
 the policy denies is hidden, and running it anyway returns `403`.
@@ -241,9 +243,9 @@ Control field visibility and editability per user:
 
 ```ruby
 class UserResource < IronAdmin::Resource
-  field :salary, visible: ->(user) { user.admin? || user.hr? }
-  field :role, readonly: ->(user) { !user.admin? }
-  field :ssn, visible: ->(user) { user.admin? }
+  field :salary, visible: ->(user) { user&.admin? || user&.hr? }
+  field :role, readonly: ->(user) { !user&.admin? }
+  field :ssn, visible: ->(user) { user&.admin? }
 end
 ```
 

@@ -49,6 +49,14 @@ class UserResource < IronAdmin::Resource
 end
 ```
 
+The admin URL is `resource_name`. A resource whose model is the one its class name implies (`UserResource` → `User`, `Billing::InvoiceResource` → `Billing::Invoice`) keeps the model's plural, so those names and URLs stay. An override of that same model is the same case: `InvoiceResource` with `self.model_class_override = ::Invoice` keeps `Invoice`'s plural, including a custom `model_name`. Setting the override to a different model derives the name from the full class path under `IronAdmin::Resources`, so a `UserResource` that points at `Account` is still `/admin/users`, not `/admin/accounts`. A namespaced override keeps the namespace: `Shop::NoteResource` is `/admin/shop_notes` and `Archive::NoteResource` is `/admin/archive_notes`. A resource that overrides `self.model` is named the same way, so it does not take the model's plural and hide the canonical resource. To choose a name, define the reader. There is no writer:
+
+```ruby
+def self.resource_name = "archived_notes"
+```
+
+Two resources that still compute the same name: the first one registered answers that URL and the other is logged.
+
 ## Fields
 
 Fields are automatically inferred from the database schema. Override specific fields:
@@ -550,7 +558,7 @@ See [Imports & Exports]({% link imports-exports.md %}) for more.
 class UserResource < IronAdmin::Resource
   policy do
     allow :read, :update
-    deny :destroy, if: ->(user) { !user.superadmin? }
+    deny :destroy, if: ->(user) { !user&.superadmin? }
   end
 end
 ```

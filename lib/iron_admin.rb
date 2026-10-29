@@ -3,7 +3,7 @@
 require "iron_admin/version"
 require "iron_admin/errors"
 require "iron_admin/configuration"
-require "iron_admin/current"
+require "iron_admin/request_context"
 require "iron_admin/live/poll_cache"
 require "iron_admin/live/broadcaster"
 require "iron_admin/live"
@@ -166,7 +166,7 @@ module IronAdmin
     def reset_configuration!
       @configuration = Configuration.new
       @dashboard_class = nil
-      Current.reset
+      RequestContext.reset
       Live.reset! if defined?(Live)
     end
 
@@ -175,7 +175,7 @@ module IronAdmin
     #
     # @return [IronAdmin::Configuration::Theme]
     def current_theme
-      Current.theme || configuration.theme_for(configuration.default_theme)
+      RequestContext.theme || configuration.theme_for(configuration.default_theme)
     end
 
     def register_field_type(type_name, &)

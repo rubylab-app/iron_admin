@@ -100,7 +100,7 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
 
     context "with a theme that transforms field labels" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:loud) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:loud) do |t|
           t.field_label_transform = "uppercase tracking-wider"
         end
       end
@@ -150,7 +150,7 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
       subject(:mark) { render_inline(described_class.new(name: :email, required: true)) { "input" }.at_css("label span") }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.error_text = "text-rose-400" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.error_text = "text-rose-400" }
       end
 
       it "writes the required mark in that theme's error color" do

@@ -107,7 +107,7 @@ RSpec.describe IronAdmin::Ui::PaginationComponent, type: :component do
       let(:current) { html.at_css("span[aria-current='page']")[:class].split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.pagination_active = "bg-indigo-500 text-white border-indigo-500"
         end
       end

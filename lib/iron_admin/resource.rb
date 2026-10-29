@@ -61,6 +61,17 @@ module IronAdmin
     class_attribute :export_field_names, default: nil
     class_attribute :denied_crud_actions, default: []
     class_attribute :defined_associations, default: {}
+
+    # Model this resource manages when the class name does not name it.
+    #
+    # The URL segment is {.resource_name}. An override of a different model
+    # comes from the class path under `IronAdmin::Resources`
+    # (`AutoNoteResource` is `auto_notes`, `Shop::NoteResource` is
+    # `shop_notes`), not from the model's plural. An override of the model the
+    # class name already implies keeps that model's plural. Define
+    # `self.resource_name` to choose another name. There is no writer.
+    #
+    # @return [Class, nil]
     class_attribute :model_class_override, default: nil
     class_attribute :adapter_class, default: :active_record
     class_attribute :_soft_delete_scopes, default: []
@@ -644,10 +655,39 @@ module IronAdmin
         end
       end
 
-      # Returns the URL-friendly resource name (pluralized model name).
+      # Returns the URL segment for this resource.
       #
-      # @return [String] The resource name (e.g., "users", "orders")
-      delegate :resource_name, to: :adapter
+      # A resource whose model is the one its class name implies
+      # (`UserResource` → `User`, `Billing::InvoiceResource` →
+      # `Billing::Invoice`) uses the model's plural, so those names and URLs
+      # stay. A {.model_class_override} of that same model is the same case,
+      # including when the model has a custom `model_name`. A
+      # {.model_class_override} of a different model, an overridden
+      # `self.model`, or a class name that implies no model derives the
+      # segment from the full class path under `IronAdmin::Resources`
+      # (`AutoNoteResource` is "auto_notes", `Shop::NoteResource` is
+      # "shop_notes", `Archive::NoteResource` is "archive_notes"). An HTTP
+      # adapter resource without an override keeps the adapter's name.
+      # An anonymous class, which has no name to derive from, uses the model's
+      # plural. A subclass that defines `self.resource_name` keeps that name.
+      # There is no writer.
+      #
+      # @example Choose a name
+      #   module IronAdmin
+      #     module Resources
+      #       class ArchivedNoteResource < IronAdmin::Resource
+      #         self.model_class_override = ::Note
+      #         def self.resource_name = "archived_notes"
+      #       end
+      #     end
+      #   end
+      #
+      # @return [String] The resource name (e.g., "users", "auto_notes", "shop_notes")
+      def resource_name
+        return adapter.resource_name if uses_model_resource_name?
+
+        class_derived_resource_name
+      end
 
       # Returns the human-readable label for this resource.
       #
@@ -669,6 +709,30 @@ module IronAdmin
       end
 
       private
+
+      # True when the segment is the model's plural rather than the class path.
+      def uses_model_resource_name?
+        return true if name.nil?
+        return true if adapter_class == :http && !model_class_override && !model_method_overridden?
+        return false if (model_class_override && model_class_override != implied_model_class) || model_method_overridden?
+
+        !implied_model_class.nil?
+      end
+
+      def model_method_overridden?
+        method(:model).owner != IronAdmin::Resource.singleton_class
+      end
+
+      # The constant named by this resource class, or nil when there is none.
+      def implied_model_class
+        name.sub(/Resource\z/, "").sub(/\AIronAdmin::Resources::/, "").constantize
+      rescue NameError
+        nil
+      end
+
+      def class_derived_resource_name
+        name.delete_prefix("IronAdmin::Resources::").delete_suffix("Resource").underscore.tr("/", "_").pluralize
+      end
 
       # Resolves the adapter class from a symbol or class.
       # Symbols are resolved via the Adapters::Registry (lazy loading).

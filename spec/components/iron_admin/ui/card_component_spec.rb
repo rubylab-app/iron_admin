@@ -58,7 +58,7 @@ RSpec.describe IronAdmin::Ui::CardComponent, type: :component do
       subject(:classes) { described_class.new.card_classes.split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
           t.border_width = "border-2"
           t.card_border = "border-black"
         end

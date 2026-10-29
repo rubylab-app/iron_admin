@@ -63,7 +63,7 @@ style and a width in pixels) and the palettes (Hashes).
 | API | Description |
 |-----|-------------|
 | `IronAdmin.current_theme` | The theme of the current request, or the default theme outside a request. Read it in your own components |
-| `IronAdmin::Current.theme` | Where `IronAdmin::ApplicationController` stores the resolved theme, before authentication (`IronAdmin::Current` is an `ActiveSupport::CurrentAttributes`) |
+| `IronAdmin::RequestContext.theme` | Where `IronAdmin::ApplicationController` stores the resolved theme, before authentication (`IronAdmin::RequestContext` is an `ActiveSupport::CurrentAttributes`) |
 | `IronAdmin.configuration.theme` | The default theme, whatever the request. Use it to configure the theme, not to render |
 
 ## Helpers and class recipes

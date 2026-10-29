@@ -145,7 +145,7 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.body_text = "text-zinc-100" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.body_text = "text-zinc-100" }
       end
 
       it "writes the value in that theme's body text color" do
@@ -155,7 +155,7 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
 
     context "with a theme that transforms field labels" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:loud) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:loud) do |t|
           t.field_label_transform = "uppercase tracking-wider"
         end
       end

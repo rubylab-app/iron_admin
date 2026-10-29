@@ -172,7 +172,7 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
       context "with a theme that sets no slice outline" do
         before do
-          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:plain) do |t|
+          IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:plain) do |t|
             t.chart_slice_border_color = nil
           end
         end
@@ -198,7 +198,7 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       let(:type) { :pie }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:blocky) do |t|
           t.chart_slice_border_color = "#000000"
           t.chart_border_width = 3
         end
@@ -238,7 +238,7 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
       context "with a theme that sets no slice outline" do
         before do
-          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:plain) do |t|
+          IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:plain) do |t|
             t.chart_slice_border_color = nil
           end
         end
@@ -337,7 +337,7 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       let(:type) { :pie }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:print) { |t| t.chart_point_style = "rect" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:print) { |t| t.chart_point_style = "rect" }
       end
 
       it "uses that theme's chart_point_style" do
@@ -349,7 +349,7 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
       let(:type) { :line }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.chart_grid_color = "rgba(63, 63, 70, 1)"
           t.chart_text_color = "rgb(161, 161, 170)"
         end
@@ -432,7 +432,7 @@ RSpec.describe IronAdmin::Dashboards::ChartComponent, type: :component do
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.card_bg = "bg-slate-900"
           t.border_width = "border-2"
           t.card_title = "text-base font-bold text-white"

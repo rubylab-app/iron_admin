@@ -141,7 +141,7 @@ RSpec.describe IronAdmin::Ui::ButtonComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
           t.btn_secondary = "bg-yellow-300 text-black border-2 border-black"
           t.control_radius = "rounded-none"
         end

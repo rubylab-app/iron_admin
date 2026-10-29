@@ -69,7 +69,7 @@ RSpec.describe IronAdmin::Ui::EmptyStateComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.surface_muted = "bg-zinc-800"
         end
       end

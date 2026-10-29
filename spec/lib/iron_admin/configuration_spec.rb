@@ -341,10 +341,10 @@ RSpec.describe IronAdmin do
     end
 
     it "clears the theme of the current request" do
-      IronAdmin::Current.theme = IronAdmin::Configuration::Theme.new(name: :midnight)
+      IronAdmin::RequestContext.theme = IronAdmin::Configuration::Theme.new(name: :midnight)
       described_class.reset_configuration!
 
-      expect(IronAdmin::Current.theme).to be_nil
+      expect(IronAdmin::RequestContext.theme).to be_nil
     end
   end
 
@@ -358,7 +358,7 @@ RSpec.describe IronAdmin do
     context "when the request resolved a theme" do
       let(:midnight) { described_class.configuration.register_theme(:midnight) }
 
-      before { IronAdmin::Current.theme = midnight }
+      before { IronAdmin::RequestContext.theme = midnight }
 
       it "returns that theme" do
         expect(described_class.current_theme).to equal(midnight)

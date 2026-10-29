@@ -13,11 +13,13 @@ module IronAdmin
       IronAdmin.configuration.components.build(slot, **arguments)
     end
 
+    # @param bulk_actions [Array<Hash>] Bulk actions the policy allows
     # @return [ViewComponent::Base, nil] The index page's table override
-    def iron_admin_table_component(resource_class, records:, fields:, scope:)
+    def iron_admin_table_component(resource_class, records:, fields:, scope:, bulk_actions:)
       iron_admin_resource_component(:table, resource_class) do
         { records: records, fields: fields, current_sort: params[:sort], current_direction: params[:direction],
-          scope: scope, query: params[:q], base_url: iron_admin_sort_base_url(resource_class, scope), }
+          scope: scope, query: params[:q], base_url: iron_admin_sort_base_url(resource_class, scope),
+          bulk_actions: bulk_actions, }
       end
     end
 

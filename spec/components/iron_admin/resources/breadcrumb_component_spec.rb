@@ -78,7 +78,7 @@ RSpec.describe IronAdmin::Resources::BreadcrumbComponent::ItemComponent, type: :
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.link_muted = "text-zinc-400 hover:text-white"
         end
       end

@@ -147,6 +147,9 @@ keep what the controllers rely on:
 - `iron_admin/resources/show.html.haml`: loop over `@member_actions` (the member actions the
   controller would run for this record) rather than `@resource_class.defined_actions`, and
   show the Edit button only when `@record_reachable` is true.
+- `iron_admin/resources/index.html.haml`: render the bulk bar and the row checkboxes from
+  `@permitted_bulk_actions`. When that list is empty, render neither. Pass
+  `authenticity_token: form_authenticity_token` to the bulk `form_tag`.
 - `iron_admin/imports/new.html.haml`: the upload form needs `data: { turbo: false }`.
 - `iron_admin/imports/preview.html.haml`: keep the import form that posts `import_format`
   and `import_data` back to `resource_import_path`. See the [imports guide](imports.md).

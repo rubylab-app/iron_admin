@@ -141,7 +141,7 @@ RSpec.describe IronAdmin::Dashboards::ProgressComponent, type: :component do
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.border_width = "border-2"
           t.progress_track = "bg-slate-800"
           t.control_radius = "rounded-none"

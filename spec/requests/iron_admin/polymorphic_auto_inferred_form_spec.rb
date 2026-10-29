@@ -10,7 +10,7 @@ RSpec.describe "IronAdmin polymorphic auto-inferred form rendering", type: :requ
 
   describe "GET /:resource_name/new — without explicit `types:`" do
     it "renders <option> entries for every model that declares the inverse `has_many :as`" do
-      get iron_admin.new_resource_path("notes"), as: :html
+      get iron_admin.new_resource_path("auto_notes"), as: :html
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('name="record[notable_type]"')
