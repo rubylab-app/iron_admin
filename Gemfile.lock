@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    iron_admin (0.7.0)
+    iron_admin (0.8.0)
       csv (>= 3.2.8)
       haml-rails (>= 2.0)
       heroicon (>= 1.0)

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-28
+
+> **Upgrading from 0.7.0?** The Ruby, Rails and dependency requirements are the same, but the default look is now **Neutral**, so every admin page that uses the default theme looks different. Apps that customized the theme, override views or render their own components, and specs that post to actions with form fields, should read the [0.8.0 upgrade guide](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md); it includes a `config.theme` block that restores the 0.7 look.
+
 ### Added
 
 - **Named themes** — `config.register_theme(:midnight, label: "Midnight") { |t| ... }` registers a theme that starts from the pristine Neutral values (whatever `config.theme` changed and whatever the call order), yields it and returns it. Registering a name again replaces the theme, and a blank name raises `ArgumentError`. The built-in theme is registered as `:neutral`. `config.default_theme = :midnight` names the theme used when a request resolves none (default `:neutral`), and `config.theme` keeps configuring that default theme. `config.themes` returns the registered themes, default first; `config.find_theme(name)`, `config.theme_for(name)` and `config.resolve_theme(request)` look them up. A theme has a `name`, a `label`, `dark?` and `scheme_class`, and a copy (`dup`) no longer shares its Arrays and Hashes (`chart_colors`, the palettes) with the original. See the [theming guide](docs/guides/theming.md).
@@ -586,7 +590,8 @@ First public release.
 - Policy instances now cached at Resource class level
 - Field visibility filtering applied consistently in index, show, forms, exports, and search
 
-[Unreleased]: https://github.com/rubylab-app/iron_admin/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/rubylab-app/iron_admin/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/rubylab-app/iron_admin/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/rubylab-app/iron_admin/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/rubylab-app/iron_admin/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/rubylab-app/iron_admin/compare/v0.4.0...v0.5.0
