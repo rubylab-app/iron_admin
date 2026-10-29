@@ -110,6 +110,16 @@ module IronAdmin
     # @return [Class, nil] The dashboard class for the application
     attr_accessor :dashboard_class
 
+    # Deprecation reporter for IronAdmin.
+    #
+    # Registered on +Rails.application.deprecators+ as +:iron_admin+, so
+    # +config.active_support.deprecation+ silences it or makes it raise.
+    #
+    # @return [ActiveSupport::Deprecation]
+    def deprecator
+      @deprecator ||= ActiveSupport::Deprecation.new("1.0", "IronAdmin")
+    end
+
     # Returns the global configuration instance.
     #
     # @return [IronAdmin::Configuration] The configuration object

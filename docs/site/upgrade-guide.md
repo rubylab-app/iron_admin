@@ -24,8 +24,12 @@ and the theme values you set are kept, but every page looks different, Neutral l
 font from Google Fonts, and custom components should read `IronAdmin.current_theme`. An
 `authenticate` block whose value is exactly `false` now denies the request; section 9 of
 [`UPGRADING.md`](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md) says who
-that affects. The 0.8.0 section at the top of that file explains what changes and how to
-restore the 0.7 look. Rebuild your Tailwind CSS after you run `bundle update iron_admin`.
+that affects. Tools that declare a `tool_action`, directly or through a base tool, now return
+404 for their other public methods, and tools that declare none log a deprecation warning whose
+fallback is removed in 1.0 (section 10 of
+[`UPGRADING.md`](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md)). The 0.8.0
+section at the top of that file explains what changes and how to restore the 0.7 look. Rebuild
+your Tailwind CSS after you run `bundle update iron_admin`.
 
 ## Upgrading to 0.7.0
 

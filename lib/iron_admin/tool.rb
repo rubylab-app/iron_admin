@@ -6,6 +6,18 @@ module IronAdmin
   # Tools are standalone pages that don't map to a database model.
   # External gems can subclass Tool to add custom admin functionality.
   #
+  # Declare every action with {.tool_action}. A tool that declares one or more
+  # actions, including actions inherited from a parent tool, dispatches only
+  # those names: a POST to any other name returns 404 and does not call the
+  # method, even when the tool defines that method. Helpers that are not
+  # actions should be private.
+  #
+  # A tool that declares no actions, and inherits none, still dispatches its
+  # own public methods.
+  # That fallback is deprecated and removed in 1.0. Each dispatch warns once
+  # per tool class and method through {IronAdmin.deprecator}. Set
+  # +config.strict_tool_actions+ to turn the fallback off for every tool.
+  #
   # @example Simple tool with declarative actions
   #   class CacheManagerTool < IronAdmin::Tool
   #     menu icon: "server", label: "Cache Manager", group: "System"

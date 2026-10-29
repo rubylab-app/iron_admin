@@ -47,6 +47,7 @@ RSpec.configure do |config|
     IronAdmin::AuditLog.clear!
     IronAdmin::FieldTypeRegistry.reset!
     IronAdmin::ToolRegistry.reset!
+    IronAdmin::ToolsController.reset_legacy_dispatch_warnings!
     IronAdmin::MenuRegistry.reset!
     IronAdmin::PluginRegistry.reset!
   end
