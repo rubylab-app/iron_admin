@@ -99,7 +99,7 @@ require "iron_admin/engine"
 #
 #   IronAdmin.configure do |config|
 #     config.title = "My Admin"
-#     config.authenticate { |c| c.redirect_to "/login" unless c.current_user }
+#     config.authenticate { |c| c.redirect_to "/login" unless c.session[:user_id] }
 #   end
 #
 # @see IronAdmin::Resource

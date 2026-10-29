@@ -21,11 +21,11 @@ Version-by-version upgrade notes and breaking changes.
 IronAdmin 0.8.0 replaces the default look with **Neutral**, a minimal light theme, and adds
 named themes with a theme switcher. The Ruby, Rails and dependency requirements do not change,
 and the theme values you set are kept, but every page looks different, Neutral loads the Inter
-font from Google Fonts, and custom components should read `IronAdmin.current_theme`. The 0.8.0
-section at the top of
-[`UPGRADING.md`](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md) explains
-what changes and how to restore the 0.7 look. Rebuild your Tailwind CSS after you run
-`bundle update iron_admin`.
+font from Google Fonts, and custom components should read `IronAdmin.current_theme`. An
+`authenticate` block whose value is exactly `false` now denies the request; section 9 of
+[`UPGRADING.md`](https://github.com/rubylab-app/iron_admin/blob/main/UPGRADING.md) says who
+that affects. The 0.8.0 section at the top of that file explains what changes and how to
+restore the 0.7 look. Rebuild your Tailwind CSS after you run `bundle update iron_admin`.
 
 ## Upgrading to 0.7.0
 

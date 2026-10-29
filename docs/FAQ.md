@@ -103,9 +103,8 @@ Configure authentication in the initializer:
 ```ruby
 IronAdmin.configure do |config|
   config.authenticate do |controller|
-    unless controller.current_user&.admin?
-      controller.redirect_to "/login"
-    end
+    user = User.find_by(id: controller.session[:user_id])
+    controller.redirect_to "/login" unless user&.admin?
   end
 end
 ```

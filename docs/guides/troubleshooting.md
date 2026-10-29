@@ -154,7 +154,7 @@ appear if the deferred retry *also* fails.
 
 **Cause:** Authentication block redirecting or returning false.
 
-**Solution:** Check `config/initializers/iron_admin.rb`:
+**Solution:** Check `config/initializers/iron_admin.rb`. Check the block's value: only an exact `false` denies the request. End a status `false` (a failed `save` or `update`, a failed `Rails.cache.write`, or an assignment such as `Current.impersonating = false`) with `nil`. See [UPGRADING.md, section 9](../../UPGRADING.md#9-an-authenticate-block-whose-value-is-false-now-denies-access).
 ```ruby
 config.authenticate do |controller|
   # Ensure this doesn't redirect for authenticated users

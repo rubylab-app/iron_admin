@@ -1,12 +1,16 @@
-- back_resource = @resource_class if @resource_class&.crud_allowed?(:read, iron_admin_current_user)
+-# Authentication denials turn iron_admin_error_navigation? off. Skip the
+-# policy check and the links: a nil visitor makes user.admin? raise.
+-# The only local is error, so a host override can declare strict locals.
+- back_resource = @resource_class if iron_admin_error_navigation? && @resource_class&.crud_allowed?(:read, iron_admin_current_user)
 .px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
   %section#cp-error-page.max-w-md.mx-auto.mt-8.p-8.text-center{ class: "#{t.card_bg} #{t.border_width} #{t.card_border} #{t.border_radius} #{t.card_shadow}", "aria-labelledby": "cp-error-page-title" }
     %p.text-sm.font-medium.tabular-nums{ class: t.muted_text }= Rack::Utils.status_code(error)
     %h1#cp-error-page-title.mt-2{ class: "#{t.page_title} #{t.heading_font}" }= I18n.t("iron_admin.errors.#{error}.title")
     %p.mt-2.text-sm{ class: t.muted_text }= I18n.t("iron_admin.errors.#{error}.message")
-    .mt-6
-      - if back_resource
-        = render IronAdmin::Ui::ButtonComponent.new(text: I18n.t("iron_admin.errors.back_to_resource", resource: back_resource.label),
-                                                    href: resources_path(back_resource.resource_name))
-      - else
-        = render IronAdmin::Ui::ButtonComponent.new(text: I18n.t("iron_admin.errors.back_to_dashboard"), href: root_path)
+    - if iron_admin_error_navigation?
+      .mt-6
+        - if back_resource
+          = render IronAdmin::Ui::ButtonComponent.new(text: I18n.t("iron_admin.errors.back_to_resource", resource: back_resource.label),
+                                                      href: resources_path(back_resource.resource_name))
+        - else
+          = render IronAdmin::Ui::ButtonComponent.new(text: I18n.t("iron_admin.errors.back_to_dashboard"), href: root_path)
