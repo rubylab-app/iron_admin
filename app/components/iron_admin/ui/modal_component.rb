@@ -38,9 +38,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
@@ -50,9 +50,11 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String] CSS classes for modal container
+      # @return [String] CSS classes for modal container: a theme surface lifted
+      #   by the theme's +popover_shadow+
       def modal_classes
-        "relative #{theme.card_bg} #{theme.border_radius} #{theme.card_shadow}-xl w-full #{size_classes}"
+        "relative w-full #{size_classes} #{theme.popover_background} #{theme.border_width} #{theme.card_border} " \
+          "#{theme.border_radius} #{theme.popover_shadow}"
       end
 
       # @api private

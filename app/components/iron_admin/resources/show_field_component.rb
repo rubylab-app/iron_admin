@@ -29,9 +29,15 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] CSS classes of the label and value row
+      def row_classes
+        Styles::DETAIL_ROW
       end
 
       # @api private
@@ -41,9 +47,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String, nil] Formatted field value
+      # @return [String] Formatted field value, or the empty value marker
       def value
-        helpers.display_field_value(record, field)
+        helpers.display_show_field_value(record, field)
       end
     end
   end

@@ -24,9 +24,27 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] CSS classes of the panel
+      def panel_classes
+        "p-4 #{Styles.panel(theme)}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of the panel title
+      def title_classes
+        "mb-3 #{Styles.panel_title(theme)}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of an action button
+      def button_classes
+        Styles.secondary_button(theme)
       end
 
       # @api private
@@ -34,6 +52,20 @@ module IronAdmin
       # @return [String] URL for executing the action
       def action_url(action)
         helpers.iron_admin.resource_action_path(resource_class.resource_name, record, action[:name])
+      end
+
+      # @api private
+      # @param action [Hash] Action configuration
+      # @return [Boolean] Whether the action has form fields, so its button opens the form
+      def form?(action)
+        action[:form_fields].present?
+      end
+
+      # @api private
+      # @param action [Hash] Action configuration
+      # @return [String] URL of the action's form
+      def form_url(action)
+        helpers.iron_admin.resource_action_form_path(resource_class.resource_name, record, action[:name])
       end
 
       # @api private

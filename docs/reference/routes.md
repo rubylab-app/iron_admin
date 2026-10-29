@@ -8,6 +8,7 @@ Mount: `mount IronAdmin::Engine => "/admin"`
 |--------|------|--------|-------------|
 | GET | `/admin` | `dashboard#index` | Dashboard |
 | GET | `/admin/search?q=...` | `search#index` | Global search |
+| POST | `/admin/theme` | `themes#update` | Theme switcher: stores the `theme` param in the theme cookie and redirects to `return_to` |
 | GET | `/admin/:resource/export` | `exports#show` | Export |
 | GET | `/admin/:resource/import` | `imports#new` | Import upload form |
 | POST | `/admin/:resource/import/preview` | `imports#preview` | Import preview |

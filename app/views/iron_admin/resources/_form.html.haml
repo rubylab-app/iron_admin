@@ -1,8 +1,6 @@
-- error_input_class = "!border-red-400 focus:!border-red-500 focus:!ring-red-500/20"
-
 = form_with model: @record, url: form_url, scope: :record, html: { multipart: true } do |f|
   - if @record.errors[:base].any?
-    .mb-4.text-sm.text-red-600= @record.errors[:base].to_sentence
+    .mb-6.px-4.py-3.text-sm{ role: "alert", class: "#{t.border_width} #{t.border_radius} #{t.alert_shadow} #{t.alert_palette[:error]}" }= @record.errors[:base].to_sentence
   .grid.grid-cols-1.md:grid-cols-2.2xl:grid-cols-3.gap-x-6.gap-y-5
     - @fields.each do |field|
       - if field.type == :hidden
@@ -19,10 +17,11 @@
       - label_target = overridden ? field.name : { belongs_to: field.options[:foreign_key], polymorphic_belongs_to: field.options[:type_column] }.fetch(field.type, field.name)
       %div{ class: span_full ? "md:col-span-2 2xl:col-span-3" : nil }
         - if group_label_id
-          %span{ id: group_label_id, class: "block text-sm font-medium #{cp_label_text} mb-1.5" }= field.name.to_s.humanize
+          %span{ id: group_label_id, class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform} mb-1.5" }= field.name.to_s.humanize
         - else
-          = f.label label_target, field.name.to_s.humanize,
-            class: "block text-sm font-medium #{cp_label_text} mb-1.5"
+          -# trix-editor is not labelable: the rich text editor takes its name from the label's id.
+          = f.label label_target, field.name.to_s.humanize, id: (f.field_id(field.name, :label) if field.type == :rich_text),
+            class: "block text-sm font-medium #{cp_label_text} #{t.field_label_transform} mb-1.5"
         - case field.type
         - when *iron_admin_field_component_types
           = render iron_admin_field_component(f, field)
@@ -44,95 +43,95 @@
             = f.select fk,
               options_for_select(belongs_to_options, @record.public_send(fk)),
               { include_blank: I18n.t("iron_admin.fields.select_placeholder") },
-              class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
+              class: cp_select_class(error: has_error)
         - when :text
-          = f.text_field field.name, placeholder: field.name.to_s.humanize,
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+          = f.text_field field.name, placeholder: field.name.to_s.humanize, class: cp_input_class(error: has_error)
         - when :textarea
-          = f.text_area field.name, rows: 4, placeholder: field.name.to_s.humanize,
-            class: [cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
+          = f.text_area field.name, rows: 4, placeholder: field.name.to_s.humanize, class: cp_textarea_class(error: has_error)
         - when :number
           = f.number_field field.name, placeholder: I18n.t("iron_admin.fields.number_placeholder"),
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_input_class(error: has_error)
         - when :boolean
           .flex.items-center.pt-1{ class: "gap-2.5" }
             = f.check_box field.name, class: cp_checkbox_class
-            %span.text-sm.text-gray-600= I18n.t("iron_admin.fields.boolean_enable", field: field.name.to_s.humanize.downcase)
+            %span.text-sm{ class: cp_body_text }= I18n.t("iron_admin.fields.boolean_enable", field: field.name.to_s.humanize.downcase)
         - when :datetime, :date
-          = f.datetime_local_field field.name,
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+          = f.datetime_local_field field.name, class: cp_input_class(error: has_error)
         - when :badge
           - badge_choices = field.options[:colors]&.keys&.map(&:to_s)
           - badge_choices ||= @record.class.defined_enums[field.name.to_s]&.keys if @record.class.respond_to?(:defined_enums)
           - badge_choices ||= []
           = f.select field.name, badge_choices.map { |c| [c.humanize, c] },
             { include_blank: I18n.t("iron_admin.fields.select_placeholder") },
-            class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_select_class(error: has_error)
         - when :select
           = f.select field.name, field.options[:choices]&.map { |c| [c.humanize, c] },
             { include_blank: I18n.t("iron_admin.fields.select_placeholder") },
-            class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_select_class(error: has_error)
         - when :password
           = f.password_field field.name, placeholder: field.name.to_s.humanize, autocomplete: "new-password",
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_input_class(error: has_error)
         - when :url
           = f.url_field field.name, placeholder: I18n.t("iron_admin.fields.url_placeholder"),
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_input_class(error: has_error)
         - when :email
           = f.email_field field.name, placeholder: I18n.t("iron_admin.fields.email_placeholder"),
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_input_class(error: has_error)
         - when :color
           -# Only the hex input has a name, so the form submits one value; cp-color-field keeps the picker in sync.
           .flex.items-center.gap-3{ data: { controller: "cp-color-field" } }
             = f.color_field field.name, name: nil, id: "#{f.field_id(field.name)}_picker",
               "aria-label": I18n.t("iron_admin.fields.color_picker_label", field: field.name.to_s.humanize),
-              class: "h-10 w-14 rounded border border-gray-300 cursor-pointer p-0.5",
+              class: "h-9 w-14 shrink-0 cursor-pointer p-0.5 #{t.control_radius} #{t.border_width} #{t.input_border} #{t.card_bg} #{t.control_shadow}",
               data: { cp_color_field_target: "picker", action: "input->cp-color-field#fromPicker" }
             = f.text_field field.name, placeholder: I18n.t("iron_admin.fields.color_placeholder"),
               pattern: "#(?:[0-9a-fA-F]{3}){1,2}", title: I18n.t("iron_admin.fields.color_invalid"),
-              class: [cp_input_class, "flex-1 font-mono text-sm", (error_input_class if has_error)].compact.join(" "),
+              class: "#{cp_input_class(error: has_error)} flex-1 #{t.code_font}",
               data: { cp_color_field_target: "text", action: "input->cp-color-field#fromText" }
         - when :currency
           .relative
-            %span.pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3.text-gray-500.text-sm
+            %span.pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3.text-sm{ class: cp_muted_text }
               = field.options[:symbol] || "$"
             = f.number_field field.name, step: "0.01", placeholder: I18n.t("iron_admin.fields.currency_placeholder"),
-              class: [cp_input_class, "pl-7", (error_input_class if has_error)].compact.join(" ")
+              class: cp_input_class(error: has_error, padding: "pl-7 pr-3")
         - when :file
           - attachment = @record.public_send(field.name) if @record.respond_to?(field.name)
           - if attachment&.attached?
-            .flex.items-center.gap-3.mb-2.p-3.rounded-lg.border{ class: "#{t.card_border} #{t.card_bg}" }
+            .flex.items-center.gap-3.mb-2.p-3{ class: "#{t.border_width} #{t.border_radius} #{t.card_border} #{t.surface_muted}" }
               - if attachment.image?
-                = image_tag main_app.url_for(attachment), class: "h-16 w-16 object-cover rounded"
+                = image_tag main_app.url_for(attachment), class: "h-16 w-16 object-cover #{t.control_radius}"
               - else
                 .flex.items-center.gap-2
                   = heroicon "paper-clip", variant: :mini, options: { class: "h-5 w-5 #{cp_muted_text}" }
                   %span.text-sm{ class: cp_body_text }= attachment.filename
               .ml-auto
-                = f.label "#{field.name}_purge", class: "flex items-center gap-1.5 text-sm text-red-600 cursor-pointer" do
+                = f.label "#{field.name}_purge", class: "flex items-center gap-1.5 text-sm cursor-pointer #{t.error_text}" do
                   = check_box_tag "record[#{field.name}_purge]", "1", false, id: f.field_id("#{field.name}_purge"), class: cp_checkbox_class
                   = I18n.t("iron_admin.fields.file_remove")
-          = f.file_field field.name,
-            class: [cp_file_input_class, (error_input_class if has_error)].compact.join(" ")
+          = f.file_field field.name, class: cp_file_input_class(error: has_error)
         - when :files
           - attachments = @record.public_send(field.name) if @record.respond_to?(field.name)
           - if attachments&.attached?
             .flex.flex-wrap.gap-3.mb-2
               - attachments.each do |attachment|
-                .flex.items-center.gap-2.p-2.rounded-lg.border{ class: "#{t.card_border} #{t.card_bg}" }
+                .flex.items-center.gap-2.p-2{ class: "#{t.border_width} #{t.border_radius} #{t.card_border} #{t.surface_muted}" }
                   - if attachment.image?
-                    = image_tag main_app.url_for(attachment), class: "h-12 w-12 object-cover rounded"
+                    = image_tag main_app.url_for(attachment), class: "h-12 w-12 object-cover #{t.control_radius}"
                   - else
                     .flex.items-center{ class: "gap-1.5" }
                       = heroicon "paper-clip", variant: :mini, options: { class: "h-4 w-4 #{cp_muted_text}" }
                       %span.text-xs{ class: cp_body_text }= attachment.filename
-          = f.file_field field.name, multiple: true,
-            class: [cp_file_input_class, (error_input_class if has_error)].compact.join(" ")
+          = f.file_field field.name, multiple: true, class: cp_file_input_class(error: has_error)
         - when :markdown
           = f.text_area field.name, rows: 8, placeholder: I18n.t("iron_admin.fields.markdown_placeholder"),
-            class: [cp_textarea_class, "font-mono text-sm", (error_input_class if has_error)].compact.join(" ")
+            class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :rich_text
-          = f.rich_text_area field.name, class: "trix-content"
+          -# Trix inserts its toolbar before the editor, inside this box (rich_text_toolbar). Its
+          -# cp-rich-text-field mark makes engine.css wrap the toolbar's buttons on narrow screens, and the
+          -# editor's cp-rich-text mark makes it hand Trix's border and radius to rich_text_editor.
+          %div{ class: "cp-rich-text-field #{t.rich_text_toolbar}" }
+            = f.rich_text_area field.name, "aria-labelledby": f.field_id(field.name, :label),
+              class: t.rich_text_editor.present? ? "trix-content text-sm cp-rich-text #{t.rich_text_editor}" : "trix-content text-sm"
         - when :polymorphic_belongs_to
           - types = field.options[:types] || []
           - type_col = field.options[:type_column]
@@ -143,32 +142,39 @@
             = f.select type_col,
               types.map { |klass| [klass.model_name.human, klass.name] },
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_type },
-              class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
+              class: cp_select_class(error: has_error)
             = f.select id_col,
               (current_type.present? ? current_type.constantize.all.map { |r| [display_record_label(r), r.id] } : []),
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_id },
               "aria-label": I18n.t("iron_admin.fields.polymorphic_record_label", field: field.name.to_s.humanize),
-              class: [cp_select_class, (error_input_class if has_error)].compact.join(" ")
+              class: cp_select_class(error: has_error)
         - when :tags
           - current_tags = @record.public_send(field.name)
           - tag_values = current_tags.is_a?(Array) ? current_tags : current_tags.to_s.split(",").map(&:strip).reject(&:blank?)
           - container_id = "tags-container-#{field.name}"
+          - tag_chip_class = "inline-flex items-center gap-1 pl-2 pr-1 text-xs py-0.5 #{t.badge_shape} #{t.chip}"
+          - tag_remove_class = "inline-flex h-4 w-4 items-center justify-center cursor-pointer #{t.control_radius} #{t.link_muted} #{t.focus_ring}"
           %div{ id: container_id, data: { tags_field: true } }
             = f.hidden_field field.name, value: tag_values.join(","), id: "tags-hidden-#{field.name}"
             .flex.flex-wrap.gap-2.mb-2{ data: { tags_list: true } }
               - tag_values.each do |tag_value|
-                %span.inline-flex.items-center.gap-1.px-2.py-1.text-sm.rounded-full.bg-indigo-50.text-indigo-700{ data: { tag: true } }
+                %span{ class: tag_chip_class, data: { tag: true } }
                   = tag_value
-                  %button.ml-1.text-indigo-400.hover:text-indigo-600{ type: "button", data: { remove_tag: true } } &times;
+                  %button{ type: "button", class: tag_remove_class, "aria-label": I18n.t("iron_admin.fields.tags_remove", tag: tag_value), data: { remove_tag: true } } &times;
             .flex.items-center.gap-2
               %input.flex-1{ type: "text", id: f.field_id(field.name), placeholder: I18n.t("iron_admin.fields.tags_placeholder"), data: { tag_input: true },
-                class: [cp_input_class, (error_input_class if has_error)].compact.join(" ") }
+                class: cp_input_class(error: has_error) }
+            -# The script copies this chip for each new tag, so it gets the theme's classes.
+            %template{ data: { tag_template: true } }
+              %span{ class: tag_chip_class, data: { tag: true } }
+                %button{ type: "button", class: tag_remove_class, data: { remove_tag: true, label: I18n.t("iron_admin.fields.tags_remove", tag: "%{tag}") } } &times;
           :javascript
             (function() {
               const container = document.getElementById("#{container_id}");
               const hidden = container.querySelector("[data-tags-list] ~ .flex input[data-tag-input]").closest("[data-tags-field]").querySelector("input[type=hidden]");
               const list = container.querySelector("[data-tags-list]");
               const input = container.querySelector("[data-tag-input]");
+              const template = container.querySelector("template[data-tag-template]");
 
               function updateHidden() {
                 const tags = Array.from(list.querySelectorAll("[data-tag]")).map(el => el.textContent.replace("×", "").trim());
@@ -181,17 +187,12 @@
                 const existing = Array.from(list.querySelectorAll("[data-tag]")).map(el => el.textContent.replace("×", "").trim());
                 if (existing.includes(trimmed)) return;
 
-                const span = document.createElement("span");
-                span.className = "inline-flex items-center gap-1 px-2 py-1 text-sm rounded-full bg-indigo-50 text-indigo-700";
-                span.dataset.tag = true;
-                span.textContent = trimmed;
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "ml-1 text-indigo-400 hover:text-indigo-600";
-                btn.dataset.removeTag = true;
-                btn.textContent = "×";
+                const span = template.content.firstElementChild.cloneNode(true);
+                const btn = span.querySelector("[data-remove-tag]");
+                span.insertBefore(document.createTextNode(trimmed), btn);
+                btn.setAttribute("aria-label", btn.dataset.label.replace("%{tag}", trimmed));
+                btn.removeAttribute("data-label");
                 btn.addEventListener("click", function() { span.remove(); updateHidden(); });
-                span.appendChild(btn);
                 list.appendChild(span);
                 updateHidden();
               }
@@ -215,14 +216,14 @@
         - when :key_value
           = f.text_area field.name, rows: field.options[:rows] || 6,
             placeholder: '{"key": "value"}',
-            class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
+            class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :json
           - raw_json_value = @record.public_send(field.name)
           - submitted_json = @invalid_json_values&.[](field.name)
           - json_str = submitted_json || (raw_json_value.nil? ? "" : JSON.pretty_generate(raw_json_value))
           = text_area_tag "record[#{field.name}]", json_str,
             id: "record_#{field.name}", rows: field.options[:rows] || 8, placeholder: "{}",
-            class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
+            class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :boolean_group
           - choices = field.options[:choices] || []
           - current_values = @record.public_send(field.name).to_s.split(",").map(&:strip)
@@ -252,14 +253,12 @@
               })();
         - when :external_image
           = f.url_field field.name, placeholder: I18n.t("iron_admin.fields.url_placeholder"),
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            class: cp_input_class(error: has_error)
         - when :progress_bar
           = f.number_field field.name, min: field.options[:min] || 0, max: field.options[:max] || 100,
-            placeholder: "0",
-            class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            placeholder: "0", class: cp_input_class(error: has_error)
         - when :code
-          = f.text_area field.name, rows: field.options[:rows] || 10,
-            class: ["font-mono text-sm", cp_textarea_class, (error_input_class if has_error)].compact.join(" ")
+          = f.text_area field.name, rows: field.options[:rows] || 10, class: "#{cp_textarea_class(error: has_error)} #{t.code_font}"
         - when :radio
           - layout = field.options[:layout] == :vertical ? "flex-col space-y-2" : "flex flex-wrap gap-4"
           - choices = field.options[:choices] || []
@@ -269,7 +268,8 @@
               %label.inline-flex.items-center.gap-2.cursor-pointer
                 %input{ type: "radio", name: "record[#{field.name}]",
                         value: choice_value,
-                        checked: @record.public_send(field.name).to_s == choice_value.to_s }
+                        checked: @record.public_send(field.name).to_s == choice_value.to_s,
+                        class: cp_radio_class }
                 %span.text-sm= label_text
         - else
           - custom_config = IronAdmin::FieldTypeRegistry.find(field.type) if IronAdmin::FieldTypeRegistry.registered?(field.type)
@@ -278,18 +278,17 @@
           - elsif custom_config&.form_partial_path
             = render partial: custom_config.form_partial_path, locals: { f: f, field: field, record: @record }
           - else
-            = f.text_field field.name, placeholder: field.name.to_s.humanize,
-              class: [cp_input_class, (error_input_class if has_error)].compact.join(" ")
+            = f.text_field field.name, placeholder: field.name.to_s.humanize, class: cp_input_class(error: has_error)
 
         - if has_error
           .flex.items-center{ class: "gap-1.5 mt-1.5" }
-            = heroicon "exclamation-circle", variant: :mini, options: { class: "h-4 w-4 text-red-500 shrink-0" }
-            %p.text-sm.text-red-600= @record.errors[field.name].join(", ")
+            = heroicon "exclamation-circle", variant: :mini, options: { class: "h-4 w-4 shrink-0 #{t.error_text}" }
+            %p.text-sm{ class: t.error_text }= @record.errors[field.name].join(", ")
 
   - @resource_class.habtm_associations.each do |assoc|
     - ids_attribute = "#{assoc[:name].to_s.singularize}_ids"
     .md:col-span-2.2xl:col-span-3.mt-4
-      %span.block.text-sm.font-medium.mb-2{ id: f.field_id(ids_attribute, :label), class: cp_label_text }= assoc[:name].to_s.humanize
+      %span.block.text-sm.font-medium.mb-2{ id: f.field_id(ids_attribute, :label), class: "#{cp_label_text} #{t.field_label_transform}" }= assoc[:name].to_s.humanize
       - all_options = assoc[:reflection].klass.all
       - selected_ids = @record.public_send(assoc[:name]).pluck(:id)
       .flex.flex-wrap.gap-3{ role: "group", "aria-labelledby": f.field_id(ids_attribute, :label) }

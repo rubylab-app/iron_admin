@@ -1,11 +1,18 @@
-.p-6{ class: "#{theme.card_bg} border #{theme.card_border} #{theme.border_radius} #{theme.card_shadow}" }
-  %h2.text-lg.font-semibold.mb-4{ class: theme.body_text }
+%div{ class: panel_classes }
+  %h2{ class: title_classes }
     Actions
   .flex.flex-wrap.gap-2
     - actions.each do |action|
-      = button_to action_url(action), method: :post,
-        data: action[:confirm] ? { turbo_confirm: confirm_message(action) } : {},
-        class: "#{theme.btn_ghost} inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg" do
-        - if action[:icon]
-          = heroicon action[:icon], variant: :outline, options: { class: "h-5 w-5" }
-        = action[:name].to_s.humanize
+      -# An action with form fields opens its form, which asks for the confirmation on submit.
+      - if form?(action)
+        = link_to form_url(action), class: button_classes do
+          - if action[:icon]
+            = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+          = action[:name].to_s.humanize
+      - else
+        = button_to action_url(action), method: :post,
+          data: action[:confirm] ? { turbo_confirm: confirm_message(action) } : {},
+          class: button_classes do
+          - if action[:icon]
+            = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+          = action[:name].to_s.humanize

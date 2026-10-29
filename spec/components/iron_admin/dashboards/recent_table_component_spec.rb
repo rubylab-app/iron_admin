@@ -231,6 +231,178 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
       it "shows its plain text without the content's markup" do
         expect(cell.inner_html.strip).to eq("Agenda Plan the launch")
       end
+
+      # In a card 64rem wide or more, long text keeps one line in a column that takes the room
+      # left, so it neither widens the table nor makes the rows taller.
+      it "truncates it to one line in a wide card" do
+        expect(cell[:class].split).to include("whitespace-nowrap", "@5xl:max-w-0", "@5xl:min-w-48", "@5xl:truncate")
+      end
+
+      it "does not wrap it" do
+        expect(cell[:class].split).not_to include("@5xl:whitespace-normal")
+      end
+    end
+
+    context "when the index fields include an association" do
+      subject(:cell) do
+        render_inline(described_class.new(resource_name: :keyed_license, records: [license])).at_css("tbody td:last-child")
+      end
+
+      let(:license) { create(:license) }
+
+      before do
+        IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
+        IronAdmin::ResourceRegistry.register(Class.new(IronAdmin::Resource) do
+          self.model_class_override = License
+
+          def self.resource_name = "keyed_licenses"
+
+          belongs_to :user, display: :email
+          index_fields :license_key, :user
+        end)
+      end
+
+      # An association label is short or long; in a wide card it wraps instead of widening the table.
+      it "wraps it only in a wide card" do
+        expect(cell[:class].split).to include("whitespace-nowrap", "@5xl:whitespace-normal")
+      end
+    end
+  end
+
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(resource_name: :document, records: [document])).at_css("div") }
+
+    let(:document) { create(:document, title: "Launch plan") }
+    let(:theme) { IronAdmin.current_theme }
+    let(:header) { card.at_css("th") }
+    let(:id_cell) { card.at_css("tbody td") }
+    let(:title_cell) { card.css("tbody td")[1] }
+
+    before do
+      IronAdmin::ResourceRegistry.register(IronAdmin::Resources::DocumentResource)
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    context "with the default theme" do
+      # HAML's dot syntax reads ".py-3.5" as the classes "py-3" and "5".
+      it "keeps fractional sizes such as py-3.5 whole" do
+        expect(card.css("[class]").flat_map { |node| node[:class].split }).not_to include(match(/\A\d+\z/))
+      end
+
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "titles the card with the theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*theme.card_title.split)
+      end
+
+      # The title starts where the first column does, whatever the theme's density.
+      it "pads the title row like the cells" do
+        expect(card.at_css("h2").parent[:class].split).to include(*theme.table_cell_padding.split)
+      end
+
+      it "styles the header cells with the theme's table_header_text and table_cell_padding" do
+        expect(header[:class].split).to include(*theme.table_header_text.split, *theme.table_cell_padding.split)
+      end
+
+      it "leaves the header case to the theme's label_transform" do
+        expect(header[:class].split).not_to include("uppercase")
+      end
+
+      it "marks the header cells as column headers" do
+        expect(header[:scope]).to eq("col")
+      end
+
+      it "pads the body cells with the theme's table_cell_padding" do
+        expect(title_cell[:class].split).to include(*theme.table_cell_padding.split)
+      end
+
+      it "aligns the digits of numeric cells" do
+        expect(id_cell[:class].split).to include("tabular-nums")
+      end
+
+      it "keeps proportional digits in text cells" do
+        expect(title_cell[:class].split).not_to include("tabular-nums")
+      end
+
+      # On a narrow screen the table scrolls sideways instead of squeezing its columns.
+      it "keeps every cell on one line" do
+        expect([id_cell, title_cell].map { |cell| cell[:class].split }).to all(include("whitespace-nowrap"))
+      end
+
+      it "keeps short cells such as numbers on one line in a wide card too" do
+        expect(id_cell[:class].split).not_to include("@5xl:whitespace-normal")
+      end
+
+      # The label column (a name or a title) is the one that gives way in a wide card.
+      it "lets the label column wrap in a wide card" do
+        expect(title_cell[:class].split).to include("@5xl:whitespace-normal")
+      end
+
+      it "fades the edge the table can still scroll toward" do
+        expect(card.at_css("table").parent[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+      end
+
+      # The cells fit the card's own width, wherever a dashboard layout puts it.
+      it "makes the card a size container for its cells" do
+        expect(card[:class].split).to include("@container")
+      end
+
+      it "highlights rows with the theme's table_row_hover" do
+        expect(card.at_css("tbody tr")[:class].split).to include(*theme.table_row_hover.split)
+      end
+
+      it "colors the row dividers with the theme's table_border" do
+        expect(card.at_css("tbody")[:class].split).to include("divide-y", *theme.table_border.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.border_width = "border-2"
+          t.table_header_bg = "bg-slate-800"
+          t.table_header_text = "text-xs font-bold text-slate-400"
+          t.label_transform = "uppercase tracking-wider"
+          t.table_cell_padding = "px-3 py-1.5"
+          t.table_frame = "max-h-96"
+        end
+      end
+
+      it "frames the card with that theme's border width" do
+        expect(card[:class].split).to include("border-2")
+      end
+
+      it "fills the header row with that theme's table_header_bg" do
+        expect(card.at_css("thead")[:class].split).to include("bg-slate-800")
+      end
+
+      it "styles the header cells with that theme's text and label_transform" do
+        expect(header[:class].split).to include(*%w[text-xs font-bold text-slate-400 uppercase tracking-wider])
+      end
+
+      it "pads the cells with that theme's table_cell_padding" do
+        expect(title_cell[:class].split).to include("px-3", "py-1.5")
+      end
+
+      it "adds that theme's table_frame to the table container" do
+        expect(card.at_css("table").parent[:class].split).to include("max-h-96")
+      end
+    end
+
+    context "with a theme that sets table_head_border" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:print) do |t|
+          t.table_head_border = "divide-stone-900"
+        end
+      end
+
+      it "draws the line under the head in that color" do
+        expect(card.at_css("table")[:class].split).to include("divide-stone-900")
+      end
     end
   end
 

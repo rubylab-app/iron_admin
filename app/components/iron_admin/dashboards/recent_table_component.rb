@@ -7,6 +7,7 @@ module IronAdmin
       include IronAdmin::ApplicationHelper
       include IronAdmin::FieldDisplayHelper
       include IronAdmin::ThemeHelper
+      include Concerns::ThemedCard
 
       # Number of columns shown when the resource declares no index fields.
       DEFAULT_COLUMN_COUNT = 4
@@ -16,6 +17,24 @@ module IronAdmin
 
       # Field types too long or too sensitive for a compact table.
       SKIPPED_TYPES = %i[textarea rich_text markdown code json key_value boolean_group file files password hidden].freeze
+
+      # Field types whose cells align their digits.
+      NUMERIC_TYPES = %i[number currency].freeze
+
+      # In a card narrower than 64rem every cell keeps one line and the table scrolls sideways.
+      # In a wider card (the card is a size container) the table fits it: association cells
+      # wrap, and so does the label column (a field named in LABEL_FIELDS), while the other
+      # columns keep their single line.
+      WRAPPING_TYPES = %i[belongs_to polymorphic_belongs_to].freeze
+
+      # Fields that label a record, like the first of ApplicationHelper::DISPLAY_METHODS; in a
+      # wide card their cells wrap.
+      LABEL_FIELDS = %i[name title label].freeze
+
+      # Long text: in a wide card its cell keeps one line in a column that takes the room the
+      # others leave (at least 12rem), cut with an ellipsis, so it neither widens the table nor
+      # makes the rows taller.
+      TRUNCATED_TYPES = %i[textarea rich_text markdown].freeze
 
       # @param resource_name [Symbol, String] Resource name
       # @param records [ActiveRecord::Relation, Array] Records to display. An unordered
@@ -63,10 +82,40 @@ module IronAdmin
         display_index_field_value(record, field)
       end
 
+      # Case and letter spacing come from label_transform, as in every small label.
+      #
+      # @api private
+      # @return [String] Classes of a header cell
+      def header_cell_classes
+        "#{theme.table_header_text} #{theme.label_transform} #{theme.table_cell_padding}"
+      end
+
+      # @api private
+      # @param field [IronAdmin::Field] The cell's field
+      # @return [String] Classes of a body cell: one line (in a card 64rem wide or more,
+      #   associations and the label column wrap, and long text is cut to the room left), and
+      #   numeric cells align their digits
+      def cell_classes(field)
+        "whitespace-nowrap #{theme.table_cell_padding} #{theme.body_text} #{content_classes(field)}".strip
+      end
+
       # Delegate route helpers to the view context so included helpers work
       delegate :iron_admin, :main_app, to: :helpers
 
       private
+
+      # How the cell's content fits: cut or wrapped in a wide card, or digits lined up.
+      def content_classes(field)
+        if TRUNCATED_TYPES.include?(field.type)
+          "@5xl:max-w-0 @5xl:min-w-48 @5xl:truncate"
+        elsif WRAPPING_TYPES.include?(field.type) || LABEL_FIELDS.include?(field.name)
+          "@5xl:whitespace-normal"
+        elsif NUMERIC_TYPES.include?(field.type)
+          "tabular-nums"
+        else
+          ""
+        end
+      end
 
       def columns_for(resource_class)
         visible = resource_class.resolved_fields.select { |field| field.visible?(@current_user) }

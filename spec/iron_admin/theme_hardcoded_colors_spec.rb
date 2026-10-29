@@ -1,0 +1,147 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+# Finds colors written in templates, which no theme can change. Colors belong in
+# IronAdmin::Configuration::Theme properties.
+module ThemeHardcodedColors
+  # Utilities whose value is a color.
+  UTILITY = "(?:bg|text(?:-shadow)?|border(?:-[xytrblse])?|divide|(?:inset-)?ring(?:-offset)?|outline|placeholder|" \
+            "fill|stroke|from|via|to|(?:inset-|drop-)?shadow|decoration|accent|caret)"
+  # Every palette of Tailwind v4.3 (mauve, olive, mist and taupe came in v4.2).
+  PALETTE = "(?:(?:slate|gray|zinc|neutral|stone|mauve|olive|mist|taupe|red|orange|amber|yellow|lime|green|emerald|" \
+            "teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|[1-9]00|950)|white|black)"
+  # "#" is escaped for the /x patterns below, where it would start a comment.
+  COLOR_LITERAL = "(?:\\#\\h{3,8}(?!\\h)|(?<![a-z])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\\()"
+  NAMED_COLOR = "\\b(?:white|black|red|green|blue|yellow|orange|purple|pink|gray|grey|silver|navy|maroon|olive|" \
+                "teal|aqua|fuchsia|lime)\\b"
+  # A palette color with an optional opacity, an arbitrary value holding a color literal, or a
+  # named CSS color in brackets (bg-[red], border-[color:black]).
+  VALUE = "(?:#{PALETTE}(?:/(?:\\d+|\\[[^\\]\\s]+\\]|\\([^)\\s]+\\)))?|\\[[^\\]\\s]*?#{COLOR_LITERAL}[^\\]\\s]*\\]|" \
+          "\\[(?:color:)?#{NAMED_COLOR}\\])".freeze
+  VARIANT = "(?:[\\w-]*\\[[^\\]\\s]*\\]|[\\w-]+(?:/[\\w-]+)?):"
+  COLOR_CLASS = /(?<![\w-])(?:#{VARIANT})*!?#{UTILITY}-#{VALUE}!?(?![\w-])/
+  # An arbitrary property that sets a color, such as [color:#fff] or hover:[background-color:red].
+  ARBITRARY_PROPERTY = /(?<![\w-])(?:#{VARIANT})*\[(?:color|background(?:-color)?|border(?:-[a-z]+)?-color|
+                        outline-color|fill|stroke):[^\]\s]*?(?:#{COLOR_LITERAL}|#{NAMED_COLOR})[^\]\s]*\]/x
+
+  STYLE_VALUE = "(?:#{COLOR_LITERAL}|#{NAMED_COLOR})".freeze
+  # A CSS declaration of a color property in an inline style.
+  STYLE_COLOR = /(?<![\w-])(?:color|background(?:-color)?|border(?:-[a-z]+)*|outline(?:-color)?|fill|stroke|
+                 (?:box|text)-shadow|caret-color|accent-color|text-decoration(?:-color)?)\s*:\s*[^;"'}]*?#{STYLE_VALUE}/x
+  # A color assigned to an element's style from JavaScript.
+  SCRIPT_STYLE_COLOR = /\.style\.\w*(?:[cC]olor|background|fill|stroke|[sS]hadow)\s*=\s*["'`][^"'`]*?#{STYLE_VALUE}|
+                        \.setProperty\(\s*["'][\w-]*color["']\s*,\s*["'][^"']*?#{STYLE_VALUE}/x
+  # A hex color in an inline SVG (such as a data URI in a style), "#" maybe written as %23.
+  SVG_COLOR = /(?<![\w-])(?:fill|stroke|stop-color)=(?:['"]|%2[27])(?:%23|#)\h{3,8}(?!\h)/i
+
+  module_function
+
+  # @return [Array<String>] "path:line: class" for every hard-coded color in the line
+  def offenses(path, line, number)
+    found = line.scan(COLOR_CLASS) + line.scan(ARBITRARY_PROPERTY) + line.scan(SVG_COLOR)
+    found += line.scan(STYLE_COLOR) if line.match?(/\bstyle\b/)
+    found += line.scan(SCRIPT_STYLE_COLOR) if path.end_with?(".js")
+    found.map { |offense| "#{path}:#{number}: #{offense.strip}" }
+  end
+end
+
+RSpec.describe ThemeHardcodedColors do
+  let(:root) { IronAdmin::Engine.root }
+  let(:sources) { root.glob("app/**/*.{haml,erb,rb,js}").map { |path| path.relative_path_from(root).to_s }.sort }
+
+  def offenses_in(path)
+    root.join(path).readlines.each_with_index.flat_map { |line, index| described_class.offenses(path, line, index + 1) }
+  end
+
+  describe "app sources" do
+    subject(:offenses) { sources.flat_map { |path| offenses_in(path) } }
+
+    it "take every color from the theme" do
+      expect(offenses).to be_empty
+    end
+  end
+
+  describe ".offenses" do
+    subject(:found) { described_class.offenses(path, line, 7).map { |offense| offense.delete_prefix("#{path}:7: ") } }
+
+    let(:path) { "app/views/example.html.haml" }
+
+    {
+      %(%div.bg-gray-50.p-4) => ["bg-gray-50"],
+      %(class: "p-2 hover:text-indigo-700") => ["hover:text-indigo-700"],
+      %(class: "md:dark:group-hover:border-zinc-800/50") => ["md:dark:group-hover:border-zinc-800/50"],
+      %(class: "[&>svg]:fill-white text-black") => ["[&>svg]:fill-white", "text-black"],
+      %(class: "bg-[#fafafa] text-[rgb(0,0,0)]") => ["bg-[#fafafa]", "text-[rgb(0,0,0)]"],
+      %(class: "shadow-[0_1px_2px_rgba(0,0,0,0.05)]") => ["shadow-[0_1px_2px_rgba(0,0,0,0.05)]"],
+      %(class: "!ring-red-500 focus:outline-blue-600!") => ["!ring-red-500", "focus:outline-blue-600!"],
+      %(class: "border-b-slate-200 divide-y divide-stone-100") => ["border-b-slate-200", "divide-stone-100"],
+      %(class: "placeholder:text-gray-400 from-sky-500 to-white") => ["placeholder:text-gray-400", "from-sky-500", "to-white"],
+      %(%span{ style: "color: #fff" }) => ["color: #fff"],
+      %(%span{ style: "background-color: rgb(0, 0, 0); width: 2px" }) => ["background-color: rgb("],
+      %(%div{ style: "border: 1px solid red" }) => ["border: 1px solid red"],
+      %("viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-width='1.5'") => ["stroke='%236b7280"],
+      %(class: "bg-mauve-50 text-olive-700 ring-taupe-300") => %w[bg-mauve-50 text-olive-700 ring-taupe-300],
+      %(class: "border-mist-200") => ["border-mist-200"],
+      %(class: "bg-[red] text-[white] border-[color:black]") => ["bg-[red]", "text-[white]", "border-[color:black]"],
+      %(class: "text-shadow-red-500 text-shadow-lg") => ["text-shadow-red-500"],
+      %(class: "[color:#fff] hover:[background-color:rgb(0,0,0)]") => ["[color:#fff]", "hover:[background-color:rgb(0,0,0)]"],
+    }.each do |source, classes|
+      context "with #{source}" do
+        let(:line) { source }
+
+        it "finds #{classes.join(", ")}" do
+          expect(found).to eq(classes)
+        end
+      end
+    end
+
+    [
+      %(class: "text-current bg-transparent border-transparent fill-current stroke-current text-inherit"),
+      %(class: "text-sm text-left border border-2 ring-1 ring-inset outline-none shadow-xs divide-y"),
+      %(class: "font-[family-name:Inter,sans-serif] text-[13px] bg-[url(/a.svg)]"),
+      %(class: "\#{theme.card_bg} \#{theme.border_width} \#{theme.card_border}"),
+      %(%div{ style: "height: \#{height}px; position: relative;" }),
+      %(%span{ style: "background-color: \#{value}" }),
+      %(color: "red" # a Ruby keyword, not a style),
+      %("%3cpath fill='currentColor' stroke='none'"),
+      %(# Renders the to-do list and the bg-image),
+      %(class: "text-shadow-lg drop-shadow-lg bg-[length:200%] bg-[redirect] text-[red-ish]"),
+      %(class: "[mask-type:luminance] [color-scheme:dark] [--my-color:red] [color:inherit] border-[color:var(--x)]"),
+    ].each do |source|
+      context "with #{source}" do
+        let(:line) { source }
+
+        it "finds nothing" do
+          expect(found).to be_empty
+        end
+      end
+    end
+
+    context "with JavaScript" do
+      let(:path) { "app/javascript/iron_admin/controllers/example_controller.js" }
+
+      {
+        %(this.element.style.backgroundColor = "#e5e7eb") => [%(.style.backgroundColor = "#e5e7eb)],
+        %(el.style.setProperty("--x-color", "rgb(1, 2, 3)")) => [%[.setProperty("--x-color", "rgb(]],
+        %(this.element.classList.add("bg-indigo-50")) => ["bg-indigo-50"],
+      }.each do |source, classes|
+        context "with #{source}" do
+          let(:line) { source }
+
+          it "finds #{classes.join(", ")}" do
+            expect(found).to eq(classes)
+          end
+        end
+      end
+
+      context "with a color read from the theme" do
+        let(:line) { %(this.element.style.color = this.colorValue) }
+
+        it "finds nothing" do
+          expect(found).to be_empty
+        end
+      end
+    end
+  end
+end

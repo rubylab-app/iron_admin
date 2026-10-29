@@ -1,10 +1,7 @@
-%li.px-6.py-4{ class: href ? "hover:bg-gray-50 transition-colors" : "" }
+%li
   -# A link when the item has an href, else a div; content_tag leaves out a nil href.
-  = content_tag(href ? :a : :div, class: "flex items-center gap-4", href: href) do
-    .shrink-0.p-2.rounded-full{ class: icon_classes }
+  = content_tag(href ? :a : :div, class: row_classes, href: href) do
+    .flex.h-7.w-7.shrink-0.items-center.justify-center{ class: icon_classes }
       = heroicon icon, variant: :mini, options: { class: "h-4 w-4" }
-    .flex-1.min-w-0
-      %p.text-sm{ class: theme.body_text }
-        = description
-    %time.text-xs{ class: theme.muted_text, datetime: timestamp }
-      = formatted_timestamp
+    %p.min-w-0.flex-1.text-sm{ class: theme.body_text }= description
+    %time.shrink-0.text-xs.tabular-nums{ class: theme.muted_text, datetime: timestamp }= formatted_timestamp

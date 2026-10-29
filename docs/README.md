@@ -20,7 +20,7 @@ admin, an editor or an author (no password).
 - [Dashboard](guides/dashboard.md) - Configure metrics, charts, and recent records
 - [Fields](guides/fields.md) - Field types, inference, and customization
 - [Authentication & Authorization](guides/authentication.md) - Secure your admin panel
-- [Theming](guides/theming.md) - Customize every visual aspect
+- [Theming](guides/theming.md) - The Neutral look, named themes, the theme switcher and every theme property
 - [Components](guides/components.md) - Override and extend UI components
 - [Export](guides/export.md) - CSV and JSON export
 - [Imports](guides/imports.md) - CSV and JSON import with a validated preview
@@ -48,7 +48,7 @@ Comprehensive documentation for all built-in ViewComponents:
 
 - [Configuration](reference/configuration.md) - All configuration options
 - [Routes](reference/routes.md) - Route reference
-- [Theme Properties](reference/theme-properties.md) - Complete theme property list
+- [Theme Reference](reference/theme-properties.md) - Theme methods, constants, helpers and property names
 
 ## Quick Links
 

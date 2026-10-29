@@ -4,6 +4,8 @@ module IronAdmin
   module Dashboards
     # Renders an activity feed on the dashboard.
     class ActivityFeedComponent < ViewComponent::Base
+      include Concerns::ThemedCard
+
       renders_many :items, "ItemComponent"
 
       # @return [String] Feed title
@@ -15,12 +17,6 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
-      def theme
-        IronAdmin.configuration.theme
-      end
-
-      # @api private
       # @return [Boolean] Whether to render the component
       def render?
         items.any?
@@ -29,10 +25,12 @@ module IronAdmin
       # Individual activity feed item component.
       # @api private
       class ItemComponent < ViewComponent::Base
+        include Concerns::ThemedCard
+
         # @return [String] Icon name
         attr_reader :icon
 
-        # @return [Symbol] Icon color
+        # @return [Symbol] Icon color, a key of the theme's badge palette
         attr_reader :icon_color
 
         # @return [String] Item description
@@ -44,20 +42,11 @@ module IronAdmin
         # @return [String, nil] Optional link URL
         attr_reader :href
 
-        # Color classes for icon backgrounds.
-        # @api private
-        COLORS = {
-          green: "bg-green-100 text-green-600",
-          red: "bg-red-100 text-red-600",
-          blue: "bg-blue-100 text-blue-600",
-          yellow: "bg-yellow-100 text-yellow-600",
-          gray: "bg-gray-100 text-gray-600",
-        }.freeze
-
         # @param description [String] Item description
         # @param timestamp [Time, String] Item timestamp
         # @param icon [String] Heroicon name (default: "circle-stack")
-        # @param icon_color [Symbol] Icon color (default: :blue)
+        # @param icon_color [Symbol] Icon color, a key of the theme's badge palette such as
+        #   :green, :red, :yellow or :gray (default: :blue)
         # @param href [String, nil] Optional link URL
         def initialize(description:, timestamp:, icon: "circle-stack", icon_color: :blue, href: nil)
           @description = description
@@ -67,16 +56,24 @@ module IronAdmin
           @href = href
         end
 
+        # The icon tile is tinted like a badge of the same color; an unknown color is gray.
+        #
         # @api private
-        # @return [IronAdmin::Configuration::Theme] Theme configuration
-        def theme
-          IronAdmin.configuration.theme
+        # @return [String] Icon tile colors from the theme's badge palette, and its radius
+        def icon_classes
+          palette = theme.badge_palette
+          "#{palette.fetch(icon_color) { palette[:gray] }} #{theme.control_radius}"
         end
 
+        # Only a row with an href is a link, so only it highlights on hover and shows a focus ring.
+        # It uses table_row_hover, not item_hover, so the muted time keeps AA contrast.
+        #
         # @api private
-        # @return [String] CSS classes for icon background color
-        def icon_classes
-          COLORS[@icon_color] || COLORS[:gray]
+        # @return [String] Classes of the row
+        def row_classes
+          return "flex items-center gap-3 px-5 py-3" unless href
+
+          "flex items-center gap-3 px-5 py-3 transition-colors #{theme.table_row_hover} #{theme.focus_ring}"
         end
 
         # @api private

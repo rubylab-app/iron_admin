@@ -26,8 +26,26 @@ RSpec.describe "IronAdmin::Search", type: :request do
         response.parsed_body
       end
 
+      before { create(:user, name: "John Doe", email: "john@example.com") }
+
       it "shows the query in the heading" do
-        expect(document.at_css("h1").text.strip).to eq('Search results for "John"')
+        expect(document.at_css("h1").text.squish).to eq("Search results for John")
+      end
+
+      # <q> draws the language's quotation marks, curly ones in English.
+      it "quotes the query with a q element" do
+        expect(document.at_css("h1 q").text).to eq("John")
+      end
+
+      # A theme may set page titles in capitals; the query stays as it was typed.
+      it "keeps the query's case whatever the theme does to the title" do
+        expect(document.at_css("h1 q")[:class].split).to include("normal-case")
+      end
+
+      # A result is a link to the record, like the related records of a show page.
+      it "colors each result's label with the theme's link color" do
+        label = document.at_css("a[href='#{iron_admin.resource_path("users", User.find_by(name: "John Doe"))}'] span")
+        expect(label[:class].split).to include(*IronAdmin.current_theme.link.split)
       end
     end
 

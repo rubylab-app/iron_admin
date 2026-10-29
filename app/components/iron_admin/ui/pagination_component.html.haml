@@ -1,20 +1,20 @@
-%nav.flex.items-center.justify-between{ aria: { label: "Pagination" } }
+%nav.flex.flex-wrap.items-center.justify-between.gap-3{ aria: { label: "Pagination" } }
   .text-sm{ class: theme.muted_text }
     Showing
-    %span.font-medium= pagy_obj.from
+    %span.font-medium.tabular-nums{ class: theme.body_text }= pagy_obj.from
     to
-    %span.font-medium= pagy_obj.to
+    %span.font-medium.tabular-nums{ class: theme.body_text }= pagy_obj.to
     of
-    %span.font-medium= pagy_obj.count
+    %span.font-medium.tabular-nums{ class: theme.body_text }= pagy_obj.count
     results
 
-  .isolate.inline-flex.-space-x-px.rounded-md.shadow-sm
+  .flex.items-center.gap-1
     - if pagy_obj.previous
-      = link_to page_url(pagy_obj.previous), class: "#{nav_link_classes} rounded-l-md", "aria-label": "Previous" do
-        = heroicon "chevron-left", variant: :mini, options: { class: "h-5 w-5" }
+      = link_to page_url(pagy_obj.previous), class: nav_link_classes, "aria-label": "Previous" do
+        = heroicon "chevron-left", variant: :mini, options: { class: "h-4 w-4" }
     - else
-      %span{ class: "#{nav_link_classes(disabled: true)} rounded-l-md" }
-        = heroicon "chevron-left", variant: :mini, options: { class: "h-5 w-5" }
+      %span{ class: nav_link_classes(disabled: true) }
+        = heroicon "chevron-left", variant: :mini, options: { class: "h-4 w-4" }
 
     - series.each do |item|
       - case item
@@ -23,11 +23,11 @@
       - when String
         %span{ class: page_link_classes(active: true), "aria-current": "page" }= item
       - when :gap
-        %span{ class: "#{page_link_classes} cursor-default" } ...
+        %span{ class: gap_classes } ...
 
     - if pagy_obj.next
-      = link_to page_url(pagy_obj.next), class: "#{nav_link_classes} rounded-r-md", "aria-label": "Next" do
-        = heroicon "chevron-right", variant: :mini, options: { class: "h-5 w-5" }
+      = link_to page_url(pagy_obj.next), class: nav_link_classes, "aria-label": "Next" do
+        = heroicon "chevron-right", variant: :mini, options: { class: "h-4 w-4" }
     - else
-      %span{ class: "#{nav_link_classes(disabled: true)} rounded-r-md" }
-        = heroicon "chevron-right", variant: :mini, options: { class: "h-5 w-5" }
+      %span{ class: nav_link_classes(disabled: true) }
+        = heroicon "chevron-right", variant: :mini, options: { class: "h-4 w-4" }

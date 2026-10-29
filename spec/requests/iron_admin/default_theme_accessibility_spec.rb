@@ -3,8 +3,8 @@
 require "rails_helper"
 
 # Heading levels and text colors that axe-core flagged on default-theme pages.
-# Contrast: gray-400 on gray-50 is 2.5:1 and gray-500 on gray-100 is 4.4:1
-# (below WCAG AA); gray-500 on gray-50 is 4.6:1 and gray-700 on gray-100 is 9.4:1.
+# Contrast: zinc-400 on zinc-50 is 2.5:1 and zinc-500 on zinc-100 is 4.4:1
+# (below WCAG AA); zinc-500 on zinc-50 is 4.6:1 and zinc-700 on zinc-100 is 9.5:1.
 RSpec.describe "Default theme accessibility", type: :request do
   let(:document) { response.parsed_body }
   let(:import_resource) do
@@ -73,26 +73,26 @@ RSpec.describe "Default theme accessibility", type: :request do
         before { get instance_exec(user, &path), as: :html }
 
         it "uses the theme's muted text color, which keeps 4.5:1 on the page background" do
-          expect(id_classes).to include("text-gray-500")
+          expect(id_classes).to include("text-zinc-500")
         end
 
-        it "does not use gray-400, which is 2.5:1 on the page background" do
-          expect(id_classes).not_to include("text-gray-400")
+        it "does not use zinc-400, which is 2.5:1 on the page background" do
+          expect(id_classes).not_to include("text-zinc-400")
         end
       end
     end
   end
 
   describe "GET /:resource_name/import" do
-    let(:column_chips) { document.css("span.bg-gray-100.rounded-md") }
+    let(:column_chips) { document.css("form .flex-wrap > span") }
 
     before do
       IronAdmin::ResourceRegistry.register(import_resource)
       get iron_admin.resource_import_path("contrast_import_users"), as: :html
     end
 
-    it "writes the column chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
-      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-gray-700"))
+    it "writes the column chips in zinc-700, which keeps 9.5:1 on their zinc-100 background" do
+      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-zinc-700"))
     end
 
     it "lists every import column" do
@@ -101,7 +101,7 @@ RSpec.describe "Default theme accessibility", type: :request do
   end
 
   describe "POST /:resource_name/import/preview" do
-    let(:column_chips) { document.css("span.bg-gray-100.rounded-md") }
+    let(:column_chips) { document.css(".flex-wrap > span") }
 
     before do
       IronAdmin::ResourceRegistry.register(import_resource)
@@ -110,12 +110,30 @@ RSpec.describe "Default theme accessibility", type: :request do
       post iron_admin.resource_import_preview_path("contrast_import_users"), params: { file: file }
     end
 
-    it "writes the mapping chips in the theme's label color, which keeps 4.5:1 on their gray-100 background" do
-      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-gray-700"))
+    it "writes the mapping chips in zinc-700, which keeps 9.5:1 on their zinc-100 background" do
+      expect(column_chips.map { |chip| chip[:class].split }).to all(include("text-zinc-700"))
     end
 
     it "lists every mapped column" do
       expect(column_chips.map { |chip| chip.text.squish }).to eq(["Name -> Name", "Email -> Email"])
+    end
+  end
+
+  # An unchecked box shows only its border, which needs 3:1 on the white card (WCAG 1.4.11).
+  describe "unchecked checkboxes" do
+    let(:boxes) { document.css("table input[type=checkbox]") }
+
+    before do
+      create(:license)
+      get iron_admin.resources_path("licenses"), as: :html
+    end
+
+    it "outlines the bulk selection boxes in zinc-500, which keeps 4.8:1 on white" do
+      expect(boxes.map { |box| box[:class].split }).to all(include("border-zinc-500"))
+    end
+
+    it "renders the bulk selection boxes" do
+      expect(boxes.size).to eq(2)
     end
   end
 

@@ -38,11 +38,18 @@ module IronAdmin
       end
 
       # @api private
-      # @return [String] CSS classes for tooltip container
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
+      def theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] CSS classes for tooltip container: shown on hover and
+      #   while the trigger has keyboard focus, colored by the theme's +tooltip+
       def tooltip_classes
-        "absolute #{position_classes} px-2 py-1 text-xs font-medium text-white bg-gray-900 " \
-          "rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible " \
-          "transition-all duration-150 z-50"
+        "absolute #{position_classes} px-2 py-1 text-xs font-medium whitespace-nowrap pointer-events-none " \
+          "opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 " \
+          "group-focus-within:visible transition-all duration-150 z-50 #{theme.tooltip} #{theme.control_radius}"
       end
     end
   end

@@ -30,6 +30,8 @@ module IronAdmin
       # Individual statistic card component.
       # @api private
       class StatComponent < ViewComponent::Base
+        include Concerns::ThemedCard
+
         # @return [String] Stat label
         attr_reader :label
 
@@ -59,17 +61,11 @@ module IronAdmin
         end
 
         # @api private
-        # @return [IronAdmin::Configuration::Theme] Theme configuration
-        def theme
-          IronAdmin.configuration.theme
-        end
-
-        # @api private
-        # @return [String] CSS classes for change indicator color
+        # @return [String] Color of the change: the theme's success, error or muted text
         def change_classes
           case change_type
-          when :positive then "text-green-600"
-          when :negative then "text-red-600"
+          when :positive then theme.success_text
+          when :negative then theme.error_text
           else theme.muted_text
           end
         end

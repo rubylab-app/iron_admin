@@ -1,7 +1,7 @@
 %nav.flex{ aria: { label: "Breadcrumb" } }
-  %ol.flex.items-center.space-x-2{ role: "list" }
+  %ol.flex.flex-wrap.items-center{ class: "gap-1.5", role: "list" }
     - items.each_with_index do |item, index|
-      %li.flex.items-center
+      %li.flex.items-center{ class: "gap-1.5" }
         - unless index.zero?
-          = heroicon "chevron-right", variant: :mini, options: { class: "h-4 w-4 mx-2 #{theme.muted_text}" }
+          = heroicon "chevron-right", variant: :mini, options: { class: "h-4 w-4 shrink-0 #{theme.icon_muted}", "aria-hidden": "true" }
         = item

@@ -20,26 +20,38 @@ module IronAdmin
       # @return [Integer] Dropdown width in Tailwind units
       attr_reader :width
 
+      # Width class of each supported +width+. Tailwind generates only the class
+      # names written in full in the engine's sources, so others fall back to w-48.
+      # @return [Hash{Integer => String}]
+      WIDTHS = {
+        32 => "w-32", 40 => "w-40", 44 => "w-44", 48 => "w-48", 52 => "w-52", 56 => "w-56",
+        60 => "w-60", 64 => "w-64", 72 => "w-72", 80 => "w-80", 96 => "w-96",
+      }.freeze
+
+      # Position and transform origin of each alignment.
+      # @return [Hash{Symbol => String}]
+      ALIGNMENTS = { right: "right-0 origin-top-right", left: "left-0 origin-top-left" }.freeze
+
       # @param align [Symbol] Alignment (default: :right)
-      # @param width [Integer] Width (default: 48)
+      # @param width [Integer] Width in Tailwind units, one of {WIDTHS} (default: 48)
       def initialize(align: :right, width: 48)
         @align = align
         @width = width
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
-      # @return [String] CSS classes for dropdown panel
+      # @return [String] CSS classes for dropdown panel: a theme surface lifted
+      #   by the theme's +popover_shadow+
       def dropdown_classes
-        align_class = align == :right ? "right-0" : "left-0"
-        width_class = "w-#{width}"
-        "absolute #{align_class} mt-2 #{width_class} origin-top-#{align} #{theme.border_radius} " \
-          "#{theme.card_bg} border #{theme.card_border} #{theme.card_shadow}-lg z-50"
+        position = ALIGNMENTS[align.to_sym] || ALIGNMENTS[:right]
+        "absolute #{position} z-50 mt-1.5 #{WIDTHS.fetch(width, "w-48")} p-1 #{theme.popover_background} " \
+          "#{theme.border_width} #{theme.card_border} #{theme.border_radius} #{theme.popover_shadow}"
       end
 
       # Individual dropdown menu item.
@@ -69,13 +81,21 @@ module IronAdmin
         end
 
         # @api private
-        # @return [String] CSS classes for menu item
+        # @return [IronAdmin::Configuration::Theme] Theme of the current request
+        def theme
+          IronAdmin.current_theme
+        end
+
+        # @api private
+        # @return [String] CSS classes for menu item: the theme's +danger_item+
+        #   when destructive, else its body text and +item_hover+
         def item_classes
-          base = "flex items-center gap-2 w-full px-4 py-2 text-sm text-left transition-colors duration-150"
+          base = "flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm transition-colors duration-150 " \
+                 "#{theme.control_radius} #{theme.focus_ring}"
           if destructive
-            "#{base} text-red-600 hover:bg-red-50"
+            "#{base} #{theme.danger_item}"
           else
-            "#{base} text-gray-700 hover:bg-gray-50"
+            "#{base} #{theme.body_text} #{theme.item_hover}"
           end
         end
 
@@ -102,7 +122,8 @@ module IronAdmin
         def icon_element
           return unless icon
 
-          helpers.heroicon(icon, variant: :outline, options: { class: "h-4 w-4" })
+          classes = destructive ? "h-4 w-4 shrink-0" : "h-4 w-4 shrink-0 #{theme.icon_muted}"
+          helpers.heroicon(icon, variant: :outline, options: { class: classes })
         end
       end
     end

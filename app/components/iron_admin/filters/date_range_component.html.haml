@@ -1,8 +1,13 @@
 .space-y-1
   %label{ for: from_field_id, class: label_classes }
     = label
+  -# The inputs' names say which end each holds; the markers say it on screen.
   .space-y-2
-    = date_field_tag from_field_name, from_value, id: from_field_id, class: input_classes, placeholder: "From",
-      "aria-label": I18n.t("iron_admin.filters.from_label", filter: label)
-    = date_field_tag to_field_name, to_value, id: to_field_id, class: input_classes, placeholder: "To",
-      "aria-label": I18n.t("iron_admin.filters.to_label", filter: label)
+    .flex.items-center.gap-2
+      %span{ "aria-hidden": "true", class: marker_classes }= I18n.t("iron_admin.filters.from")
+      = date_field_tag from_field_name, from_value, id: from_field_id, class: input_classes, placeholder: "From",
+        "aria-label": I18n.t("iron_admin.filters.from_label", filter: label)
+    .flex.items-center.gap-2
+      %span{ "aria-hidden": "true", class: marker_classes }= I18n.t("iron_admin.filters.to")
+      = date_field_tag to_field_name, to_value, id: to_field_id, class: input_classes, placeholder: "To",
+        "aria-label": I18n.t("iron_admin.filters.to_label", filter: label)

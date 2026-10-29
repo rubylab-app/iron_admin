@@ -24,6 +24,13 @@ RSpec.describe "IronAdmin::Audit", type: :request do
       expect(response.body).to include("Audit logging is currently disabled")
     end
 
+    it "gives the disabled warning the theme's alert_shadow" do
+      IronAdmin.configuration.theme.alert_shadow = "shadow-md"
+      get iron_admin.audit_path
+
+      expect(response.parsed_body.at_css("div.gap-3.p-4.mb-6")[:class].split).to include("shadow-md")
+    end
+
     it "does not show disabled warning when audit is enabled" do
       IronAdmin.configure { |c| c.audit_enabled = true }
 
@@ -69,6 +76,32 @@ RSpec.describe "IronAdmin::Audit", type: :request do
         expect(response.body).to include("Create")
         expect(response.body).to include("Update")
         expect(response.body).to include("UserResource")
+      end
+
+      describe "the table frame, which scrolls sideways on a narrow screen" do
+        subject(:frame) do
+          get iron_admin.audit_path
+          response.parsed_body.at_css("table").parent
+        end
+
+        it "fades the edge the table can still scroll toward" do
+          expect(frame[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+        end
+
+        # The fade masks the scrolling box, so the card's border sits on a box that does not scroll.
+        it "sits in the card, whose border the fade leaves alone" do
+          expect(frame.parent[:class].split).to include(*IronAdmin.current_theme.card_border.split, *IronAdmin.current_theme.border_radius.split)
+        end
+
+        it "rounds its corners like the card" do
+          expect(frame[:class].split).to include("rounded-[inherit]")
+        end
+      end
+
+      it "keeps each changes summary on one line, so a table narrower than its columns keeps short rows" do
+        get iron_admin.audit_path
+
+        expect(response.parsed_body.css("td details > summary").map { |summary| summary[:class].split }).to all(include("whitespace-nowrap"))
       end
 
       it "displays IP addresses" do
@@ -236,12 +269,16 @@ RSpec.describe "IronAdmin::Audit", type: :request do
 
     it "gives the selects, date inputs, Filter button and Clear link one height, so they line up" do
       controls = filter_row.css("select, input[type=date], button, a")
-      expect(controls.map { |control| control[:class].split.include?("h-10.5") }).to all(be(true))
+      expect(controls.map { |control| control[:class].split.include?("h-9") }).to all(be(true))
     end
 
-    it "pads the date inputs like the selects" do
-      paddings = filter_row.css("select, input[type=date]").map { |control| control[:class].split.grep(/\Ap[xy]-/).sort }
-      expect(paddings.uniq).to eq([%w[px-3.5 py-2.5]])
+    it "draws the Clear link as a secondary button, like the forms' Cancel" do
+      expect(filter_row.at_css("a")[:class].split).to eq(IronAdmin::Resources::Styles.secondary_button(IronAdmin.current_theme).split)
+    end
+
+    it "insets the text of the date inputs like the selects" do
+      left_paddings = filter_row.css("select, input[type=date]").map { |control| control[:class][/(?<![\w-])p[xl]-([\d.]+)/, 1] }
+      expect(left_paddings.uniq).to eq(["3"])
     end
   end
 
@@ -273,8 +310,14 @@ RSpec.describe "IronAdmin::Audit", type: :request do
       expect(page).to have_http_status(:ok)
     end
 
-    it "shows when each entry happened" do
-      expect(page.body).to include("2026-10-25 18:30:00")
+    # The format of the other dates of the admin, such as a datetime field's.
+    it "shows when each entry happened, as the other pages show dates" do
+      expect(page.parsed_body.css("tbody time").map { |time| time.text.strip }).to include("Oct 25, 2026 at 6:30 PM")
+    end
+
+    it "gives the exact time to machines and on hover" do
+      time = page.parsed_body.css("tbody time").find { |node| node.text.include?("Oct 25") }
+      expect([time[:datetime], time[:title]]).to eq(["2026-10-25T18:30:00Z", "2026-10-25 18:30:00 UTC"])
     end
 
     it "shows the stored user identifier" do

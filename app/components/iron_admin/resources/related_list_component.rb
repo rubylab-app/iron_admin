@@ -29,9 +29,33 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] CSS classes of the panel
+      def panel_classes
+        "mt-6 overflow-hidden #{Styles.panel(theme)}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of the title row
+      def header_classes
+        Styles.panel_header(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of the title
+      def title_classes
+        Styles.panel_title(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of the list body
+      def body_classes
+        Styles.divided(theme)
       end
 
       # @api private

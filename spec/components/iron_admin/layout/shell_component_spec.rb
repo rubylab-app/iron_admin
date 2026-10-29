@@ -30,12 +30,55 @@ RSpec.describe IronAdmin::Layout::ShellComponent, type: :component do
       end
     end
 
-    it "uses a translucent background that Tailwind v4 still generates" do
-      expect(backdrop[:class].split).to include("bg-gray-900/50")
+    it "uses the theme's translucent overlay background" do
+      expect(backdrop[:class].split).to include("bg-zinc-900/40")
     end
 
     it "does not use the bg-opacity utility that Tailwind v4 removed" do
       expect(backdrop[:class]).not_to include("bg-opacity")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.overlay_bg = "bg-black/60" }
+      end
+
+      it "uses that theme's overlay background" do
+        expect(backdrop[:class].split).to include("bg-black/60")
+      end
+
+      it "drops the default theme's overlay background" do
+        expect(backdrop[:class].split).not_to include("bg-zinc-900/40")
+      end
+    end
+  end
+
+  describe "skip link" do
+    subject(:skip_link) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new).at_css("a[href='#main-content']")[:class].split
+      end
+    end
+
+    it "styles the focused link with the theme's skip_link classes" do
+      expect(skip_link).to include("focus:bg-white", "focus:text-zinc-900", "focus:ring-indigo-500")
+    end
+
+    it "rounds it like the other controls" do
+      expect(skip_link).to include("rounded-md")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.skip_link = "focus:bg-zinc-900 focus:text-white"
+          t.control_radius = "rounded-none"
+        end
+      end
+
+      it "uses that theme's skip_link and control_radius classes" do
+        expect(skip_link).to include("focus:bg-zinc-900", "focus:text-white", "rounded-none")
+      end
     end
   end
 

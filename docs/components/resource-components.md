@@ -89,6 +89,10 @@ IronAdmin::Resources::ActionsComponent.new(
 With `confirm: true`, the button asks for confirmation with the action's `confirm_message`,
 or with `iron_admin.resources.action.confirm` ("Are you sure?") when it has none.
 
+An action with `form_fields` is a link to its form (`resource_action_form_path`), styled like
+the buttons, and the form asks for the confirmation when it is submitted. See
+[Action Forms](../guides/resources.md#action-forms).
+
 The component renders every action it is given. On the show page, IronAdmin sets
 `@member_actions` to the actions it would run for that record: allowed by the resource
 policy, able to load the record (a soft-deleted record only offers `restore`), and with a
@@ -144,6 +148,14 @@ IronAdmin::Resources::BulkActionsComponent.new(
 )
 ```
 
+Each action is a small form with a `data-bulk-actions-target="form"` attribute, for a host
+Stimulus controller (`bulk-actions`) that adds the selected `ids[]` to it. An action without
+`form_fields` posts to the bulk action; an action with `form_fields` opens its form with a GET
+(`resource_bulk_action_form_path`), which has no CSRF token, so the ids land in that form.
+With `confirm: true`, the button of an action without `form_fields` asks for confirmation
+(`data-turbo-confirm`, with the action's `confirm_message` or
+`iron_admin.resources.action.confirm`); an action with `form_fields` asks on its form's submit.
+
 **Example:**
 
 ```haml
@@ -182,7 +194,8 @@ IronAdmin::Resources::RelatedListComponent.new(
 
 `Resource.has_many_associations` returns hashes in this shape, `reflection:` included.
 
-The list renders nothing when there are no records. The card has no border, rows are divided
+The list renders nothing when there are no records. The card is a panel like the show page's
+(`card_bg`, `border_width`, `card_border`, `border_radius` and `card_shadow`), rows are divided
 with `theme.table_border`, the table scrolls horizontally inside an `overflow-x-auto`
 container, and the "View all" label comes from `iron_admin.resources.show.view_all`.
 

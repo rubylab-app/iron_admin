@@ -1,6 +1,6 @@
-.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
   .flex.items-center.justify-between.mb-6
-    %h1.text-2xl{ class: cp_heading }= @tool_class.label
+    %h1{ class: "#{t.page_title} #{t.heading_font}" }= @tool_class.label
   .overflow-hidden{ class: cp_card }
     .p-6
       %p.text-sm.mb-6{ class: cp_muted_text }
@@ -11,15 +11,14 @@
           - @tool_class.defined_tool_actions.each do |action|
             - next unless action.allowed?(iron_admin_current_user)
             - if action.has_form?
-              = link_to tool_action_form_path(@tool_class.tool_name, action.name),
-                class: "#{t.btn_secondary} px-4 py-2 text-sm font-medium rounded-lg inline-flex items-center gap-2" do
+              = link_to tool_action_form_path(@tool_class.tool_name, action.name), class: cp_btn_secondary do
                 - if action.icon
                   = heroicon action.icon, variant: :mini, options: { class: "h-4 w-4" }
                 = action.label
             - else
               = button_to tool_action_path(@tool_class.tool_name, action.name),
                 method: :post,
-                class: "#{t.btn_secondary} px-4 py-2 text-sm font-medium rounded-lg inline-flex items-center gap-2",
+                class: cp_btn_secondary,
                 data: action.confirm ? { turbo_confirm: action.confirm_message || I18n.t("iron_admin.tools.confirm_default", default: "Are you sure?") } : {} do
                 - if action.icon
                   = heroicon action.icon, variant: :mini, options: { class: "h-4 w-4" }

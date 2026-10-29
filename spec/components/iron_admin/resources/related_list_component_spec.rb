@@ -109,6 +109,10 @@ RSpec.describe IronAdmin::Resources::RelatedListComponent, type: :component do
       expect(render_list.css(".overflow-x-auto table")).not_to be_empty
     end
 
+    it "fades the edge the table can still scroll toward" do
+      expect(render_list.at_css("table").parent[:class].split).to include("cp-scroll-fade")
+    end
+
     it "labels the View all link from the locale" do
       allow(I18n).to receive(:t).and_call_original
       allow(I18n).to receive(:t).with("iron_admin.resources.show.view_all").and_return("Every license")
@@ -195,6 +199,61 @@ RSpec.describe IronAdmin::Resources::RelatedListComponent, type: :component do
       it "links View all to the unfiltered index, since the id alone would match other parent types" do
         expect(view_all_href(notes_association, records: user.notes, parent: user))
           .to eq(resources_path("notes"))
+      end
+    end
+  end
+
+  describe "theme" do
+    subject(:rendered) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(association: users_association, records: User.all))
+      end
+    end
+
+    let(:users_association) { { name: :users, resource: IronAdmin::Resources::UserResource, display: :name } }
+    let(:styles) { IronAdmin::Resources::Styles }
+    let(:theme) { IronAdmin.current_theme }
+
+    before { create(:user, name: "Ada") }
+
+    it "renders the list in a panel" do
+      expect(rendered.at_css("div")[:class].split).to include(*styles.panel(theme).split)
+    end
+
+    it "separates the header with the panel header classes" do
+      expect(rendered.at_css("h2").parent[:class]).to eq(styles.panel_header(theme))
+    end
+
+    it "titles the panel with the panel title classes" do
+      expect(rendered.at_css("h2")[:class].split).to include(*styles.panel_title(theme).split)
+    end
+
+    it "divides the rows in the theme's table border color" do
+      expect(rendered.at_css("tbody")[:class]).to eq(styles.divided(theme))
+    end
+
+    it "pads the cells like the index table" do
+      expect(rendered.at_css("td")[:class].split).to include("px-4", "py-2.5")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.card_title = "text-base font-bold text-white"
+          t.btn_secondary = "bg-zinc-800 text-zinc-100"
+          t.label_transform = "uppercase tracking-wider"
+          t.table_frame = "ring-1 ring-zinc-700"
+          t.table_cell_padding = "px-3 py-1.5"
+        end
+      end
+
+      it "uses that theme's card title" do
+        expect(rendered.at_css("h2")[:class].split).to include("text-base", "font-bold", "text-white")
+      end
+
+      it "uses that theme's cell padding" do
+        expect(rendered.at_css("td")[:class].split).to include("px-3", "py-1.5")
       end
     end
   end

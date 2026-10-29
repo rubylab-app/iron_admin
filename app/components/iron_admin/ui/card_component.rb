@@ -34,15 +34,15 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
       # @return [String] CSS classes for card container
       def card_classes
-        classes = ["overflow-hidden", theme.border_radius, theme.card_bg, "border", theme.card_border]
+        classes = ["overflow-hidden", theme.border_radius, theme.card_bg, theme.border_width, theme.card_border]
         classes << theme.card_shadow if shadow
         classes.join(" ")
       end

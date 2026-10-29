@@ -3,14 +3,16 @@
 module IronAdmin
   # Base controller for all IronAdmin admin panel controllers.
   #
-  # Provides authentication and current user handling for the admin panel.
-  # All other IronAdmin controllers inherit from this class.
+  # Provides theme resolution, authentication and current user handling for the
+  # admin panel. All other IronAdmin controllers inherit from this class.
   #
   # @see IronAdmin::Configuration#authenticate
   # @see IronAdmin::Configuration#current_user
   class ApplicationController < ::ActionController::Base
     include Pagy::Method
 
+    # Before authentication, so pages and redirects it renders use the request's theme.
+    before_action :resolve_iron_admin_theme
     before_action :authenticate_iron_admin_user!
 
     rescue_from IronAdmin::RecordNotFound, with: :render_not_found
@@ -19,6 +21,11 @@ module IronAdmin
     helper_method :iron_admin_current_user, :iron_admin_filter_param, :iron_admin_active_filter?
 
     private
+
+    # @api private
+    def resolve_iron_admin_theme
+      IronAdmin::Current.theme = IronAdmin.configuration.resolve_theme(request)
+    end
 
     # @api private
     def authenticate_iron_admin_user!

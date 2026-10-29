@@ -44,6 +44,185 @@ RSpec.describe "Engine layout", type: :request do
     it "declares the page language" do
       expect(Nokogiri::HTML(body).at_css("html")["lang"]).to eq(I18n.locale.to_s)
     end
+
+    # A 24px outline icon drawn at 16px turns its 1.5 stroke into a blurred 1px line.
+    it "draws the sidebar's 16px outline icons with a 1.75 stroke" do
+      icons = Nokogiri::HTML(body).css("nav#cp-sidebar-panel svg.h-4")
+      expect(icons.pluck("stroke-width").uniq).to eq(["1.75"])
+    end
+  end
+
+  describe "theme" do
+    subject(:document) do
+      get iron_admin.resources_path("users"), as: :html
+      response.parsed_body
+    end
+
+    let(:font_url) { "https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" }
+    let(:body_classes) { document.at_css("body")[:class].split }
+
+    context "with the default theme" do
+      it "sets the light color scheme class on the html element" do
+        expect(document.at_css("html")[:class].split).to include("scheme-light")
+      end
+
+      it "declares the light color scheme" do
+        expect(document.at_css("meta[name='color-scheme']")[:content]).to eq("light")
+      end
+
+      it "links the theme's font stylesheet" do
+        expect(document.css("head link[rel='stylesheet']").pluck(:href)).to include(font_url)
+      end
+
+      it "preconnects to the Google Fonts hosts" do
+        expect(document.css("head link[rel='preconnect']").pluck(:href))
+          .to eq(["https://fonts.googleapis.com", "https://fonts.gstatic.com"])
+      end
+
+      it "allows the font files host to serve fonts across origins" do
+        expect(document.at_css("head link[href='https://fonts.gstatic.com']").key?("crossorigin")).to be(true)
+      end
+
+      it "styles the body with the theme's background, text color and font" do
+        expect(body_classes).to include("antialiased", "bg-zinc-50", "text-zinc-900",
+                                        "font-[family-name:Inter,ui-sans-serif,system-ui,sans-serif]")
+      end
+    end
+
+    context "with a dark theme picked by the theme cookie" do
+      before do
+        IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.color_scheme = "dark"
+          t.main_bg = "bg-zinc-950"
+          t.body_text = "text-zinc-100"
+        end
+        cookies["iron_admin_theme"] = "midnight"
+      end
+
+      it "sets the dark color scheme class on the html element" do
+        expect(document.at_css("html")[:class].split).to include("scheme-dark")
+      end
+
+      it "declares the dark color scheme" do
+        expect(document.at_css("meta[name='color-scheme']")[:content]).to eq("dark")
+      end
+
+      it "styles the body with that theme" do
+        expect(body_classes).to include("bg-zinc-950", "text-zinc-100")
+      end
+
+      it "does not keep the default theme's body colors" do
+        expect(body_classes).not_to include("bg-zinc-50", "text-zinc-900")
+      end
+    end
+
+    context "with a font stylesheet off Google Fonts" do
+      before { IronAdmin.configuration.theme.font_stylesheet_url = "https://cdn.example.com/fonts.css" }
+
+      it "links it" do
+        expect(document.css("head link[rel='stylesheet']").pluck(:href)).to include("https://cdn.example.com/fonts.css")
+      end
+
+      it "preconnects to no font host" do
+        expect(document.css("head link[rel='preconnect']")).to be_empty
+      end
+    end
+
+    context "without a font stylesheet" do
+      before { IronAdmin.configuration.theme.font_stylesheet_url = nil }
+
+      it "links no font stylesheet" do
+        expect(document.css("head link[rel='preconnect'], head link[href*='fonts']")).to be_empty
+      end
+    end
+  end
+
+  describe "theme switcher" do
+    subject(:form) do
+      get iron_admin.resources_path("users", page: 1), as: :html
+      response.parsed_body.at_css("header details form")
+    end
+
+    context "with one theme" do
+      it "is not rendered" do
+        expect(form).to be_nil
+      end
+    end
+
+    context "with two themes" do
+      before { IronAdmin.configuration.register_theme(:midnight) }
+
+      it "posts to the mounted theme switch endpoint" do
+        expect(form[:action]).to eq("/admin/theme")
+      end
+
+      it "returns to the current page" do
+        expect(form.at_css("input[name='return_to']")[:value]).to eq("/admin/users?page=1")
+      end
+    end
+  end
+
+  # The import preview path has no GET route: returning to it after the switch would be a 404.
+  describe "theme switcher on a page answering a POST" do
+    subject(:return_to) do
+      post iron_admin.resource_import_preview_path("switcher_import_users"),
+           params: { file: Rack::Test::UploadedFile.new(StringIO.new("Name\nJane\n"), "text/csv", original_filename: "users.csv") },
+           headers: referer ? { "Referer" => referer } : {}
+      response.parsed_body.at_css("header details form input[name='return_to']")
+    end
+
+    let(:import_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = User
+
+        def self.name
+          "SwitcherImportUserResource"
+        end
+
+        def self.resource_name
+          "switcher_import_users"
+        end
+
+        imports :csv
+      end
+    end
+
+    before do
+      IronAdmin.configuration.register_theme(:midnight)
+      IronAdmin::ResourceRegistry.register(import_resource)
+    end
+
+    context "when the browser came from a page of this site" do
+      let(:referer) { "http://www.example.com/admin/switcher_import_users/import?step=1" }
+
+      it "returns to that page" do
+        expect(return_to[:value]).to eq("/admin/switcher_import_users/import?step=1")
+      end
+    end
+
+    context "without a Referer" do
+      let(:referer) { nil }
+
+      it "sends no return_to, so the switch leads to the admin root" do
+        expect(return_to).to be_nil
+      end
+    end
+
+    context "with a Referer from another host" do
+      let(:referer) { "http://evil.example/admin/switcher_import_users/import" }
+
+      it "sends no return_to" do
+        expect(return_to).to be_nil
+      end
+    end
+
+    context "with a Referer on this host that is not a web URL" do
+      let(:referer) { "ftp://www.example.com/admin/switcher_import_users/import" }
+
+      it "sends no return_to" do
+        expect(return_to).to be_nil
+      end
+    end
   end
 
   describe "favicon" do
@@ -145,7 +324,7 @@ RSpec.describe "Engine layout", type: :request do
     end
 
     describe "GET /:resource_name/bulk_actions/:action_name/form" do
-      let(:path) { iron_admin.resource_bulk_action_form_path("form_title_licenses", "bulk_revoke_with_note") }
+      let(:path) { iron_admin.resource_bulk_action_form_path("form_title_licenses", "bulk_revoke_with_note", ids: [create(:license).id]) }
 
       it_behaves_like "a page titled by its only h1", "Bulk revoke with note"
     end

@@ -47,6 +47,10 @@ RSpec.describe "Action Forms", type: :request do
                ] do |lic, params|
           lic.update!(status: :revoked, license_type: params[:reason])
         end
+
+        action :revoke_quietly, form_fields: [action_field(:notify, type: :boolean)] do |lic, params|
+          lic.update!(status: :revoked, license_type: params.inspect)
+        end
       end
     end
 
@@ -67,6 +71,32 @@ RSpec.describe "Action Forms", type: :request do
 
         action_path = iron_admin.resource_action_path("form_exec_licenses", license, "revoke_with_reason")
         expect(response.parsed_body.at_css("form[action='#{action_path}']")["data-turbo-frame"]).to eq("_top")
+      end
+
+      describe "theme classes" do
+        let(:document) { response.parsed_body }
+        let(:theme) { IronAdmin.configuration.theme }
+        let(:controls) { IronAdmin::Form::ControlClasses }
+
+        before do
+          get iron_admin.resource_action_form_path("form_exec_licenses", license, "revoke_with_reason"), as: :html
+        end
+
+        it "renders the textarea as a theme textarea" do
+          expect(document.at_css("#action_form_reason")[:class].split).to eq(controls.textarea(theme).split)
+        end
+
+        it "renders the checkbox as a theme checkbox" do
+          expect(document.at_css("#action_form_notify")[:class].split).to eq(controls.checkbox(theme).split)
+        end
+
+        it "writes the required mark in the theme's error color" do
+          expect(document.at_css("label[for=action_form_reason] span")[:class].split).to include(theme.error_text)
+        end
+
+        it "renders Execute as a theme primary button" do
+          expect(document.at_css("button[type=submit]")[:class].split).to eq(controls.button(theme, :primary).split)
+        end
       end
 
       it "returns not found for an unknown action before finding the record" do
@@ -113,11 +143,18 @@ RSpec.describe "Action Forms", type: :request do
       end
 
       context "without action_form param" do
-        it "passes empty hash to the block" do
+        it "passes empty hash to the block of an action without required fields" do
+          post iron_admin.resource_action_path("form_exec_licenses", license, "revoke_quietly"),
+               as: :html
+
+          expect(license.reload.license_type).to eq({}.inspect)
+        end
+
+        it "does not run an action whose field is required" do
           post iron_admin.resource_action_path("form_exec_licenses", license, "revoke_with_reason"),
                as: :html
 
-          expect(license.reload.status).to eq("revoked")
+          expect(license.reload.status).to eq("active")
         end
       end
     end
@@ -249,6 +286,7 @@ RSpec.describe "Action Forms", type: :request do
     describe "GET bulk_action_form" do
       it "renders the bulk form page" do
         get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"),
+            params: { ids: licenses.map(&:id) },
             as: :html
 
         expect(response).to have_http_status(:ok)
@@ -262,6 +300,14 @@ RSpec.describe "Action Forms", type: :request do
 
         action_path = iron_admin.resource_bulk_action_path("bulk_form_exec_licenses", "bulk_revoke_with_note")
         expect(response.parsed_body.at_css("form[action='#{action_path}']")["data-turbo-frame"]).to eq("_top")
+      end
+
+      it "renders the textarea as a theme textarea" do
+        get iron_admin.resource_bulk_action_form_path("bulk_form_exec_licenses", "bulk_revoke_with_note"),
+            params: { ids: licenses.map(&:id) }, as: :html
+
+        expect(response.parsed_body.at_css("#action_form_note")[:class].split)
+          .to eq(IronAdmin::Form::ControlClasses.textarea(IronAdmin.configuration.theme).split)
       end
     end
 

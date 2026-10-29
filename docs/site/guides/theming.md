@@ -14,4 +14,7 @@ permalink: /guides/theming/
 > **TODO:** copy the body, add front matter, fix links. Also cross-link the
 > [Theme Properties reference]({% link reference.md %}).
 
-Every UI element is a configurable Tailwind CSS class via `config.theme`.
+Every page is drawn from a theme. The default one, Neutral, is a minimal light look; change
+its properties with `config.theme`, register more themes with `config.register_theme`, and
+people pick one from the theme switcher in the navbar (or `config.theme_resolver` picks it per
+request). Every color, font, radius and shadow is a Tailwind class.

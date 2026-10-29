@@ -70,4 +70,61 @@ RSpec.describe IronAdmin::Dashboards::MetricCardComponent, type: :component do
       expect(label.parent.css("p")).not_to include(value)
     end
   end
+
+  describe "theme classes" do
+    subject(:card) { render_inline(described_class.new(name: :total_users, value: 1284, icon: "users")).at_css("div") }
+
+    let(:theme) { IronAdmin.current_theme }
+    let(:label) { card.css("p").find { |paragraph| paragraph.text.strip == "Total users" } }
+    let(:value) { card.css("p").find { |paragraph| paragraph.text.strip == "1,284" } }
+    let(:tile) { card.at_css("svg").parent }
+
+    context "with the default theme" do
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "puts the label on top in the theme's metric_label" do
+        expect(label[:class].split).to include(*theme.metric_label.split)
+      end
+
+      it "shows the figure in tabular numbers" do
+        expect(value[:class].split).to include("tabular-nums")
+      end
+
+      it "draws the icon tile in the theme's metric_icon" do
+        expect(tile[:class].split).to include(*theme.metric_icon.split, theme.control_radius)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.card_bg = "bg-slate-900"
+          t.border_width = "border-2"
+          t.metric_label = "text-sm font-bold text-slate-300"
+          t.label_transform = "uppercase tracking-widest"
+          t.metric_value = "text-4xl font-black text-white"
+          t.metric_icon = "bg-sky-500/10 text-sky-300"
+        end
+      end
+
+      it "frames the card with that theme's surface and border width" do
+        expect(card[:class].split).to include("bg-slate-900", "border-2")
+      end
+
+      it "styles the label with that theme's metric_label and label_transform" do
+        expect(label[:class].split).to include(*%w[text-sm font-bold text-slate-300 uppercase tracking-widest])
+      end
+
+      # Tailwind does not guarantee which of two font sizes wins, so only the theme sets one.
+      it "leaves the figure's size and color to that theme's metric_value" do
+        expect(value[:class].split.grep(/text-/)).to eq(%w[text-4xl text-white])
+      end
+
+      it "draws the icon tile in that theme's metric_icon" do
+        expect(tile[:class].split).to include("bg-sky-500/10", "text-sky-300")
+      end
+    end
+  end
 end

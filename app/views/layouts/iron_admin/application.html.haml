@@ -1,14 +1,21 @@
+- theme = IronAdmin.current_theme
 !!!
-%html{ lang: I18n.locale }
+%html{ lang: I18n.locale, class: theme.scheme_class }
   %head
     %meta{ charset: "utf-8" }
     %meta{ name: "viewport", content: "width=device-width, initial-scale=1" }
+    %meta{ name: "color-scheme", content: theme.dark? ? "dark" : "light" }
     %title= IronAdmin.configuration.title
     - if IronAdmin.configuration.favicon.present?
       -# type: nil, because favicon_link_tag would claim image/x-icon for any file.
       = favicon_link_tag IronAdmin.configuration.favicon, type: nil
     = csrf_meta_tags
     = csp_meta_tag
+    - if theme.font_stylesheet_url.present?
+      - if cp_google_fonts?
+        %link{ rel: "preconnect", href: "https://fonts.googleapis.com" }
+        %link{ rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "anonymous" }
+      %link{ rel: "stylesheet", href: theme.font_stylesheet_url }
     = stylesheet_link_tag "tailwind", "data-turbo-track": "reload"
     - if defined?(ActionText)
       = stylesheet_link_tag "trix", "data-turbo-track": "reload"
@@ -19,6 +26,6 @@
       %script{ type: "module" }
         import "trix"
         import "@rails/actiontext"
-  %body.text-gray-900.antialiased{ class: IronAdmin.configuration.theme.main_bg }
+  %body{ class: "antialiased #{theme.main_bg} #{theme.body_text} #{theme.font_family}" }
     = render iron_admin_component(:shell, current_user: iron_admin_current_user) do
       = yield

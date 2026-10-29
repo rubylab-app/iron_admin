@@ -2,6 +2,35 @@ require "rails_helper"
 
 RSpec.describe "IronAdmin::Dashboard", type: :request do
   describe "GET /" do
+    describe "page title" do
+      subject(:title_classes) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("h1")[:class].split
+      end
+
+      it "uses the theme's page_title" do
+        expect(title_classes).to include("text-xl", "font-semibold", "tracking-tight", "text-zinc-900")
+      end
+
+      context "with a registered theme picked by the theme cookie" do
+        before do
+          IronAdmin.configuration.register_theme(:editorial) do |t|
+            t.page_title = "text-3xl font-normal text-stone-900"
+            t.heading_font = "font-[family-name:Fraunces,serif]"
+          end
+          cookies["iron_admin_theme"] = "editorial"
+        end
+
+        it "uses that theme's page_title and heading_font" do
+          expect(title_classes).to include("text-3xl", "font-normal", "font-[family-name:Fraunces,serif]")
+        end
+
+        it "drops the default theme's page_title" do
+          expect(title_classes).not_to include("text-xl", "font-semibold")
+        end
+      end
+    end
+
     context "without dashboard class configured" do
       it "returns success" do
         get iron_admin.root_path, headers: { "Accept" => "text/html" }
@@ -22,11 +51,22 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
         end
 
         it "pads the page like the other admin pages" do
-          expect(container_classes).to include("p-4", "sm:p-6", "lg:p-8")
+          expect(container_classes).to include("px-4", "sm:px-6", "lg:px-8", "py-6")
         end
 
         it "does not use the fixed desktop padding on small screens" do
-          expect(container_classes).not_to include("p-8")
+          expect(container_classes).not_to include("p-8", "lg:p-8")
+        end
+      end
+
+      context "with the empty state" do
+        subject(:card_classes) do
+          get iron_admin.root_path, headers: { "Accept" => "text/html" }
+          response.parsed_body.css("p").find { |paragraph| paragraph.text.include?("No dashboard configured") }.parent[:class].split
+        end
+
+        it "frames the message like the dashboard cards" do
+          expect(card_classes).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
         end
       end
     end
@@ -51,6 +91,30 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
       end
     end
 
+    context "with charts" do
+      subject(:grid_classes) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("canvas").ancestors(".grid").first[:class].split
+      end
+
+      before do
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) do
+          chart(:signups, type: :bar) { { "Mon" => 1, "Tue" => 2 } }
+          chart(:plans, type: :pie) { { "Free" => 3, "Pro" => 1 } }
+          chart(:status, type: :doughnut) { { "Open" => 2, "Closed" => 5 } }
+        end
+      end
+
+      it "sets the charts two to a row from the lg breakpoint" do
+        expect(grid_classes).to include("lg:grid-cols-2")
+      end
+
+      # Three charts would leave the right half of the last row empty.
+      it "stretches a last chart left alone in its row across both columns" do
+        expect(grid_classes).to include("lg:[&>*:last-child:nth-child(odd)]:col-span-2")
+      end
+    end
+
     context "with metrics" do
       subject(:grid_classes) do
         get iron_admin.root_path, headers: { "Accept" => "text/html" }
@@ -69,6 +133,43 @@ RSpec.describe "IronAdmin::Dashboard", type: :request do
 
       it "switches to four columns at the xl breakpoint" do
         expect(grid_classes).to include("xl:grid-cols-4")
+      end
+
+      it "spaces the cards like the stats grid" do
+        expect(grid_classes).to include("gap-4")
+      end
+
+      it "draws the 16px metric icon with a 1.75 stroke, which stays sharp at that size" do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        expect(response.parsed_body.at_css("#metric_total_users svg")["stroke-width"]).to eq("1.75")
+      end
+    end
+
+    context "with a registered theme chosen by the theme cookie" do
+      subject(:card) do
+        get iron_admin.root_path, headers: { "Accept" => "text/html" }
+        response.parsed_body.at_css("#metric_total_users")
+      end
+
+      before do
+        IronAdmin.configure do |config|
+          config.register_theme(:harbor) do |t|
+            t.card_bg = "bg-slate-900"
+            t.metric_value = "text-4xl font-black text-white"
+          end
+        end
+        IronAdmin.dashboard_class = Class.new(IronAdmin::Dashboard) do
+          metric(:total_users, live: true) { 42 }
+        end
+        cookies[IronAdmin::Configuration::THEME_COOKIE] = "harbor"
+      end
+
+      it "frames the metric cards with that theme's surface" do
+        expect(card[:class].split).to include("bg-slate-900")
+      end
+
+      it "shows the figures in that theme's metric_value" do
+        expect(card.css("p").last[:class].split).to include(*%w[text-4xl font-black text-white])
       end
     end
 

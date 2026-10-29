@@ -1,11 +1,10 @@
-= link_to href, class: "flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group" do
+-# table_row_hover, not item_hover: the muted description needs AA contrast on the hover background.
+= link_to href, class: "flex items-center gap-3 px-5 py-3 transition-colors #{theme.table_row_hover} #{theme.focus_ring}" do
   - if icon
-    .shrink-0.p-2.rounded-lg.bg-indigo-50.group-hover:bg-indigo-100.transition-colors
-      = heroicon icon, variant: :outline, options: { class: "h-5 w-5 text-indigo-600" }
-  .flex-1.min-w-0
-    %p.text-sm.font-medium{ class: theme.body_text }
-      = label
+    .flex.h-8.w-8.shrink-0.items-center.justify-center{ class: icon_tile_classes }
+      = heroicon icon, variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+  .min-w-0.flex-1
+    %p.text-sm.font-medium{ class: theme.body_text }= label
     - if description
-      %p.text-sm{ class: theme.muted_text }
-        = description
-  = heroicon "chevron-right", variant: :mini, options: { class: "h-5 w-5 #{theme.muted_text} group-hover:text-gray-700" }
+      %p.text-sm{ class: theme.muted_text }= description
+  = heroicon "chevron-right", variant: :mini, options: { class: "h-4 w-4 shrink-0 #{theme.icon_muted}" }

@@ -1,35 +1,38 @@
 # frozen_string_literal: true
 
+require_relative "theme/neutral_defaults"
+
 module IronAdmin
   class Configuration
-    # Theme configuration for customizing the admin panel appearance.
-    #
-    # All theme properties accept Tailwind CSS class strings. This allows
-    # complete customization of colors, spacing, and visual styles.
-    #
-    # @example Customizing the theme
-    #   IronAdmin.configure do |config|
-    #     config.theme do |t|
-    #       t.btn_primary = "bg-blue-600 text-white hover:bg-blue-700"
-    #       t.sidebar_bg = "bg-slate-900"
-    #       t.link = "text-blue-600 hover:text-blue-800"
-    #     end
-    #   end
+    # A named look of the admin panel. A new Theme holds the values of the built-in
+    # Neutral look. Properties hold Tailwind classes, except the chart properties (CSS
+    # colors, a Chart.js point style and a width), the font stylesheet URL and the color scheme.
     #
     # @see IronAdmin::Configuration#theme
+    # @see IronAdmin::Configuration#register_theme
     class Theme
+      # Tailwind class that sets the CSS +color-scheme+ of each {#color_scheme}.
+      # @return [Hash{String => String}]
+      SCHEME_CLASSES = { "light" => "scheme-light", "dark" => "scheme-dark" }.freeze
+
+      # @return [Symbol] Name the theme is registered under (and the value of the theme cookie)
+      attr_reader :name
+
+      # @return [String] Human name shown in the theme switcher
+      attr_reader :label
+
       # @!group Button Styles
 
-      # @return [String] Primary button classes (default: indigo)
+      # @return [String] Primary button colors and focus outline
       attr_accessor :btn_primary
 
-      # @return [String] Secondary button classes (default: white with border)
+      # @return [String] Secondary button colors and border
       attr_accessor :btn_secondary
 
-      # @return [String] Danger/destructive button classes (default: red)
+      # @return [String] Danger/destructive button colors
       attr_accessor :btn_danger
 
-      # @return [String] Ghost button classes (default: gray background)
+      # @return [String] Ghost button colors
       attr_accessor :btn_ghost
 
       # @!endgroup
@@ -46,17 +49,61 @@ module IronAdmin
 
       # @!group Form Styles
 
-      # @return [String] Focus ring classes for interactive elements
+      # @return [String] Focus indicator of interactive elements other than inputs
       attr_accessor :focus_ring
 
-      # @return [String] Input border classes
+      # @return [String] Border color, with hover, of inputs, selects, textareas, the file input and
+      #   the navbar search. An empty input shows nothing but this outline, so keep 3:1 against
+      #   {#card_bg} (WCAG 1.4.11): Neutral's zinc-500 at 80% is 3.3:1 on white, while zinc-200 to
+      #   zinc-400 are below 3:1
       attr_accessor :input_border
 
       # @return [String] Input focus state classes
       attr_accessor :input_focus
 
-      # @return [String] Checked checkbox classes
+      # @return [String] Border and background color of checked checkboxes and radio buttons, and
+      #   their focus ring. The check mark and the radio dot are always white (engine.css), in
+      #   every color_scheme, so the checked background needs 3:1 contrast against white
+      #   (WCAG 1.4.11)
       attr_accessor :checkbox_checked
+
+      # @return [String] Border color of unchecked checkboxes and radio buttons. It is all that
+      #   shows an unchecked control, so keep 3:1 against {#card_bg} (WCAG 1.4.11): Neutral's
+      #   zinc-500 is 4.8:1 on white, while zinc-300 and zinc-400 are below 3:1
+      attr_accessor :checkbox_border
+
+      # @return [String] Radius of checkboxes (radio buttons are always round)
+      attr_accessor :checkbox_radius
+
+      # @return [String] Border color and focus state (ring width included) of inputs with
+      #   validation errors, used instead of {#input_border} and {#input_focus}. Keep the border at
+      #   3:1 too: Neutral's red-500 is 3.8:1 on white, red-400 is 2.9:1
+      attr_accessor :input_error
+
+      # @return [String] Color of input placeholders (with the +placeholder:+ variant)
+      attr_accessor :placeholder_text
+
+      # @return [String] Color of disabled pagination links and controls
+      attr_accessor :disabled_text
+
+      # @return [String] Radius of inputs, buttons, selects and dropdown items
+      attr_accessor :control_radius
+
+      # @return [String] Shadow of inputs, selects, textareas and buttons other than ghost ones (empty = none)
+      attr_accessor :control_shadow
+
+      # @return [String] Classes of the rich text editor box (Action Text's +<trix-editor>+): border
+      #   width and color, radius, background, text color, shadow and focus state, as for an input
+      #   (Neutral outlines it like its inputs). Empty = the look of Trix's own stylesheet; when set,
+      #   the engine's stylesheet hands Trix's border and radius back to these classes
+      attr_accessor :rich_text_editor
+
+      # @return [String] Classes of the box around the rich text toolbar and editor, which style
+      #   the toolbar's parts with descendant variants and the important modifier, such as
+      #   +[&_.trix-button-group]:border-zinc-700!+ (Trix's stylesheet is not in a cascade layer,
+      #   so it wins over utilities without +!+). Neutral gives the groups its borders and radii.
+      #   Empty = Trix's look
+      attr_accessor :rich_text_toolbar
 
       # @!endgroup
 
@@ -78,6 +125,9 @@ module IronAdmin
       # @return [String] Sidebar background classes
       attr_accessor :sidebar_bg
 
+      # @return [String] Sidebar edge (border side and color) on large screens
+      attr_accessor :sidebar_border
+
       # @return [String] Sidebar title text classes
       attr_accessor :sidebar_title
 
@@ -88,7 +138,8 @@ module IronAdmin
       attr_accessor :sidebar_link_hover
 
       # @return [String] Classes of the sidebar link for the current page, used instead of
-      #   {#sidebar_link} and {#sidebar_link_hover} (default: "bg-gray-800 text-white")
+      #   {#sidebar_link} and {#sidebar_link_hover}. The link is +relative+, so
+      #   +before:+ utilities can draw an accent bar.
       attr_accessor :sidebar_link_active
 
       # @return [String] Sidebar group label classes
@@ -104,11 +155,23 @@ module IronAdmin
       # @return [String] Navbar border classes
       attr_accessor :navbar_border
 
+      # @return [String] Side and width of the navbar's border (the color is {#navbar_border})
+      attr_accessor :navbar_border_width
+
       # @return [String] Navbar search input background
       attr_accessor :navbar_search_bg
 
       # @return [String] Navbar search input focus background
       attr_accessor :navbar_search_focus_bg
+
+      # @return [String] Color of the user name and other navbar text
+      attr_accessor :navbar_text
+
+      # @return [String] Keyboard hint (such as the search shortcut): border, background and text color
+      attr_accessor :kbd
+
+      # @return [String] Skip link once it receives focus (with the +focus:+ variant)
+      attr_accessor :skip_link
 
       # @!endgroup
 
@@ -117,11 +180,35 @@ module IronAdmin
       # @return [String] Table header background classes
       attr_accessor :table_header_bg
 
-      # @return [String] Table row hover classes
+      # @return [String] Table header cells: size, weight and color
+      attr_accessor :table_header_text
+
+      # @return [String] Padding (density) of table body and header cells
+      attr_accessor :table_cell_padding
+
+      # @return [String] Extra classes of the table container (empty = none)
+      attr_accessor :table_frame
+
+      # @return [String] Edge shadow of the sticky actions column of index tables, cast by a box
+      #   over each sticky cell (see Resources::Styles.sticky_edge); empty = none
+      attr_accessor :table_sticky_shadow
+
+      # @return [String] Hover of table rows and of the dashboard's quick links and activity feed
+      #   rows. These rows hold {#muted_text}, so keep AA contrast for it on this background
       attr_accessor :table_row_hover
+
+      # @return [String] Background of the sticky actions cell of index tables while its row is
+      #   hovered: the row is the +group/row+, so use +group-hover/row:+ variants in the color of
+      #   {#table_row_hover} (empty = the cell keeps {#card_bg})
+      attr_accessor :table_sticky_row_hover
 
       # @return [String] Table border/divider classes
       attr_accessor :table_border
+
+      # @return [String, nil] Color of the line between a table's head and its body, such as a
+      #   darker rule above hairline row dividers (+divide-*+ classes; empty = {#table_border};
+      #   read it through {#table_head_divider})
+      attr_accessor :table_head_border
 
       # @!endgroup
 
@@ -130,21 +217,49 @@ module IronAdmin
       # @return [String] Card background classes
       attr_accessor :card_bg
 
-      # @return [String] Card border classes
+      # @return [String] Card border color classes
       attr_accessor :card_border
 
       # @return [String] Card shadow classes
       attr_accessor :card_shadow
 
+      # @return [String] Shadow of floating surfaces: dropdown menus, the filter panel, belongs-to
+      #   autocomplete results, the theme switcher panel and modals (empty = none)
+      attr_accessor :popover_shadow
+
+      # @return [String, nil] Background of those floating surfaces, such as a raised tone in a dark
+      #   theme (empty = {#card_bg}; read it through {#popover_background})
+      attr_accessor :popover_bg
+
+      # @return [String] Card and section titles (h2): size, weight and color
+      attr_accessor :card_title
+
       # @!endgroup
 
       # @!group Typography
 
-      # @return [String] Font family classes (empty = system default)
+      # @return [String] Font family classes of the page (empty = system default)
       attr_accessor :font_family
+
+      # @return [String, nil] Stylesheet the layout links for the theme's fonts (nil = none)
+      attr_accessor :font_stylesheet_url
+
+      # @return [String] Extra font family classes of page and card titles (empty = {#font_family})
+      attr_accessor :heading_font
 
       # @return [String] Heading weight classes
       attr_accessor :heading_weight
+
+      # @return [String] Page title (h1): size, weight, tracking and color
+      attr_accessor :page_title
+
+      # @return [String] Text transform and letter spacing of small labels (sidebar groups,
+      #   table headers, metric labels); empty = as written
+      attr_accessor :label_transform
+
+      # @return [String] Text transform and letter spacing of field labels: form and import form
+      #   labels, action form labels and the field names of show pages; empty = as written
+      attr_accessor :field_label_transform
 
       # @return [String] Body text color classes
       attr_accessor :body_text
@@ -155,6 +270,12 @@ module IronAdmin
       # @return [String] Label text color classes
       attr_accessor :label_text
 
+      # @return [String] Color of validation messages, required marks and negative deltas
+      attr_accessor :error_text
+
+      # @return [String] Color of positive deltas and true booleans
+      attr_accessor :success_text
+
       # @!endgroup
 
       # @!group Layout
@@ -162,99 +283,178 @@ module IronAdmin
       # @return [String] Main content area background classes
       attr_accessor :main_bg
 
-      # @return [String] Border radius classes
+      # @return [String] Border radius of cards and panels (inputs and buttons use {#control_radius})
       attr_accessor :border_radius
+
+      # @return [String] Border width of the outline of cards, panels, popovers, modals, alerts, inputs,
+      #   checkboxes and pagination links. One-sided dividers (panel and modal headers, form and
+      #   bulk action footers, table rows, scope tabs) keep the width their template sets,
+      #   {#sidebar_border} and {#btn_secondary} carry their own width, and {#navbar_border_width}
+      #   sets the navbar's
+      attr_accessor :border_width
+
+      # @return [String] "light" or "dark": the CSS color scheme of browser UI and scrollbars
+      #   (charts take {#chart_grid_color} and {#chart_text_color})
+      attr_accessor :color_scheme
+
+      # @return [String] Classes of this theme's 12px swatch in the theme switcher: shape, fill and ring
+      attr_accessor :swatch
+
+      # @return [String] Secondary backgrounds: readonly and disabled inputs, nested form rows,
+      #   file previews, the empty state icon and audit change details
+      attr_accessor :surface_muted
+
+      # @return [String] Hover of dropdown and switcher items, search result rows and pagination
+      #   links. Rows that hold {#muted_text} use {#table_row_hover}, a lighter background
+      attr_accessor :item_hover
+
+      # @return [String] Background of the listbox option that the arrow keys highlight
+      #   (belongs-to autocomplete results)
+      attr_accessor :item_active
+
+      # @return [String] Color of decorative icons
+      attr_accessor :icon_muted
+
+      # @return [String] Backdrop of modals and drawers
+      attr_accessor :overlay_bg
+
+      # @!endgroup
+
+      # @!group Feedback Styles
+
+      # @return [Hash{Symbol => String}] Alert, flash and warning panel classes (background, border
+      #   color, text color) by type: +:success+, +:error+, +:warning+, +:info+
+      attr_accessor :alert_palette
+
+      # @return [String] Shadow of alerts, flash messages and warning panels (empty = none)
+      attr_accessor :alert_shadow
+
+      # @return [Hash{Symbol => String}] Badge classes by color name (+:green+, +:red+, +:yellow+,
+      #   +:blue+, +:indigo+, +:purple+, +:pink+, +:orange+, +:teal+, +:gray+)
+      attr_accessor :badge_palette
+
+      # @return [Hash{Symbol => String}] Badge dot classes by color name ({#badge_palette} keys);
+      #   an empty Hash renders badges without a dot
+      attr_accessor :badge_dot_palette
+
+      # @return [String] Radius and font weight of badges
+      attr_accessor :badge_shape
+
+      # @return [String] Tags and has-many chips
+      attr_accessor :chip
+
+      # @return [String] Color of destructive dropdown items, with their hover
+      attr_accessor :danger_item
+
+      # @return [String] Tooltip background and text color
+      attr_accessor :tooltip
+
+      # @return [String] JSON/code display background and text color
+      attr_accessor :code_block
+
+      # @return [String] Font family of code-like text: code blocks, code, JSON, key/value, markdown
+      #   and hex color inputs, and audit change details
+      attr_accessor :code_font
+
+      # @return [String] Progress bar track
+      attr_accessor :progress_track
+
+      # @return [String] Current page of the pagination
+      attr_accessor :pagination_active
+
+      # @!endgroup
+
+      # @!group Dashboard Styles
+
+      # @return [String] Dashboard metric label: size, weight and color
+      attr_accessor :metric_label
+
+      # @return [String] Dashboard metric figure: size, weight, tracking and color
+      attr_accessor :metric_value
+
+      # @return [String] Dashboard metric icon tile: background and icon color
+      attr_accessor :metric_icon
 
       # @!endgroup
 
       # @!group Chart Styles
 
-      # @return [Array<String>] Default chart color palette (CSS color values: hex, rgb, rgba)
+      # @return [Array<String>] Default chart color palette (CSS color values: hex, rgb, rgba): the
+      #   slices of pie, doughnut and polar area charts in order; bar charts fill every bar with the
+      #   first color
       attr_accessor :chart_colors
 
       # @return [String] Default chart border/line color (CSS color value)
       attr_accessor :chart_border_color
 
+      # @return [String] Chart grid lines (CSS color value)
+      attr_accessor :chart_grid_color
+
+      # @return [String] Chart ticks and legend (CSS color value)
+      attr_accessor :chart_text_color
+
+      # @return [String] Chart.js point style of the legend markers ("circle", "rect", "rectRounded",
+      #   "triangle" and so on)
+      attr_accessor :chart_point_style
+
+      # @return [String, nil] Outline of pie, doughnut and polar area slices (CSS color value;
+      #   nil = each slice in its own color)
+      attr_accessor :chart_slice_border_color
+
+      # @return [Integer, nil] Width in pixels of slice and bar outlines and of lines (nil = the
+      #   Chart.js defaults)
+      attr_accessor :chart_border_width
+
       # @!endgroup
 
-      # Creates a new Theme with default values.
-      def initialize
-        # --- Buttons ---
-        @btn_primary = "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-1"
-        @btn_secondary = "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-        @btn_danger = "bg-red-600 text-white hover:bg-red-700"
-        @btn_ghost = "bg-gray-100 text-gray-700 hover:bg-gray-200"
-
-        # --- Links ---
-        @link = "text-indigo-600 hover:text-indigo-900"
-        @link_muted = "text-gray-500 hover:text-gray-700"
-
-        # --- Focus ring ---
-        @focus_ring = "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-
-        # --- Inputs ---
-        @input_border = "border-gray-300 hover:border-gray-400"
-        @input_focus = "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-
-        # --- Checkbox ---
-        @checkbox_checked = "checked:border-indigo-600 checked:bg-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
-
-        # --- Scopes / Tabs ---
-        @scope_active = "border-indigo-600 text-indigo-600"
-        @scope_inactive = "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-
-        # --- Badge counter ---
-        @badge_count = "bg-indigo-600 text-white"
-
-        init_sidebar_defaults
-
-        # --- Navbar ---
-        @navbar_bg = "bg-white"
-        @navbar_border = "border-gray-200"
-        @navbar_search_bg = "bg-gray-50"
-        @navbar_search_focus_bg = "focus:bg-white"
-
-        # --- Table ---
-        @table_header_bg = "bg-gray-50"
-        @table_row_hover = "hover:bg-gray-50"
-        @table_border = "divide-gray-200"
-
-        # --- Cards / Panels ---
-        @card_bg = "bg-white"
-        @card_border = "border-gray-200"
-        @card_shadow = "shadow"
-
-        # --- Typography ---
-        @font_family = ""
-        @heading_weight = "font-bold"
-        @body_text = "text-gray-900"
-        @muted_text = "text-gray-500"
-        @label_text = "text-gray-700"
-
-        # --- Layout ---
-        @main_bg = "bg-gray-50"
-        @border_radius = "rounded-lg"
-
+      # Creates a Theme with the values of the Neutral look.
+      #
+      # @param name [Symbol, String] Name the theme is registered under
+      # @param label [String, nil] Name shown in the theme switcher (default: the titleized name)
+      def initialize(name: :neutral, label: nil)
+        @name = name.to_sym
+        @label = (label || @name.to_s.titleize).to_s
+        init_control_defaults
+        init_form_defaults
+        init_navigation_defaults
+        init_surface_defaults
+        init_typography_defaults
+        init_feedback_defaults
+        init_palette_defaults
         init_chart_defaults
       end
 
-      private
-
-      def init_sidebar_defaults
-        @sidebar_bg = "bg-gray-900"
-        @sidebar_title = "text-white"
-        @sidebar_link = "text-gray-300"
-        @sidebar_link_hover = "hover:bg-gray-800 hover:text-white"
-        @sidebar_link_active = "bg-gray-800 text-white"
-        @sidebar_group_label = "text-gray-400"
+      # Copies Array and Hash values (chart colors, palettes) too, so a copy never shares them.
+      #
+      # @param source [Theme] The theme being copied
+      # @return [void]
+      def initialize_copy(source)
+        super
+        instance_variables.each do |variable|
+          value = instance_variable_get(variable)
+          instance_variable_set(variable, value.deep_dup) if value.is_a?(Array) || value.is_a?(Hash)
+        end
       end
 
-      def init_chart_defaults
-        @chart_colors = %w[
-          rgba(99,102,241,0.8) rgba(59,130,246,0.8) rgba(16,185,129,0.8)
-          rgba(245,158,11,0.8) rgba(239,68,68,0.8) rgba(139,92,246,0.8)
-        ]
-        @chart_border_color = "rgb(99, 102, 241)"
+      # @return [String] Background of floating surfaces: {#popover_bg}, or {#card_bg} while it is empty
+      def popover_background
+        popover_bg.presence || card_bg
+      end
+
+      # @return [String] Color of the line between a table's head and body: {#table_head_border},
+      #   or {#table_border} while it is empty
+      def table_head_divider
+        table_head_border.presence || table_border
+      end
+
+      # @return [Boolean] Whether {#color_scheme} is "dark"
+      def dark?
+        color_scheme.to_s == "dark"
+      end
+
+      # @return [String] Tailwind class of the +<html>+ element for {#color_scheme}
+      def scheme_class
+        SCHEME_CLASSES.fetch(dark? ? "dark" : "light")
       end
     end
   end

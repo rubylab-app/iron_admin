@@ -45,6 +45,18 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       expect(response.body).to include("JSON")
     end
 
+    it "frames the page like the other admin pages, so its title lines up with theirs" do
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      expect(html.at_css("h1").ancestors("div").map { |div| div[:class].to_s.split }).to include(include("max-w-7xl", "mx-auto"))
+    end
+
+    it "keeps the upload card narrow, at the start of the page" do
+      get iron_admin.resource_import_path("request_import_users"), as: :html
+
+      expect(html.at_css("form").parent[:class].split).to include("max-w-3xl")
+    end
+
     it "returns not found for resources without imports enabled" do
       get iron_admin.resource_import_path("users"), as: :html
 
@@ -76,6 +88,25 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       get iron_admin.resource_import_path("request_import_users"), as: :html
 
       expect(html.css("form .flex-wrap > span").map { |chip| chip.text.strip }).to eq(%w[Preferences Active Email Name])
+    end
+
+    describe "theme classes" do
+      let(:theme) { IronAdmin.configuration.theme }
+      let(:controls) { IronAdmin::Form::ControlClasses }
+
+      before { get iron_admin.resource_import_path("request_import_users"), as: :html }
+
+      it "renders the file field as a theme file input" do
+        expect(html.at_css("#file")[:class].split).to eq(controls.file_input(theme).split)
+      end
+
+      it "renders the format select as a theme select" do
+        expect(html.at_css("#import_format")[:class].split).to eq(controls.select(theme).split)
+      end
+
+      it "renders the field names as theme chips" do
+        expect(html.css("form .flex-wrap > span").map { |chip| chip[:class].split }).to all(include(*theme.chip.split))
+      end
     end
   end
 
@@ -141,6 +172,65 @@ RSpec.describe "IronAdmin::Imports", type: :request do
       preview_csv("Name,Email\nJane,jane@example.com\n")
 
       expect(preview_cells.first.first(2)).to eq(["Jane", "jane@example.com"])
+    end
+
+    it "renders the header cells with the theme's table header classes" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      theme = IronAdmin.configuration.theme
+      expect(html.css("thead th").map { |header| header[:class].split })
+        .to all(include(*theme.table_header_text.split, *theme.table_cell_padding.split))
+    end
+
+    describe "the table frame, which scrolls sideways on a narrow screen" do
+      subject(:frame) do
+        preview_csv("Name,Email\nJane,jane@example.com\n")
+        html.at_css("table").parent
+      end
+
+      it "is in the keyboard's tab order, so a keyboard can scroll it" do
+        expect(frame[:tabindex]).to eq("0")
+      end
+
+      it "is a region named after the rows it holds" do
+        expect([frame[:role], frame["aria-label"]]).to eq(["region", I18n.t("iron_admin.imports.preview.table_label")])
+      end
+
+      it "shows the theme's focus ring when it has the focus" do
+        expect(frame[:class].split).to include(*IronAdmin.current_theme.focus_ring.split)
+      end
+
+      it "fades the edge the table can still scroll toward" do
+        expect(frame[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+      end
+
+      # The fade masks the scrolling box, so the card's border sits on a box that does not scroll.
+      it "sits in the card, whose border the fade leaves alone" do
+        expect(frame.parent[:class].split).to include(*IronAdmin.current_theme.card_border.split, *IronAdmin.current_theme.border_radius.split)
+      end
+
+      it "rounds its corners like the card" do
+        expect(frame[:class].split).to include("rounded-[inherit]")
+      end
+    end
+
+    it "frames the page like the upload step, so the title does not move between the two" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      expect(html.at_css("h1").ancestors("div").map { |div| div[:class].to_s.split }).to include(include("max-w-7xl", "mx-auto"))
+    end
+
+    it "marks a valid row with a green badge, as the other pages show states" do
+      preview_csv("Name,Email\nJane,jane@example.com\n")
+
+      badge = html.at_css("tbody tr td:last-child span")
+      expect([badge.text.strip, badge[:class].split]).to match([I18n.t("iron_admin.imports.preview.valid_status"), include(*IronAdmin.current_theme.badge_palette[:green].split)])
+    end
+
+    it "writes the errors of an invalid row in the theme's error color" do
+      preview_csv("Name,Email\n,nameless@example.com\n")
+
+      expect(html.at_css("tbody tr td:last-child")[:class].split).to include(IronAdmin.configuration.theme.error_text)
     end
 
     it "orders the columns as import_fields does" do

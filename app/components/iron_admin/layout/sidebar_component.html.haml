@@ -1,44 +1,44 @@
-%nav#cp-sidebar-panel.w-64.flex.flex-col.h-full.overflow-y-auto.fixed.inset-y-0.left-0.z-40.transition-transform.duration-200{ class: "-translate-x-full lg:static lg:translate-x-0 lg:z-auto #{cp_sidebar_bg} #{cp_sidebar_title}", data: { cp_sidebar_target: "panel" } }
-  .flex.items-center.justify-end.px-4.pt-4.lg:hidden
-    %button.p-1{ type: "button", "aria-label": "Close menu", data: { action: "cp-sidebar#close", cp_sidebar_target: "closeButton" } }
-      = helpers.heroicon "x-mark", variant: :outline, options: { class: "h-6 w-6" }
-  .p-6
+%nav#cp-sidebar-panel.w-64.flex.flex-col.h-full.overflow-y-auto.fixed.inset-y-0.left-0.z-40.transition-transform.duration-200{ class: "-translate-x-full lg:static lg:translate-x-0 lg:z-auto #{theme.sidebar_bg} #{theme.sidebar_border} #{theme.sidebar_title}", data: { cp_sidebar_target: "panel" } }
+  -# As high as the navbar, so the brand lines up with it.
+  .flex.h-14.shrink-0.items-center.justify-between.gap-2.px-5
     - if logo
       = image_tag logo, class: "h-8"
     - else
-      .text-xl.font-bold= title
+      .truncate.text-base{ class: "#{theme.heading_weight} #{theme.heading_font}" }= title
+    %button.-mr-2.inline-flex.h-8.w-8.shrink-0.items-center.justify-center{ type: "button", class: "lg:hidden #{theme.control_radius} #{theme.btn_ghost} #{theme.focus_ring}", "aria-label": "Close menu", data: { action: "cp-sidebar#close", cp_sidebar_target: "closeButton" } }
+      = helpers.heroicon "x-mark", variant: :outline, options: { class: "h-5 w-5" }
 
-  .flex-1.px-3
-    = link_to helpers.iron_admin.root_path, **link_options(dashboard_active?, "mb-1") do
-      = helpers.heroicon "home", variant: :outline, options: { class: "h-5 w-5" }
+  .flex-1.pb-6{ class: "px-2.5" }
+    = link_to helpers.iron_admin.root_path, **link_options(dashboard_active?) do
+      = helpers.heroicon "home", variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
       = I18n.t("iron_admin.navigation.dashboard")
 
     - grouped_resources.each do |group, resources|
       .mt-6
-        %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
-        .mt-2.space-y-1
+        %p.mb-1.text-xs.font-medium{ class: "px-2.5 #{group_label_classes}" }= group
+        %div{ class: "space-y-0.5" }
           - resources.sort_by { |r| r.menu_options[:priority] || 999 }.each do |resource|
             = link_to helpers.iron_admin.resources_path(resource.resource_name), **link_options(resource_active?(resource)) do
               - if resource.menu_options[:icon]
-                = helpers.heroicon resource.menu_options[:icon], variant: :outline, options: { class: "h-5 w-5" }
+                = helpers.heroicon resource.menu_options[:icon], variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
               = resource.label
 
     - grouped_tools.each do |group, tools_list|
       .mt-6
-        %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
-        .mt-2.space-y-1
+        %p.mb-1.text-xs.font-medium{ class: "px-2.5 #{group_label_classes}" }= group
+        %div{ class: "space-y-0.5" }
           - tools_list.sort_by { |tool| tool.menu_options[:priority] || 999 }.each do |tool|
             = link_to helpers.iron_admin.tool_path(tool.tool_name), **link_options(tool_active?(tool)) do
               - if tool.menu_options[:icon]
-                = helpers.heroicon tool.menu_options[:icon], variant: :outline, options: { class: "h-5 w-5" }
+                = helpers.heroicon tool.menu_options[:icon], variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
               = tool.label
 
     - grouped_menu_items.each do |group, items|
       .mt-6
-        %p.px-3.text-xs.font-semibold.uppercase.tracking-wider{ class: cp_sidebar_group_label }= group
-        .mt-2.space-y-1
+        %p.mb-1.text-xs.font-medium{ class: "px-2.5 #{group_label_classes}" }= group
+        %div{ class: "space-y-0.5" }
           - items.each do |item|
             = link_to item.path, **link_options(menu_item_active?(item)) do
               - if item.icon
-                = helpers.heroicon item.icon, variant: :outline, options: { class: "h-5 w-5" }
+                = helpers.heroicon item.icon, variant: :outline, options: { class: ICON_CLASSES, "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
               = item.label

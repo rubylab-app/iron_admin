@@ -76,6 +76,49 @@ RSpec.describe IronAdmin::Ui::PaginationComponent, type: :component do
       it "disables the next link" do
         expect(html.css("a[aria-label='Next']")).to be_empty
       end
+
+      it "writes the disabled next link in the theme's disabled_text color" do
+        expect(html.css("nav span").last[:class].split).to include("text-zinc-300", "cursor-not-allowed")
+      end
+    end
+
+    context "with the default theme" do
+      let(:current) { html.at_css("span[aria-current='page']")[:class].split }
+      let(:other_page) { html.at_css("a[href$='page=3']")[:class].split }
+
+      it "marks the current page with the theme's pagination_active classes" do
+        expect(current).to include("bg-zinc-900", "text-white", "border-zinc-900")
+      end
+
+      it "rounds every page link with the theme's control_radius" do
+        expect([current, other_page]).to all(include("rounded-md"))
+      end
+
+      it "highlights a hovered page link with the theme's item_hover" do
+        expect(other_page).to include("hover:bg-zinc-100")
+      end
+
+      it "aligns the page numbers in tabular figures" do
+        expect(other_page).to include("tabular-nums")
+      end
+    end
+
+    context "with a registered theme active" do
+      let(:current) { html.at_css("span[aria-current='page']")[:class].split }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.pagination_active = "bg-indigo-500 text-white border-indigo-500"
+        end
+      end
+
+      it "marks the current page with that theme's pagination_active classes" do
+        expect(current).to include("bg-indigo-500", "border-indigo-500")
+      end
+
+      it "drops the default theme's pagination_active classes" do
+        expect(current).not_to include("bg-zinc-900")
+      end
     end
   end
 end

@@ -19,7 +19,7 @@ RSpec.describe IronAdmin::Layout::FlashComponent, type: :component do
     end
 
     it "styles it as a success" do
-      expect(rendered.at_css("[role='alert']")[:class]).to include("bg-green-50")
+      expect(rendered.at_css("[role='alert']")[:class]).to include("bg-emerald-50")
     end
   end
 

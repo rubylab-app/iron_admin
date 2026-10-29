@@ -89,6 +89,24 @@ Charts render using `IronAdmin::Dashboards::ChartComponent`:
 )
 ```
 
+### Chart Colors
+
+Charts take their colors from the current theme: `chart_colors` for slices (bar charts fill
+every bar with its first color),
+`chart_border_color` for lines, and `chart_grid_color` and `chart_text_color` for grid lines,
+ticks and legends. These are CSS colors, not Tailwind classes, because Chart.js draws on a
+canvas. A chart's own colors win over the theme, and a bar chart given its own colors fills its
+bars with them one by one:
+
+```ruby
+chart :revenue, type: :bar, colors: ["#0ea5e9", "#6366f1"] do
+  # ...
+end
+```
+
+The first color is also the line color of line, area and radar charts. Charts draw their text
+in the page's font. See [Color scheme, dark themes and charts](theming.md#color-scheme-dark-themes-and-charts).
+
 ## Recent Records
 
 Show recent records from any resource:
@@ -129,6 +147,13 @@ Recent records render using `IronAdmin::Dashboards::RecentTableComponent`:
 `current_user:` is optional. Pass it so that fields with a `visible:` proc are checked for that
 user; without it, the procs receive `nil`. An unordered relation is listed newest first, so
 `User.order(created_at: :desc).limit(5)` is not needed, but still works.
+
+Every cell keeps one line, so in a narrow card the table scrolls sideways, and the engine's
+`cp-scroll-fade` class fades out the edge it can still scroll toward. The card is a size
+container, so the table fits the card's own width wherever a layout puts it: in a card 64rem
+wide or more (`@5xl`), association cells and the label column (`name`, `title` or `label`) wrap,
+long text (`:textarea`, `:rich_text`, `:markdown`) is cut to one line with an ellipsis, and the
+other columns, such as dates and emails, keep their line.
 
 ## Stats Grid
 

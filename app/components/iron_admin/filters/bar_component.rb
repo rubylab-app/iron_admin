@@ -42,9 +42,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
@@ -71,16 +71,37 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for filter dropdown trigger button
       def trigger_classes
-        "inline-flex items-center gap-2 px-4 cursor-pointer select-none text-sm font-medium " \
-          "#{theme.border_radius} border shadow-sm transition duration-150 " \
-          "#{theme.label_text} #{theme.card_border} #{theme.card_bg} py-2.5 hover:bg-gray-50"
+        ControlStyles.trigger(theme)
       end
 
       # @api private
       # @return [String] CSS classes for filter dropdown panel
       def dropdown_classes
-        "absolute right-0 top-full mt-2 w-72 border z-20 #{theme.border_radius} " \
-          "#{theme.card_border} #{theme.card_bg} #{theme.card_shadow}-lg"
+        ControlStyles.panel(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of the active filter count
+      def count_classes
+        ControlStyles.count(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of the Apply and Clear row
+      def footer_classes
+        ControlStyles.footer(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of the Apply button
+      def apply_classes
+        ControlStyles.apply_button(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of the Clear link
+      def clear_classes
+        ControlStyles.clear_button(theme)
       end
     end
   end

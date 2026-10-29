@@ -8,7 +8,7 @@ Convention-over-configuration admin panel engine for Ruby on Rails. Build beauti
 
 **[Live demo](https://demo.ironadmin.rubylab.app/)** · [Demo source](https://github.com/rubylab-app/meridian_magazine) · [Documentation](https://rubylab-app.github.io/iron_admin/) · [What's new in 0.7](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-7-the-whole-roadmap-shipped-then-i-tried-to-break-it-6be683936023)
 
-[![The IronAdmin dashboard of the Meridian Magazine demo, with metric cards, a bar chart of articles published per month and a pie chart of articles by category](docs/site/assets/images/demo-dashboard.png)](https://demo.ironadmin.rubylab.app/)
+[![The IronAdmin dashboard of the Meridian Magazine demo in the default Neutral theme: a light gray sidebar, white metric cards with thin borders, an indigo bar chart of articles published per month and a pie chart of articles by category](docs/site/assets/images/demo-dashboard.png)](https://demo.ironadmin.rubylab.app/)
 
 The demo is Meridian Magazine, a Rails 8 app built with IronAdmin. Sign in as one of three
 users (an admin, an editor or an author; no password needed) and see how resource policies
@@ -20,7 +20,7 @@ has the resources, dashboard, policies and theme behind it.
 - **Zero Configuration CRUD** - Auto-generates forms and tables from your database schema
 - **Resource DSL** - Customize fields, filters, scopes, and actions with a clean Ruby DSL
 - **Dashboard Builder** - Create metrics, charts, and recent records widgets
-- **Theme System** - Fully customizable Tailwind CSS classes for every UI element
+- **Themes** - A minimal default look (Neutral), named themes such as a dark one, and a theme switcher in the navbar; every color, font, radius and shadow is a Tailwind class you can change
 - **Authorization** - Built-in policy system for fine-grained access control
 - **Search** - Global search across all resources
 - **Export** - CSV and JSON export out of the box
@@ -167,6 +167,39 @@ end
 ```
 
 Visit `/admin` and your admin panel is ready!
+
+## Themes
+
+[![The Meridian Magazine dashboard in four IronAdmin themes: Neutral, light with black buttons; Midnight, dark with a violet accent; Editorial, cream paper with black rules and serif headings; Brutalist, monospace with thick black borders, hard shadows and yellow accents](docs/site/assets/images/themes.png)](docs/guides/theming.md)
+
+The four themes of the [Meridian Magazine demo](https://github.com/rubylab-app/meridian_magazine).
+The [Theming Guide](docs/guides/theming.md) shows how to build your own.
+
+The default look, **Neutral**, is a minimal light theme: zinc grays, white surfaces with 1px
+borders, the Inter typeface, a black primary button and an indigo accent. Change any of its
+properties, or register more themes. With two or more, the navbar shows a theme switcher that
+remembers each person's choice in a cookie:
+
+```ruby
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.theme do |t| # the default theme
+    t.btn_primary = "bg-emerald-700 text-white hover:bg-emerald-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+  end
+
+  config.register_theme(:midnight, label: "Midnight") do |t|
+    t.color_scheme = "dark"
+    t.main_bg = "bg-zinc-950"
+    t.card_bg = "bg-zinc-900"
+    # ... every property is listed in the theming guide
+  end
+end
+```
+
+`config.theme_resolver` can pick the theme per user or per tenant, and your own components read
+the request's theme with `IronAdmin.current_theme`. Neutral loads Inter from Google Fonts; set
+`font_stylesheet_url` to `nil` to turn that request off. See the
+[Theming Guide](docs/guides/theming.md), which includes a complete dark theme.
 
 ## Documentation
 

@@ -209,6 +209,52 @@ RSpec.describe "Error pages", type: :request do
     end
   end
 
+  describe "theme" do
+    let(:section) { page.at_css("#cp-error-page")[:class].split }
+    let(:title) { page.at_css("#cp-error-page h1")[:class].split }
+    let(:back_button) { page.at_css("#cp-error-page a")[:class].split }
+
+    context "with the default theme" do
+      before { get iron_admin.resource_path("users", 999_999), as: :html }
+
+      it "draws the message as a theme surface" do
+        expect(section).to include("bg-white", "border", "border-zinc-200", "rounded-lg", "shadow-xs")
+      end
+
+      it "titles the page with the theme's page_title" do
+        expect(title).to include("text-xl", "font-semibold", "tracking-tight", "text-zinc-900")
+      end
+
+      it "renders the way back as a primary button" do
+        expect(back_button).to include("h-9", "bg-zinc-900", "rounded-md")
+      end
+    end
+
+    context "with a registered theme picked by the theme cookie" do
+      before do
+        IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.page_title = "text-2xl font-bold text-white"
+          t.heading_font = "font-[family-name:Georgia,serif]"
+        end
+        cookies["iron_admin_theme"] = "midnight"
+        get iron_admin.resource_path("users", 999_999), as: :html
+      end
+
+      it "draws the message with that theme's surface" do
+        expect(section).to include("bg-zinc-900")
+      end
+
+      it "titles the page with that theme's page_title and heading_font" do
+        expect(title).to include("text-2xl", "font-bold", "text-white", "font-[family-name:Georgia,serif]")
+      end
+
+      it "drops the default theme's title classes" do
+        expect(title).not_to include("text-xl", "text-zinc-900")
+      end
+    end
+  end
+
   describe "the page inside the engine layout" do
     # The dummy app overrides the engine layout (see layout_spec.rb).
     around do |example|

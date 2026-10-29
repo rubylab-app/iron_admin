@@ -194,6 +194,10 @@ RSpec.describe "Index state", type: :request do
       it "goes back to the first page" do
         expect(tab_query).not_to have_key("page")
       end
+
+      it "fades the edge the row of tabs can still scroll toward" do
+        expect(scope_tab("Active").parent[:class].split).to include("overflow-x-auto", "cp-scroll-fade")
+      end
     end
 
     describe "search form" do
@@ -264,6 +268,21 @@ RSpec.describe "Index state", type: :request do
         clear_link = filter_form.css("a").find { |link| link.text.squish == "Clear" }
 
         expect(query_of(clear_link[:href])).to include("sort" => "expires_at", "direction" => "asc")
+      end
+
+      it "draws the Clear link as a secondary button, like the audit log's" do
+        clear_link = filter_form.css("a").find { |link| link.text.squish == "Clear" }
+
+        expect(clear_link[:class].split).to eq(IronAdmin::Filters::ControlStyles.clear_button(IronAdmin.current_theme).split)
+      end
+
+      # Two date inputs look the same, so each says which end of the range it holds.
+      it "shows From and To beside the two inputs of a date range" do
+        markers = %w[from to].map do |edge|
+          filter_form.at_css("input[name='filters[created_at_#{edge}]']").parent.at_css("[aria-hidden=true]").text.strip
+        end
+
+        expect(markers).to eq([I18n.t("iron_admin.filters.from"), I18n.t("iron_admin.filters.to")])
       end
     end
 

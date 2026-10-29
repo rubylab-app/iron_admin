@@ -74,24 +74,26 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for text input field
       def input_classes
-        base = "block w-full border px-3 py-2 text-sm shadow-sm outline-none transition duration-150 ease-in-out " \
-               "#{theme.border_radius} #{theme.input_border} #{theme.card_bg} #{theme.body_text} #{theme.input_focus}"
-        base += " !border-red-400 focus:!border-red-500 focus:!ring-red-500/20" if has_error
-        base += " bg-gray-50 cursor-not-allowed" if effectively_disabled?
-        base
+        ControlClasses.input(theme, error: has_error, muted: effectively_disabled?)
       end
 
       # @api private
       # @return [String] CSS classes for autocomplete dropdown panel
       def dropdown_classes
-        "absolute z-50 mt-1 w-full max-h-60 overflow-auto #{theme.border_radius} " \
-          "#{theme.card_bg} border #{theme.input_border} shadow-lg"
+        "absolute z-50 mt-1 w-full max-h-60 overflow-auto p-1 #{theme.border_radius} #{theme.border_width} " \
+          "#{theme.card_border} #{theme.popover_background} #{theme.popover_shadow}"
       end
 
       # @api private
       # @return [String] CSS classes for dropdown list items
       def dropdown_item_classes
-        "px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 #{theme.body_text}"
+        "px-2.5 py-1.5 text-sm cursor-pointer #{theme.control_radius} #{theme.body_text} #{theme.item_hover}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of the item shown when nothing matches
+      def empty_item_classes
+        "px-2.5 py-1.5 text-sm #{theme.muted_text}"
       end
 
       # @api private

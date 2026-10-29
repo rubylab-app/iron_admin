@@ -137,11 +137,19 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
         action :publish do |post|
           post.update!(title: "Published")
         end
+
+        action :retitle, form_fields: [action_field(:title, type: :text)] do |post, params|
+          post.update!(title: params[:title])
+        end
       end
     end
 
     def action_buttons(record, action_name)
       response.parsed_body.css("form[action='#{iron_admin.resource_action_path("soft_delete_posts", record, action_name)}']")
+    end
+
+    def form_links(record, action_name)
+      response.parsed_body.css("a[href='#{iron_admin.resource_action_form_path("soft_delete_posts", record, action_name)}']")
     end
 
     context "with a deleted record that the default scope hides" do
@@ -158,6 +166,20 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
       it "does not offer actions that cannot load the deleted record" do
         expect(action_buttons(deleted_post, :publish)).to be_empty
       end
+
+      it "does not link the form of an action that cannot load the deleted record" do
+        expect(form_links(deleted_post, :retitle)).to be_empty
+      end
+
+      it "returns not found for that form, as executing the action does" do
+        get iron_admin.resource_action_form_path("soft_delete_posts", deleted_post, "retitle"), as: :html
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "loads the deleted record in the restore form" do
+        get iron_admin.resource_action_form_path("soft_delete_posts", deleted_post, "restore"), as: :html
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     context "with an active record" do
@@ -167,6 +189,10 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
 
       it "offers its custom actions" do
         expect(action_buttons(active_post, :publish)).not_to be_empty
+      end
+
+      it "links the form of its actions with form fields" do
+        expect(form_links(active_post, :retitle)).not_to be_empty
       end
 
       it "does not offer restore, whose condition is false" do

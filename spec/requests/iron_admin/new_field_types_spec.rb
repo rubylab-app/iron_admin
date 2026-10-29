@@ -58,8 +58,16 @@ RSpec.describe "New Field Types", type: :request do
 
       get iron_admin.resource_path("documents", document), as: :html
 
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("prose")
+      expect(response.parsed_body.at_css("dd div.trix-content strong")&.text).to eq("world")
+    end
+
+    it "drops the typography plugin's prose classes, which host apps do not compile" do
+      document = create(:document)
+      document.update!(content: "Hello <strong>world</strong>")
+
+      get iron_admin.resource_path("documents", document), as: :html
+
+      expect(response.parsed_body.css("dd [class~=prose]")).to be_empty
     end
   end
 
@@ -216,8 +224,7 @@ RSpec.describe "New Field Types", type: :request do
         get iron_admin.resource_path("posts", post_record), as: :html
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("prose")
-        expect(response.body).to include("<h1>Hello</h1>")
+        expect(response.parsed_body.at_css("dd div.trix-content h1")&.text).to eq("Hello")
         expect(response.body).to include("<strong>bold</strong>")
       end
 
@@ -303,7 +310,7 @@ RSpec.describe "New Field Types", type: :request do
         expect(response.body).to include("ruby")
         expect(response.body).to include("rails")
         expect(response.body).to include("web")
-        expect(response.body).to include("bg-indigo-50")
+        expect(response.body).to include("bg-zinc-100 text-zinc-700")
       end
 
       it "handles empty tags gracefully" do

@@ -193,9 +193,19 @@ RSpec.describe IronAdmin::Form::BelongsToComponent, type: :component do
       expect(component.select_classes).to include("border")
     end
 
-    it "includes error classes when has_error" do
+    it "uses the theme's input_error when has_error" do
       component = described_class.new(name: :user_id, association_class: User, has_error: true)
-      expect(component.select_classes).to include("border-red-400")
+      expect(component.select_classes.split).to include(*IronAdmin.current_theme.input_error.split)
+    end
+
+    it "drops the theme's input_border when has_error" do
+      component = described_class.new(name: :user_id, association_class: User, has_error: true)
+      expect(component.select_classes.split).not_to include(*IronAdmin.current_theme.input_border.split)
+    end
+
+    it "uses the theme's surface_muted when disabled" do
+      component = described_class.new(name: :user_id, association_class: User, disabled: true)
+      expect(component.select_classes.split).to include(IronAdmin.current_theme.surface_muted)
     end
 
     it "includes disabled classes when disabled" do
@@ -204,15 +214,34 @@ RSpec.describe IronAdmin::Form::BelongsToComponent, type: :component do
     end
   end
 
-  describe "#chevron_style" do
-    it "includes background-image" do
-      component = described_class.new(name: :user_id, association_class: User)
-      expect(component.chevron_style).to include("background-image")
+  describe "rendering" do
+    subject(:result) { render_inline(described_class.new(name: :user_id, association_class: User, options_limit: 1)) }
+
+    before { create_list(:user, 2) }
+
+    it "draws the engine's chevron, which follows the theme's color scheme" do
+      expect(result.at_css("select")[:class].split).to include("cp-select-chevron")
     end
 
-    it "includes padding-right" do
-      component = described_class.new(name: :user_id, association_class: User)
-      expect(component.chevron_style).to include("padding-right")
+    it "sets no inline style" do
+      expect(result.at_css("select")[:style]).to be_nil
+    end
+
+    it "writes the search hint in the theme's muted text color" do
+      expect(result.at_css("p")[:class].split).to include(IronAdmin.current_theme.muted_text)
+    end
+  end
+
+  context "with a registered theme active" do
+    before do
+      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+        theme.control_radius = "rounded-none"
+        theme.checkbox_radius = "rounded-none"
+      end
+    end
+
+    it "renders the select with that theme's radius" do
+      expect(render_inline(described_class.new(name: :user_id, association_class: User)).at_css("select")[:class].split).to include("rounded-none")
     end
   end
 end

@@ -11,15 +11,20 @@
 @source "../../../javascript/**/*.js";
 @source "../../../../lib/iron_admin/**/*.rb";
 
-/* Inline SVG backgrounds used by ThemeHelper#cp_select_class and #cp_checkbox_class. */
+/* Inline SVG backgrounds used by IronAdmin::Form::ControlClasses (selects, checkboxes, radios). */
 /* A Tailwind bg-[url(...)] class holding them does not fit in one source line, */
 /* and Tailwind generates nothing for a class split across string literals. */
+/* The chevron is zinc-500, and zinc-400 under a theme whose color_scheme is "dark". */
 @layer components {
   .cp-select-chevron {
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E");
-    background-position: right 0.5rem center;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%2371717a%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E");
+    background-position: right 0.625rem center;
     background-repeat: no-repeat;
-    background-size: 1.25rem 1.25rem;
+    background-size: 1rem 1rem;
+  }
+
+  .scheme-dark .cp-select-chevron {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%23a1a1aa%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E");
   }
 
   .cp-checkbox-mark:checked {
@@ -27,5 +32,75 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: 100% 100%;
+  }
+
+  .cp-radio-mark:checked {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22white%22%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%223%22%2F%3E%3C%2Fsvg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+}
+
+/* Rich text (Action Text's Trix). Trix's stylesheet is not in a cascade layer, so its rules win */
+/* over every Tailwind utility; these rules are not in a layer either. A theme's rich_text_editor */
+/* marks the editor with cp-rich-text, and revert-layer hands the border and radius that Trix sets */
+/* back to the theme's classes. Under a dark color scheme the toolbar's black icons are inverted. */
+trix-editor.cp-rich-text {
+  border: revert-layer;
+  border-radius: revert-layer;
+}
+
+/* Trix scrolls its row of button groups sideways when it is wider than the field, and its */
+/* buttons are not focusable, so keyboard users could not reach the groups past the edge. */
+/* In IronAdmin's rich text field (cp-rich-text-field) the groups wrap onto more rows instead. */
+.cp-rich-text-field trix-toolbar .trix-button-row {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  column-gap: 0.5rem;
+}
+
+.cp-rich-text-field trix-toolbar .trix-button-group:not(:first-child) {
+  margin-left: 0;
+}
+
+.scheme-dark trix-toolbar .trix-button--icon::before {
+  filter: invert(1);
+}
+
+/* Scroll frames (cp-scroll-fade): a table or a row of tabs wider than its frame scrolls sideways, */
+/* and phones hide the scrollbar. The frame fades out at each edge it can still scroll toward. */
+/* A scroll timeline drives the fade, so a frame that fits, or a browser without scroll */
+/* timelines, shows none. The fade is a mask, so it suits any theme's colors; a mask also hides */
+/* focus outlines, so it lifts while the frame or a control in it has the keyboard focus. */
+@property --cp-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --cp-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes cp-scroll-fade {
+  0% { --cp-fade-start: 0px; --cp-fade-end: 2rem; }
+  8% { --cp-fade-start: 2rem; }
+  92% { --cp-fade-end: 2rem; }
+  100% { --cp-fade-start: 2rem; --cp-fade-end: 0px; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .cp-scroll-fade {
+    mask-image: linear-gradient(to right, transparent, #000 var(--cp-fade-start), #000 calc(100% - var(--cp-fade-end)), transparent);
+    animation: cp-scroll-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+
+  .cp-scroll-fade:focus-visible,
+  .cp-scroll-fade:has(:focus-visible) {
+    mask-image: none;
   }
 }

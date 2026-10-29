@@ -91,7 +91,7 @@ IronAdmin::Dashboards::ActivityFeedComponent.new(
 - `description` - Activity description
 - `timestamp` - Time or string
 - `icon` - Heroicon name
-- `icon_color` - `:green`, `:red`, `:blue`, `:yellow`, `:gray`
+- `icon_color` - a color name of the theme's `badge_palette` (`:green`, `:red`, `:yellow`, `:blue`, `:indigo`, `:purple`, `:pink`, `:orange`, `:teal` or `:gray`; default `:blue`). An unknown color uses `:gray`
 - `href` - Optional link
 
 **Example:**

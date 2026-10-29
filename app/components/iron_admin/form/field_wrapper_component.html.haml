@@ -2,7 +2,7 @@
   %label{ for: name, class: label_classes }
     = label
     - if required
-      %span.text-red-500 *
+      %span{ class: theme.error_text } *
 
   = content
 
@@ -12,6 +12,6 @@
 
   - if has_errors?
     %div{ class: error_classes }
-      = heroicon "exclamation-circle", variant: :mini, options: { class: "h-4 w-4 text-red-500 shrink-0" }
-      %p.text-sm.text-red-600
+      = heroicon "exclamation-circle", variant: :mini, options: { class: "h-4 w-4 shrink-0 #{theme.error_text}" }
+      %p.text-sm{ class: theme.error_text }
         = errors.join(", ")

@@ -5,6 +5,8 @@ module IronAdmin
   module Dashboards
     # Renders a chart on the dashboard.
     class ChartComponent < ViewComponent::Base
+      include Concerns::ThemedCard
+
       # @return [String] Chart title
       attr_reader :title
 
@@ -35,6 +37,11 @@ module IronAdmin
       # @return [Array<Symbol>]
       SINGLE_SERIES_TYPES = %i[line area radar].freeze
 
+      # Bar types: their bars are one series, so they share one color unless the chart
+      # passes its own `colors:`.
+      # @return [Array<Symbol>]
+      BAR_TYPES = %i[bar horizontal_bar].freeze
+
       # Types whose area is filled by default. `:line` stays filled for
       # backward compatibility (it was filled before `:area` was introduced);
       # `:area` is the explicit, intention-revealing name for a filled line.
@@ -44,6 +51,14 @@ module IronAdmin
       # Types that display a legend (multi-slice proportion charts).
       # @return [Array<Symbol>]
       LEGEND_TYPES = %i[pie doughnut polar_area].freeze
+
+      # Types drawn on x and y axes.
+      # @return [Array<Symbol>]
+      CARTESIAN_TYPES = %i[line area bar horizontal_bar].freeze
+
+      # Types drawn on a radial scale.
+      # @return [Array<Symbol>]
+      RADIAL_TYPES = %i[radar polar_area].freeze
 
       # @param title [String] Chart title
       # @param type [Symbol] Chart type (default: :line)
@@ -61,12 +76,6 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
-      def theme
-        IronAdmin.configuration.theme
-      end
-
-      # @api private
       # @return [String] Unique chart element ID
       def chart_id
         "chart-#{object_id}"
@@ -80,22 +89,9 @@ module IronAdmin
           type: chart_js_type,
           data: {
             labels: labels,
-            datasets: [{
-              data: data,
-              borderColor: border,
-              backgroundColor: dataset_background(border),
-              fill: filled?,
-              tension: 0.3,
-            }],
+            datasets: [dataset(border)],
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: index_axis,
-            plugins: {
-              legend: { display: legend? },
-            },
-          },
+          options: chart_options,
         }.to_json
       end
 
@@ -132,12 +128,78 @@ module IronAdmin
 
       private
 
-      # Resolves the dataset background: a single semi-transparent fill for
-      # single-series charts, or the full color palette for multi-slice charts.
+      # The outline width is left out unless the theme sets one, so Chart.js keeps its defaults.
+      # @param border [String] Resolved border color
+      # @return [Hash] The chart's one dataset
+      def dataset(border)
+        set = {
+          data: data,
+          borderColor: dataset_border(border),
+          backgroundColor: dataset_background(border),
+          fill: filled?,
+          tension: 0.3,
+        }
+        width = theme.chart_border_width
+        width ? set.merge(borderWidth: width) : set
+      end
+
+      # Grid, tick and legend colors come from the theme, so dark themes get readable charts.
+      # @return [Hash] Chart.js options
+      def chart_options
+        options = {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: index_axis,
+          plugins: {
+            legend: { display: legend?, labels: legend_labels },
+          },
+        }
+        scales = scale_options
+        scales ? options.merge(scales: scales) : options
+      end
+
+      # @return [Hash] Chart.js legend label options: the theme's text color and point style
+      def legend_labels
+        { color: theme.chart_text_color, usePointStyle: true, pointStyle: theme.chart_point_style }
+      end
+
+      # Pie and doughnut charts get no scales: Chart.js would draw axes for them. Cartesian
+      # charts draw grid lines across the value axis only, as the category axis needs none.
+      # @return [Hash, nil] Chart.js scale options in the theme's colors
+      def scale_options
+        grid = theme.chart_grid_color
+        text = theme.chart_text_color
+        if CARTESIAN_TYPES.include?(type)
+          value = { grid: { color: grid }, border: { color: grid }, ticks: { color: text } }
+          category = value.merge(grid: { color: grid, display: false })
+          index_axis == "y" ? { x: value, y: category } : { x: category, y: value }
+        elsif RADIAL_TYPES.include?(type)
+          ticks = { color: text, backdropColor: "transparent" }
+          { r: { grid: { color: grid }, angleLines: { color: grid }, pointLabels: { color: text }, ticks: ticks } }
+        end
+      end
+
+      # Multi-slice charts outline each slice in its own color, unless the theme sets a
+      # chart_slice_border_color: the line color would ring every slice, and every legend entry.
+      # @param border [String] Resolved border color
+      # @return [String, Array<String>] Border color(s) for the dataset
+      def dataset_border(border)
+        return border unless legend?
+
+        theme.chart_slice_border_color.presence || resolved_colors
+      end
+
+      # Resolves the dataset background: a single semi-transparent fill for line,
+      # area and radar charts, the theme's first chart color for the bars of a bar
+      # chart (one series: a color per bar would suggest categories), or the full
+      # palette for multi-slice charts and for bars given their own `colors:`.
       # @param border [String] Resolved border color
       # @return [String, Array<String>] Background color(s) for the dataset
       def dataset_background(border)
-        SINGLE_SERIES_TYPES.include?(type) ? line_fill_color(border) : resolved_colors
+        return line_fill_color(border) if SINGLE_SERIES_TYPES.include?(type)
+        return theme.chart_colors.first if BAR_TYPES.include?(type) && @colors.nil?
+
+        resolved_colors
       end
 
       # @return [Array<String>] Color palette resolved from per-chart, theme, or default

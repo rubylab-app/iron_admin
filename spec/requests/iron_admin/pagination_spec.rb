@@ -25,6 +25,40 @@ RSpec.describe "IronAdmin pagination", type: :request do
       it "links to the next page" do
         expect(pagination.at_css("a[href$='page=3']")).not_to be_nil
       end
+
+      it "styles the page links as the theme's secondary buttons" do
+        expect(pagination.at_css("a[href$='page=3']")[:class].split).to include("bg-white", "border-zinc-200", "rounded-md")
+      end
+
+      it "outlines a focused page link with the theme's focus_ring" do
+        expect(pagination.at_css("a[href$='page=3']")[:class].split).to include("focus-visible:outline-indigo-500")
+      end
+    end
+
+    context "with the first page" do
+      subject(:pagination) { response.parsed_body.at_css("nav[aria-label='Pagination']") }
+
+      before { get iron_admin.resources_path("users"), as: :html }
+
+      it "writes the disabled previous link in the theme's disabled_text color" do
+        expect(pagination.at_css("span[aria-disabled='true']")[:class].split).to include("text-zinc-300")
+      end
+    end
+
+    context "with a registered theme picked by the theme cookie" do
+      subject(:pagination) { response.parsed_body.at_css("nav[aria-label='Pagination']") }
+
+      before do
+        IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.btn_secondary = "bg-zinc-900 text-zinc-100 border border-zinc-700 hover:bg-zinc-800"
+        end
+        cookies["iron_admin_theme"] = "midnight"
+        get iron_admin.resources_path("users"), params: { page: 2 }, as: :html
+      end
+
+      it "styles the page links with that theme's secondary buttons" do
+        expect(pagination.at_css("a[href$='page=3']")[:class].split).to include("bg-zinc-900", "border-zinc-700")
+      end
     end
 
     # These raised (HTTP 500) on pagy releases below the gemspec floor:

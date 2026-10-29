@@ -1,15 +1,16 @@
-.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
-  %h1.text-2xl.mb-6{ class: cp_heading }= IronAdmin.configuration.title
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
+  %h1.mb-6{ class: "#{t.page_title} #{t.heading_font}" }= IronAdmin.configuration.title
 
   - if @dashboard
     - if @dashboard.defined_metrics.any?
-      .grid.grid-cols-1.md:grid-cols-2.xl:grid-cols-4.gap-6.mb-8
+      .grid.grid-cols-1.md:grid-cols-2.xl:grid-cols-4.gap-4.mb-6
         - @dashboard.defined_metrics.each do |metric|
           = render IronAdmin::Dashboards::MetricCardComponent.new(name: metric[:name], value: metric[:block].call, format: metric[:format], icon: metric[:icon], live: metric[:live])
 
     - if @dashboard.defined_charts.any?
       = javascript_include_tag "chart.min", defer: true, onload: "document.dispatchEvent(new CustomEvent('chartjs:loaded'))"
-      .grid.grid-cols-1.lg:grid-cols-2.gap-6.mb-8
+      -# A last chart left alone in its row (an odd count) spans both columns.
+      .grid.grid-cols-1.lg:grid-cols-2.gap-4.mb-6{ class: "lg:[&>*:last-child:nth-child(odd)]:col-span-2" }
         - @dashboard.defined_charts.each do |chart|
           - chart_data = chart[:block].call
           - labels = chart_data.keys
@@ -22,13 +23,13 @@
             = render IronAdmin::Dashboards::ChartComponent.new(title: chart_title, type: chart[:type], data: data, labels: labels, colors: chart[:colors])
 
     - if @dashboard.defined_progress_bars.any?
-      .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-6.mb-8
+      .grid.grid-cols-1.md:grid-cols-2.lg:grid-cols-3.gap-4.mb-6
         - @dashboard.defined_progress_bars.each do |bar|
           - bar_title = bar[:label] || bar[:name].to_s.humanize
           = render IronAdmin::Dashboards::ProgressComponent.new(title: bar_title, value: bar[:block].call, max: bar[:max], format: bar[:format], color: bar[:color])
 
     - if @dashboard.defined_recents.any?
-      .space-y-6
+      .space-y-4
         - @dashboard.defined_recents.each do |recent|
           - resource_class = IronAdmin::ResourceRegistry.find(recent[:resource_name].to_s.pluralize)
           -# Like the index page: the read policy decides, and tenant_scope applies after the recent scope.
@@ -39,5 +40,5 @@
             = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: recent[:resource_name], records: records, current_user: iron_admin_current_user)
 
   - else
-    .p-12.text-center{ class: cp_card }
-      %p{ class: cp_muted_text } No dashboard configured. Create an AdminDashboard in app/iron_admin/.
+    .p-12.text-center{ class: "#{t.card_bg} #{t.border_width} #{t.card_border} #{t.border_radius} #{t.card_shadow}" }
+      %p.text-sm{ class: t.muted_text } No dashboard configured. Create an AdminDashboard in app/iron_admin/.

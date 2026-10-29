@@ -4,6 +4,8 @@ module IronAdmin
   module Dashboards
     # Renders a progress (gauge) widget showing a value as a proportion of a target.
     class ProgressComponent < ViewComponent::Base
+      include Concerns::ThemedCard
+
       # @return [String] Widget title
       attr_reader :title
 
@@ -49,16 +51,19 @@ module IronAdmin
         format_number(max)
       end
 
+      # The bar reports the percentage, which stays within 0..100 even past the target,
+      # and reads out the value and the target as text.
+      #
+      # @api private
+      # @return [Hash{Symbol => Object}] ARIA attributes of the progress bar
+      def bar_aria
+        { label: title, valuemin: 0, valuemax: 100, valuenow: percentage, valuetext: "#{formatted_value} / #{formatted_max}" }
+      end
+
       # @api private
       # @return [String] CSS color for the filled bar
       def bar_color
         @color || theme.chart_border_color
-      end
-
-      # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
-      def theme
-        IronAdmin.configuration.theme
       end
 
       private

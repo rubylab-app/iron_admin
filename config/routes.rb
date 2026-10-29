@@ -2,6 +2,7 @@ IronAdmin::Engine.routes.draw do
   root "dashboard#index"
 
   get "search", to: "search#index", as: :search
+  post "theme", to: "themes#update", as: :theme
   get "audit", to: "audit#index", as: :audit
   get "live/:stream", to: "live#show", as: :live
   get "autocomplete/:resource_name", to: "resources#autocomplete", as: :autocomplete

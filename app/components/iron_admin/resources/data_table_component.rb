@@ -50,21 +50,52 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
+      end
+
+      # @api private
+      # @return [String] CSS classes of the panel the table scrolls in
+      def frame_classes
+        Styles.table_frame(theme)
       end
 
       # @api private
       # @return [String] CSS classes for table element
       def table_classes
-        "min-w-full divide-y #{theme.card_bg} #{theme.border_radius} #{theme.card_shadow}"
+        Styles.table(theme)
       end
 
       # @api private
       # @return [String] CSS classes for table header
       def header_classes
         theme.table_header_bg
+      end
+
+      # @api private
+      # @return [String] CSS classes of a header cell
+      def header_cell_classes
+        Styles.header_cell(theme)
+      end
+
+      # @api private
+      # @return [String] CSS classes of a column's sort link
+      def sort_link_classes
+        "group inline-flex items-center gap-1 #{theme.focus_ring}"
+      end
+
+      # @api private
+      # @return [String] CSS classes of the table body
+      def body_classes
+        Styles.divided(theme)
+      end
+
+      # @api private
+      # @param field [IronAdmin::Field] The cell's field
+      # @return [String] CSS classes of a body cell
+      def cell_classes(field)
+        Styles.cell(theme, field)
       end
 
       delegate :empty?, to: :records

@@ -51,6 +51,60 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent, type: :component do
       expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([["h2", "Latest Events"]])
     end
   end
+
+  describe "theme classes" do
+    subject(:card) do
+      render_inline(described_class.new) { |feed| feed.with_item(description: "User signed up", timestamp: "now") }.at_css("div")
+    end
+
+    before do
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    context "with the default theme" do
+      # HAML's dot syntax reads ".py-3.5" as the classes "py-3" and "5".
+      it "keeps fractional sizes such as py-3.5 whole" do
+        expect(card.css("[class]").flat_map { |node| node[:class].split }).not_to include(match(/\A\d+\z/))
+      end
+
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "titles the card with the theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*IronAdmin.current_theme.card_title.split)
+      end
+
+      # A border color on the list would leave the dividers in currentColor.
+      it "colors the dividers between items with the theme's table_border" do
+        expect(card.at_css("ul")[:class].split).to include("divide-y", *IronAdmin.current_theme.table_border.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.border_width = "border-2"
+          t.card_title = "text-base font-bold text-white"
+          t.table_border = "divide-slate-700"
+        end
+      end
+
+      it "frames the card with that theme's border width" do
+        expect(card[:class].split).to include("border-2")
+      end
+
+      it "titles the card with that theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*%w[text-base font-bold text-white])
+      end
+
+      it "colors the dividers with that theme's table_border" do
+        expect(card.at_css("ul")[:class].split).to include("divide-slate-700")
+      end
+    end
+  end
 end
 
 RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type: :component do
@@ -96,32 +150,62 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
   end
 
   describe "#icon_classes" do
-    it "returns green classes for green color" do
-      component = described_class.new(description: "Event", timestamp: Time.current, icon_color: :green)
-      expect(component.icon_classes).to include("bg-green-100")
-      expect(component.icon_classes).to include("text-green-600")
+    subject(:icon_classes) { described_class.new(description: "Event", timestamp: Time.current, icon_color: icon_color).icon_classes.split }
+
+    let(:theme) { IronAdmin.current_theme }
+
+    context "with a color of the theme's badge palette" do
+      let(:icon_color) { :green }
+
+      it "tints the icon tile like a badge of that color" do
+        expect(icon_classes).to include(*theme.badge_palette[:green].split)
+      end
+
+      it "rounds the tile with the theme's control_radius" do
+        expect(icon_classes).to include(theme.control_radius)
+      end
     end
 
-    it "returns red classes for red color" do
-      component = described_class.new(description: "Event", timestamp: Time.current, icon_color: :red)
-      expect(component.icon_classes).to include("bg-red-100")
-      expect(component.icon_classes).to include("text-red-600")
+    context "with a color the old fixed palette did not have" do
+      let(:icon_color) { :purple }
+
+      it "tints the icon tile like a badge of that color" do
+        expect(icon_classes).to include(*theme.badge_palette[:purple].split)
+      end
     end
 
-    it "returns blue classes for blue color" do
-      component = described_class.new(description: "Event", timestamp: Time.current, icon_color: :blue)
-      expect(component.icon_classes).to include("bg-blue-100")
-      expect(component.icon_classes).to include("text-blue-600")
+    context "with an unknown color" do
+      let(:icon_color) { :unknown }
+
+      it "falls back to the gray badge colors" do
+        expect(icon_classes).to include(*theme.badge_palette[:gray].split)
+      end
     end
 
-    it "returns yellow classes for yellow color" do
-      component = described_class.new(description: "Event", timestamp: Time.current, icon_color: :yellow)
-      expect(component.icon_classes).to include("bg-yellow-100")
+    context "with a registered theme active for the request" do
+      let(:icon_color) { :red }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.badge_palette = t.badge_palette.merge(red: "bg-rose-950 text-rose-200")
+        end
+      end
+
+      it "tints the icon tile with that theme's badge palette" do
+        expect(icon_classes).to include("bg-rose-950", "text-rose-200")
+      end
     end
 
-    it "falls back to gray for unknown color" do
-      component = described_class.new(description: "Event", timestamp: Time.current, icon_color: :unknown)
-      expect(component.icon_classes).to include("bg-gray-100")
+    context "with a theme whose badge palette has no gray" do
+      let(:icon_color) { :unknown }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) { |t| t.badge_palette = {} }
+      end
+
+      it "keeps only the tile radius" do
+        expect(icon_classes).to eq([IronAdmin.current_theme.control_radius])
+      end
     end
   end
 
@@ -153,6 +237,15 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
       it "wraps the icon, description and time in a link to the href" do
         expect(item.at_css("li > a[href='/admin/users/1']")&.text&.squish).to eq("User signed up Yesterday")
       end
+
+      # item_hover (zinc-100 in Neutral) would put the muted time below AA contrast.
+      it "highlights the link on hover with the theme's table_row_hover, like a table row" do
+        expect(item.at_css("a")[:class].split).to include(*IronAdmin.current_theme.table_row_hover.split)
+      end
+
+      it "shows the theme's focus ring on the link" do
+        expect(item.at_css("a")[:class].split).to include(*IronAdmin.current_theme.focus_ring.split)
+      end
     end
 
     context "without an href" do
@@ -164,6 +257,10 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
 
       it "renders no link" do
         expect(item.css("a")).to be_empty
+      end
+
+      it "adds no hover to a row that leads nowhere" do
+        expect(item.at_css("li > div")[:class].split).not_to include(*IronAdmin.current_theme.table_row_hover.split)
       end
     end
   end

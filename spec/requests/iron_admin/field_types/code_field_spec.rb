@@ -15,7 +15,7 @@ RSpec.describe "Code field type", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("def hello; end")
       expect(response.body).to include("font-mono")
-      expect(response.body).to include("bg-gray-900")
+      expect(response.body).to include("bg-zinc-950")
     end
 
     it "handles nil code gracefully" do

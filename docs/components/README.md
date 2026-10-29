@@ -51,13 +51,17 @@ Components can be rendered in views using ViewComponent's `render` helper:
 
 ## Theme Integration
 
-All components automatically use the configured theme. Access theme values via the `theme` method inside components:
+All components use the theme of the current request (`IronAdmin.current_theme`), so they follow
+the theme switcher. Inside the built-in components, the `theme` method returns it:
 
 ```ruby
 def card_classes
-  "#{theme.card_bg} #{theme.card_border} #{theme.border_radius}"
+  "#{theme.card_bg} #{theme.border_width} #{theme.card_border} #{theme.border_radius}"
 end
 ```
+
+In components of your own, read `IronAdmin.current_theme` too (see
+[Using the theme in your own components](../guides/theming.md#using-the-theme-in-your-own-components)).
 
 ## Overriding Components
 

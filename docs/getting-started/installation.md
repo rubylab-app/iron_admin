@@ -135,6 +135,10 @@ Understanding how the CSS pipeline works will help you troubleshoot any styling 
 5. The engine's layout references `stylesheet_link_tag "tailwind"`, which serves
    this compiled CSS file.
 
+Classes you write yourself, such as the properties of a theme in
+`config/initializers/iron_admin.rb`, must be in a file your build scans. See
+[Tailwind: literal classes and source scanning](../guides/theming.md#tailwind-literal-classes-and-source-scanning).
+
 ### Manual setup (without the generator)
 
 If you didn't use the install generator, or the import line is missing:

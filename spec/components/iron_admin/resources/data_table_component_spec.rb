@@ -251,4 +251,72 @@ RSpec.describe IronAdmin::Resources::DataTableComponent, type: :component do
       end
     end
   end
+
+  describe "theme" do
+    subject(:rendered) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(records: User.all, fields: table_fields,
+                                          resource_class: IronAdmin::Resources::UserResource, base_url: "/admin/users?"))
+      end
+    end
+
+    let(:styles) { IronAdmin::Resources::Styles }
+    let(:theme) { IronAdmin.current_theme }
+    let(:table_fields) { [IronAdmin::Field.new(:id, type: :number), IronAdmin::Field.new(:name, type: :string)] }
+
+    before { create(:user) }
+
+    it "scrolls the table inside the table frame" do
+      expect(rendered.at_css("table").parent[:class]).to eq(styles.table_frame(theme))
+    end
+
+    it "divides the head from the body" do
+      expect(rendered.at_css("table")[:class]).to eq(styles.table(theme))
+    end
+
+    it "divides the rows in the theme's table border color" do
+      expect(rendered.at_css("tbody")[:class]).to eq(styles.divided(theme))
+    end
+
+    it "uses the theme's header background" do
+      expect(rendered.at_css("thead")[:class]).to eq("bg-zinc-50")
+    end
+
+    it "styles the header cells with the header cell classes" do
+      expect(rendered.css("thead th").first(2).pluck(:class)).to all(eq(styles.header_cell(theme)))
+    end
+
+    it "lines up the digits of numeric cells" do
+      expect(rendered.at_css("tbody td")[:class]).to eq(styles.cell(theme, table_fields.first))
+    end
+
+    it "keeps proportional digits in text cells" do
+      expect(rendered.css("tbody td")[1][:class].split).not_to include("tabular-nums")
+    end
+
+    it "highlights a row on hover with the theme's row hover" do
+      expect(rendered.at_css("tbody tr")[:class]).to eq("hover:bg-zinc-50")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.card_bg = "bg-zinc-900"
+          t.card_title = "text-base font-bold text-white"
+          t.btn_secondary = "bg-zinc-800 text-zinc-100"
+          t.label_transform = "uppercase tracking-wider"
+          t.table_frame = "ring-1 ring-zinc-700"
+          t.table_cell_padding = "px-3 py-1.5"
+        end
+      end
+
+      it "adds that theme's table frame" do
+        expect(rendered.at_css("table").parent[:class].split).to include("ring-1", "ring-zinc-700")
+      end
+
+      it "uses that theme's label transform and cell padding in the header" do
+        expect(rendered.at_css("thead th")[:class].split).to include("uppercase", "tracking-wider", "px-3", "py-1.5")
+      end
+    end
+  end
 end

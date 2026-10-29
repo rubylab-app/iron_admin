@@ -51,19 +51,28 @@ module IronAdmin
       # Variant style mappings (uses theme configuration).
       # @return [Hash{Symbol => Proc}]
       VARIANTS = {
-        primary: -> { IronAdmin.configuration.theme.btn_primary },
-        secondary: -> { IronAdmin.configuration.theme.btn_secondary },
-        danger: -> { IronAdmin.configuration.theme.btn_danger },
-        ghost: -> { IronAdmin.configuration.theme.btn_ghost },
+        primary: -> { IronAdmin.current_theme.btn_primary },
+        secondary: -> { IronAdmin.current_theme.btn_secondary },
+        danger: -> { IronAdmin.current_theme.btn_danger },
+        ghost: -> { IronAdmin.current_theme.btn_ghost },
       }.freeze
 
-      # Size class mappings.
+      # Size class mappings (md is 36px high).
       # @return [Hash{Symbol => String}]
       SIZES = {
-        sm: "px-3 py-1.5 text-sm",
-        md: "px-4 py-2 text-sm",
-        lg: "px-5 py-2.5 text-base",
+        sm: "h-8 px-3 text-sm",
+        md: "h-9 px-3.5 text-sm",
+        lg: "h-10 px-4 text-base",
       }.freeze
+
+      # Variants whose theme classes carry their own focus outline (+btn_primary+);
+      # the others get the theme's +focus_ring+.
+      # @return [Array<Symbol>]
+      OWN_FOCUS_VARIANTS = %i[primary].freeze
+
+      # Variants drawn without the theme's +control_shadow+, like the ghost form buttons.
+      # @return [Array<Symbol>]
+      FLAT_VARIANTS = %i[ghost].freeze
 
       # @param text [String, nil] Button text
       # @param variant [Symbol] Style variant (default: :primary)
@@ -103,14 +112,26 @@ module IronAdmin
       # @api private
       # @return [String] Base CSS classes for all button variants
       def base_classes
-        "inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-colors duration-150 " \
-          "focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
+        "inline-flex shrink-0 items-center justify-center gap-2 font-medium whitespace-nowrap transition-colors " \
+          "duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed #{IronAdmin.current_theme.control_radius}"
+      end
+
+      # @api private
+      # @return [String] The theme's +focus_ring+, unless the variant's classes carry their own
+      def focus_classes
+        OWN_FOCUS_VARIANTS.include?(known_variant) ? "" : IronAdmin.current_theme.focus_ring
+      end
+
+      # @api private
+      # @return [String] The theme's +control_shadow+, except for flat (ghost) buttons
+      def shadow_classes
+        FLAT_VARIANTS.include?(known_variant) ? "" : IronAdmin.current_theme.control_shadow
       end
 
       # @api private
       # @return [String] Combined CSS classes for button
       def button_classes
-        "#{base_classes} #{variant_classes} #{size_classes}"
+        [base_classes, variant_classes, focus_classes, shadow_classes, size_classes].compact_blank.join(" ")
       end
 
       # @api private
@@ -137,6 +158,11 @@ module IronAdmin
       end
 
       private
+
+      # An unknown variant renders as primary (see #variant_classes).
+      def known_variant
+        VARIANTS.key?(@variant) ? @variant : :primary
+      end
 
       def button_content
         safe_join([icon_element, text_element].compact)

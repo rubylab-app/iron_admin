@@ -18,7 +18,7 @@ interfaces with minimal code.
 [Try the live demo](https://demo.ironadmin.rubylab.app/){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/rubylab-app/iron_admin){: .btn .fs-5 .mb-4 .mb-md-0 }
 
-[![The IronAdmin dashboard of the Meridian Magazine demo, with metric cards, a bar chart of articles published per month and a pie chart of articles by category]({{ '/assets/images/demo-dashboard.png' | relative_url }})](https://demo.ironadmin.rubylab.app/)
+[![The IronAdmin dashboard of the Meridian Magazine demo in the default Neutral theme: a light gray sidebar, white metric cards with thin borders, an indigo bar chart of articles published per month and a pie chart of articles by category]({{ '/assets/images/demo-dashboard.png' | relative_url }})](https://demo.ironadmin.rubylab.app/)
 
 The [live demo](https://demo.ironadmin.rubylab.app/) is Meridian Magazine, a Rails 8 app
 built with IronAdmin. Sign in as one of three users (an admin, an editor or an author; no
@@ -53,7 +53,8 @@ rails generate iron_admin:install
 - **Zero-configuration CRUD** — forms and tables inferred from your database schema.
 - **Resource DSL** — customize fields, filters, scopes, and actions in clean Ruby.
 - **Dashboard builder** — metrics, charts, and recent-record widgets.
-- **Theme system** — every UI element is a configurable Tailwind class.
+- **Themes** — a minimal default look (Neutral), named themes such as a dark one, and a theme
+  switcher in the navbar; every color, font, radius and shadow is a configurable Tailwind class.
 - **Authorization** — a built-in policy DSL for fine-grained access control.
 - **Adapters** — pluggable data-layer support (ActiveRecord, Mongoid, and custom).
 - **Search & export** — global search and CSV/JSON export out of the box.

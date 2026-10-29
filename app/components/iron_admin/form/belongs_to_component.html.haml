@@ -1,8 +1,8 @@
-%select{ name: name, id: name, class: select_classes, disabled: disabled, style: chevron_style }
+%select{ name: name, id: name, class: select_classes, disabled: disabled }
   - if include_blank
     %option{ value: "" } Select...
   - options.each do |label, value|
     %option{ value: value, selected: selected.to_s == value.to_s }= label
 - if show_search_hint?
-  %p.text-xs.text-gray-500.mt-1.italic
+  %p.text-xs.mt-1{ class: theme.muted_text }
     Showing first #{options_limit} options. Use search for more results.

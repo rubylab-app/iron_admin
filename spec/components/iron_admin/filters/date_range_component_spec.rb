@@ -54,36 +54,46 @@ RSpec.describe IronAdmin::Filters::DateRangeComponent, type: :component do
   end
 
   describe "#label_classes" do
+    subject(:component) { described_class.new(name: :created_at) }
+
+    it "uses the filter label classes of the current theme" do
+      expect(component.label_classes).to eq(IronAdmin::Filters::ControlStyles.label(IronAdmin.current_theme))
+    end
+
     it "includes text-xs" do
-      component = described_class.new(name: :created_at)
       expect(component.label_classes).to include("text-xs")
-    end
-
-    it "includes font-semibold" do
-      component = described_class.new(name: :created_at)
-      expect(component.label_classes).to include("font-semibold")
-    end
-
-    it "includes uppercase" do
-      component = described_class.new(name: :created_at)
-      expect(component.label_classes).to include("uppercase")
     end
   end
 
   describe "#input_classes" do
+    subject(:input_classes) { described_class.new(name: :created_at).input_classes.split }
+
     it "includes full width" do
-      component = described_class.new(name: :created_at)
-      expect(component.input_classes).to include("w-full")
+      expect(input_classes).to include("w-full")
     end
 
-    it "includes border" do
-      component = described_class.new(name: :created_at)
-      expect(component.input_classes).to include("border")
+    it "uses the theme's border width" do
+      expect(input_classes).to include("border")
     end
 
     it "includes text-sm" do
-      component = described_class.new(name: :created_at)
-      expect(component.input_classes).to include("text-sm")
+      expect(input_classes).to include("text-sm")
+    end
+
+    it "is 36px high" do
+      expect(input_classes).to include("h-9")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          t.input_border = "border-zinc-700"
+        end
+      end
+
+      it "uses that theme's input border" do
+        expect(input_classes).to include("border-zinc-700")
+      end
     end
   end
 
@@ -100,6 +110,13 @@ RSpec.describe IronAdmin::Filters::DateRangeComponent, type: :component do
 
     it "names the to input after the filter" do
       expect(document.at_css("input[name='filters[created_at_to]']")["aria-label"]).to eq("Created at to")
+    end
+
+    # Two date inputs look the same, so each says which end of the range it holds; the
+    # inputs' names already say it to screen readers.
+    it "shows From and To beside the two inputs" do
+      markers = %w[from to].map { |edge| document.at_css("input[name='filters[created_at_#{edge}]']").parent.at_css("[aria-hidden=true]").text.strip }
+      expect(markers).to eq(%w[From To])
     end
   end
 end

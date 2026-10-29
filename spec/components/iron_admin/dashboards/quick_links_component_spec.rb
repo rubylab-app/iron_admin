@@ -51,6 +51,56 @@ RSpec.describe IronAdmin::Dashboards::QuickLinksComponent, type: :component do
       expect(headings.map { |heading| [heading.name, heading.text.squish] }).to eq([%w[h2 Shortcuts]])
     end
   end
+
+  describe "theme classes" do
+    subject(:card) do
+      render_inline(described_class.new) { |links| links.with_link(label: "Users", href: "/admin/users") }.at_css("div")
+    end
+
+    before do
+      vc_test_controller.view_context.class.define_method(:heroicon) do |name, **_opts|
+        "<svg class=\"heroicon-#{name}\"></svg>".html_safe
+      end
+    end
+
+    context "with the default theme" do
+      # HAML's dot syntax reads ".py-3.5" as the classes "py-3" and "5".
+      it "keeps fractional sizes such as py-3.5 whole" do
+        expect(card.css("[class]").flat_map { |node| node[:class].split }).not_to include(match(/\A\d+\z/))
+      end
+
+      it "frames the card with the theme's surface, border, radius and shadow" do
+        expect(card[:class].split).to include(*%w[bg-white border border-zinc-200 rounded-lg shadow-xs])
+      end
+
+      it "titles the card with the theme's card_title" do
+        expect(card.at_css("h2")[:class].split).to include(*IronAdmin.current_theme.card_title.split)
+      end
+
+      # A border color on the list would leave the dividers in currentColor.
+      it "colors the dividers between links with the theme's table_border" do
+        expect(card.at_css("a").parent[:class].split).to include("divide-y", *IronAdmin.current_theme.table_border.split)
+      end
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.card_bg = "bg-slate-900"
+          t.border_width = "border-2"
+          t.heading_font = "font-serif"
+        end
+      end
+
+      it "frames the card with that theme's surface and border width" do
+        expect(card[:class].split).to include("bg-slate-900", "border-2")
+      end
+
+      it "titles the card with that theme's heading_font" do
+        expect(card.at_css("h2")[:class].split).to include("font-serif")
+      end
+    end
+  end
 end
 
 RSpec.describe IronAdmin::Dashboards::QuickLinksComponent::LinkComponent, type: :component do
@@ -86,6 +136,48 @@ RSpec.describe IronAdmin::Dashboards::QuickLinksComponent::LinkComponent, type: 
       expect(component.href).to eq("/admin/users")
       expect(component.icon).to eq("users")
       expect(component.description).to eq("Manage user accounts")
+    end
+  end
+
+  describe "rendering" do
+    subject(:link) { render_inline(described_class.new(label: "Users", href: "/admin/users", icon: "users")).at_css("a") }
+
+    let(:theme) { IronAdmin.current_theme }
+    let(:icon) { link.css("svg").first }
+    let(:chevron) { link.css("svg").last }
+
+    # item_hover (zinc-100 in Neutral) would put the muted description below AA contrast.
+    it "highlights the link on hover with the theme's table_row_hover, like a table row" do
+      expect(link[:class].split).to include(*theme.table_row_hover.split)
+    end
+
+    it "shows the theme's focus ring on the link" do
+      expect(link[:class].split).to include(*theme.focus_ring.split)
+    end
+
+    it "draws the icon tile in the theme's metric_icon and control_radius" do
+      expect(icon.parent[:class].split).to include(*theme.metric_icon.split, theme.control_radius)
+    end
+
+    it "draws the chevron in the theme's icon_muted" do
+      expect(chevron[:class].split).to include(*theme.icon_muted.split)
+    end
+
+    context "with a registered theme active for the request" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+          t.table_row_hover = "hover:bg-slate-800"
+          t.metric_icon = "bg-sky-500/10 text-sky-300"
+        end
+      end
+
+      it "highlights the link on hover with that theme's table_row_hover" do
+        expect(link[:class].split).to include("hover:bg-slate-800")
+      end
+
+      it "draws the icon tile in that theme's metric_icon" do
+        expect(icon.parent[:class].split).to include("bg-sky-500/10", "text-sky-300")
+      end
     end
   end
 end

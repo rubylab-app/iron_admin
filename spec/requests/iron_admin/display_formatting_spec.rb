@@ -184,33 +184,41 @@ RSpec.describe "Display Formatting", type: :request do
   end
 
   describe "boolean smart rendering" do
+    # The icon next to the screen reader text "Yes" or "No".
+    def icon_classes(label)
+      wrapper = response.parsed_body.css("span.relative").find { |span| span.at_css(".sr-only")&.text == label }
+      wrapper.at_css("svg")[:class].split
+    end
+
     describe "GET /:resource_name/:id (show)" do
-      it "renders true as green checkmark icon" do
+      it "renders true as a check icon in the theme's success text color" do
         user = create(:user, active: true)
         get iron_admin.resource_path("users", user), as: :html
 
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("text-green-500")
+        expect(icon_classes("Yes")).to include("text-emerald-700")
       end
 
-      it "renders false as red X icon" do
+      it "renders false as a cross icon in the theme's muted text color" do
         user = create(:user, active: false)
         get iron_admin.resource_path("users", user), as: :html
 
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("text-red-400")
+        expect(icon_classes("No")).to include("text-zinc-500")
       end
     end
 
     describe "GET /:resource_name (index)" do
-      it "renders boolean icons on index page" do
+      before do
         create(:user, active: true)
         create(:user, active: false)
         get iron_admin.resources_path("users"), as: :html
+      end
 
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include("text-green-500")
-        expect(response.body).to include("text-red-400")
+      it "renders the true icon" do
+        expect(icon_classes("Yes")).to include("text-emerald-700")
+      end
+
+      it "renders the false icon" do
+        expect(icon_classes("No")).to include("text-zinc-500")
       end
     end
   end

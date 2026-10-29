@@ -71,6 +71,43 @@ module IronAdmin
         permitted_keys = fields.map(&:name)
         params.fetch(:action_form, {}).permit(*permitted_keys).to_h.symbolize_keys
       end
+
+      # Sets what an action form view renders: the action, its fields, the URL
+      # the form posts to, the value of each field and its errors.
+      #
+      # @param action [Hash] The action definition
+      # @param url [String] Path of the action the form posts to
+      # @param values [Hash, nil] Submitted values, or nil for the fields' defaults
+      # @param errors [Hash{Symbol => Array<String>}] Error messages by field name
+      # @return [void]
+      def assign_action_form(action, url, values: nil, errors: {})
+        @action = action
+        @form_fields = action[:form_fields]
+        @form_url = url
+        @form_values = values || @form_fields.to_h { |field| [field.name, field.default] }
+        @form_errors = errors
+      end
+
+      # Renders the action's form again, as unprocessable, when a required
+      # field is blank: the action does not run, and the form keeps the
+      # submitted values with an error under each blank field. A direct POST
+      # that leaves the field out gets the same form.
+      #
+      # @param action [Hash] The action definition
+      # @param collected [Hash] The permitted form params
+      # @param template [Symbol] :action_form or :bulk_action_form
+      # @param url [String] Path of the action the form posts to
+      # @return [Boolean] Whether it rendered the form
+      def render_invalid_action_form?(action, collected, template, url)
+        errors = Array(action[:form_fields]).each_with_object({}) do |field, found|
+          found[field.name] = [I18n.t("errors.messages.blank")] if field.missing?(collected[field.name])
+        end
+        return false if errors.empty?
+
+        assign_action_form(action, url, values: collected, errors: errors)
+        render template, status: :unprocessable_content
+        true
+      end
     end
   end
 end

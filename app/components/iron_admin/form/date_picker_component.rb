@@ -55,9 +55,9 @@ module IronAdmin
       end
 
       # @api private
-      # @return [IronAdmin::Configuration::Theme] Theme configuration
+      # @return [IronAdmin::Configuration::Theme] Theme of the current request
       def theme
-        IronAdmin.configuration.theme
+        IronAdmin.current_theme
       end
 
       # @api private
@@ -73,11 +73,7 @@ module IronAdmin
       # @api private
       # @return [String] CSS classes for date input field
       def input_classes
-        base = "block w-full border px-3 py-2 text-sm shadow-sm outline-none transition duration-150 ease-in-out " \
-               "#{theme.border_radius} #{theme.input_border} #{theme.card_bg} #{theme.body_text} #{theme.input_focus}"
-        base += " !border-red-400 focus:!border-red-500 focus:!ring-red-500/20" if has_error
-        base += " bg-gray-50 cursor-not-allowed" if disabled
-        base
+        ControlClasses.input(theme, error: has_error, muted: disabled)
       end
 
       # @api private

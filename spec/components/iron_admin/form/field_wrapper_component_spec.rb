@@ -97,6 +97,18 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
       component = described_class.new(name: :email)
       expect(component.label_classes).to include("mb-1.5")
     end
+
+    context "with a theme that transforms field labels" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:loud) do |t|
+          t.field_label_transform = "uppercase tracking-wider"
+        end
+      end
+
+      it "uses that theme's field_label_transform" do
+        expect(described_class.new(name: :email).label_classes.split).to include("uppercase", "tracking-wider")
+      end
+    end
   end
 
   describe "#error_classes" do
@@ -108,6 +120,42 @@ RSpec.describe IronAdmin::Form::FieldWrapperComponent, type: :component do
     it "includes mt-1.5" do
       component = described_class.new(name: :email)
       expect(component.error_classes).to include("mt-1.5")
+    end
+  end
+
+  describe "rendering" do
+    let(:theme) { IronAdmin.current_theme }
+
+    context "when required" do
+      subject(:mark) { render_inline(described_class.new(name: :email, required: true)) { "input" }.at_css("label span") }
+
+      it "writes the required mark in the theme's error color" do
+        expect(mark[:class].split).to include(theme.error_text)
+      end
+    end
+
+    context "with errors" do
+      subject(:result) { render_inline(described_class.new(name: :email, errors: ["is invalid"])) { "input" } }
+
+      it "writes the message in the theme's error color" do
+        expect(result.at_css("p")[:class].split).to include(theme.error_text)
+      end
+
+      it "draws the icon in the theme's error color" do
+        expect(result.at_css("svg")[:class].split).to include(theme.error_text)
+      end
+    end
+
+    context "with a registered theme active" do
+      subject(:mark) { render_inline(described_class.new(name: :email, required: true)) { "input" }.at_css("label span") }
+
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.error_text = "text-rose-400" }
+      end
+
+      it "writes the required mark in that theme's error color" do
+        expect(mark[:class].split).to include("text-rose-400")
+      end
     end
   end
 end

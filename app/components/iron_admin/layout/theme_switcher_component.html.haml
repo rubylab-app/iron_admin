@@ -1,0 +1,15 @@
+%details.relative{ data: { controller: "cp-disclosure", action: "keydown->cp-disclosure#closeOnEscape click@document->cp-disclosure#closeOnOutsideClick" } }
+  %summary.flex.h-9.w-9.cursor-pointer.list-none.items-center.justify-center{ class: "#{theme.control_radius} #{theme.btn_ghost} #{theme.focus_ring} [&::-webkit-details-marker]:hidden", data: { cp_disclosure_target: "summary" } }
+    = heroicon "swatch", variant: :outline, options: { class: "h-5 w-5" }
+    %span.sr-only= summary_label
+  -# A dropdown surface, like IronAdmin::Ui::DropdownComponent's menu.
+  .absolute.right-0.z-40.w-52.origin-top-right.p-1{ class: "mt-1.5 #{theme.popover_background} #{theme.border_width} #{theme.card_border} #{theme.border_radius} #{theme.popover_shadow}" }
+    = form_with url: helpers.iron_admin.theme_path, method: :post, data: { turbo: false }, html: { role: "group", "aria-label": menu_label } do
+      - if return_path
+        = hidden_field_tag :return_to, return_path, id: nil
+      - themes.each do |option|
+        %button.flex.h-8.w-full.cursor-pointer.items-center.gap-2.px-2.text-left.text-sm{ type: "submit", name: "theme", value: option.name, "aria-pressed": current?(option).to_s, class: "#{theme.control_radius} #{theme.body_text} #{theme.item_hover} #{theme.focus_ring}" }
+          %span.h-3.w-3.shrink-0{ "aria-hidden": "true", class: option.swatch }
+          %span.flex-1.truncate= option.label
+          - if current?(option)
+            = heroicon "check", variant: :mini, options: { class: "h-4 w-4 shrink-0", "aria-hidden": "true" }

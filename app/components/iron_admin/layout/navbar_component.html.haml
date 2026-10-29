@@ -1,11 +1,17 @@
-%header.py-3.flex.items-center.justify-between.gap-3.border-b{ class: "px-4 sm:px-6 #{helpers.t.navbar_bg} #{helpers.t.navbar_border}" }
-  %button.p-2.-ml-2.shrink-0{ type: "button", class: "lg:hidden #{helpers.t.body_text}", "aria-label": "Open menu", "aria-controls": "cp-sidebar-panel", "aria-expanded": "false", data: { action: "cp-sidebar#toggle", cp_sidebar_target: "toggle" } }
-    = helpers.heroicon "bars-3", variant: :outline, options: { class: "h-6 w-6" }
-  = form_with url: helpers.iron_admin.search_path, method: :get, class: "flex-1 max-w-lg" do
+%header.flex.h-14.shrink-0.items-center.gap-3.px-4{ class: "sm:px-6 lg:px-8 #{theme.navbar_bg} #{theme.navbar_border_width} #{theme.navbar_border}" }
+  %button.-ml-2.inline-flex.h-9.w-9.shrink-0.items-center.justify-center{ type: "button", class: "lg:hidden #{theme.control_radius} #{theme.btn_ghost} #{theme.focus_ring}", "aria-label": "Open menu", "aria-controls": "cp-sidebar-panel", "aria-expanded": "false", data: { action: "cp-sidebar#toggle", cp_sidebar_target: "toggle" } }
+    = helpers.heroicon "bars-3", variant: :outline, options: { class: "h-5 w-5" }
+  -# cp-search-shortcut focuses the search box on ⌘K / Ctrl+K and shows that shortcut in the hint.
+  = form_with url: helpers.iron_admin.search_path, method: :get, class: "flex-1 max-w-md", data: { controller: "cp-search-shortcut", action: "keydown@window->cp-search-shortcut#focus" }, html: { role: "search" } do
     .relative
-      .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center{ class: "pl-3.5" }
-        = helpers.heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 text-gray-400" }
-      %input.block.w-full.appearance-none.pl-10.pr-4.py-2.text-sm.shadow-sm.outline-none.transition.duration-150.ease-in-out{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search across all resources...", class: "#{helpers.t.border_radius} border #{helpers.t.input_border} #{helpers.t.navbar_search_bg} #{helpers.t.body_text} placeholder:text-gray-400 #{helpers.t.input_focus} #{helpers.t.navbar_search_focus_bg}" }
-  .flex.items-center.gap-4
+      .pointer-events-none.absolute.inset-y-0.left-0.flex.items-center.pl-3
+        = helpers.heroicon "magnifying-glass", variant: :mini, options: { class: "h-4 w-4 #{theme.icon_muted}" }
+      %input{ type: "search", name: "q", value: search_query, "aria-label": "Search across all resources", placeholder: "Search…", class: "peer sm:pr-16 #{helpers.cp_navbar_search_class}", data: { cp_search_shortcut_target: "input" } }
+      -# Hidden until the controller connects: without it there is no shortcut to show.
+      %kbd{ hidden: true, "aria-hidden": "true", class: "pointer-events-none absolute top-1/2 right-2 hidden h-5 -translate-y-1/2 items-center px-1.5 text-[11px] leading-none font-medium [font-family:inherit] transition-opacity duration-150 peer-focus:opacity-0 sm:inline-flex #{theme.border_width} #{theme.control_radius} #{theme.kbd}", data: { cp_search_shortcut_target: "hint" } } ⌘K
+  .ml-auto.flex.shrink-0.items-center.gap-3
+    - if theme_switcher
+      = render theme_switcher
     - if @current_user
-      %span.text-sm.text-gray-600= @current_user.try(:name) || @current_user.try(:email)
+      -# Hidden on phones and truncated from sm: the 56px bar cannot wrap a long name.
+      %span.hidden.max-w-64.truncate.text-sm.font-medium{ class: "sm:block #{theme.navbar_text}" }= @current_user.try(:name) || @current_user.try(:email)

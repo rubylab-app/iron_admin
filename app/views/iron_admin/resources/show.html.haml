@@ -1,6 +1,8 @@
-.p-4.sm:p-6.lg:p-8.max-w-7xl.mx-auto{ class: t.font_family }
+- styles = IronAdmin::Resources::Styles
+
+.px-4.sm:px-6.lg:px-8.py-6.max-w-7xl.mx-auto
   .flex.items-center.justify-between.gap-3.flex-wrap.mb-6
-    %h1.text-2xl{ class: cp_heading }
+    %h1{ class: styles.page_title(t) }
       = @resource_class.model.model_name.human
       %span{ class: cp_muted_text }= "##{@record.id}"
     .flex.gap-2.flex-wrap
@@ -12,62 +14,69 @@
           method: :delete, data: { turbo_confirm: I18n.t("iron_admin.resources.show.delete_confirm") },
           class: cp_btn_danger
 
-  .overflow-hidden{ class: cp_card }
-    %dl{ class: "#{cp_table_border} divide-y" }
+  .overflow-hidden{ class: styles.panel(t) }
+    %dl{ class: styles.divided(t) }
       - @fields.each do |field|
         - next unless field.visible?(iron_admin_current_user)
-        .px-6.py-4.flex.flex-col.gap-1{ class: "sm:flex-row sm:items-center" }
-          %dt.text-sm.font-medium{ class: "sm:w-1/3 #{cp_muted_text}" }= field.name.to_s.humanize
-          %dd.text-sm.break-words{ class: "sm:w-2/3 #{cp_body_text}" }= display_field_value(@record, field)
+        %div{ class: styles::DETAIL_ROW }
+          %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text} #{t.field_label_transform}" }= field.name.to_s.humanize
+          %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_show_field_value(@record, field)
 
   - @resource_class.has_one_associations.each do |assoc|
     - related_record = @record.public_send(assoc[:name])
     - next unless related_record
-    .mt-6.overflow-hidden{ class: cp_card }
-      .px-6.py-4.border-b.flex.items-center.justify-between{ class: t.card_border }
-        %h2.text-lg.font-semibold= assoc[:name].to_s.humanize
+    .mt-6.overflow-hidden{ class: styles.panel(t) }
+      %div{ class: styles.panel_header(t) }
+        %h2{ class: styles.panel_title(t) }= assoc[:name].to_s.humanize
         = link_to I18n.t("iron_admin.resources.show.view_link"),
           resource_path(assoc[:resource].resource_name, related_record),
           class: "text-sm #{cp_link}"
-      %dl{ class: "#{cp_table_border} divide-y" }
+      %dl{ class: styles.divided(t) }
         - assoc[:resource].resolved_fields.first(6).each do |field|
           - next if field.name == :id
           - next unless field.visible?(iron_admin_current_user)
-          .px-6.py-3.flex.flex-col.gap-1{ class: "sm:flex-row sm:items-center" }
-            %dt.text-sm.font-medium{ class: "sm:w-1/3 #{cp_muted_text}" }= field.name.to_s.humanize
-            %dd.text-sm.break-words{ class: "sm:w-2/3 #{cp_body_text}" }= display_field_value(related_record, field)
+          %div{ class: styles::DETAIL_ROW }
+            %dt.text-sm.font-medium{ class: "sm:w-1/3 #{t.muted_text} #{t.field_label_transform}" }= field.name.to_s.humanize
+            %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_show_field_value(related_record, field)
 
   - @resource_class.habtm_associations.each do |assoc|
     - related_records = @record.public_send(assoc[:name])
     - next if related_records.empty?
-    .mt-6.overflow-hidden{ class: cp_card }
-      .px-6.py-4.border-b{ class: t.card_border }
-        %h2.text-lg.font-semibold= assoc[:name].to_s.humanize
-      .px-6.py-4
-        .flex.flex-wrap.gap-2
-          - related_records.each do |related|
-            - display = assoc[:display]
-            - if assoc[:resource]
-              = link_to display_record_label(related, display),
-                resource_path(assoc[:resource].resource_name, related),
-                class: "inline-flex px-3 py-1 text-sm font-medium rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
-            - else
-              %span.inline-flex.px-3.py-1.text-sm.font-medium.rounded-full.bg-gray-100.text-gray-700
-                = display_record_label(related, display)
+    .mt-6{ class: styles.panel(t) }
+      %div{ class: styles.panel_header(t) }
+        %h2{ class: styles.panel_title(t) }= assoc[:name].to_s.humanize
+      .flex.flex-wrap.gap-2.px-4.py-3
+        - related_records.each do |related|
+          - display = assoc[:display]
+          - if assoc[:resource]
+            = link_to display_record_label(related, display),
+              resource_path(assoc[:resource].resource_name, related),
+              class: "inline-flex items-center px-2 py-0.5 text-xs transition-opacity hover:opacity-75 #{t.badge_shape} #{t.chip} #{t.focus_ring}"
+          - else
+            %span{ class: "inline-flex items-center px-2 py-0.5 text-xs #{t.badge_shape} #{t.chip}" }
+              = display_record_label(related, display)
 
   - @resource_class.has_many_associations.each do |assoc|
     = render IronAdmin::Resources::RelatedListComponent.new(association: assoc,
       records: @record.public_send(assoc[:name]), parent: @record)
 
   - if @member_actions.any?
-    .mt-6.p-6{ class: cp_card }
-      %h2.text-lg.font-semibold.mb-4= I18n.t("iron_admin.resources.show.actions_label")
+    .mt-6.p-4{ class: styles.panel(t) }
+      %h2.mb-3{ class: styles.panel_title(t) }= I18n.t("iron_admin.resources.show.actions_label")
       .flex.gap-2.flex-wrap
         - @member_actions.each do |action|
-          - confirm = action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
-          = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
-            data: action[:confirm] ? { turbo_confirm: confirm } : {},
-            class: cp_btn_ghost do
-            - if action[:icon]
-              = heroicon action[:icon], variant: :outline, options: { class: "h-5 w-5" }
-            = action[:name].to_s.humanize
+          -# An action with form fields opens its form, which asks for the confirmation on submit.
+          - if action[:form_fields].present?
+            = link_to resource_action_form_path(@resource_class.resource_name, @record, action[:name]),
+              class: styles.secondary_button(t) do
+              - if action[:icon]
+                = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+              = action[:name].to_s.humanize
+          - else
+            - confirm = action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
+            = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
+              data: action[:confirm] ? { turbo_confirm: confirm } : {},
+              class: styles.secondary_button(t) do
+              - if action[:icon]
+                = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+              = action[:name].to_s.humanize

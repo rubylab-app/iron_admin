@@ -31,6 +31,13 @@ en:
         not_completed: "Bulk action was not completed"
         failure: "Action failed: %{error}"
         inaccessible: "Some records are not accessible"
+      action_form:
+        record: "Applies to %{model} #%{id}."
+        record_with_label: "Applies to %{model} #%{id} (%{label})."
+      bulk_action_form:
+        selected:
+          one: "Applies to 1 selected record."
+          other: "Applies to %{count} selected records."
       index:
         new_button: "New %{model}"
         import_button: "Import"
@@ -70,6 +77,7 @@ en:
           one: "%{count} row detected."
           other: "%{count} rows detected."
         mapping_title: "Column mapping"
+        table_label: "Rows to import"
         status_column: "Status"
         valid_status: "Valid"
         back_button: "Back"
@@ -87,11 +95,13 @@ en:
       boolean_enable: "Enable %{field}"
       boolean_true: "Yes"
       boolean_false: "No"
+      empty_value: "Not set"
       url_placeholder: "https://"
       email_placeholder: "user@example.com"
       file_remove: "Remove"
       markdown_placeholder: "Write markdown here..."
       tags_placeholder: "Type and press Enter to add..."
+      tags_remove: "Remove %{tag}"
       color_placeholder: "#000000"
       color_picker_label: "%{field} picker"
       color_invalid: "Enter a hex color such as #1a2b3c or #abc."
@@ -110,6 +120,10 @@ en:
       dismiss: "Dismiss"
     modal:
       close: "Close"
+    theme_switcher:
+      button_label: "Theme: %{theme}"
+      menu_label: "Themes"
+      unknown: "That theme is not available."
     nested_form:
       add_button: "Add row"
       remove_button: "Remove"

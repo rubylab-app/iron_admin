@@ -31,9 +31,20 @@ RSpec.describe IronAdmin::Form::CheckboxComponent, type: :component do
       expect(component.checkbox_classes).to include("w-4")
     end
 
-    it "includes rounded" do
+    it "uses the theme's checkbox_radius" do
       component = described_class.new(name: :active)
-      expect(component.checkbox_classes).to include("rounded")
+      expect(component.checkbox_classes.split).to include(IronAdmin.current_theme.checkbox_radius)
+    end
+
+    it "uses the theme's checkbox_border and checked state" do
+      theme = IronAdmin.current_theme
+      component = described_class.new(name: :active)
+      expect(component.checkbox_classes.split).to include(theme.checkbox_border, *theme.checkbox_checked.split)
+    end
+
+    it "draws the engine's check mark" do
+      component = described_class.new(name: :active)
+      expect(component.checkbox_classes.split).to include("appearance-none", "cp-checkbox-mark")
     end
   end
 
@@ -79,6 +90,19 @@ RSpec.describe IronAdmin::Form::CheckboxComponent, type: :component do
         result = render_inline(described_class.new(name: :active, disabled: false))
         expect(result.css("input[type='checkbox'][disabled]")).not_to be_present
       end
+    end
+  end
+
+  context "with a registered theme active" do
+    before do
+      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+        theme.control_radius = "rounded-none"
+        theme.checkbox_radius = "rounded-none"
+      end
+    end
+
+    it "renders the checkbox with that theme's radius" do
+      expect(render_inline(described_class.new(name: :active)).at_css("input[type='checkbox']")[:class].split).to include("rounded-none")
     end
   end
 end

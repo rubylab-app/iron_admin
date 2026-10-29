@@ -29,6 +29,24 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
     end
   end
 
+  describe "rendering an empty value" do
+    subject(:value) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(field: role_field, record: create(:user, role: nil))).at_css("dd")
+      end
+    end
+
+    let(:role_field) { IronAdmin::Resources::UserResource.resolved_fields.find { |f| f.name == :role } }
+
+    it "marks it with a muted dash, as the show page does" do
+      expect(value.at_css("[aria-hidden=true]").text).to eq("\u2014")
+    end
+
+    it "names it for screen readers" do
+      expect(value.at_css(".sr-only").text).to eq(I18n.t("iron_admin.fields.empty_value"))
+    end
+  end
+
   describe "field visibility" do
     let(:current_user) { create(:user) }
 
@@ -102,6 +120,48 @@ RSpec.describe IronAdmin::Resources::ShowFieldComponent, type: :component do
         component = described_class.new(field: admin_only_field, record: user, current_user: regular_user)
         result = render_inline(component)
         expect(result.to_html.strip).to be_empty
+      end
+    end
+  end
+
+  describe "rendered row" do
+    subject(:row) do
+      with_controller_class(IronAdmin::ApplicationController) do
+        render_inline(described_class.new(field: field, record: user)).at_css("div")
+      end
+    end
+
+    it "lays out the label and the value like the show page's detail rows" do
+      expect(row[:class]).to eq(IronAdmin::Resources::Styles::DETAIL_ROW)
+    end
+
+    it "writes the label in the theme's muted text color" do
+      expect(row.at_css("dt")[:class].split).to include("text-zinc-500")
+    end
+
+    it "writes the value in the theme's body text color" do
+      expect(row.at_css("dd")[:class].split).to include("text-zinc-900")
+    end
+
+    context "with a registered theme active" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.body_text = "text-zinc-100" }
+      end
+
+      it "writes the value in that theme's body text color" do
+        expect(row.at_css("dd")[:class].split).to include("text-zinc-100")
+      end
+    end
+
+    context "with a theme that transforms field labels" do
+      before do
+        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:loud) do |t|
+          t.field_label_transform = "uppercase tracking-wider"
+        end
+      end
+
+      it "transforms the label" do
+        expect(row.at_css("dt")[:class].split).to include("uppercase", "tracking-wider")
       end
     end
   end
