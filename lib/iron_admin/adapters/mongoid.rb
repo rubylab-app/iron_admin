@@ -9,8 +9,12 @@ module IronAdmin
     # query interface, field introspection, and association reflection.
     #
     # @example Configuring a resource to use Mongoid
-    #   class ArticleResource < IronAdmin::Resource
-    #     self.adapter_class = :mongoid
+    #   module IronAdmin
+    #     module Resources
+    #       class ArticleResource < IronAdmin::Resource
+    #         self.adapter_class = :mongoid
+    #       end
+    #     end
     #   end
     class Mongoid < Base
       # Maps Mongoid field types (Ruby classes) to IronAdmin symbol types.

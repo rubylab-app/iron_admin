@@ -8,23 +8,27 @@ Create a dashboard class in `app/iron_admin/dashboards/`:
 
 ```ruby
 # app/iron_admin/dashboards/admin_dashboard.rb
-class AdminDashboard < IronAdmin::Dashboard
-  metric :total_users, format: :number do
-    User.count
-  end
+module IronAdmin
+  module Dashboards
+    class AdminDashboard < IronAdmin::Dashboard
+      metric :total_users, format: :number do
+        User.count
+      end
 
-  metric :monthly_revenue, format: :currency do
-    Payment.where("created_at > ?", 30.days.ago).sum(:amount)
-  end
+      metric :monthly_revenue, format: :currency do
+        Payment.where("created_at > ?", 30.days.ago).sum(:amount)
+      end
 
-  metric :conversion_rate, format: :percentage do
-    total = User.count
-    paying = User.joins(:subscriptions).distinct.count
-    total.zero? ? 0 : (paying.to_f / total * 100).round(1)
-  end
+      metric :conversion_rate, format: :percentage do
+        total = User.count
+        paying = User.joins(:subscriptions).distinct.count
+        total.zero? ? 0 : (paying.to_f / total * 100).round(1)
+      end
 
-  recent :users, limit: 5, scope: -> { where(active: true) }
-  recent :payments, limit: 10
+      recent :users, limit: 5, scope: -> { where(active: true) }
+      recent :payments, limit: 10
+    end
+  end
 end
 ```
 
@@ -60,11 +64,16 @@ Metrics render using `IronAdmin::Dashboards::MetricCardComponent`. Customize the
 
 ## Charts
 
-Define charts for visualizing trends:
+Define charts for visualizing trends. The block must return a Hash of label => value.
+groupdate is not a dependency. This reads one column from the last twelve months,
+including the current month. `group_by` keeps the order of the rows, which is not
+chronological. `"YYYY-MM"` keys sort in calendar order. A month with no rows is
+missing; zero-fill those twelve months when the chart should still show them.
 
 ```ruby
 chart :signups_over_time, type: :line do
-  # Return chart data
+  signups = User.where(created_at: 11.months.ago.beginning_of_month..).pluck(:created_at)
+  signups.group_by { |created_at| created_at.strftime("%Y-%m") }.transform_values(&:count).sort.to_h
 end
 ```
 

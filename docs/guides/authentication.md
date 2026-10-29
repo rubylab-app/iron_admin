@@ -102,10 +102,14 @@ The user returned by `config.current_user` is available as `iron_admin_current_u
 Per-resource access control:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  policy do
-    allow :read, :create, :update
-    deny :destroy, if: ->(user) { !user&.superadmin? }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      policy do
+        allow :read, :create, :update
+        deny :destroy, if: ->(user) { !user&.superadmin? }
+      end
+    end
   end
 end
 ```
@@ -159,19 +163,23 @@ end
 Custom actions and bulk actions are **allowed by default**, even when a policy is defined. This separates custom action authorization from CRUD policy. To restrict a custom action, add an `allow` rule with a condition:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  action :lock do |record|
-    record.update!(locked_at: Time.current)
-  end
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      action :lock do |record|
+        record.update!(locked_at: Time.current)
+      end
 
-  bulk_action :archive do |records|
-    records.update_all(archived: true)
-  end
+      bulk_action :archive do |records|
+        records.update_all(archived: true)
+      end
 
-  policy do
-    allow :read, :update
-    allow :lock, if: ->(user) { user&.admin? }      # Restrict the custom action
-    allow :archive, if: ->(user) { user&.admin? }   # Restrict the bulk action
+      policy do
+        allow :read, :update
+        allow :lock, if: ->(user) { user&.admin? }      # Restrict the custom action
+        allow :archive, if: ->(user) { user&.admin? }   # Restrict the bulk action
+      end
+    end
   end
 end
 ```
@@ -186,8 +194,12 @@ the policy denies is hidden, and running it anyway returns `403`.
 For simple cases:
 
 ```ruby
-class AuditLogResource < IronAdmin::Resource
-  deny_actions :create, :update, :delete
+module IronAdmin
+  module Resources
+    class AuditLogResource < IronAdmin::Resource
+      deny_actions :create, :update, :delete
+    end
+  end
 end
 ```
 
@@ -242,10 +254,14 @@ these translation keys:
 Control field visibility and editability per user:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :salary, visible: ->(user) { user&.admin? || user&.hr? }
-  field :role, readonly: ->(user) { !user&.admin? }
-  field :ssn, visible: ->(user) { user&.admin? }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :salary, visible: ->(user) { user&.admin? || user&.hr? }
+      field :role, readonly: ->(user) { !user&.admin? }
+      field :ssn, visible: ->(user) { user&.admin? }
+    end
+  end
 end
 ```
 
@@ -350,12 +366,33 @@ end
 
 ## Multi-Tenant Support
 
-Automatically scope all queries to the current tenant:
+Automatically scope all queries to the current tenant.
+
+`Current.organization` is the host application's current attributes, not
+`IronAdmin::RequestContext`. Nothing in an admin request sets it: the host's
+controller callbacks do not run here. Set it for the request with an
+`around_action` on `IronAdmin::ApplicationController`, installed from
+`to_prepare`, the same way as the locale. Guard a missing organization.
+Calling `id` on nil raises `NoMethodError` and the request returns 500.
 
 ```ruby
+# config/initializers/iron_admin.rb
+Rails.application.config.to_prepare do
+  IronAdmin::ApplicationController.class_eval do
+    around_action :set_iron_admin_tenant
+
+    private
+
+    def set_iron_admin_tenant(&action)
+      Current.set(organization: iron_admin_current_user&.organization, &action)
+    end
+  end
+end
+
 IronAdmin.configure do |config|
   config.tenant_scope do |scope|
-    scope.where(organization_id: Current.organization.id)
+    organization = Current.organization
+    organization ? scope.where(organization_id: organization.id) : scope
   end
 end
 ```

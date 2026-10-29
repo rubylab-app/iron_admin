@@ -291,8 +291,12 @@ end
 ```
 
 ```ruby
-class ProductResource < IronAdmin::Resource
-  field :accent_color, type: :color_picker
+module IronAdmin
+  module Resources
+    class ProductResource < IronAdmin::Resource
+      field :accent_color, type: :color_picker
+    end
+  end
 end
 ```
 

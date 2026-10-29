@@ -76,7 +76,8 @@ module IronAdmin
     # @return [Symbol] Default sort direction, :asc or :desc (default: :desc)
     attr_accessor :default_sort_direction
 
-    # @return [Symbol] Search engine to use (default: :default)
+    # Unused. The value is stored and returned, and nothing in IronAdmin reads it (default: :default).
+    # @return [Symbol]
     attr_accessor :search_engine
 
     # @return [Hash{String => String}] Mapping of status values to badge colors
@@ -326,23 +327,35 @@ module IronAdmin
       @audit_user_labels_block = block
     end
 
-    # Defines a callback executed after any CRUD action.
+    # Registers a block called with one event after a resource change.
     #
-    # Use this for audit logging, notifications, or other side effects.
+    # Create, update and destroy call it after a successful save. A custom
+    # action, a bulk action and an import call it after the resource transaction
+    # commits, or immediately when there is no transaction. The import's action
+    # is +:create+ or +:update+.
     #
-    # @yield [action, resource, record, user] Block executed after actions
-    # @yieldparam action [Symbol] The action (:create, :update, :delete)
-    # @yieldparam resource [Class] The resource class
-    # @yieldparam record [ActiveRecord::Base] The affected record
-    # @yieldparam user [Object] The current user
+    # The event has these readers:
+    # * +user+ — +iron_admin_current_user+
+    # * +action+ — +:create+, +:update+ or +:destroy+ for CRUD. For a custom
+    #   action, +event.action+ is the String URL segment (+params[:action_name]+).
+    #   For a bulk action, it is the Symbol passed to +bulk_action+. Compare with
+    #   +event.action.to_s+. An import is +:create+ or +:update+
+    # * +resource+ — the resource class name as a String, not the class
+    # * +record_id+ — +record.id.to_s+
+    # * +changes+ — a Hash of the saved changes. Password fields and the host's
+    #   +filter_parameters+ are replaced with +"[FILTERED]"+
+    # * +ip_address+ — +request.remote_ip+
     #
-    # @example Audit logging
-    #   config.on_action do |action, resource, record, user|
-    #     AuditLog.create!(
-    #       action: action,
-    #       resource: resource.name,
-    #       record_id: record.id,
-    #       user_id: user.id
+    # @yield [event] Block called with the event
+    # @yieldparam event [OpenStruct] The event described above
+    #
+    # @example Record the event
+    #   config.on_action do |event|
+    #     AuditTrail.create!(
+    #       action: event.action,
+    #       resource: event.resource,
+    #       record_id: event.record_id,
+    #       user_id: event.user&.id
     #     )
     #   end
     #

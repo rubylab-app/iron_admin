@@ -8,33 +8,42 @@ module IronAdmin
   # filters, actions, search, and authorization.
   #
   # @example Basic resource definition
-  #   class UserResource < IronAdmin::Resource
-  #     field :email, readonly: true
-  #     field :role, type: :select, options: %w[admin user guest]
-  #     field :password_digest, visible: false
+  #   module IronAdmin
+  #     module Resources
+  #       class UserResource < IronAdmin::Resource
+  #         field :email, readonly: true
+  #         # Fields take choices:. Filters take options:.
+  #         field :role, type: :select, choices: %w[admin user guest]
+  #         field :password_digest, visible: false
   #
-  #     searchable :name, :email
-  #     index_fields :id, :name, :email, :role, :created_at
+  #         searchable :name, :email
+  #         index_fields :id, :name, :email, :role, :created_at
   #
-  #     filter :role, type: :select, options: %w[admin user guest]
+  #         filter :role, type: :select, options: %w[admin user guest]
   #
-  #     action :suspend, icon: "pause", confirm: true do |record|
-  #       record.update!(suspended_at: Time.current)
-  #     end
+  #         action :suspend, icon: "pause", confirm: true do |record|
+  #           record.update!(suspended_at: Time.current)
+  #         end
   #
-  #     policy do
-  #       allow :read
-  #       allow :update, if: ->(user) { user.admin? }
-  #       deny :delete
+  #         policy do
+  #           allow :read
+  #           allow :update, if: ->(user) { user.admin? }
+  #           deny :delete
+  #         end
+  #       end
   #     end
   #   end
   #
   # @example Resource with associations
-  #   class OrderResource < IronAdmin::Resource
-  #     belongs_to :customer
-  #     has_many :line_items, resource: LineItemResource
+  #   module IronAdmin
+  #     module Resources
+  #       class OrderResource < IronAdmin::Resource
+  #         belongs_to :customer
+  #         has_many :line_items, resource: LineItemResource
   #
-  #     preload :customer, :line_items
+  #         preload :customer, :line_items
+  #       end
+  #     end
   #   end
   #
   # @see IronAdmin::Field For field configuration options
@@ -116,16 +125,24 @@ module IronAdmin
       # @return [Class] The ActiveRecord model class
       #
       # @example Override with model_class_override
-      #   class LegacyUserResource < IronAdmin::Resource
-      #     self.model_class_override = OldUser
+      #   module IronAdmin
+      #     module Resources
+      #       class LegacyUserResource < IronAdmin::Resource
+      #         self.model_class_override = OldUser
+      #       end
+      #     end
       #   end
       #
       # @example HTTP adapter — no Ruby model required
-      #   class ProductResource < IronAdmin::Resource
-      #     self.adapter_class = :http
-      #     # `model` returns `Adapters::Http::ModelProxy.new(self)` — no
-      #     # `Product` constant required; fields come from the API
-      #     # response on first access.
+      #   module IronAdmin
+      #     module Resources
+      #       class ProductResource < IronAdmin::Resource
+      #         self.adapter_class = :http
+      #         # `model` returns `Adapters::Http::ModelProxy.new(self)` — no
+      #         # `Product` constant required; fields come from the API
+      #         # response on first access.
+      #       end
+      #     end
       #   end
       def model
         return model_class_override if model_class_override
@@ -141,26 +158,45 @@ module IronAdmin
       #
       # @param name [Symbol] The field name (must match a database column or association)
       # @param options [Hash] Configuration options for the field
-      # @option options [Symbol] :type Override the inferred field type
-      #   (:string, :text, :integer, :boolean, :date, :datetime, :select, :belongs_to)
+      # @option options [Symbol] :type Override the inferred field type.
+      #   {FieldInferrer} assigns :text, :textarea, :number, :boolean, :date,
+      #   :datetime, :time, :json, :url, :email, :select, :belongs_to,
+      #   :polymorphic_belongs_to, :file, :files and :rich_text. The form also
+      #   renders :badge, :password, :hidden, :color, :currency, :markdown,
+      #   :tags, :key_value, :boolean_group, :external_image, :progress_bar,
+      #   :code and :radio. :string and :integer are not field types, and neither
+      #   is any other unknown type (including :time, which is inferred but has
+      #   no form branch): the form renders a text input. An import still casts
+      #   +type: :integer+ with +Integer()+. A type registered with
+      #   {FieldTypeRegistry} uses that registration.
       # @option options [Boolean, Proc] :visible Whether the field is visible
       #   (Proc receives the current user)
       # @option options [Boolean, Proc] :readonly Whether the field is read-only
       #   (Proc receives the current user)
-      # @option options [String] :label Custom label for the field
-      # @option options [Array] :options For select fields, the available choices
+      # @option options [String] :label No effect on index, show or form labels.
+      #   Those pages humanize the field name. Import column matching uses it as
+      #   an extra header candidate.
+      # @option options [Array] :choices Choices for a :select field. The form
+      #   reads :choices. :options is the filter key, not the field key.
+      #   +field :role, type: :select, options: [...]+ raises +NoMethodError+
+      #   (+map+ for nil) on new and edit.
       # @option options [Boolean] :autocomplete For belongs_to, force autocomplete mode
-      # @option options [Proc] :format Custom formatting proc for display
+      # @option options [String] :format strftime pattern for :date and :datetime
+      #   on the index, the show page and, when the value is a String, the import
+      #   preview. Defaults are +"%b %d, %Y"+ and +"%b %d, %Y at %l:%M %p"+ (the
+      #   datetime text is then squished). A Proc is not called. A datetime raises
+      #   +NoMethodError+ (+TimeWithZone#strftime+ calls +gsub+ on the format). A
+      #   +Date+ raises +TypeError+. Other types ignore :format.
       #
       # @example Basic field configuration
       #   field :email, readonly: true
-      #   field :role, type: :select, options: %w[admin user guest]
+      #   field :role, type: :select, choices: %w[admin user guest]
       #
       # @example Conditional visibility
       #   field :salary, visible: ->(user) { user.admin? || user.hr? }
       #
-      # @example Custom formatting
-      #   field :price, format: ->(value) { number_to_currency(value) }
+      # @example strftime pattern for a date
+      #   field :published_on, type: :date, format: "%Y-%m-%d"
       #
       # @return [void]
       def field(name, **options)
@@ -293,7 +329,8 @@ module IronAdmin
       # @yield [records, params] Block executed when action is triggered
       # @yieldparam records [ActiveRecord::Relation] The selected records
       # @yieldparam params [Hash{Symbol => String}] The form's values (two-argument blocks only)
-      # @yieldreturn [Boolean, nil] Return false to rollback the transaction
+      # @yieldreturn [Boolean, nil] +false+ rolls the transaction back.
+      #   Use +next false+. +return false+ raises +LocalJumpError+.
       #
       # @example Bulk deactivate
       #   bulk_action :deactivate do |records|
@@ -302,7 +339,7 @@ module IronAdmin
       #
       # @example Bulk action with rollback on failure
       #   bulk_action :process do |records|
-      #     return false unless ExternalService.process(records)
+      #     next false unless ExternalService.process(records)
       #   end
       #
       # @return [void]
@@ -363,7 +400,8 @@ module IronAdmin
       #
       # @param options [Hash] Menu configuration options
       # @option options [String] :icon Heroicon name for the menu item
-      # @option options [String] :label Custom label (defaults to pluralized model name)
+      # @option options [String] :label Ignored for a resource. The sidebar uses
+      #   {.label}, the pluralized model name. A tool's menu +label:+ is used.
       # @option options [Integer] :priority Sort order (lower = higher in menu)
       # @option options [String] :group Group name for the sidebar section
       #   (sibling resources sharing the same `:group` are listed together;
@@ -372,7 +410,7 @@ module IronAdmin
       #   compatibility with earlier docs.
       #
       # @example
-      #   menu icon: "users", label: "Team Members", priority: 10, group: "People"
+      #   menu icon: "users", priority: 10, group: "People"
       #
       # @return [void]
       def menu(**options)
@@ -526,21 +564,6 @@ module IronAdmin
       def belongs_to(name, **options)
         self.defined_associations = defined_associations.merge(name => { kind: :belongs_to, **options })
       end
-
-      # Declares a has_many association for this resource.
-      #
-      # Has_many associations appear as related lists on the show page.
-      #
-      # @param name [Symbol] The association name
-      # @param options [Hash] Configuration options
-      # @option options [Class] :resource The associated resource class
-      # @option options [Array<Symbol>] :fields Fields to display in the related list
-      #
-      # @example
-      #   has_many :orders
-      #   has_many :comments, fields: [:id, :body, :created_at]
-      #
-      # has_many and has_one are defined in Concerns::Nestable
 
       # Declares a has_and_belongs_to_many association for this resource.
       #

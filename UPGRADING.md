@@ -312,22 +312,26 @@ Something is affected if it posts a method name that is not a declared action: a
 **Action required:** Declare all of a tool's actions at once, each with the same `condition:` as the tool's other actions. Declaring only the method named in a deprecation warning turns the tool's other public methods into silent 404s, because a tool that declares one action dispatches only declared actions. A declared action also appears as a button on the default tool page. Make helpers that are not actions `private`.
 
 ```ruby
-class BaseTool < IronAdmin::Tool
-  tool_action :refresh, condition: ->(user) { user&.admin? }
+module IronAdmin
+  module Tools
+    class BaseTool < IronAdmin::Tool
+      tool_action :refresh, condition: ->(user) { user&.admin? }
 
-  def refresh
-  end
-end
+      def refresh
+      end
+    end
 
-class ReportsTool < BaseTool
-  tool_action :export_csv, condition: ->(user) { user&.admin? }
+    class ReportsTool < BaseTool
+      tool_action :export_csv, condition: ->(user) { user&.admin? }
 
-  def export_csv
-  end
+      def export_csv
+      end
 
-  private
+      private
 
-  def filename_for(report)
+      def filename_for(report)
+      end
+    end
   end
 end
 ```
@@ -498,19 +502,26 @@ For an action without a `tool_action` declaration, `POST /admin/tools/:tool/:act
 **Action required:** Declare shared actions with `tool_action`. Declarations are inherited, so declaring the action once on the base class covers every subclass. Declared actions also get a button on the default tool page.
 
 ```ruby
-# Before: /admin/tools/reports/refresh ran the inherited method
+# Before (0.6):
+# /admin/tools/reports/refresh ran the inherited method
 class BaseTool < IronAdmin::Tool
   def refresh; end
 end
 
 class ReportsTool < BaseTool
 end
+```
 
+```ruby
 # After: declare it (once on the base class is enough)
-class BaseTool < IronAdmin::Tool
-  tool_action :refresh
+module IronAdmin
+  module Tools
+    class BaseTool < IronAdmin::Tool
+      tool_action :refresh
 
-  def refresh; end
+      def refresh; end
+    end
+  end
 end
 ```
 
@@ -839,8 +850,12 @@ If you have a custom adapter (not using the built-in `:active_record` or `:mongo
 To use IronAdmin with MongoDB, add `mongoid` to your Gemfile and configure resources:
 
 ```ruby
-class ArticleResource < IronAdmin::Resource
-  self.adapter_class = :mongoid
+module IronAdmin
+  module Resources
+    class ArticleResource < IronAdmin::Resource
+      self.adapter_class = :mongoid
+    end
+  end
 end
 ```
 
@@ -913,11 +928,14 @@ mv app/iron_admin/*_dashboard.rb app/iron_admin/dashboards/
 Wrap each resource class in the `IronAdmin::Resources` module:
 
 ```ruby
-# Before (app/iron_admin/user_resource.rb)
+# Before (0.4):
+# app/iron_admin/user_resource.rb
 class UserResource < IronAdmin::Resource
   # ...
 end
+```
 
+```ruby
 # After (app/iron_admin/resources/user_resource.rb)
 module IronAdmin
   module Resources
@@ -933,11 +951,14 @@ end
 Wrap each dashboard class in the `IronAdmin::Dashboards` module:
 
 ```ruby
-# Before (app/iron_admin/admin_dashboard.rb)
+# Before (0.4):
+# app/iron_admin/admin_dashboard.rb
 class AdminDashboard < IronAdmin::Dashboard
   # ...
 end
+```
 
+```ruby
 # After (app/iron_admin/dashboards/admin_dashboard.rb)
 module IronAdmin
   module Dashboards

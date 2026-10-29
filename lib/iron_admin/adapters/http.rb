@@ -9,10 +9,14 @@ module IronAdmin
     # Faraday is used as the HTTP transport (lazy loaded).
     #
     # @example Minimal resource configuration
-    #   class ProductResource < IronAdmin::Resource
-    #     self.adapter_class = :http
-    #     http_config do |c|
-    #       c.base_url = "https://api.example.com/v1"
+    #   module IronAdmin
+    #     module Resources
+    #       class ProductResource < IronAdmin::Resource
+    #         self.adapter_class = :http
+    #         http_config do |c|
+    #           c.base_url = "https://api.example.com/v1"
+    #         end
+    #       end
     #     end
     #   end
     class Http < Base

@@ -7,13 +7,17 @@ module IronAdmin
   # without coupling them to the controller.
   #
   # @example Accessing context in a tool action
-  #   class ReportTool < IronAdmin::Tool
-  #     tool_action :generate
+  #   module IronAdmin
+  #     module Tools
+  #       class ReportTool < IronAdmin::Tool
+  #         tool_action :generate
   #
-  #     def generate(ctx)
-  #       user = ctx.current_user
-  #       format = ctx.action_params(:format)[:format]
-  #       ctx.flash[:notice] = "Report generated for #{user.name}"
+  #         def generate(ctx)
+  #           user = ctx.current_user
+  #           format = ctx.action_params(:format)[:format]
+  #           ctx.flash[:notice] = "Report generated for #{user.name}"
+  #         end
+  #       end
   #     end
   #   end
   class ToolContext

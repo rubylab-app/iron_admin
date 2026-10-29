@@ -20,12 +20,16 @@ IronAdmin automatically infers field types from your model's schema (ActiveRecor
 ## Overriding Fields
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :status, type: :badge, colors: {
-    active: :green,
-    suspended: :red,
-    pending: :yellow
-  }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :status, type: :badge, colors: {
+        active: :green,
+        suspended: :red,
+        pending: :yellow
+      }
+    end
+  end
 end
 ```
 
@@ -43,9 +47,13 @@ Overrides merge with inferred fields. You only need to specify the fields you wa
 ## Dynamic Visibility and Readonly
 
 ```ruby
-class SalaryResource < IronAdmin::Resource
-  field :amount, visible: ->(user) { user.admin? || user.hr? }
-  field :department, readonly: ->(user) { !user.admin? }
+module IronAdmin
+  module Resources
+    class SalaryResource < IronAdmin::Resource
+      field :amount, visible: ->(user) { user.admin? || user.hr? }
+      field :department, readonly: ->(user) { !user.admin? }
+    end
+  end
 end
 ```
 
@@ -82,9 +90,13 @@ IronAdmin assigns colors to common status values without configuration
 Example:
 
 ```ruby
-class OrderResource < IronAdmin::Resource
-  # No colors needed - auto-detected from value
-  field :status, type: :badge
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      # No colors needed - auto-detected from value
+      field :status, type: :badge
+    end
+  end
 end
 
 # Order with status "pending" will show a yellow badge
@@ -171,8 +183,12 @@ class User < ApplicationRecord
   has_one_attached :avatar
 end
 
-class UserResource < IronAdmin::Resource
-  field :avatar, type: :file
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :avatar, type: :file
+    end
+  end
 end
 ```
 
@@ -187,8 +203,12 @@ class Product < ApplicationRecord
   has_many_attached :images
 end
 
-class ProductResource < IronAdmin::Resource
-  field :images, type: :files
+module IronAdmin
+  module Resources
+    class ProductResource < IronAdmin::Resource
+      field :images, type: :files
+    end
+  end
 end
 ```
 
@@ -203,8 +223,12 @@ class Article < ApplicationRecord
   has_rich_text :body
 end
 
-class ArticleResource < IronAdmin::Resource
-  field :body, type: :rich_text
+module IronAdmin
+  module Resources
+    class ArticleResource < IronAdmin::Resource
+      field :body, type: :rich_text
+    end
+  end
 end
 ```
 
@@ -213,8 +237,12 @@ On forms, a Trix WYSIWYG editor is rendered. On show pages, the rich text conten
 ## Password Field
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :password, type: :password
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :password, type: :password
+    end
+  end
 end
 ```
 
@@ -223,8 +251,12 @@ Renders a password input with masking on forms. Leaving it blank on an edit form
 ## Tags Field
 
 ```ruby
-class ArticleResource < IronAdmin::Resource
-  field :tags, type: :tags
+module IronAdmin
+  module Resources
+    class ArticleResource < IronAdmin::Resource
+      field :tags, type: :tags
+    end
+  end
 end
 ```
 
@@ -233,8 +265,12 @@ On forms, renders a tag input where users can type and press Enter to add tags, 
 ## Markdown Field
 
 ```ruby
-class PostResource < IronAdmin::Resource
-  field :body, type: :markdown
+module IronAdmin
+  module Resources
+    class PostResource < IronAdmin::Resource
+      field :body, type: :markdown
+    end
+  end
 end
 ```
 
@@ -243,8 +279,12 @@ Renders a monospace text area on forms with a markdown placeholder. On show page
 ## Color Field
 
 ```ruby
-class ThemeResource < IronAdmin::Resource
-  field :primary_color, type: :color
+module IronAdmin
+  module Resources
+    class ThemeResource < IronAdmin::Resource
+      field :primary_color, type: :color
+    end
+  end
 end
 ```
 
@@ -260,10 +300,14 @@ For columns that store other CSS color formats (names such as `red`, `rgb(...)`,
 ## Currency Field
 
 ```ruby
-class ProductResource < IronAdmin::Resource
-  field :price, type: :currency
-  # Or with a custom symbol:
-  field :price, type: :currency, symbol: "EUR"
+module IronAdmin
+  module Resources
+    class ProductResource < IronAdmin::Resource
+      field :price, type: :currency
+      # Or with a custom symbol:
+      field :price, type: :currency, symbol: "EUR"
+    end
+  end
 end
 ```
 
@@ -272,8 +316,12 @@ On show and index pages, displays the value formatted with a currency symbol pre
 ## Boolean Field
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :active, type: :boolean
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :active, type: :boolean
+    end
+  end
 end
 ```
 
@@ -282,13 +330,17 @@ Boolean fields are auto-inferred from boolean database columns. On show and inde
 ## Date and DateTime Fields
 
 ```ruby
-class EventResource < IronAdmin::Resource
-  field :start_date, type: :date
-  field :starts_at, type: :datetime
+module IronAdmin
+  module Resources
+    class EventResource < IronAdmin::Resource
+      field :start_date, type: :date
+      field :starts_at, type: :datetime
+    end
+  end
 end
 ```
 
-Date and datetime fields are auto-inferred from their database column types. On show and index pages, dates are displayed in human-readable format (e.g., "January 15, 2026") and datetimes include the time component.
+Date and datetime fields are auto-inferred from their database column types. On show and index pages, a date uses the field's `format:` or `"%b %d, %Y"` (`Jan 15, 2026`). A datetime uses `format:` or `"%b %d, %Y at %l:%M %p"`, then squeezes the extra space (`Jan 15, 2026 at 2:05 PM`). `format:` is a strftime string. A Proc is not called: a datetime raises `NoMethodError`, and a `Date` raises `TypeError`. Other field types ignore `format:`. The import preview uses `format:` only when it is a String.
 
 ## Index Text Truncation
 
@@ -303,8 +355,12 @@ class Comment < ApplicationRecord
   belongs_to :commentable, polymorphic: true
 end
 
-class CommentResource < IronAdmin::Resource
-  belongs_to :commentable, polymorphic: true, types: [Article, Photo, Video]
+module IronAdmin
+  module Resources
+    class CommentResource < IronAdmin::Resource
+      belongs_to :commentable, polymorphic: true, types: [Article, Photo, Video]
+    end
+  end
 end
 ```
 
@@ -312,34 +368,85 @@ On forms, a type selector dropdown and an ID selector are rendered. On show and 
 
 ## Custom Field Types (FieldTypeRegistry)
 
-You can register custom field types using the `FieldTypeRegistry` API:
+You can register custom field types using the `FieldTypeRegistry` API. The form
+input is a String on `config.components.fields`. IronAdmin constantizes that String
+when the form renders, so a reload is picked up on the next request. See
+[Field input overrides](components.md#field-input-overrides). The override wins over
+`form_component` and does not change show or index pages.
+
+Register `display` and `index_display` once. Those blocks must not call a constant
+Zeitwerk can reload. The registry raises `ArgumentError`
+(`Field type :star_rating is already registered`) on a second `register`.
+
+`form_component` is the wrong place for this class. Rails 8 does not autoload
+constants while initializers run, so naming `MyApp::StarRatingComponent` there
+raises `NameError` (`uninitialized constant MyApp`) at boot. `form_component`
+stores the class: a String has no `new`, and a class captured at boot goes stale
+after a reload as soon as it calls a sibling constant.
 
 ```ruby
-IronAdmin::FieldTypeRegistry.register(:star_rating) do
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.components.fields[:star_rating] = "MyApp::StarRatingComponent"
+end
+
+IronAdmin.register_field_type(:star_rating) do
   display do |record, field|
     value = record.public_send(field.name)
-    value.to_i.times.map { "&#9733;" }.join.html_safe
+    value.to_i.clamp(0, 5).times.map { "&#9733;" }.join.html_safe
   end
 
   index_display do |record, field|
-    value = record.public_send(field.name)
-    "#{value}/5"
+    "#{record.public_send(field.name)}/5"
   end
-
-  # Optional: specify a custom ViewComponent for the form
-  form_component MyApp::StarRatingComponent
-
-  # Or a partial path:
-  # form_partial "shared/star_rating_input"
 end
 ```
 
-Then use it in a resource:
+The display block draws one character per unit of the stored value and does not
+stop. Clamp it. The input's `max` is checked only by the browser. Reject a value
+outside the scale on the model: `validates :rating, inclusion: { in: 1..5 }`.
+
+The component takes `form:`, `field:` and `record:`. `StarScale` sits in the same
+file. The String is constantized on each render, so the form uses the reloaded
+component and that sibling.
 
 ```ruby
-class ReviewResource < IronAdmin::Resource
-  field :rating, type: :star_rating
+# app/components/my_app/star_rating_component.rb
+module MyApp
+  module StarScale
+    def self.max
+      5
+    end
+  end
+
+  class StarRatingComponent < ViewComponent::Base
+    def initialize(form:, field:, record:)
+      super()
+      @form = form
+      @field = field
+      @record = record
+    end
+
+    def call
+      @form.number_field(@field.name, min: 1, max: StarScale.max)
+    end
+  end
 end
 ```
 
-The `display` block controls show page rendering, `index_display` controls index table rendering (falls back to `display` if not provided), and `form_component` or `form_partial` controls the form input.
+A partial is the other form option: `form_partial "shared/star_rating_input"`.
+
+Then use the type in a resource:
+
+```ruby
+# app/iron_admin/resources/review_resource.rb
+module IronAdmin
+  module Resources
+    class ReviewResource < IronAdmin::Resource
+      field :rating, type: :star_rating
+    end
+  end
+end
+```
+
+The `display` block controls show page rendering, `index_display` controls index table rendering (falls back to `display` if not provided), and `config.components.fields` controls the form input.

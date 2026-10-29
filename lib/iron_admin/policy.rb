@@ -6,24 +6,33 @@ module IronAdmin
   # Policies define which actions users can perform on resources.
   # They use a simple DSL with `allow` and `deny` to manage permissions.
   #
-  # When no policy is defined for a resource, all actions are allowed by default.
-  # Once a policy block is provided, actions must be explicitly allowed.
-  # Deny rules take precedence over allow rules.
+  # When no policy is defined for a resource, all actions are allowed.
+  # Once a policy block exists, CRUD actions must be explicitly allowed
+  # ({#allowed?}). Custom actions and bulk actions stay allowed unless the
+  # policy names them ({#action_allowed?}). A deny rule wins over an allow rule.
   #
   # @example Basic policy in a resource
-  #   class UserResource < IronAdmin::Resource
-  #     policy do
-  #       allow :read                           # Everyone can view
-  #       allow :create, :update, if: ->(user) { user.admin? }
-  #       deny :destroy                         # No one can delete
+  #   module IronAdmin
+  #     module Resources
+  #       class UserResource < IronAdmin::Resource
+  #         policy do
+  #           allow :read                           # Everyone can view
+  #           allow :create, :update, if: ->(user) { user.admin? }
+  #           deny :destroy                         # No one can delete
+  #         end
+  #       end
   #     end
   #   end
   #
   # @example Policy with conditional deny
-  #   class OrderResource < IronAdmin::Resource
-  #     policy do
-  #       allow :read, :create, :update, :destroy
-  #       deny :destroy, if: ->(user) { !user.superadmin? }
+  #   module IronAdmin
+  #     module Resources
+  #       class OrderResource < IronAdmin::Resource
+  #         policy do
+  #           allow :read, :create, :update, :destroy
+  #           deny :destroy, if: ->(user) { !user.superadmin? }
+  #         end
+  #       end
   #     end
   #   end
   #

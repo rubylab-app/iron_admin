@@ -47,6 +47,11 @@ IronAdmin.configure do |config|
 end
 ```
 
+An app built with `bin/rails generate authentication` does not store the user id in
+`session[:user_id]`. IronAdmin controllers inherit from `ActionController::Base`, so
+the host's `Authentication` concern and `Current.user` are not available in this block.
+Use the [Rails 8 authentication generator example](https://github.com/rubylab-app/iron_admin/blob/main/docs/guides/authentication.md#with-the-rails-8-authentication-generator).
+
 ## 3. Generate Resources
 
 ```bash

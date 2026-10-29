@@ -59,18 +59,26 @@ IronAdmin infers fields from your database schema. Ensure:
 ### How do I hide a field?
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :password_digest, visible: false
-  field :secret, visible: ->(user) { user.admin? }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :password_digest, visible: false
+      field :secret, visible: ->(user) { user.admin? }
+    end
+  end
 end
 ```
 
 ### How do I make a field read-only?
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  field :email, readonly: true
-  field :role, readonly: ->(user) { !user.admin? }
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :email, readonly: true
+      field :role, readonly: ->(user) { !user.admin? }
+    end
+  end
 end
 ```
 
@@ -79,17 +87,25 @@ Readonly fields are left out of the form and are never mass-assigned on create o
 ### How do I customize field display in the index table?
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  index_fields :id, :name, :email, :role, :created_at
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      index_fields :id, :name, :email, :role, :created_at
+    end
+  end
 end
 ```
 
 ### How do I create a custom action?
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  action :lock, icon: "lock-closed", confirm: true do |record|
-    record.update!(locked_at: Time.current)
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      action :lock, icon: "lock-closed", confirm: true do |record|
+        record.update!(locked_at: Time.current)
+      end
+    end
   end
 end
 ```
@@ -114,11 +130,15 @@ end
 Use policies:
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  policy do
-    allow :read
-    allow :update, if: ->(user) { user&.admin? }
-    deny :delete
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      policy do
+        allow :read
+        allow :update, if: ->(user) { user&.admin? }
+        deny :delete
+      end
+    end
   end
 end
 ```
@@ -128,8 +148,12 @@ Once a resource has a `policy` block, every CRUD action must be allowed explicit
 Or use `deny_actions` for simple cases:
 
 ```ruby
-class AuditLogResource < IronAdmin::Resource
-  deny_actions :create, :update, :delete
+module IronAdmin
+  module Resources
+    class AuditLogResource < IronAdmin::Resource
+      deny_actions :create, :update, :delete
+    end
+  end
 end
 ```
 
@@ -168,8 +192,12 @@ created_at:2025-01-01..2025-12-31
 ### How do I customize which fields are searchable?
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  searchable :name, :email
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      searchable :name, :email
+    end
+  end
 end
 ```
 
@@ -184,16 +212,24 @@ CSV and JSON exports are enabled by default. Access via:
 ### How do I customize export fields?
 
 ```ruby
-class UserResource < IronAdmin::Resource
-  export_fields :id, :name, :email, :created_at
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      export_fields :id, :name, :email, :created_at
+    end
+  end
 end
 ```
 
 ### How do I disable export?
 
 ```ruby
-class SecretResource < IronAdmin::Resource
-  exports  # Empty to disable
+module IronAdmin
+  module Resources
+    class SecretResource < IronAdmin::Resource
+      exports  # Empty to disable
+    end
+  end
 end
 ```
 
@@ -202,21 +238,32 @@ end
 ### How do I create a custom dashboard?
 
 ```ruby
-class AdminDashboard < IronAdmin::Dashboard
-  metric :total_users, format: :number do
-    User.count
-  end
+module IronAdmin
+  module Dashboards
+    class AdminDashboard < IronAdmin::Dashboard
+      metric :total_users, format: :number do
+        User.count
+      end
 
-  recent :users, limit: 5
+      recent :users, limit: 5
+    end
+  end
 end
 ```
 
 ### How do I add charts?
 
 ```ruby
-class AdminDashboard < IronAdmin::Dashboard
-  chart :signups_by_month, type: :bar do
-    User.group_by_month(:created_at).count
+module IronAdmin
+  module Dashboards
+    class AdminDashboard < IronAdmin::Dashboard
+      chart :signups_by_month, type: :bar do
+        # groupdate is not a dependency. The block must return a Hash of label => value.
+        # group_by keeps row order. YYYY-MM keys sort chronologically. Zero-fill empty months if you need all twelve.
+        signups = User.where(created_at: 11.months.ago.beginning_of_month..).pluck(:created_at)
+        signups.group_by { |created_at| created_at.strftime("%Y-%m") }.transform_values(&:count).sort.to_h
+      end
+    end
   end
 end
 ```
@@ -228,8 +275,12 @@ end
 IronAdmin automatically preloads `belongs_to` associations. For custom preloading:
 
 ```ruby
-class OrderResource < IronAdmin::Resource
-  preload :customer, :line_items
+module IronAdmin
+  module Resources
+    class OrderResource < IronAdmin::Resource
+      preload :customer, :line_items
+    end
+  end
 end
 ```
 
