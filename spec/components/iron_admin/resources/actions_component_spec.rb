@@ -64,6 +64,49 @@ RSpec.describe IronAdmin::Resources::ActionsComponent, type: :component do
     end
   end
 
+  describe "an action with form fields" do
+    subject(:rendered) do
+      render_inline(described_class.new(actions: [form_action, { name: :lock }], record: user,
+                                        resource_class: IronAdmin::Resources::UserResource))
+    end
+
+    let(:form_action) do
+      { name: :suspend, icon: "pause", confirm: true, form_fields: [IronAdmin::ActionField.new(name: :reason)] }
+    end
+    let(:form_path) { IronAdmin::Engine.routes.url_helpers.resource_action_form_path("users", user, :suspend) }
+    let(:link) { rendered.at_css("a[href='#{form_path}']") }
+
+    it "links to the action's form" do
+      expect(link).to be_present
+    end
+
+    it "styles the link as the action buttons" do
+      expect(link[:class]).to eq(IronAdmin::Resources::Styles.secondary_button(IronAdmin.current_theme))
+    end
+
+    it "draws the action's icon in the link" do
+      expect(link.at_css("svg")[:class].split).to include("h-4", "w-4")
+    end
+
+    it "labels the link with the action's name" do
+      expect(link.text.squish).to eq("Suspend")
+    end
+
+    it "leaves the confirmation to the form" do
+      expect(link["data-turbo-confirm"]).to be_nil
+    end
+
+    it "does not post the action" do
+      action_path = IronAdmin::Engine.routes.url_helpers.resource_action_path("users", user, :suspend)
+      expect(rendered.at_css("form[action='#{action_path}']")).to be_nil
+    end
+
+    it "keeps the direct POST of an action without form fields" do
+      action_path = IronAdmin::Engine.routes.url_helpers.resource_action_path("users", user, :lock)
+      expect(rendered.at_css("form[action='#{action_path}'] button")).to be_present
+    end
+  end
+
   describe "theme" do
     subject(:rendered) do
       render_inline(described_class.new(actions: [{ name: :archive, icon: "archive-box" }], record: user,

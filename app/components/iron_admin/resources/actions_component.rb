@@ -56,6 +56,20 @@ module IronAdmin
 
       # @api private
       # @param action [Hash] Action configuration
+      # @return [Boolean] Whether the action has form fields, so its button opens the form
+      def form?(action)
+        action[:form_fields].present?
+      end
+
+      # @api private
+      # @param action [Hash] Action configuration
+      # @return [String] URL of the action's form
+      def form_url(action)
+        helpers.iron_admin.resource_action_form_path(resource_class.resource_name, record, action[:name])
+      end
+
+      # @api private
+      # @param action [Hash] Action configuration
       # @return [String] Text of the action's confirmation dialog
       def confirm_message(action)
         action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")

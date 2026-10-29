@@ -130,21 +130,17 @@ module IronAdmin
 
       return unless prepare_action_record?(@action)
 
-      @form_fields = @action[:form_fields]
-      @form_url = resource_action_path(@resource_class.resource_name, @record, @action[:name])
+      assign_action_form(@action, resource_action_path(@resource_class.resource_name, @record, @action[:name]))
     end
 
-    # Renders the action form for a bulk action with form_fields.
+    # Renders the action form for a bulk action with form_fields, for the
+    # records selected on the index.
     #
     # @return [void]
     def bulk_action_form
-      action = find_bulk_action
-      return render_not_found unless action
-      return render_forbidden unless action_authorized?(action[:name])
+      return unless prepare_bulk_action?
 
-      @action = action
-      @form_fields = action[:form_fields]
-      @form_url = resource_bulk_action_path(@resource_class.resource_name, action[:name])
+      assign_action_form(@bulk_action, resource_bulk_action_path(@resource_class.resource_name, @bulk_action[:name]))
     end
 
     # Executes a custom action on a single record.
@@ -157,6 +153,8 @@ module IronAdmin
       return unless prepare_action_record?(action)
 
       collected = action_form_params(action)
+      return if render_invalid_action_form?(action, collected, :action_form,
+                                            resource_action_path(@resource_class.resource_name, @record, action[:name]))
 
       completed = action_transaction_completed? do
         result = call_action_block(action[:block], @record, collected)
@@ -182,18 +180,13 @@ module IronAdmin
     #
     # @return [void]
     def execute_bulk_action
-      ids = bulk_action_ids
-      return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.no_records")) if ids.empty?
+      return unless prepare_bulk_action?
 
-      requested, records = find_bulk_records(ids)
-      action = find_bulk_action
-
-      return render_not_found unless action
-      return render_forbidden unless action_authorized?(action[:name])
-      return redirect_bulk(:alert, inaccessible_bulk_message) unless records.count == requested.size
-
+      collected = action_form_params(@bulk_action)
+      return if render_invalid_action_form?(@bulk_action, collected, :bulk_action_form,
+                                            resource_bulk_action_path(@resource_class.resource_name, @bulk_action[:name]))
       return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.not_completed")) unless
-        run_bulk_action_in_transaction(action, records)
+        run_bulk_action_in_transaction(@bulk_action, @bulk_records, collected)
 
       redirect_bulk(:notice, I18n.t("iron_admin.resources.bulk_action.success"), state: bulk_return_state)
     rescue StandardError => e
@@ -262,6 +255,28 @@ module IronAdmin
       @resource_class.defined_bulk_actions.find { |a| a[:name].to_s == params[:action_name] }
     end
 
+    # Loads the bulk action (@bulk_action) and the selected records
+    # (@bulk_records, their ids in @bulk_ids), as the form and the action
+    # both do. Responds instead and returns false: back to the index when
+    # nothing is selected or a selected record is out of reach (outside the
+    # tenant scope, or gone), 404 for an unknown action, 403 for a denied one.
+    def prepare_bulk_action?
+      load_bulk_action
+      !performed?
+    end
+
+    def load_bulk_action
+      ids = bulk_action_ids
+      return redirect_bulk(:alert, I18n.t("iron_admin.resources.bulk_action.no_records")) if ids.empty?
+
+      @bulk_ids, @bulk_records = find_bulk_records(ids)
+      @bulk_action = find_bulk_action
+      return render_not_found unless @bulk_action
+      return render_forbidden unless action_authorized?(@bulk_action[:name])
+
+      redirect_bulk(:alert, inaccessible_bulk_message) unless @bulk_records.count == @bulk_ids.size
+    end
+
     def inaccessible_bulk_message
       I18n.t("iron_admin.resources.bulk_action.inaccessible")
     end
@@ -270,8 +285,7 @@ module IronAdmin
     # the block still gets an unloaded relation, destroyed records keep their
     # entry, and objects the block loaded replace the copies. Returns false
     # when the block rolled back.
-    def run_bulk_action_in_transaction(action, records)
-      collected = action_form_params(action)
+    def run_bulk_action_in_transaction(action, records, collected)
       action_transaction_completed? do
         selected = records.dup.to_a
         result = call_action_block(action[:block], records, collected)

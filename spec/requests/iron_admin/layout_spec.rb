@@ -324,7 +324,7 @@ RSpec.describe "Engine layout", type: :request do
     end
 
     describe "GET /:resource_name/bulk_actions/:action_name/form" do
-      let(:path) { iron_admin.resource_bulk_action_form_path("form_title_licenses", "bulk_revoke_with_note") }
+      let(:path) { iron_admin.resource_bulk_action_form_path("form_title_licenses", "bulk_revoke_with_note", ids: [create(:license).id]) }
 
       it_behaves_like "a page titled by its only h1", "Bulk revoke with note"
     end

@@ -4,13 +4,16 @@
 
     .p-6{ class: cp_card }
       = form_tag @form_url, method: :post, class: "space-y-5", data: { turbo_frame: "_top" } do
+        -# The record is named here, as the bulk form counts its records: the page may be opened on its own.
+        %p.text-sm{ class: cp_muted_text }= action_form_record_text(@resource_class, @record)
         - @form_fields.each do |field|
-          = render "iron_admin/form/action_field", field: field, scope: "action_form"
+          = render "iron_admin/form/action_field", field: field, scope: "action_form",
+            value: @form_values[field.name], errors: @form_errors[field.name]
 
-        - if params[:ids].present?
-          - Array(params[:ids]).each do |id|
-            = hidden_field_tag "ids[]", id
-
+        -# The action's confirmation comes here, once the form is filled in.
+        - confirm = @action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
         .flex.items-center.gap-3.pt-5.border-t{ class: t.card_border }
-          %button{ type: "submit", class: cp_btn_primary }= I18n.t("iron_admin.resources.action_form.submit", default: "Execute")
-          = link_to I18n.t("iron_admin.form.cancel_button"), "javascript:history.back()", class: cp_btn_secondary
+          %button{ type: "submit", class: cp_btn_primary, data: @action[:confirm] ? { turbo_confirm: confirm } : {} }= I18n.t("iron_admin.resources.action_form.submit", default: "Execute")
+          -# A whole-page visit: the record's page has no action-form-modal frame to load into.
+          = link_to I18n.t("iron_admin.form.cancel_button"), resource_path(@resource_class.resource_name, @record), class: cp_btn_secondary,
+            data: { turbo_frame: "_top" }

@@ -65,10 +65,18 @@
       %h2.mb-3{ class: styles.panel_title(t) }= I18n.t("iron_admin.resources.show.actions_label")
       .flex.gap-2.flex-wrap
         - @member_actions.each do |action|
-          - confirm = action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
-          = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
-            data: action[:confirm] ? { turbo_confirm: confirm } : {},
-            class: styles.secondary_button(t) do
-            - if action[:icon]
-              = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
-            = action[:name].to_s.humanize
+          -# An action with form fields opens its form, which asks for the confirmation on submit.
+          - if action[:form_fields].present?
+            = link_to resource_action_form_path(@resource_class.resource_name, @record, action[:name]),
+              class: styles.secondary_button(t) do
+              - if action[:icon]
+                = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+              = action[:name].to_s.humanize
+          - else
+            - confirm = action[:confirm_message].presence || I18n.t("iron_admin.resources.action.confirm")
+            = button_to resource_action_path(@resource_class.resource_name, @record, action[:name]),
+              data: action[:confirm] ? { turbo_confirm: confirm } : {},
+              class: styles.secondary_button(t) do
+              - if action[:icon]
+                = heroicon action[:icon], variant: :outline, options: { class: "h-4 w-4", "stroke-width": IronAdmin::ApplicationHelper::SMALL_ICON_STROKE }
+              = action[:name].to_s.humanize
