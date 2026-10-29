@@ -187,11 +187,6 @@ module IronAdmin
         IronAdmin::Filters::ActiveRecordQueryBuilder
       end
 
-      # (see Base#pagy_method)
-      def pagy_method
-        :pagy
-      end
-
       def cast_boolean(value)
         ::ActiveModel::Type::Boolean.new.cast(value)
       end

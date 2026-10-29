@@ -182,11 +182,6 @@ module IronAdmin
         IronAdmin::Filters::HttpQueryBuilder
       end
 
-      # (see Base#pagy_method)
-      def pagy_method
-        :pagy
-      end
-
       # Allows injecting a pre-built configuration (for testing or per-resource override).
       attr_writer :http_config
 

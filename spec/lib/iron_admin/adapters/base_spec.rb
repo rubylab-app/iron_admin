@@ -158,8 +158,8 @@ RSpec.describe IronAdmin::Adapters::Base do
       expect { adapter.query_builder_class }.to raise_error(NotImplementedError)
     end
 
-    it "raises NotImplementedError for #pagy_method" do
-      expect { adapter.pagy_method }.to raise_error(NotImplementedError)
+    it "no longer defines #pagy_method, deprecated in 0.7.0" do
+      expect(adapter).not_to respond_to(:pagy_method)
     end
 
     it "implements cast_boolean with default truthy values" do

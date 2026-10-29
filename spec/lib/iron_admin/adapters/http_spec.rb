@@ -336,8 +336,8 @@ RSpec.describe IronAdmin::Adapters::Http do
   end
 
   describe "#pagy_method" do
-    it "returns :pagy" do
-      expect(adapter.pagy_method).to eq(:pagy)
+    it "is no longer defined, deprecated in 0.7.0" do
+      expect(adapter).not_to respond_to(:pagy_method)
     end
   end
 

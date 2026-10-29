@@ -322,15 +322,6 @@ module IronAdmin
         raise NotImplementedError
       end
 
-      # Returns the Pagy backend method name for this adapter.
-      # @deprecated Unused: pagination always calls Pagy's default :offset
-      #   paginator, which needs a scope that responds to count/offset/limit.
-      #   Will be removed in 0.8.0.
-      # @return [Symbol]
-      def pagy_method
-        raise NotImplementedError
-      end
-
       # Casts a string value to a boolean.
       # Default implementation for non-AR adapters.
       # ActiveRecord overrides to use ActiveModel::Type::Boolean.
