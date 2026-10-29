@@ -111,7 +111,7 @@ RSpec.describe IronAdmin::Filters::BarComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.btn_secondary = "bg-zinc-800 text-zinc-100"
           t.popover_shadow = "shadow-2xl"
         end

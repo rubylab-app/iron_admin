@@ -41,7 +41,7 @@ RSpec.describe IronAdmin::Filters::SearchComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.card_bg = "bg-zinc-900" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.card_bg = "bg-zinc-900" }
       end
 
       it "uses that theme's surface" do

@@ -117,7 +117,7 @@ Use policies:
 class UserResource < IronAdmin::Resource
   policy do
     allow :read
-    allow :update, if: ->(user) { user.admin? }
+    allow :update, if: ->(user) { user&.admin? }
     deny :delete
   end
 end

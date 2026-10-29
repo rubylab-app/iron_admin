@@ -115,7 +115,7 @@ RSpec.describe IronAdmin::Dashboards::StatsGridComponent::StatComponent, type: :
       let(:change_type) { :positive }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) { |t| t.success_text = "text-lime-300" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) { |t| t.success_text = "text-lime-300" }
       end
 
       it "uses that theme's success_text" do
@@ -184,7 +184,7 @@ RSpec.describe IronAdmin::Dashboards::StatsGridComponent::StatComponent, type: :
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.card_border = "border-slate-700"
           t.border_width = "border-2"
           t.metric_label = "text-sm font-bold text-slate-300"

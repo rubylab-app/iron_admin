@@ -86,7 +86,7 @@ RSpec.describe IronAdmin::Filters::DateRangeComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.input_border = "border-zinc-700"
         end
       end

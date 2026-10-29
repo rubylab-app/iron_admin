@@ -204,7 +204,7 @@ RSpec.describe IronAdmin::Form::NestedFormComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.card_title = "text-base font-bold text-white" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.card_title = "text-base font-bold text-white" }
       end
 
       it "titles the section with that theme's card_title" do

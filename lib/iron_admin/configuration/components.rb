@@ -15,13 +15,16 @@ module IronAdmin
       # +flash+ is the request's flash. The +filter_bar+ slot's +scope+, +query+,
       # +current_sort+ and +current_direction+ are what its form keeps as the
       # +scope+, +q+, +sort+ and +direction+ hidden fields (nil when not set).
+      # +bulk_actions+ on +table+ is the bulk actions the policy allows for
+      # the current user, and is empty when it allows none.
       SLOTS = {
         shell: %i[current_user],
         navbar: %i[current_user title],
         sidebar: %i[current_user],
         flash: %i[flash current_user],
         theme_switcher: %i[themes current_theme current_user],
-        table: %i[records fields resource_class current_user current_sort current_direction scope query base_url],
+        table: %i[records fields resource_class current_user current_sort current_direction scope query base_url
+                  bulk_actions],
         form: %i[record fields resource_class url current_user],
         filter_bar: %i[filters resource_class form_url scope query active_count current_user
                        current_sort current_direction],

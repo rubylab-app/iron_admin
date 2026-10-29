@@ -362,7 +362,7 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.border_width = "border-2"
           t.table_header_bg = "bg-slate-800"
           t.table_header_text = "text-xs font-bold text-slate-400"
@@ -395,7 +395,7 @@ RSpec.describe IronAdmin::Dashboards::RecentTableComponent, type: :component do
 
     context "with a theme that sets table_head_border" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:print) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:print) do |t|
           t.table_head_border = "divide-stone-900"
         end
       end

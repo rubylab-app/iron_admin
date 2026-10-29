@@ -185,7 +185,7 @@ Returns ActionText rich text attribute names. Each name starts with `rich_text_`
 
 #### `resource_name` → `String`
 
-**Implemented in Base.** Returns the URL-friendly plural name (e.g., `"users"`). Uses `model_class.model_name.plural`. Override only if your model doesn't include `ActiveModel::Naming`.
+**Implemented in Base.** Returns the model's plural (e.g., `"users"`), from `model_class.model_name.plural`. `IronAdmin::Resource.resource_name` uses that plural when the model is the one the class name implies, including an override of that same model, when the resource uses the HTTP adapter without an override, and when the class is anonymous. Otherwise the resource derives its name from the full class path under `IronAdmin::Resources` (`Shop::NoteResource` is `shop_notes`), unless it defines `def self.resource_name`. Override this method only if your model doesn't include `ActiveModel::Naming`.
 
 #### `human_name` → `String`
 

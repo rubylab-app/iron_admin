@@ -56,7 +56,7 @@ RSpec.describe IronAdmin::Filters::SelectFilterComponent, type: :component do
 
     context "with a registered theme that transforms labels active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.label_transform = "uppercase tracking-wider"
         end
       end

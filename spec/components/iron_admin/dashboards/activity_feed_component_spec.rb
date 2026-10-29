@@ -85,7 +85,7 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent, type: :component do
 
     context "with a registered theme active for the request" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.border_width = "border-2"
           t.card_title = "text-base font-bold text-white"
           t.table_border = "divide-slate-700"
@@ -186,7 +186,7 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
       let(:icon_color) { :red }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) do |t|
           t.badge_palette = t.badge_palette.merge(red: "bg-rose-950 text-rose-200")
         end
       end
@@ -200,7 +200,7 @@ RSpec.describe IronAdmin::Dashboards::ActivityFeedComponent::ItemComponent, type
       let(:icon_color) { :unknown }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:harbor) { |t| t.badge_palette = {} }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:harbor) { |t| t.badge_palette = {} }
       end
 
       it "keeps only the tile radius" do

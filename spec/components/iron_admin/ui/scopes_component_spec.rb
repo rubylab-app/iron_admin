@@ -116,7 +116,7 @@ RSpec.describe IronAdmin::Ui::ScopesComponent, type: :component do
       end
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.scope_active = "border-indigo-400 text-white"
         end
       end

@@ -115,7 +115,7 @@ Show recent records from any resource:
 recent :resource_name, limit: 5, scope: -> { custom_scope }
 ```
 
-The `resource_name` must match a registered resource's name (model's plural form).
+The `resource_name` must match a registered resource's `resource_name`. A resource whose model is the one its class name implies uses the model's plural (`UserResource` is `users`, `Billing::InvoiceResource` is that model's plural), and so does an override of that same model. An override of a different model, an overridden `self.model`, or a class name that implies no model uses the full class path under `IronAdmin::Resources` (`Shop::NoteResource` is `shop_notes`). A resource that defines `def self.resource_name` keeps that name.
 
 **Access:** like the index page, the table is only rendered when the current user may read the
 resource (`policy` and `deny_actions`), and `config.tenant_scope` applies to it, after the

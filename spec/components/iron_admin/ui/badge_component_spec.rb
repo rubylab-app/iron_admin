@@ -91,7 +91,7 @@ RSpec.describe IronAdmin::Ui::BadgeComponent, type: :component do
     end
 
     context "with a registered theme active" do
-      before { IronAdmin::Current.theme = midnight }
+      before { IronAdmin::RequestContext.theme = midnight }
 
       it "returns that theme's classes" do
         expect(color_classes).to eq("bg-emerald-950 text-emerald-300")
@@ -101,7 +101,7 @@ RSpec.describe IronAdmin::Ui::BadgeComponent, type: :component do
     context "with a theme whose palette has no gray" do
       let(:color) { :unknown }
 
-      before { IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:bare) { |t| t.badge_palette = {} } }
+      before { IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:bare) { |t| t.badge_palette = {} } }
 
       it "returns no classes" do
         expect(color_classes).to eq("")
@@ -133,7 +133,7 @@ RSpec.describe IronAdmin::Ui::BadgeComponent, type: :component do
     end
 
     context "with a theme without dots" do
-      before { IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:flat) { |t| t.badge_dot_palette = {} } }
+      before { IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:flat) { |t| t.badge_dot_palette = {} } }
 
       it "returns nil" do
         expect(dot_classes).to be_nil
@@ -200,7 +200,7 @@ RSpec.describe IronAdmin::Ui::BadgeComponent, type: :component do
     end
 
     context "with a registered theme active" do
-      before { IronAdmin::Current.theme = midnight }
+      before { IronAdmin::RequestContext.theme = midnight }
 
       it "uses that theme's shape and palette" do
         expect(badge_classes).to include("rounded-none", "font-bold", "bg-emerald-950", "text-emerald-300")

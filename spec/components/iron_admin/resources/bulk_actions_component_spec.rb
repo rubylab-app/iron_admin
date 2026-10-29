@@ -30,6 +30,11 @@ RSpec.describe IronAdmin::Resources::BulkActionsComponent, type: :component do
       component = described_class.new(actions: [], resource_class: IronAdmin::Resources::UserResource)
       expect(component.render?).to be false
     end
+
+    it "returns false when actions are nil" do
+      component = described_class.new(actions: nil, resource_class: IronAdmin::Resources::UserResource)
+      expect(component.render?).to be false
+    end
   end
 
   describe "a bulk action with form fields" do
@@ -145,7 +150,7 @@ RSpec.describe IronAdmin::Resources::BulkActionsComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.card_bg = "bg-zinc-900"
           t.card_title = "text-base font-bold text-white"
           t.btn_secondary = "bg-zinc-800 text-zinc-100"

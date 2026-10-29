@@ -72,9 +72,11 @@ module IronAdmin
       end
 
       # @api private
-      # @return [Boolean] Whether to render the component
+      # @return [Boolean] Whether to render the component. A nil list, which is
+      #   what a page other than the index has for +@permitted_bulk_actions+,
+      #   renders nothing.
       def render?
-        actions.any?
+        Array(actions).any?
       end
     end
   end

@@ -283,7 +283,7 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
 
   context "with a registered theme active" do
     before do
-      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+      IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
         theme.control_radius = "rounded-none"
         theme.checkbox_radius = "rounded-none"
       end
@@ -298,7 +298,7 @@ RSpec.describe IronAdmin::Form::BelongsToAutocompleteComponent, type: :component
     subject(:classes) { described_class.new(name: :user_id, resource_name: "users").dropdown_classes.split }
 
     before do
-      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:raised) do |theme|
+      IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:raised) do |theme|
         theme.card_bg = "bg-zinc-900"
         theme.popover_bg = "bg-zinc-800"
       end

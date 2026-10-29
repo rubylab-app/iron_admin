@@ -97,7 +97,7 @@ RSpec.describe IronAdmin::Ui::ModalComponent, type: :component do
       subject(:classes) { described_class.new.modal_classes.split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
           t.popover_shadow = "shadow-[6px_6px_0_0_var(--color-zinc-950)]"
           t.border_width = "border-2"
         end
@@ -112,7 +112,7 @@ RSpec.describe IronAdmin::Ui::ModalComponent, type: :component do
       subject(:classes) { described_class.new.modal_classes.split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:raised) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:raised) do |t|
           t.card_bg = "bg-zinc-900"
           t.popover_bg = "bg-zinc-800"
         end

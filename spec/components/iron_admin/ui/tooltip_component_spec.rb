@@ -90,7 +90,7 @@ RSpec.describe IronAdmin::Ui::TooltipComponent, type: :component do
       subject(:classes) { described_class.new(text: "Info").tooltip_classes.split }
 
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.tooltip = "bg-white text-zinc-900"
         end
       end

@@ -93,8 +93,8 @@ RSpec.describe IronAdmin::Resource do
 
       expect(resource.live_index_enabled?).to be true
       expect(resource.live_show_enabled?).to be true
-      expect(resource.live_stream_name(:index)).to eq("resources:users:index")
-      expect(resource.live_stream_name(:show, 42)).to eq("resources:users:show:42")
+      expect(resource.live_stream_name(:index)).to eq("resources:live_users:index")
+      expect(resource.live_stream_name(:show, 42)).to eq("resources:live_users:show:42")
     end
   end
 
@@ -1291,6 +1291,142 @@ RSpec.describe IronAdmin::Resource do
       it "stores position_field as symbol" do
         assoc = positional_resource.nested_associations.first
         expect(assoc.position_field).to eq(:max_devices)
+      end
+    end
+  end
+
+  describe ".resource_name" do
+    after { remove_resource_name_fixtures }
+
+    def remove_nested_constant(parent, const_name)
+      return unless parent.const_defined?(const_name, false)
+
+      parent.send(:remove_const, const_name)
+    end
+
+    def remove_resource_name_fixtures
+      if IronAdmin::Resources.const_defined?(:Shop, false)
+        remove_nested_constant(IronAdmin::Resources::Shop, :NoteResource)
+        remove_nested_constant(IronAdmin::Resources, :Shop)
+      end
+      if IronAdmin::Resources.const_defined?(:Billing, false)
+        remove_nested_constant(IronAdmin::Resources::Billing, :InvoiceResource)
+        remove_nested_constant(IronAdmin::Resources, :Billing)
+      end
+      remove_nested_constant(Object, :Billing)
+      remove_nested_constant(IronAdmin::Resources, :InvoiceResource)
+      remove_nested_constant(Object, :Invoice)
+    end
+
+    def define_shop_note_resource
+      IronAdmin::Resources.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+        module Shop
+          class NoteResource < IronAdmin::Resource
+            self.model_class_override = ::Note
+          end
+        end
+      RUBY
+    end
+
+    def define_billing_invoice_model
+      Object.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+        module Billing
+          class Invoice < ActiveRecord::Base
+            self.table_name = "notes"
+
+            def self.model_name
+              ActiveModel::Name.new(self, nil, "Invoice")
+            end
+          end
+        end
+      RUBY
+    end
+
+    def define_billing_invoice_resource
+      define_billing_invoice_model
+
+      IronAdmin::Resources.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+        module Billing
+          class InvoiceResource < IronAdmin::Resource
+          end
+        end
+      RUBY
+    end
+
+    def define_invoice_with_custom_plural
+      Object.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+        class Invoice < ActiveRecord::Base
+          self.table_name = "notes"
+
+          def self.model_name
+            ActiveModel::Name.new(self, nil, "Bill")
+          end
+        end
+      RUBY
+    end
+
+    it "derives a namespaced override from the full class path" do
+      define_shop_note_resource
+
+      expect(IronAdmin::Resources::Shop::NoteResource.resource_name).to eq("shop_notes")
+    end
+
+    it "keeps the model's plural when the class name implies that model" do
+      define_billing_invoice_resource
+
+      expect(IronAdmin::Resources::Billing::InvoiceResource.resource_name).to eq("invoices")
+    end
+
+    it "uses the model's plural when an override resource has no name" do
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = Note
+      end
+
+      expect(resource.resource_name).to eq("notes")
+    end
+
+    context "when model_class_override is the implied model" do
+      it "keeps the model's plural" do
+        define_invoice_with_custom_plural
+        IronAdmin::Resources.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+          class InvoiceResource < IronAdmin::Resource
+            self.model_class_override = ::Invoice
+          end
+        RUBY
+
+        expect(IronAdmin::Resources::InvoiceResource.resource_name).to eq("bills")
+      end
+    end
+
+    context "when the class name implies an existing model and model_class_override names another" do
+      it "derives the name from the class path" do
+        define_billing_invoice_model
+        IronAdmin::Resources.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+          module Billing
+            class InvoiceResource < IronAdmin::Resource
+              self.model_class_override = ::Note
+            end
+          end
+        RUBY
+
+        expect(IronAdmin::Resources::Billing::InvoiceResource.resource_name).to eq("billing_invoices")
+      end
+    end
+
+    context "when the class name implies an existing model and self.model returns another" do
+      it "derives the name from the class path" do
+        define_billing_invoice_model
+        IronAdmin::Resources.module_eval(<<~RUBY, __FILE__, __LINE__ + 1)
+          module Billing
+            class InvoiceResource < IronAdmin::Resource
+              def self.model
+                ::Note
+              end
+            end
+          end
+        RUBY
+
+        expect(IronAdmin::Resources::Billing::InvoiceResource.resource_name).to eq("billing_invoices")
       end
     end
   end

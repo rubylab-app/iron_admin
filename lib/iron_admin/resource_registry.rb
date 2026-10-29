@@ -32,16 +32,27 @@ module IronAdmin
       # is swallowed and {.finalize!} re-runs with the correct adapter
       # after the class body has finished evaluating.
       #
+      # A class whose name equals the name of a class already stored is a
+      # reloaded version of it: this replaces that entry in the remembered
+      # list and in the registry, and it is not a collision. Two different
+      # classes that compute the same resource name keep the first one
+      # registered. The other stays out of the registry, and {.finalize!}
+      # logs that collision once. Before 0.8 the last class registered
+      # replaced the previous one. The registry key is computed before the
+      # class is remembered, so a class that has no key (an anonymous class
+      # whose model cannot be named) raises here and is not remembered.
+      #
       # @param resource_class [Class] The resource class to register
       # @return [Class] The registered resource class
       def register(resource_class)
-        # Stage the registry key first so the resource is discoverable
-        # even if `register_soft_delete_features` raises. We use a key
-        # derived from the class name (no adapter/model lookup) so HTTP
-        # resources without a Ruby model class — and any other case where
-        # `resource_name` would touch a not-yet-loaded adapter — still
-        # land in the registry.
-        resources[registry_key_for(resource_class)] = resource_class
+        # Compute the key before remembering the class. An anonymous class
+        # with no model raises here; remembering it first would make every
+        # later {.finalize!} raise inside {#rekey_resources!}. The key is
+        # provisional until {.finalize!}: `inherited` runs before the
+        # class body sets `model_class_override` and `resource_name`.
+        registry_key_for(resource_class)
+        remember_resource(resource_class)
+        store_resource(resource_class)
         begin
           resource_class.register_soft_delete_features
         rescue StandardError
@@ -75,8 +86,15 @@ module IronAdmin
       # and Mongoid/HTTP resources would 500 with `undefined method
       # 'columns' for <MongoidModel>`.
       #
+      # The registry is also re-keyed by each resource's final
+      # {Resource.resource_name}. A reloaded class (the same name) already
+      # replaced its stale entry in {.register}. Two different classes that
+      # still share a name keep the first one registered; the other is
+      # logged once here and left out.
+      #
       # @return [void]
       def finalize!
+        rekey_resources!
         all.each do |resource_class|
           resource_class.instance_variable_set(:@adapter, nil)
           resource_class.register_soft_delete_features
@@ -136,6 +154,7 @@ module IronAdmin
       # @return [void]
       def reset!
         @resources = {}
+        @registered_classes = []
       end
 
       private
@@ -144,15 +163,69 @@ module IronAdmin
         @resources ||= {}
       end
 
-      # Builds the registry key without touching the adapter or model.
-      # Falls back from `resource_class.resource_name` (which delegates
-      # to the adapter and may raise on HTTP/Mongoid resources before
-      # `to_prepare` finalizes the lifecycle) to a name derived purely
-      # from the class identifier.
+      def registered_classes
+        @registered_classes ||= []
+      end
+
+      def remember_resource(resource_class)
+        index = registered_classes.index { |stored| same_registered_class?(stored, resource_class) }
+        if index
+          registered_classes[index] = resource_class
+        else
+          registered_classes << resource_class
+        end
+      end
+
+      # A reloaded class (the same name) replaces its previous entry, including
+      # a move to a new key. A different class leaves the first occupant of the
+      # key in place and stays in {#registered_classes} so {.finalize!} can
+      # place it once its resource name is final.
+      def store_resource(resource_class)
+        key = registry_key_for(resource_class)
+        resources.delete_if { |_stored_key, stored| same_registered_class?(stored, resource_class) }
+        resources[key] ||= resource_class
+      end
+
+      # Same object, or a reload of it: another class object with the same name.
+      # Anonymous classes have no name, so only the same object matches.
+      def same_registered_class?(stored, resource_class)
+        stored.equal?(resource_class) || (resource_class.name && stored.name == resource_class.name)
+      end
+
+      def rekey_resources!
+        rebuilt = {}
+        registered_classes.each do |resource_class|
+          key = registry_key_for(resource_class)
+          occupant = rebuilt[key]
+          if occupant && occupant != resource_class
+            log_registry_collision(occupant, resource_class, key)
+          else
+            rebuilt[key] = resource_class
+          end
+        end
+        @resources = rebuilt
+      end
+
+      def log_registry_collision(kept, skipped, key)
+        return unless defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
+
+        Rails.logger.error(
+          "[IronAdmin] #{skipped.name} was not registered under \"#{key}\" because " \
+          "#{kept.name} already uses that resource name. " \
+          "Define def self.resource_name = \"a_unique_name\" on one of them."
+        )
+      end
+
+      # Builds the registry key. `resource_name` may raise before the class
+      # body has set the adapter, so fall back to the class path. The
+      # derivation matches {Resource.resource_name}.
       def registry_key_for(resource_class)
         resource_class.resource_name
       rescue StandardError
-        resource_class.name.demodulize.sub(/Resource\z/, "").underscore.pluralize
+        name = resource_class.name
+        raise if name.nil?
+
+        name.delete_prefix("IronAdmin::Resources::").delete_suffix("Resource").underscore.tr("/", "_").pluralize
       end
 
       def warn_finalize_failure(resource_class, error)

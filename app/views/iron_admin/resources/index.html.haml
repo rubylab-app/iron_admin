@@ -126,11 +126,12 @@
                 resources_path(@resource_class.resource_name, scope: @current_scope, q: params[:q], **iron_admin_index_state.slice("sort", "direction").symbolize_keys),
                 class: controls.clear_button(t)
 
-  - has_bulk_actions = @resource_class.defined_bulk_actions.any?
+  - has_bulk_actions = @permitted_bulk_actions.any?
   = turbo_frame_tag "records", data: { turbo_action: "advance" } do
     -# Submitted to the whole page, so the shell shows the redirect's flash message.
     -# A bulk action with form fields opens its form with a GET; cp-bulk-select keeps the CSRF token out of its URL.
-    = form_tag "#", method: :post, id: "bulk-actions-form", data: { turbo_frame: "_top", **(has_bulk_actions ? { controller: "cp-bulk-select", action: "submit->cp-bulk-select#omitTokenFromGet" } : {}) } do
+    -# per_form_csrf_tokens would bind a token for action "#" to the index path. The global token validates on each bulk action route.
+    = form_tag "#", method: :post, id: "bulk-actions-form", authenticity_token: form_authenticity_token, data: { turbo_frame: "_top", **(has_bulk_actions ? { controller: "cp-bulk-select", action: "submit->cp-bulk-select#omitTokenFromGet" } : {}) } do
       - if has_bulk_actions
         - iron_admin_hidden_params(iron_admin_index_state).each do |name, value|
           = hidden_field_tag name, value, id: nil
@@ -139,7 +140,7 @@
             %span.tabular-nums{ data: { cp_bulk_select_target: "count" } } 0
             = I18n.t("iron_admin.resources.index.selected_label", default: "selected")
           .flex.flex-wrap.items-center.gap-2
-            - @resource_class.defined_bulk_actions.each do |action|
+            - @permitted_bulk_actions.each do |action|
               -# A bulk action with form fields takes the selection to its form instead of running, and the
               -# form asks for the confirmation on submit. Turbo reads data-turbo-confirm from the button.
               - if action[:form_fields].present?
@@ -151,7 +152,7 @@
                 - if action[:icon]
                   = heroicon action[:icon], variant: :mini, options: { class: "h-4 w-4" }
                 = action[:name].to_s.humanize
-      - if (table_component = iron_admin_table_component(@resource_class, records: @records, fields: @fields, scope: @current_scope))
+      - if (table_component = iron_admin_table_component(@resource_class, records: @records, fields: @fields, scope: @current_scope, bulk_actions: @permitted_bulk_actions))
         = render table_component
       - else
         - sticky = IronAdmin.configuration.sticky_actions_column

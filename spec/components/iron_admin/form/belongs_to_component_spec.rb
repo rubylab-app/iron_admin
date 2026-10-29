@@ -234,7 +234,7 @@ RSpec.describe IronAdmin::Form::BelongsToComponent, type: :component do
 
   context "with a registered theme active" do
     before do
-      IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
+      IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:blocky) do |theme|
         theme.control_radius = "rounded-none"
         theme.checkbox_radius = "rounded-none"
       end

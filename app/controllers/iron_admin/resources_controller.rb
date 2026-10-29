@@ -41,6 +41,7 @@ module IronAdmin
 
       @fields = index_fields
       @current_scope = current_scope_name
+      @permitted_bulk_actions = @resource_class.defined_bulk_actions.select { |action| listed_bulk_action?(action) }
     end
 
     # Shows a single record.

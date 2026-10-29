@@ -169,7 +169,7 @@ RSpec.describe IronAdmin::Ui::AlertComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:brutal) do |t|
           t.alert_palette = { success: "bg-lime-300 border-black text-black", info: "bg-white border-black text-black" }
           t.border_width = "border-2"
         end

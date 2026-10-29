@@ -25,7 +25,7 @@ module IronAdmin
 
     # @api private
     def resolve_iron_admin_theme
-      IronAdmin::Current.theme = IronAdmin.configuration.resolve_theme(request)
+      IronAdmin::RequestContext.theme = IronAdmin.configuration.resolve_theme(request)
     end
 
     # Only an exact false from the block denies access, with 403. nil and any
@@ -121,7 +121,10 @@ module IronAdmin
     end
 
     def log_iron_admin_error(error)
-      Rails.logger.error("[IronAdmin] #{error.class}: #{error.message}")
+      message = "[IronAdmin] #{error.class}: #{error.message}"
+      backtrace = Rails.backtrace_cleaner.clean(Array(error.backtrace)).first(10)
+      message = "#{message}\n#{backtrace.join("\n")}" if backtrace.any?
+      Rails.logger.error(message)
     end
   end
 end

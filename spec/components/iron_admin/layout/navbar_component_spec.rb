@@ -77,7 +77,7 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
     context "with a registered theme active" do
       subject(:pressed) { switcher.css("button[aria-pressed='true']").pluck(:value) }
 
-      before { IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) }
+      before { IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) }
 
       it "presses that theme's button" do
         expect(pressed).to eq(["midnight"])
@@ -184,7 +184,7 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.navbar_bg = "bg-zinc-900"
           t.navbar_border = "border-zinc-800"
           t.navbar_search_bg = "bg-zinc-800"
@@ -212,7 +212,7 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
 
     context "with a theme that sets navbar_border_width" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:heavy) { |t| t.navbar_border_width = "border-b-3" }
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:heavy) { |t| t.navbar_border_width = "border-b-3" }
       end
 
       it "draws the bottom border in that width" do
@@ -276,7 +276,7 @@ RSpec.describe IronAdmin::Layout::NavbarComponent, type: :component do
 
     context "with a registered theme active" do
       before do
-        IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+        IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
           t.kbd = "border-zinc-700 bg-zinc-800 text-zinc-300"
         end
       end

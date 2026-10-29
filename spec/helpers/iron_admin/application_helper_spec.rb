@@ -82,7 +82,7 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
 
       context "with a registered theme active" do
         before do
-          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
+          IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) do |t|
             t.badge_palette[:green] = "bg-emerald-950 text-emerald-300"
           end
         end
@@ -205,7 +205,7 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       context "when the value is true with a registered theme active" do
         before do
           user.active = true
-          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.success_text = "text-lime-400" }
+          IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.success_text = "text-lime-400" }
         end
 
         it "colors the check icon with that theme's success text color" do
@@ -340,7 +340,7 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         end
 
         before do
-          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:blocky) { |t| t.control_radius = "rounded-none" }
+          IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:blocky) { |t| t.control_radius = "rounded-none" }
         end
 
         it "draws a square track and bar" do
@@ -368,7 +368,7 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
         let(:default_field) { IronAdmin::Field.new(:completion, type: :progress_bar) }
 
         before do
-          IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.chart_border_color = "rgb(1, 2, 3)" }
+          IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.chart_border_color = "rgb(1, 2, 3)" }
         end
 
         it "fills the bar with that theme's chart border color" do
@@ -495,7 +495,7 @@ RSpec.describe IronAdmin::ApplicationHelper, type: :helper do
       end
 
       context "with a registered theme active" do
-        before { IronAdmin::Current.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.chip = "bg-zinc-800" } }
+        before { IronAdmin::RequestContext.theme = IronAdmin.configuration.register_theme(:midnight) { |t| t.chip = "bg-zinc-800" } }
 
         it "uses that theme's chip classes" do
           expect(chips.first[:class].split).to include("bg-zinc-800")

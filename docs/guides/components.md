@@ -136,7 +136,7 @@ Pages without overrides render exactly as before.
 | `sidebar` | The navigation inside the built-in shell | `current_user` | Global |
 | `flash` | The flash messages above the page content inside the built-in shell | `flash`, `current_user` | Global |
 | `theme_switcher` | The theme switcher inside the built-in navbar (only rendered when two or more themes are registered) | `themes`, `current_theme`, `current_user` | Global |
-| `table` | The records table on index pages | `records`, `fields`, `resource_class`, `current_user`, `current_sort`, `current_direction`, `scope`, `query`, `base_url` | Global or per resource |
+| `table` | The records table on index pages | `records`, `fields`, `resource_class`, `current_user`, `current_sort`, `current_direction`, `scope`, `query`, `base_url`, `bulk_actions` | Global or per resource |
 | `form` | The form on new and edit pages | `record`, `fields`, `resource_class`, `url`, `current_user` | Global or per resource |
 | `filter_bar` | The filters dropdown on index pages (only rendered when the resource has filters) | `filters`, `resource_class`, `form_url`, `scope`, `query`, `active_count`, `current_user`, `current_sort`, `current_direction` | Global or per resource |
 | `search` | The search box on index pages (only rendered when the resource has searchable columns) | `resource_class`, `form_url`, `value`, `placeholder`, `hidden_params`, `current_user` | Global or per resource |
@@ -192,9 +192,11 @@ The same list is available in code as `IronAdmin::Configuration::Components::SLO
   pagination around it. Only the bulk-action bar, the table and the pagination are inside
   the `records` Turbo frame; the scope tabs, search and filters sit outside it. The frame
   has `data-turbo-action="advance"`, so a link or form inside it that does not target
-  `_top` updates the address bar and the browser history. If the resource has bulk actions,
-  render a checkbox per row named `ids[]` with
+  `_top` updates the address bar and the browser history. `bulk_actions` is the list the
+  policy allows for the current user (on the index, `@permitted_bulk_actions`). When it
+  has any actions, render a checkbox per row named `ids[]` with
   `data-cp-bulk-select-target="checkbox"` and `data-action="change->cp-bulk-select#toggle"`.
+  When `bulk_actions` is empty, render no checkbox column.
   Give each one an `aria-label`, as the built-in table does with
   `iron_admin.resources.index.select_record` ("Select %{record}").
   `base_url` already includes the scope, the search query and the active filters, but never
