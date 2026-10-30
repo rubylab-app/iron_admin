@@ -116,7 +116,7 @@ For custom audit logging, use the `on_action` callback instead.
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `theme` | Block | Neutral | Yields and returns the default theme, to change its properties |
-| `register_theme(name, label:)` | Method with a block | none | Registers a named theme that starts from the Neutral values. With two or more themes, the navbar shows a theme switcher |
+| `register_theme(name, label:)` | Method with a block | none | Registers a named theme that starts from the Neutral values. A Symbol, a String and any other case are the same name. A name a plugin owns raises `PluginError`. With two or more themes, the navbar shows a theme switcher |
 | `default_theme` | Symbol | `:neutral` | The theme used when a request resolves no registered theme |
 | `theme_resolver` | Block | reads the `iron_admin_theme` cookie | Receives the request and returns the name of its theme. Unknown names and errors fall back to `default_theme` |
 

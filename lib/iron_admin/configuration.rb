@@ -220,6 +220,9 @@ module IronAdmin
       @search_engine = :default
       @badge_colors = DEFAULT_BADGE_COLORS.dup
       @themes = { NEUTRAL_THEME => Theme.new(name: NEUTRAL_THEME) }
+      # Name => owner. +:app+ is the application (Neutral and {#register_theme}); a String is a
+      # plugin's +plugin_name+, a logical identity, not proof that two implementations match.
+      @theme_owners = { NEUTRAL_THEME => :app }
       @default_theme = NEUTRAL_THEME
       @theme_resolver = DEFAULT_THEME_RESOLVER
       @components = Components.new
@@ -383,16 +386,45 @@ module IronAdmin
     end
 
     # Registers a theme that starts from the Neutral values and yields it.
-    # Registering a name again replaces it; a blank name raises ArgumentError.
+    # Registering a name the app already owns replaces that theme and records
+    # the app as its owner. A name a plugin owns raises {PluginError} before
+    # anything is replaced. A blank name raises ArgumentError. A Symbol, a
+    # String and any other case are the same name. The theme and its owner are
+    # stored only after the block returns.
     #
     # @param name [Symbol, String] Cookie value
     # @param label [String] Switcher text
     # @return [IronAdmin::Configuration::Theme]
-    def register_theme(name, label: name.to_s.titleize)
-      name = theme_name!(name)
-      registered = Theme.new(name: name, label: label)
-      yield registered if block_given?
-      @themes[name] = registered
+    # @raise [ArgumentError] The name is blank
+    # @raise [IronAdmin::PluginError] A plugin already owns the name
+    # @see IronAdmin::Plugin::Registration#theme
+    def register_theme(name, label: name.to_s.titleize, &)
+      key = theme_name!(name)
+      refuse_foreign_theme!(key, :app)
+      write_theme(key, label, :app, &)
+    end
+
+    # Registers a theme owned by a plugin. The same +plugin_name+ on a later
+    # activation keeps the theme object: the block is not called again, so an
+    # adjustment the app made stays until the process restarts.
+    #
+    # +plugin_name+ is a logical identity, not a proof that two implementations
+    # are the same. Another plugin class that declares it is the same owner.
+    #
+    # @api private
+    # @param plugin_name [#to_s] {IronAdmin::Plugin.plugin_name} of the owner
+    # @param name [Symbol, String] Cookie value
+    # @param label [String] Switcher text
+    # @return [IronAdmin::Configuration::Theme]
+    # @raise [IronAdmin::PluginError] Another owner already has the name
+    # @raise [ArgumentError] The name is blank
+    def register_plugin_theme(plugin_name, name, label: name.to_s.titleize, &)
+      key = theme_name!(name)
+      owner = plugin_name.to_s
+      return @themes.fetch(key) if @theme_owners[key] == owner
+
+      refuse_foreign_theme!(key, owner)
+      write_theme(key, label, owner, &)
     end
 
     # @return [Hash{Symbol => IronAdmin::Configuration::Theme}] Registered themes by name: the
@@ -436,12 +468,14 @@ module IronAdmin
       find_theme(name) || theme
     end
 
-    # @param name [Symbol, String, nil] Name of a theme
-    # @return [IronAdmin::Configuration::Theme, nil] The theme registered under the name, if any
+    # @param name [Symbol, String, nil] Name of a theme. A String that is not valid UTF-8 is ignored
+    # @return [IronAdmin::Configuration::Theme, nil] The theme registered under the name, else nil
     def find_theme(name)
-      key = name.to_s
-      @themes.each { |theme_name, registered| return registered if theme_name.name == key }
-      nil
+      text = name.to_s
+      return unless text.valid_encoding?
+      return if text.strip.empty?
+
+      @themes[theme_name!(name)]
     end
 
     # Defines a tenant scope for multi-tenant applications.
@@ -475,9 +509,37 @@ module IronAdmin
     private
 
     def theme_name!(name)
-      raise ArgumentError, "IronAdmin theme name must not be blank, got #{name.inspect}" if name.to_s.strip.empty?
+      text = name.to_s
+      raise ArgumentError, "IronAdmin theme name must not be blank, got #{name.inspect}" if text.strip.empty?
 
-      name.to_sym
+      text.downcase.to_sym
+    end
+
+    def refuse_foreign_theme!(key, claimant)
+      owner = @theme_owners[key]
+      return if owner.nil? || owner == claimant
+
+      raise PluginError, theme_conflict_message(key, claimant, owner)
+    end
+
+    def write_theme(key, label, owner)
+      theme = Theme.new(name: key, label: label)
+      yield theme if block_given?
+      @themes[key] = theme
+      @theme_owners[key] = owner
+      theme
+    end
+
+    def theme_conflict_message(key, claimant, owner)
+      "Cannot register theme #{key.inspect} for #{theme_owner_phrase(claimant)}: " \
+        "#{theme_owner_phrase(owner)} already registered it. " \
+        "Rename one theme, or remove one registration."
+    end
+
+    def theme_owner_phrase(owner)
+      return "the app" if owner == :app
+
+      "plugin #{owner.inspect}"
     end
 
     def log_theme_resolver_error(error)

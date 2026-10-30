@@ -109,6 +109,82 @@ RSpec.describe IronAdmin::Configuration do
       end
     end
 
+    context "with a name the app registered in another case" do
+      before { config.register_theme(:harbor, label: "Old") { |theme| theme.btn_primary = "old" } }
+
+      it "replaces that theme" do
+        config.register_theme("Harbor", label: "New") { |theme| theme.btn_primary = "new" }
+
+        expect(config.themes.keys).to eq(%i[neutral harbor])
+      end
+
+      it "keeps the new label" do
+        config.register_theme("Harbor", label: "New")
+
+        expect(config.find_theme(:harbor).label).to eq("New")
+      end
+
+      it "keeps the new values" do
+        config.register_theme("Harbor") { |theme| theme.btn_primary = "new" }
+
+        expect(config.find_theme("HARBOR").btn_primary).to eq("new")
+      end
+
+      it "records the app as the owner of the replacement" do
+        config.register_theme("Harbor", label: "New")
+
+        expect { config.register_plugin_theme("harbor_theme", :harbor) }.to raise_error(
+          IronAdmin::PluginError, /the app already registered it/
+        )
+      end
+    end
+
+    context "when a plugin owns the name" do
+      before do
+        config.register_plugin_theme("harbor_theme", :harbor) { |theme| theme.btn_primary = "from-plugin" }
+      end
+
+      it "raises PluginError naming the theme, the app and the plugin" do
+        expect { config.register_theme(:harbor) }.to raise_error(
+          IronAdmin::PluginError,
+          'Cannot register theme :harbor for the app: plugin "harbor_theme" already registered it. ' \
+          "Rename one theme, or remove one registration."
+        )
+      end
+
+      it "does not run the block" do
+        called = false
+
+        expect { config.register_theme(:harbor) { called = true } }.to raise_error(IronAdmin::PluginError)
+        expect(called).to be(false)
+      end
+
+      it "keeps the plugin theme" do
+        expect { config.register_theme(:harbor) { |theme| theme.btn_primary = "from-app" } }
+          .to raise_error(IronAdmin::PluginError)
+
+        expect(config.find_theme(:harbor).btn_primary).to eq("from-plugin")
+      end
+    end
+
+    context "when the block raises" do
+      before do
+        config.register_theme(:harbor) { raise "boom" }
+      rescue RuntimeError => e
+        raise unless e.message == "boom"
+      end
+
+      it "leaves no theme" do
+        expect(config.find_theme(:harbor)).to be_nil
+      end
+
+      it "leaves the name free for a plugin" do
+        config.register_plugin_theme("later", :harbor, label: "Later")
+
+        expect(config.find_theme(:harbor).label).to eq("Later")
+      end
+    end
+
     [nil, "", "  "].each do |blank|
       context "with the blank name #{blank.inspect}" do
         it "raises ArgumentError" do
@@ -191,6 +267,14 @@ RSpec.describe IronAdmin::Configuration do
         end
       end
     end
+
+    context "with a name that is not valid UTF-8" do
+      let(:name) { "\xFF".dup.force_encoding(Encoding::UTF_8) }
+
+      it "returns nil" do
+        expect(config.find_theme(name)).to be_nil
+      end
+    end
   end
 
   describe "#theme_for" do
@@ -205,6 +289,14 @@ RSpec.describe IronAdmin::Configuration do
         it "returns the default theme" do
           expect(config.theme_for(name)).to equal(config.theme)
         end
+      end
+    end
+
+    context "with a name that is not valid UTF-8" do
+      let(:name) { "\xFF".dup.force_encoding(Encoding::UTF_8) }
+
+      it "returns the default theme" do
+        expect(config.theme_for(name)).to equal(config.theme)
       end
     end
   end
@@ -267,6 +359,22 @@ RSpec.describe IronAdmin::Configuration do
 
       it "returns the default theme" do
         expect(resolved).to equal(config.theme)
+      end
+    end
+
+    context "with a theme cookie that is not valid UTF-8" do
+      let(:request) { request_with(cookie: "%FF") }
+
+      before { allow(Rails.logger).to receive(:warn) }
+
+      it "returns the default theme" do
+        expect(resolved).to equal(config.theme)
+      end
+
+      it "logs no warning" do
+        resolved
+
+        expect(Rails.logger).not_to have_received(:warn)
       end
     end
 

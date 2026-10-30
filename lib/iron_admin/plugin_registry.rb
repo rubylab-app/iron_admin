@@ -43,8 +43,9 @@ module IronAdmin
       # Re-activates every registered plugin.
       #
       # Called by the engine on boot/reload so component overrides and menu
-      # items survive the per-request configuration lifecycle. Activation is
-      # idempotent, so repeated calls are safe.
+      # items survive the per-request configuration lifecycle. A plugin's
+      # theme is left as it was registered. Activation is idempotent, so
+      # repeated calls are safe.
       #
       # @return [void]
       def activate_all!

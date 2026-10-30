@@ -187,7 +187,7 @@ module IronAdmin
     # Call this from a host initializer (config/initializers/iron_admin.rb)
     # after +require+-ing the plugin gem. The plugin's setup block runs
     # immediately, wiring its extensions (menu items, component overrides,
-    # field types, ...) into the current install.
+    # field types, themes, ...) into the current install.
     #
     # @note EXPERIMENTAL — unstable until 1.0. The plugin API is not covered by
     #   the zero-breaking-changes invariant and may change before GA.

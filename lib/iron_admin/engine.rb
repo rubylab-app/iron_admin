@@ -76,8 +76,10 @@ module IronAdmin
         IronAdmin::ResourceRegistry.finalize!
       end
       # Re-activate registered plugins so their component overrides and menu
-      # items survive the per-reload configuration lifecycle. Activation is
-      # idempotent, so this is safe to run on every `to_prepare`.
+      # items survive the per-reload configuration lifecycle. A plugin theme
+      # is not rebuilt here: the theme object, including an app's adjustments,
+      # stays until the process restarts. Activation is idempotent, so this
+      # is safe to run on every `to_prepare`.
       IronAdmin::PluginRegistry.activate_all!
     end
   end
