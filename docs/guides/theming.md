@@ -21,6 +21,7 @@ Sections:
 - [Customizing the default theme](#customizing-the-default-theme)
 - [Theme properties](#theme-properties)
 - [Registering more themes](#registering-more-themes)
+- [Themes from plugins](#themes-from-plugins)
 - [Choosing the default theme](#choosing-the-default-theme)
 - [Picking a theme per request](#picking-a-theme-per-request)
 - [The theme switcher and its cookie](#the-theme-switcher-and-its-cookie)
@@ -319,10 +320,12 @@ values, yields it, and stores it under `name`:
   `register_theme` before or after `config.theme`; the changes `config.theme` makes to the
   default theme never carry over;
 - the label defaults to the titleized name (`:high_contrast` is "High Contrast");
-- registering a name again replaces that theme, and registering `:neutral` replaces the
-  built-in theme;
+- a Symbol, a String and any other case are the same name (`:Harbor` and `"harbor"`);
+- registering a name the app already owns replaces that theme, and registering `:neutral`
+  replaces the built-in theme. A name a plugin owns raises `IronAdmin::PluginError` instead
+  (see [Themes from plugins](#themes-from-plugins));
 - a blank name raises `ArgumentError`;
-- the method returns the theme.
+- the method returns the theme. The theme is stored only after the block returns.
 
 Once two or more themes are registered, the navbar shows the
 [theme switcher](#the-theme-switcher-and-its-cookie).
@@ -456,6 +459,48 @@ end
 
 `color_scheme = "dark"` makes the browser draw scrollbars, date pickers and other native
 controls in dark colors; see [Color scheme](#color-scheme-dark-themes-and-charts).
+
+## Themes from plugins
+
+A theme can ship as its own gem. Name the gem `iron_admin-theme-<name>`. A compound name keeps
+an underscore inside that segment: `iron_admin-theme-high_contrast` loads
+`iron_admin/theme/high_contrast`. The namespace `IronAdmin::Theme` is reserved for these gems.
+The guide to writing a theme gem comes later. `admin.theme` belongs to the experimental plugin
+API, which may change before 1.0. See the [plugin system design](../plugin-system-design.md).
+
+A theme gem that ships CSS defines a `Rails::Engine` with `engine_name "iron_admin_theme_<name>"`
+and ships `app/assets/tailwind/iron_admin_theme_<name>/engine.css`. `bin/rails tailwindcss:build`
+writes `app/assets/builds/tailwind/iron_admin_theme_<name>.css` from that file.
+
+Installing one:
+
+1. Add the gem (`gem "iron_admin-theme-high_contrast"`).
+2. Call `IronAdmin.register_plugin` with the plugin class
+   (`IronAdmin.register_plugin(IronAdmin::Theme::HighContrast)`).
+3. When the gem ships that `engine.css`, add
+   `@import "../builds/tailwind/iron_admin_theme_<name>";` to the app's Tailwind entry
+   (`app/assets/tailwind/application.css`), beside the engine's import. An import with no
+   bridge file makes `tailwindcss:build` fail, and `assets:precompile` with it.
+4. Run `bin/rails tailwindcss:build`.
+
+Requiring the gem already runs its Ruby. Explicit activation is not a sandbox: trust a theme
+gem the way you trust any other gem you install.
+
+The plugin registers the theme with `admin.theme` in its `setup` block. That plugin owns the
+name. `IronAdmin.register_plugin` activates the plugin at once, inside your initializer, so
+whichever registration of the name runs second raises `IronAdmin::PluginError` at boot. The
+message names the theme and both owners. Rename one theme, or remove one registration.
+
+Activating the plugin again does not rebuild the theme. Adjust a value on the theme object
+after `register_plugin`. Before that call the theme is not registered, so `find_theme` is `nil`:
+
+```ruby
+IronAdmin.register_plugin(IronAdmin::Theme::HighContrast)
+IronAdmin.configuration.find_theme(:high_contrast).btn_primary = "..."
+```
+
+Reloads in development keep that object, so the change stays. A change made in an initializer
+is applied again on every boot. The plugin's own values only change after a restart.
 
 ## Choosing the default theme
 

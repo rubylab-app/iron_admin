@@ -1,8 +1,8 @@
 # Plugin / Community Extension System — Design Proposal
 
 > Status: **Design proposal + proof-of-concept skeleton.** The registration
-> core and three extension points (menu items, component overrides and field
-> types) are implemented and tested; the remaining extension points are
+> core and four extension points (menu items, component overrides, field
+> types and themes) are implemented and tested; the remaining extension points are
 > specified here but not yet built. This
 > document is the contract a maintainer should approve before the feature is
 > completed.
@@ -32,7 +32,7 @@ of admin functionality that *many* host apps install with a single line.
 - A normal Rails gem that `require`s IronAdmin and calls a small, stable
   registration API.
 - A bundle of one or more extensions: resources, dashboards, tools, field
-  types, adapters, component overrides, and custom menu entries.
+  types, themes, adapters, component overrides, and custom menu entries.
 - Versioned and declared-compatible against an IronAdmin version range.
 - Activated **explicitly** by the host (`IronAdmin.register_plugin`) — the host
   keeps an auditable list of everything extending its admin panel.
@@ -65,6 +65,7 @@ builds on, and its status in this proposal.
 | Menu items        | *(new)* — sidebar was resource/tool-derived only    | **Implemented**    |
 | Component override | `config.components.<slot> = Klass`                  | **Implemented**    |
 | Field types       | `FieldTypeRegistry.register` / `register_field_type`| **Implemented**    |
+| Themes            | `admin.theme` → `Configuration#register_plugin_theme`, plus the ownership map | **Implemented** |
 | Resources         | `inherited` → `ResourceRegistry`, Zeitwerk `push_dir`| Design only        |
 | Dashboards        | `inherited` → `IronAdmin.dashboard_class`           | Design only        |
 | Tools             | `inherited` → `ToolRegistry`                         | Design only        |
@@ -293,8 +294,8 @@ Recommended posture:
 
 - **Trust before install.** Document that plugins are not sandboxed. Encourage
   hosts to vet plugin source and pin exact versions.
-- **Explicit activation** (§4) is the mitigation that exists: nothing runs
-  until the host names it.
+- **Explicit activation** (§4) only controls what is wired into IronAdmin.
+  Requiring a plugin gem already runs its Ruby.
 - **Fail-safe activation.** Consider (future) wrapping each plugin's `activate!`
   so one broken plugin logs and is skipped rather than taking down boot —
   mirroring how `ResourceRegistry.finalize!` already isolates per-resource
@@ -359,7 +360,7 @@ under a "Billing" group in the sidebar. If Acme later upgrades to IronAdmin
 - `IronAdmin::Plugin` base class (metadata DSL, `setup`, compatibility check,
   `activate!`).
 - `IronAdmin::Plugin::Registration` facade with `menu_item`, `component`,
-  `field_type`.
+  `field_type`, `theme`.
 - `IronAdmin::PluginRegistry` (idempotent register/activate, `activate_all!`).
 - `IronAdmin.register_plugin` host entry point.
 - `IronAdmin::MenuItem` + `IronAdmin::MenuRegistry` (new sidebar extension

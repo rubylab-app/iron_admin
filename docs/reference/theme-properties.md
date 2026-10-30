@@ -44,13 +44,13 @@ style and a width in pixels) and the palettes (Hashes).
 | Method | Description |
 |--------|-------------|
 | `config.theme { \|t\| ... }` | Yields and returns the default theme: the one `default_theme` names, else Neutral. `config.theme_config` returns the same theme |
-| `config.register_theme(name, label: name.to_s.titleize) { \|t\| ... }` | Builds a theme with the pristine Neutral values, yields it, stores it under `name.to_sym` and returns it. Registering a name again replaces the theme. Raises `ArgumentError` for a blank name |
+| `config.register_theme(name, label: name.to_s.titleize) { \|t\| ... }` | Builds a theme with the pristine Neutral values, yields it, stores it under the normalized name and returns it. A Symbol, a String and any other case are the same name (`:Harbor` and `"harbor"`). Registering a name the app owns replaces the theme. A name a plugin owns raises `PluginError`. The theme and its owner are stored only after the block returns. Raises `ArgumentError` for a blank name |
 | `config.themes` | `Hash{Symbol => Theme}` of the registered themes, the default theme first, then the others in registration order |
 | `config.default_theme` / `config.default_theme = name` | The name of the theme used when a request resolves none (default `:neutral`). The writer raises `ArgumentError` for a blank name |
 | `config.theme_resolver { \|request\| ... }` | Sets the block that returns the name (String, Symbol or `nil`) of each request's theme, and returns the resolver. Without a block, it returns the current resolver |
 | `config.resolve_theme(request)` | The theme the resolver names; the default theme for an unknown, blank or `nil` name, or when the resolver raises (logged as a warning) |
 | `config.theme_for(name)` | The theme registered under `name`, else the default theme |
-| `config.find_theme(name)` | The theme registered under `name` (a String or Symbol), else `nil` |
+| `config.find_theme(name)` | The theme registered under `name` (a String, a Symbol or another case), else `nil`. A String that is not valid UTF-8 is `nil` |
 
 | Constant | Value |
 |----------|-------|

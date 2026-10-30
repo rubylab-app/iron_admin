@@ -68,6 +68,21 @@ RSpec.describe "Theme of each request", type: :request do
     end
   end
 
+  context "with a theme cookie that is not valid UTF-8" do
+    before do
+      allow(Rails.logger).to receive(:warn)
+      get iron_admin.resources_path("users"), headers: { "Cookie" => "iron_admin_theme=%FF" }, as: :html
+    end
+
+    it "renders the page with the default theme" do
+      expect(new_button_classes).to include("bg-zinc-900")
+    end
+
+    it "logs no warning" do
+      expect(Rails.logger).not_to have_received(:warn).with(/theme_resolver raised/)
+    end
+  end
+
   context "with a resolver that raises" do
     before do
       IronAdmin.configuration.theme_resolver { |_request| raise "session store down" }
