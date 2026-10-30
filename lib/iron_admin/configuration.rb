@@ -116,6 +116,16 @@ module IronAdmin
     # @see IronAdmin::Tool
     attr_accessor :strict_tool_actions
 
+    # When +true+, each scope tab on a resource index shows how many records
+    # that tab would list: the tenant scope, the current filters, that tab's
+    # scope and the current search. The selected scope and the page are not
+    # part of the count. Each counted scope runs one query. Off by default.
+    # A resource overrides this with +scope_counts+.
+    #
+    # @return [Boolean] whether scope tabs show record counts (default: false)
+    # @see IronAdmin::Concerns::ScopeCountable::ScopeCountDsl
+    attr_accessor :scope_counts
+
     # @return [Proc, nil] Authentication block
     # @see #authenticate
     attr_reader :authenticate_block
@@ -235,6 +245,7 @@ module IronAdmin
       @live_poll_interval = 3.seconds
       @live_throttle = 0.5.seconds
       @strict_tool_actions = false
+      @scope_counts = false
     end
 
     # Defines the authentication check for admin access.

@@ -22,12 +22,10 @@ when `resource_class:` is given, and the placeholder otherwise.
 **Example:**
 
 ```haml
-= render IronAdmin::Filters::SearchComponent.new(
-  form_url: resources_path,
+= render IronAdmin::Filters::SearchComponent.new(form_url: resources_path,
   placeholder: "Search users...",
   value: params[:q],
-  hidden_params: { scope: params[:scope] }
-)
+  hidden_params: { scope: params[:scope] })
 ```
 
 ---
@@ -48,12 +46,10 @@ IronAdmin::Filters::SelectFilterComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Filters::SelectFilterComponent.new(
-  name: :role,
+= render IronAdmin::Filters::SelectFilterComponent.new(name: :role,
   options: [["Admin", "admin"], ["User", "user"], ["Guest", "guest"]],
   label: "User Role",
-  selected: params.dig(:filters, :role)
-)
+  selected: params.dig(:filters, :role))
 ```
 
 ---
@@ -74,73 +70,36 @@ IronAdmin::Filters::DateRangeComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Filters::DateRangeComponent.new(
-  name: :created_at,
+= render IronAdmin::Filters::DateRangeComponent.new(name: :created_at,
   label: "Created Between",
   from_value: params.dig(:filters, :created_at_from),
-  to_value: params.dig(:filters, :created_at_to)
-)
+  to_value: params.dig(:filters, :created_at_to))
 ```
 
 ---
 
-## StringFilterComponent
+## String and number filters
 
-Text input with an operator dropdown for string matching.
-
-```ruby
-IronAdmin::Filters::StringFilterComponent.new(
-  name: :name,                   # Required: filter parameter name
-  label: nil,                    # Optional: label text (auto-generated from name)
-  value: nil,                    # Optional: current filter value
-  operator: "contains"           # Optional: current operator (default: "contains")
-)
-```
-
-**Operators:** `contains`, `equals`, `starts_with`, `ends_with`
-
-**Example:**
-
-```haml
-= render IronAdmin::Filters::StringFilterComponent.new(
-  name: :name,
-  label: "Customer Name",
-  value: params.dig(:filters, :name),
-  operator: params.dig(:filters, :name_operator) || "contains"
-)
-```
-
----
-
-## NumberFilterComponent
-
-Number input with an operator dropdown for numeric comparisons.
+The index draws a string filter and a number filter inline. There is no
+`StringFilterComponent` or `NumberFilterComponent`. Declare the filter on the
+resource:
 
 ```ruby
-IronAdmin::Filters::NumberFilterComponent.new(
-  name: :price,                  # Required: filter parameter name
-  label: nil,                    # Optional: label text (auto-generated from name)
-  value: nil,                    # Optional: current filter value
-  max_value: nil,                # Optional: upper bound for "between" operator
-  operator: "equals"             # Optional: current operator (default: "equals")
-)
+module IronAdmin
+  module Resources
+    class ProductResource < IronAdmin::Resource
+      filter :name, type: :string
+      filter :price, type: :number
+    end
+  end
+end
 ```
 
-**Operators:** `equals`, `greater_than`, `less_than`, `between`
-
-When the `between` operator is selected, a second input for the upper bound is displayed.
-
-**Example:**
-
-```haml
-= render IronAdmin::Filters::NumberFilterComponent.new(
-  name: :price,
-  label: "Price",
-  value: params.dig(:filters, :price),
-  max_value: params.dig(:filters, :price_max),
-  operator: params.dig(:filters, :price_operator) || "equals"
-)
-```
+A `:string` filter (`filter :name, type: :string`) offers contains, equals,
+starts_with and ends_with. A `:number` filter (`filter :price, type: :number`)
+offers equals, greater_than, less_than and between, and shows a second input
+when the operator is between. The [resources guide](../guides/resources.md#filter-types)
+lists both.
 
 ---
 
@@ -170,24 +129,18 @@ slot passes.
 **Example:**
 
 ```haml
-= render IronAdmin::Filters::BarComponent.new(
-  form_url: resources_path,
-  active_count: @active_filter_count
-) do |bar|
+= render IronAdmin::Filters::BarComponent.new(form_url: resources_path,
+  active_count: @active_filter_count) do |bar|
 
   - bar.with_filter do
-    = render IronAdmin::Filters::SelectFilterComponent.new(
-      name: :status,
+    = render IronAdmin::Filters::SelectFilterComponent.new(name: :status,
       options: status_options,
-      selected: params.dig(:filters, :status)
-    )
+      selected: params.dig(:filters, :status))
 
   - bar.with_filter do
-    = render IronAdmin::Filters::DateRangeComponent.new(
-      name: :created_at,
+    = render IronAdmin::Filters::DateRangeComponent.new(name: :created_at,
       from_value: params.dig(:filters, :created_at_from),
-      to_value: params.dig(:filters, :created_at_to)
-    )
+      to_value: params.dig(:filters, :created_at_to))
 ```
 
 ---
@@ -199,25 +152,17 @@ Typical filter bar setup:
 ```haml
 .flex.items-center.gap-4
   -# Search
-  = render IronAdmin::Filters::SearchComponent.new(
-    form_url: resources_path,
-    value: params[:q]
-  )
+  = render IronAdmin::Filters::SearchComponent.new(form_url: resources_path,
+    value: params[:q])
 
   -# Filter dropdown
-  = render IronAdmin::Filters::BarComponent.new(
-    form_url: resources_path,
-    active_count: active_filter_count
-  ) do |bar|
+  = render IronAdmin::Filters::BarComponent.new(form_url: resources_path,
+    active_count: active_filter_count) do |bar|
 
     - bar.with_filter do
-      = render IronAdmin::Filters::SelectFilterComponent.new(
-        name: :role,
-        options: role_options
-      )
+      = render IronAdmin::Filters::SelectFilterComponent.new(name: :role,
+        options: role_options)
 
     - bar.with_filter do
-      = render IronAdmin::Filters::DateRangeComponent.new(
-        name: :created_at
-      )
+      = render IronAdmin::Filters::DateRangeComponent.new(name: :created_at)
 ```

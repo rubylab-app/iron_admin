@@ -71,7 +71,7 @@ module IronAdmin
       end
 
       def visible_searchable_columns
-        @resource_class.visible_searchable_columns(iron_admin_current_user)
+        @visible_searchable_columns ||= @resource_class.visible_searchable_columns(iron_admin_current_user)
       end
 
       # A field query searches only fields the user sees, and never a secret one.

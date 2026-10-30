@@ -193,6 +193,24 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Number of records the scope lists, matching the index total, or nil
+      # when the adapter cannot know it exactly. Unknown is not zero.
+      #
+      # The default asks {#count}, so a custom adapter keeps working. When
+      # {#count} raises +NotImplementedError+, the count is unknown: this
+      # returns nil and logs nothing.
+      # {ActiveRecord} counts rows with +count(:all)+ and turns a grouped Hash
+      # into its size, which is what the index pagination uses. {Http} returns
+      # +meta.total+, or nil when the response has none.
+      #
+      # @param scope [Object, nil] the relation to count, or every record when nil
+      # @return [Integer, nil]
+      def exact_count(scope = nil)
+        count(scope)
+      rescue NotImplementedError
+        nil
+      end
+
       # --- Search ---
 
       # Searches a single column with LIKE/ILIKE.

@@ -7,12 +7,17 @@ module IronAdmin
     # and page, so switching tabs keeps the search, filters and sort and
     # starts back at the first page.
     #
+    # Pass +counts+ (the hash the index assigns before rendering) to show
+    # how many records each tab would list. A missing key draws no number.
+    # Zero draws zero. Template overrides can read {#counts} and {#scope_label}.
+    #
     # @example Scopes from resource, keeping the index state
     #   render IronAdmin::Ui::ScopesComponent.new(
     #     scopes: @resource_class.all_scopes,
     #     current_scope: @current_scope,
     #     base_path: resources_path(@resource_class.resource_name),
-    #     params: iron_admin_index_state
+    #     params: iron_admin_index_state,
+    #     counts: @scope_counts
     #   )
     class ScopesComponent < ViewComponent::Base
       # @return [Array<Hash>] Scope definitions
@@ -27,6 +32,12 @@ module IronAdmin
       # @return [Hash] Query params the tabs keep
       attr_reader :params
 
+      # Counts keyed by scope name. A missing key draws no number; zero draws zero.
+      # Template overrides can read this.
+      #
+      # @return [Hash{String => Integer}]
+      attr_reader :counts
+
       # Params a tab link never keeps: it sets its own scope and starts back at the first page.
       DROPPED_PARAMS = %w[scope page].freeze
 
@@ -35,11 +46,23 @@ module IronAdmin
       # @param base_path [String] Base URL
       # @param params [Hash] Query params the tabs keep, such as +iron_admin_index_state+
       #   (the search, filters and sort); their +scope+ and +page+ are dropped
-      def initialize(scopes:, current_scope:, base_path:, params: {})
+      # @param counts [Hash, nil] Record counts keyed by scope name (String or Symbol).
+      #   The index computes this before rendering. The default, +{}+, draws names only.
+      def initialize(scopes:, current_scope:, base_path:, params: {}, counts: {})
         @scopes = scopes
         @current_scope = current_scope
         @base_path = base_path
         @params = params
+        @counts = (counts || {}).to_h.transform_keys(&:to_s)
+      end
+
+      # Label of a tab, including its count when one was computed.
+      # Template overrides can call this.
+      #
+      # @param scope [Hash] Scope definition
+      # @return [String]
+      def scope_label(scope)
+        ScopeCounts.label(scope, counts)
       end
 
       # @api private

@@ -273,11 +273,51 @@ end
 Switching tabs keeps the search, the active filters and the sort, and starts back at the first
 page.
 
+A tab can show how many records it would list. That number is the index for that tab: the
+tenant scope, the current filters, that tab's own scope and the current search. It ignores the
+tab you are on and the page you are on. Zero is shown as zero. A scope with `count: false`
+shows no number, and neither does a count the adapter cannot know (an HTTP response with no
+exact total is left blank, not shown as zero). Each counted scope on an HTTP resource sends one
+more unpaginated list request on every index view, even when the response has no
+`meta.total`. Without `meta.total` the tab shows its name and no number. Set
+`scope_counts false` on an HTTP resource whose API returns no total.
+
+Each counted scope costs one query on the index. On ActiveRecord, the `with_deleted` and
+`only_deleted` tabs are counted too, one query each. Only `scope_counts false` on the resource
+turns those off. Other adapters do not count those two tabs. With the feature off, the index
+runs no extra query. It is off unless you turn it on:
+
+```ruby
+IronAdmin.configure do |config|
+  config.scope_counts = true
+end
+```
+
+A resource overrides the global setting. `scope_counts` (or `scope_counts true`) turns its
+counts on when the global setting is off, and `scope_counts false` turns them off when the
+global setting is on.
+Leave the call out to follow the global setting.
+
+```ruby
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      scope_counts true
+
+      scope :active, -> { where(active: true) }, default: true
+      scope :archived, -> { where(archived: true) }, count: false
+    end
+  end
+end
+```
+
 ## Soft Delete Support
 
 IronAdmin auto-detects models with a `deleted_at` column and provides:
 
-- **Auto-registered scopes**: `with_deleted` and `only_deleted`
+- **Auto-registered scopes**: `with_deleted` and `only_deleted`. With scope counts on,
+  ActiveRecord counts both tabs, one query each. `scope_counts false` on the resource is what
+  turns them off. An HTTP or Mongoid resource does not count them.
 - **Auto-registered restore action**: Restores soft-deleted records
 
 ```ruby

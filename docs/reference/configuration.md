@@ -11,6 +11,7 @@ IronAdmin.configure do |config|
   config.per_page = 25
   config.default_sort = :created_at
   config.default_sort_direction = :desc
+  config.scope_counts = false # true: each scope tab shows how many records it would list
   config.strict_tool_actions = false # true: only tool_action names dispatch
 
   # --- Multi-Tenant Support ---
@@ -72,6 +73,7 @@ end
 | `logo` | String | `nil` | Path to logo image |
 | `favicon` | String | `nil` | Icon linked from every admin page with `<link rel="icon">`: a path (`"/icon.svg"`), a URL or an asset name, resolved like `logo`. With `nil`, the admin layout links no icon and browsers request `/favicon.ico` |
 | `per_page` | Integer | `25` | Records per page |
+| `scope_counts` | Boolean | `false` | When `true`, each scope tab shows how many records that tab would list. Each counted scope runs one query. A resource overrides this with `scope_counts`. See [Scopes](../guides/resources.md#scopes) |
 | `default_sort` | Symbol | `:created_at` | Default sort column |
 | `default_sort_direction` | Symbol | `:desc` | Default sort direction (`:asc` or `:desc`) |
 | `strict_tool_actions` | Boolean | `false` | When `true`, tools dispatch only actions declared with `tool_action`. Undeclared names return 404, including the legacy bare-method fallback. See [Custom Tools](../guides/extending.md#custom-tools) |

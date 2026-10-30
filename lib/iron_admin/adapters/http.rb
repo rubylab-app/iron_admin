@@ -103,6 +103,18 @@ module IronAdmin
         (scope || all).count
       end
 
+      # The provider's exact total for +scope+, or for every record when
+      # +scope+ is nil. A response with no +meta.total+ returns nil. An
+      # unknown total is not zero. {#count} still returns the page length,
+      # which pagination uses.
+      #
+      # @param scope [IronAdmin::Adapters::Http::Query, nil]
+      # @return [Integer, nil]
+      def exact_count(scope = nil)
+        relation = scope || all
+        relation.respond_to?(:exact_total) ? relation.exact_total : nil
+      end
+
       # --- Search ---
 
       def search_column(scope, column, query)

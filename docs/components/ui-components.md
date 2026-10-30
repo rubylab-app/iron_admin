@@ -51,14 +51,12 @@ IronAdmin::Ui::ButtonComponent.new(
 = render IronAdmin::Ui::ButtonComponent.new(text: "Save Changes", variant: :primary)
 
 -# Danger button with confirmation
-= render IronAdmin::Ui::ButtonComponent.new(
-  text: "Delete",
+= render IronAdmin::Ui::ButtonComponent.new(text: "Delete",
   variant: :danger,
   icon: "trash",
   method: :delete,
   href: resource_path(@record),
-  confirm: "This action cannot be undone."
-)
+  confirm: "This action cannot be undone.")
 
 -# Icon-only button
 = render IronAdmin::Ui::ButtonComponent.new(icon: "pencil", variant: :ghost, size: :sm)
@@ -125,16 +123,12 @@ IronAdmin::Ui::AlertComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Ui::AlertComponent.new(
-  message: "Your changes have been saved.",
+= render IronAdmin::Ui::AlertComponent.new(message: "Your changes have been saved.",
   type: :success,
-  dismissible: true
-)
+  dismissible: true)
 
-= render IronAdmin::Ui::AlertComponent.new(
-  message: "Please fix the errors below.",
-  type: :error
-)
+= render IronAdmin::Ui::AlertComponent.new(message: "Please fix the errors below.",
+  type: :error)
 ```
 
 ---
@@ -261,12 +255,25 @@ Tab-style scope navigation.
 
 ```ruby
 IronAdmin::Ui::ScopesComponent.new(
-  scopes: scopes,           # Required: array of scope hashes
-  current_scope: "all",     # Required: currently active scope
+  scopes: scopes,            # Required: array of scope hashes
+  current_scope: "all",      # Required: currently active scope
   base_path: "/admin/users", # Required: base URL
-  params: {}                # Optional: query params the tabs keep
+  params: {},                # Optional: query params the tabs keep
+  counts: {}                 # Optional: record counts keyed by scope name
 )
 ```
+
+`counts` is the hash the index computes before it renders (`@scope_counts`). `@scope_counts`
+is set only on the index. The keys are Strings, while a scope's name in the DSL is a Symbol.
+Build the tab label with `IronAdmin::ScopeCounts.label(scope, counts)` (it returns
+`"Active (12)"`, not the number). Read the number with `counts[scope[:name].to_s]`.
+A value of `0` renders as zero. A scope with no entry renders its name and no number.
+The default is `{}`, so existing callers stay unchanged. A template override can read `counts`
+and call `scope_label(scope)`, which returns `"Active (12)"`, `"Inactive (0)"` or `"Archived"`.
+A request from the `records` Turbo frame gets an empty `@scope_counts`. Render the tabs
+outside that frame, as the built-in index does.
+An `index.html.haml` override that turns counts on still pays one query per counted scope, and
+shows no numbers until it passes `counts: @scope_counts`.
 
 Each tab links to `base_path` with `params` and its own `scope`. The `scope` and `page` in
 `params` are dropped, so a tab starts back at the first page. Pass `iron_admin_index_state` to
@@ -291,7 +298,8 @@ scopes = [
 = render IronAdmin::Ui::ScopesComponent.new(scopes: scopes,
   current_scope: params[:scope] || "all",
   base_path: request.path,
-  params: iron_admin_index_state)
+  params: iron_admin_index_state,
+  counts: @scope_counts)
 ```
 
 ---
@@ -313,9 +321,7 @@ IronAdmin::Ui::EmptyStateComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Ui::EmptyStateComponent.new(
-  title: "No records found",
+= render IronAdmin::Ui::EmptyStateComponent.new(title: "No records found",
   description: "Try adjusting your search or filters.",
-  icon: "magnifying-glass"
-)
+  icon: "magnifying-glass")
 ```

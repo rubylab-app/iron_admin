@@ -21,12 +21,10 @@ IronAdmin::Form::TextInputComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::TextInputComponent.new(
-  name: :email,
+= render IronAdmin::Form::TextInputComponent.new(name: :email,
   value: @user.email,
   type: :email,
-  placeholder: "user@example.com"
-)
+  placeholder: "user@example.com")
 ```
 
 ---
@@ -49,12 +47,10 @@ IronAdmin::Form::SelectComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::SelectComponent.new(
-  name: :role,
+= render IronAdmin::Form::SelectComponent.new(name: :role,
   options: [["Admin", "admin"], ["User", "user"], ["Guest", "guest"]],
   selected: @user.role,
-  include_blank: "Select a role..."
-)
+  include_blank: "Select a role...")
 ```
 
 ---
@@ -76,11 +72,9 @@ IronAdmin::Form::CheckboxComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::CheckboxComponent.new(
-  name: :email_notifications,
+= render IronAdmin::Form::CheckboxComponent.new(name: :email_notifications,
   label: "Receive email notifications",
-  checked: @user.email_notifications
-)
+  checked: @user.email_notifications)
 ```
 
 ---
@@ -104,12 +98,10 @@ IronAdmin::Form::TextareaComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::TextareaComponent.new(
-  name: :description,
+= render IronAdmin::Form::TextareaComponent.new(name: :description,
   value: @product.description,
   rows: 6,
-  placeholder: "Enter product description..."
-)
+  placeholder: "Enter product description...")
 ```
 
 ---
@@ -133,12 +125,10 @@ IronAdmin::Form::DatePickerComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::DatePickerComponent.new(
-  name: :start_date,
+= render IronAdmin::Form::DatePickerComponent.new(name: :start_date,
   value: @event.start_date,
   type: :datetime_local,
-  min: Date.today
-)
+  min: Date.today)
 ```
 
 ---
@@ -162,12 +152,10 @@ IronAdmin::Form::BelongsToComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::BelongsToComponent.new(
-  name: :category_id,
+= render IronAdmin::Form::BelongsToComponent.new(name: :category_id,
   association_class: Category,
   selected: @product.category_id,
-  display_method: :title
-)
+  display_method: :title)
 ```
 
 ---
@@ -190,16 +178,12 @@ IronAdmin::Form::FieldWrapperComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Form::FieldWrapperComponent.new(
-  name: :email,
+= render IronAdmin::Form::FieldWrapperComponent.new(name: :email,
   label: "Email Address",
   errors: @user.errors[:email],
   required: true,
-  hint: "We'll never share your email."
-) do
-  = render IronAdmin::Form::TextInputComponent.new(
-    name: :email,
+  hint: "We'll never share your email.") do
+  = render IronAdmin::Form::TextInputComponent.new(name: :email,
     value: @user.email,
-    has_error: @user.errors[:email].any?
-  )
+    has_error: @user.errors[:email].any?)
 ```

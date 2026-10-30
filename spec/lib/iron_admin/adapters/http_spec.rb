@@ -238,6 +238,45 @@ RSpec.describe IronAdmin::Adapters::Http do
     end
   end
 
+  describe "#exact_count" do
+    it "returns nil when the response has no exact total" do
+      expect(adapter.exact_count).to be_nil
+    end
+
+    it "returns nil for a scope when the response has no exact total" do
+      expect(adapter.exact_count(adapter.all)).to be_nil
+    end
+
+    it "returns nil for an empty list with no total" do
+      stub_request(:get, "https://api.example.com/v1/products")
+        .to_return(status: 200, body: [].to_json, headers: { "Content-Type" => "application/json" })
+
+      expect(adapter.exact_count).to be_nil
+    end
+
+    it "returns the exact total when the response includes one" do
+      stub_request(:get, "https://api.example.com/v1/products")
+        .to_return(
+          status: 200,
+          body: { data: [{ id: 1, name: "Widget" }], meta: { total: 100 } }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      expect(adapter.exact_count).to eq(100)
+    end
+
+    it "returns zero when the exact total is zero" do
+      stub_request(:get, "https://api.example.com/v1/products")
+        .to_return(
+          status: 200,
+          body: { data: [{ id: 1, name: "Widget" }], meta: { total: 0 } }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      expect(adapter.exact_count).to eq(0)
+    end
+  end
+
   # --- Search ---
 
   describe "#search_column" do
