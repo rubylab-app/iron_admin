@@ -127,13 +127,58 @@ jobs:
           GEM_VERSION="$(ruby -r ./lib/iron_admin/version -e 'print IronAdmin::VERSION')"
           ruby .github/scripts/verify_gem.rb "iron_admin-${GEM_VERSION}.gem" "${GEM_VERSION}"
 
+  # Proves the packaged gem in a fresh Rails host. Bundler stays out of
+  # vendor/bundle: the gemspec's vendor glob would pack those gems.
+  # No job permissions. The workflow default is contents: read, and that is
+  # all checkout and actions/cache use. release.yml calls this workflow with
+  # only contents: read; a job cannot ask for more than the caller grants.
+  # The job reads no secrets.
+  host-app-gate:
+    name: Host-app gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BUNDLE_PATH: ${{ github.workspace }}/tmp/host_app_gate/dev-bundle
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+
+      - name: Cache the development and host bundles
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: |
+            tmp/host_app_gate/dev-bundle
+            tmp/host_app_gate/bundle
+          key: host-app-gate-${{ runner.os }}-${{ hashFiles('Gemfile.lock', '.ruby-version') }}
+          restore-keys: |
+            host-app-gate-${{ runner.os }}-
+
+      - name: Install development gems
+        run: bundle install
+
+      - name: Run the passing gate
+        run: script/host_app_gate/run
+
+      - name: Naive resource must fail
+        run: script/host_app_gate/run --variant naive --expect-failure
+
+      - name: Open authentication must fail
+        run: script/host_app_gate/run --variant open_auth --expect-failure
+
+      - name: Broken runner must fail
+        run: script/host_app_gate/run --variant broken_runner --expect-failure
+
   # The only check the "Protect main" ruleset needs to require. Its name stays
   # stable when the matrix changes, unlike the per-leg check names.
   ci-result:
     name: CI result
     # always(), not !cancelled(): GitHub treats a skipped required check as passing.
     if: ${{ always() }}
-    needs: [test, minimum, lint, package]
+    needs: [test, minimum, lint, package, host-app-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

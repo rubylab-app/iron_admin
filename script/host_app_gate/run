@@ -1,0 +1,344 @@
+#!/usr/bin/env bash
+# Host-app gate. Builds this checkout into a gem, unpacks it, and proves that
+# gem in a fresh Rails host that uses the Rails 8 authentication generator.
+#
+# Usage:
+#   script/host_app_gate/run [--variant NAME] [--expect-failure]
+#
+# Variants:
+#   (none)          the passing initializer and ProductResource
+#   naive           category select uses options: and the policy omits :archive
+#   open_auth       authenticate allows every visitor
+#   broken_runner   an initializer raises while the runner boots
+#
+# --expect-failure exits 0 for a variant whose expected failures are exactly
+# runner, when the runner dies before any check reports. Every other variant
+# also needs the full check catalog and its expected names among the failures.
+# A failure while building the gem, generating the host, or compiling the CSS
+# always exits non-zero.
+#
+# Ruby is pinned to .ruby-version. Rails is pinned to the exact version in
+# this repo's Gemfile.lock; the generated host's Gemfile is rewritten to that
+# version. The other host gems float at the versions rails new and its
+# installers resolve. Generating a host needs network access unless every gem
+# is already cached (bundle install --local has to succeed; tailwindcss:install
+# may still install foreman).
+#
+# The host is Rails with Tailwind and SQLite; deploy extras (Kamal, Solid,
+# Thruster, Docker, CI templates) are skipped. rails new is --skip-bundle so
+# the path gem is installed once; importmap, Hotwire and tailwindcss:install
+# then run, which is what rails new would have run. Work files stay in
+# tmp/host_app_gate, which git ignores.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+GATE="$(cd "$(dirname "$0")" && pwd)"
+WORK="$ROOT/tmp/host_app_gate"
+PACKAGE="$WORK/package"
+BUNDLE_DIR="$WORK/bundle"
+
+VARIANT=""
+EXPECT_FAILURE=0
+FAILURES=""
+
+usage() {
+  sed -n '2,31p' "$0"
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --variant)
+      VARIANT="${2:?--variant needs a name}"
+      shift 2
+      ;;
+    --expect-failure)
+      EXPECT_FAILURE=1
+      shift
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+say() {
+  printf '== %s\n' "$1"
+}
+
+on_exit() {
+  printf 'host-app gate (%s) finished in %ss\n' "${VARIANT:-passing}" "$SECONDS"
+}
+trap on_exit EXIT
+
+if [ -n "$VARIANT" ] && [ ! -d "$GATE/variants/$VARIANT" ]; then
+  echo "unknown variant: $VARIANT" >&2
+  exit 1
+fi
+
+if [ "$EXPECT_FAILURE" -eq 1 ]; then
+  if [ -z "$VARIANT" ]; then
+    echo "--expect-failure needs --variant" >&2
+    exit 1
+  fi
+  if [ ! -f "$GATE/variants/$VARIANT/expected_failures" ]; then
+    echo "variant $VARIANT has no expected_failures" >&2
+    exit 1
+  fi
+fi
+
+required="$(tr -d '[:space:]' < "$ROOT/.ruby-version")"
+actual="$(ruby -e 'print RUBY_VERSION')"
+if [ "$actual" != "$required" ]; then
+  echo "host-app gate requires Ruby ${required} (.ruby-version); this process is ${actual}" >&2
+  exit 1
+fi
+
+rails_version="$(ruby -e 'text = File.read(ARGV[0]); match = text[/^    rails \(([0-9.]+)\)/, 1]; abort "rails version not found in Gemfile.lock" unless match; print match' "$ROOT/Gemfile.lock")"
+
+run_in_host() {
+  local app="$1"
+  shift
+  (
+    cd "$app"
+    # RUBYLIB is unset so a checkout on the load path cannot satisfy requires
+    # that the packaged gem should satisfy.
+    env -u BUNDLE_GEMFILE -u BUNDLER_SETUP -u BUNDLE_BIN_PATH -u BUNDLE_APP_CONFIG -u RUBYOPT -u RUBYLIB \
+      BUNDLE_PATH="$BUNDLE_DIR" \
+      "$@"
+  )
+}
+
+package_digest() {
+  (
+    cd "$PACKAGE"
+    find . -type f ! -name '*.gemspec' -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | awk '{print $1}'
+  )
+}
+
+# What the baseline build executes. A change misses the stamp, so the host is
+# generated again instead of skipping a changed smoke check or host template.
+stamp_value() {
+  {
+    package_digest
+    shasum -a 256 \
+      "$ROOT/iron_admin.gemspec" \
+      "$ROOT/Gemfile.lock" \
+      "$GATE/prepare_host.rb" \
+      "$GATE/run" \
+      "$GATE/smoke.rb" \
+      "$GATE/app_files/"*
+  } | shasum -a 256 | awk '{print $1}'
+}
+
+unpack_gem() {
+  say "building and unpacking the gem"
+  mkdir -p "$WORK"
+  (cd "$ROOT" && gem build iron_admin.gemspec --output "$WORK/iron_admin.gem")
+  rm -rf "$PACKAGE"
+  mkdir -p "$PACKAGE"
+  tar -xOf "$WORK/iron_admin.gem" data.tar.gz | tar -xz -C "$PACKAGE"
+  gem spec "$WORK/iron_admin.gem" --ruby > "$PACKAGE/iron_admin.gemspec"
+  test -f "$PACKAGE/lib/iron_admin/engine.rb"
+  if [ -d "$PACKAGE/spec" ] || [ -d "$PACKAGE/vendor/bundle" ]; then
+    echo "built gem contains repository-only files (spec or vendor/bundle)" >&2
+    exit 1
+  fi
+}
+
+verify_packaged_files() {
+  if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "host-app gate is not in a git checkout, so packaged files cannot be compared" >&2
+    exit 1
+  fi
+
+  say "comparing packaged files to the checkout"
+  local missing=0
+  local path
+  while IFS= read -r path; do
+    [ -z "$path" ] && continue
+    if [ ! -f "$PACKAGE/$path" ]; then
+      echo "packaged gem is missing ${path}" >&2
+      missing=1
+    fi
+  done < <(git -C "$ROOT" ls-files -- app config lib vendor)
+
+  if [ "$missing" -ne 0 ]; then
+    exit 1
+  fi
+}
+
+build_baseline() {
+  # An interrupted build must not be reused. The stamp is written only after
+  # the generated initializer and the CSS have been checked.
+  rm -f "$WORK/baseline.stamp"
+  say "generating Rails ${rails_version} host"
+  rm -rf "$WORK/baseline"
+  (
+    cd "$ROOT"
+    bundle exec rails "_${rails_version}_" new "$WORK/baseline" \
+      --css tailwind \
+      --skip-git --skip-docker --skip-kamal --skip-solid --skip-thruster \
+      --skip-ci --skip-rubocop --skip-brakeman --skip-bundler-audit \
+      --skip-bundle --skip-test
+  )
+  ruby "$GATE/prepare_host.rb" --app "$WORK/baseline" --package "$PACKAGE" --step gem --rails-version "$rails_version"
+  say "installing host gems"
+  run_in_host "$WORK/baseline" bundle config set --local path "$BUNDLE_DIR"
+  if ! run_in_host "$WORK/baseline" bundle install --local; then
+    say "local gems were not enough; installing from the network"
+    run_in_host "$WORK/baseline" bundle install
+  fi
+  # rails new --skip-bundle does not run these. tailwindcss:install must
+  # precede the IronAdmin installer, which appends its @import to the file
+  # this task creates.
+  say "installing importmap, Hotwire, and Tailwind"
+  run_in_host "$WORK/baseline" bin/rails importmap:install
+  run_in_host "$WORK/baseline" bin/rails turbo:install stimulus:install
+  run_in_host "$WORK/baseline" bin/rails tailwindcss:install
+  say "generating authentication, Product, and IronAdmin"
+  run_in_host "$WORK/baseline" bin/rails generate authentication
+  run_in_host "$WORK/baseline" bin/rails generate migration AddAdminToUsers admin:boolean
+  run_in_host "$WORK/baseline" bin/rails generate model Product \
+    name:string status:integer category:string price:decimal archived_at:datetime
+  run_in_host "$WORK/baseline" bin/rails generate iron_admin:install
+  ruby "$GATE/prepare_host.rb" --app "$WORK/baseline" --package "$PACKAGE" --step app
+  say "preparing the database and Tailwind CSS"
+  run_in_host "$WORK/baseline" bin/rails db:prepare
+  run_in_host "$WORK/baseline" bin/rails db:seed
+  run_in_host "$WORK/baseline" bin/rails tailwindcss:build
+  say "checking the generated initializer"
+  run_in_host "$WORK/baseline" bin/rails runner "$GATE/smoke.rb"
+  stamp_value > "$WORK/baseline.stamp"
+}
+
+apply_fixtures() {
+  local app="$1"
+  cp "$GATE/fixtures/initializer.rb" "$app/config/initializers/iron_admin.rb"
+  mkdir -p "$app/app/iron_admin/resources"
+  cp "$GATE/fixtures/product_resource.rb" "$app/app/iron_admin/resources/product_resource.rb"
+  if [ -z "$VARIANT" ]; then
+    return 0
+  fi
+
+  local overlay="$GATE/variants/$VARIANT"
+  local rel
+  while IFS= read -r -d '' rel; do
+    rel="${rel#./}"
+    mkdir -p "$app/$(dirname "$rel")"
+    cp "$overlay/$rel" "$app/$rel"
+  done < <(cd "$overlay" && find . -type f ! -name expected_failures -print0)
+}
+
+prepare_run() {
+  say "applying fixtures${VARIANT:+ (${VARIANT})}"
+  rm -rf "$WORK/run"
+  mkdir -p "$WORK/run"
+  cp -a "$WORK/baseline/." "$WORK/run/"
+  rm -rf "$WORK/run/tmp/cache" "$WORK/run/tmp/pids"
+  apply_fixtures "$WORK/run"
+}
+
+coverage_ok() {
+  [ -f "$WORK/checks.log" ] && grep -qx "HOST_APP_GATE coverage ok" "$WORK/checks.log"
+}
+
+read_failures() {
+  local result="$1"
+  local status="$2"
+  if [ -f "$result" ]; then
+    FAILURES="$(grep -v '^$' "$result" || true)"
+  else
+    FAILURES=""
+  fi
+  if [ "$status" -ne 0 ] && [ -z "$FAILURES" ]; then
+    if [ -f "$WORK/checks.log" ] && grep -qE '^HOST_APP_GATE coverage (missing|unexpected):' "$WORK/checks.log"; then
+      echo "HOST_APP_GATE FAILED coverage: reported checks do not match the catalog"
+      FAILURES="coverage"
+    else
+      echo "HOST_APP_GATE FAILED runner: rails runner exited ${status} without a result file"
+      FAILURES="runner"
+    fi
+  fi
+}
+
+expected_names_reported() {
+  local missing=0
+  local name
+  while IFS= read -r name || [ -n "$name" ]; do
+    [ -z "$name" ] && continue
+    if ! printf '%s\n' "$FAILURES" | grep -qx "$name"; then
+      echo "expected failure ${name} was not reported" >&2
+      missing=1
+    fi
+  done < "$GATE/variants/$VARIANT/expected_failures"
+  [ "$missing" -eq 0 ]
+}
+
+only_runner_expected() {
+  local names
+  names="$(grep -v '^$' "$GATE/variants/$VARIANT/expected_failures" | tr '\n' ' ' | sed 's/ $//')"
+  [ "$names" = "runner" ] && [ "$FAILURES" = "runner" ]
+}
+
+run_checks() {
+  local result="$WORK/result.txt"
+  local status=0
+  rm -f "$result" "$WORK/checks.log"
+  set +e
+  run_in_host "$WORK/run" env \
+    "IRON_ADMIN_PACKAGE_ROOT=$PACKAGE" \
+    "HOST_APP_GATE_RESULT=$result" \
+    bin/rails runner "$GATE/checks.rb" 2>&1 | tee "$WORK/checks.log"
+  status=${PIPESTATUS[0]}
+  set -e
+  read_failures "$result" "$status"
+
+  # One status. --expect-failure inverts it only for a complete run, or for
+  # the runner variant, which dies before any check can report.
+  local gate_status=0
+  if [ -n "$FAILURES" ] || ! coverage_ok; then
+    gate_status=1
+  fi
+
+  if [ "$EXPECT_FAILURE" -eq 1 ]; then
+    if only_runner_expected; then
+      echo "variant ${VARIANT} failed as expected: runner"
+      gate_status=0
+    elif ! coverage_ok; then
+      echo "check coverage incomplete; --expect-failure does not apply" >&2
+      echo "reported: $(printf '%s\n' "$FAILURES" | tr '\n' ' ')" >&2
+      gate_status=1
+    elif [ "$gate_status" -eq 0 ]; then
+      echo "expected variant ${VARIANT} to fail, but the checks passed" >&2
+      gate_status=1
+    elif expected_names_reported; then
+      echo "variant ${VARIANT} failed as expected: $(printf '%s\n' "$FAILURES" | tr '\n' ' ')"
+      gate_status=0
+    else
+      echo "variant ${VARIANT} did not report every expected failure" >&2
+      echo "reported: $(printf '%s\n' "$FAILURES" | tr '\n' ' ')" >&2
+      gate_status=1
+    fi
+  fi
+
+  exit "$gate_status"
+}
+
+unpack_gem
+verify_packaged_files
+mkdir -p "$BUNDLE_DIR"
+if [ -f "$WORK/baseline.stamp" ] && [ "$(cat "$WORK/baseline.stamp")" = "$(stamp_value)" ] && [ -f "$WORK/baseline/config/environment.rb" ]; then
+  say "reusing the generated host"
+else
+  build_baseline
+fi
+
+prepare_run
+say "running checks"
+run_checks

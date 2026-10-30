@@ -79,6 +79,7 @@ end
 3. Ensure all tests pass
 4. Ensure Rubocop passes
 5. Update CHANGELOG.md
+6. Run the host-app gate the way CI does: `script/host_app_gate/run`. It needs exactly the Ruby in `.ruby-version`, and network access on the first run. CI runs the "With the Rails 8 authentication generator" block of `docs/guides/authentication.md`, so that heading and its ruby fence must stay.
 
 ## Reporting Issues
 
