@@ -42,7 +42,8 @@ jobs:
           echo "Tag ${GITHUB_REF_NAME} matches gem version ${GEM_VERSION}"
 
   # The same jobs that guard main: Ruby x Rails matrix, minimum deps, RuboCop,
-  # gem package check, and the "CI result" gate.
+  # gem package check, the host-app gate, and the "CI result" gate. The call
+  # grants contents: read, and every job in ci.yml stays within that.
   ci:
     needs: verify-tag
     uses: ./.github/workflows/ci.yml

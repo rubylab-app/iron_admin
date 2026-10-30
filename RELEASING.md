@@ -7,7 +7,8 @@ does **not** publish anything. Only *publishing a GitHub Release* triggers
 1. checks that the tag is exactly `v` plus the version in `lib/iron_admin/version.rb`,
    before anything else runs,
 2. runs the full CI workflow ([`ci.yml`](.github/workflows/ci.yml): Ruby 3.3/3.4/4.0 ×
-   Rails 8.0/8.1, minimum dependency versions on Ruby 3.3, RuboCop, gem package check),
+   Rails 8.0/8.1, minimum dependency versions on Ruby 3.3, RuboCop, gem package check,
+   and the host-app gate),
 3. builds `iron_admin-X.Y.Z.gem` and verifies its contents
    ([`.github/scripts/verify_gem.rb`](.github/scripts/verify_gem.rb)),
 4. pushes it to RubyGems via **trusted publishing** (OIDC: no API key or secret
@@ -63,8 +64,8 @@ release notes. You can also do this from the GitHub UI:
 **Releases → Draft a new release → tag `v0.7.0` → paste notes → Publish**.
 
 Publishing the Release creates the tag and fires `release.yml`. Once the tag
-check and the full CI run pass (a few minutes), the gem is published and the
-`release` deployment turns green.
+check and the full CI run pass, including the host-app gate (a few minutes),
+the gem is published and the `release` deployment turns green.
 
 ### 3. Redeploy the documentation site
 
@@ -88,6 +89,7 @@ gh workflow run docs.yml --ref main
 | `Minimum deps` | The suite on Ruby 3.3 with every runtime dependency pinned to its gemspec floor (`gemfiles/minimum.gemfile`). |
 | `lint` | RuboCop, from the root `Gemfile.lock`. |
 | `Gem package` | Builds the gem and runs `verify_gem.rb` on it. |
+| `Host-app gate` | Installs the packaged gem in a freshly generated Rails host and checks authentication, the documented Rails 8 recipe, CSRF, and the packaged assets. |
 | `CI result` | Fails unless every job above succeeded. This is the one required check. |
 
 The `gemfiles/*.gemfile.lock` files are resolved in CI and not committed. To

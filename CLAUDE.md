@@ -32,6 +32,9 @@ bundle exec rubocop -A
 
 # Check Ruby version (should match .ruby-version)
 ruby -v
+
+# Prove the packaged gem in a freshly generated Rails host app
+script/host_app_gate/run
 ```
 
 ## Architecture

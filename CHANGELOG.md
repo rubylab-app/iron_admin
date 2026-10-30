@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Resource and tool names are read with `params.expect`** — The resources, exports, imports and tools controllers read `:resource_name` and `:tool_name` with `params.expect`. A name that matches nothing still returns `404`. A blank name, such as `/admin/%20`, now returns a bare `400 Bad Request` instead of the not found page.
 - **Request specs parse HTML with `response.parsed_body`** instead of calling Nokogiri on `response.body`, as the new RuboCop Rails cops require.
 - **Resource registration** — Before 0.8, the last class registered under a name replaced the previous one. The first class now keeps the name. A class whose `name` matches the stored class is a reload: it replaces that entry and is not logged as a collision. Two different classes that share a name keep the first, and `finalize!` logs the collision once. The log shows `def self.resource_name = "a_unique_name"`.
+- **CI** — The host-app gate installs the packaged gem in a freshly generated Rails host and fails the build when that host cannot authenticate, render the documented Rails 8 recipe, or serve the packaged assets and translations. The release workflow runs it with the rest of CI before publishing. The job keeps the workflow's `contents: read` permission, which is all checkout and the bundle cache need, so a release call that grants only `contents: read` can start it.
 
 ### Deprecated
 
