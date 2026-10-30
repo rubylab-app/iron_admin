@@ -86,6 +86,34 @@ module IronAdmin
         defined_scope&.dig(:name)&.to_s
       end
 
+      # Sets the selected scope and the tab counts. Counts run only when the
+      # index is going to render: a pagination redirect returns before this.
+      def assign_index_scope
+        @current_scope = current_scope_name
+        @scope_counts = scope_count_map
+      end
+
+      def scope_count_map
+        return {} if respond_to?(:turbo_frame_request_id, true) && turbo_frame_request_id == "records"
+
+        ScopeCounts.new(
+          resource: @resource_class,
+          adapter: adapter,
+          relation_for: method(:relation_for_scope_count)
+        ).to_h
+      end
+
+      # What one tab would list: the tenant scope, the current filters, that
+      # tab's scope, the current search and the index preloading. Not the
+      # selected scope, not the sorting, and not a page. A nil or false body
+      # is not a relation, so search and preloading stop before they run.
+      def relation_for_scope_count(scope_body)
+        scoped = apply_resource_scope(apply_filters(base_scope), scope_body)
+        return scoped if scoped.nil? || scoped == false
+
+        apply_preloading(apply_search(scoped))
+      end
+
       def apply_scopes(scope)
         defined_scope = @resource_class.all_scopes.find { |s| s[:name].to_s == params[:scope] }
         defined_scope ||= @resource_class.all_scopes.find { |s| s[:default] }

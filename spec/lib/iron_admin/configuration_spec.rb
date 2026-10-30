@@ -76,6 +76,10 @@ RSpec.describe IronAdmin::Configuration do
       expect(config.strict_tool_actions).to be false
     end
 
+    it "sets scope_counts to false" do
+      expect(config.scope_counts).to be false
+    end
+
     it "disables live updates by default" do
       expect(config.live_updates).to eq(:disabled)
     end

@@ -106,6 +106,17 @@ module IronAdmin
         scope.count
       end
 
+      # Rows the relation lists. +count(:all)+ ignores a select list, and a
+      # grouped count (a Hash of group key to count) becomes the number of
+      # groups. That is the total the index pagination shows.
+      #
+      # @param scope [ActiveRecord::Relation, nil]
+      # @return [Integer]
+      def exact_count(scope = nil)
+        result = (scope || all).count(:all)
+        result.is_a?(Hash) ? result.size : result
+      end
+
       # --- Search ---
 
       def search_column(scope, column, query)

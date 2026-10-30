@@ -222,6 +222,40 @@ RSpec.describe IronAdmin::Adapters::ActiveRecord do
     end
   end
 
+  describe "#exact_count" do
+    it "counts rows when the scope selects several columns" do
+      create_list(:user, 2)
+      scope = adapter.all
+      scope = scope.select(:id, :name, :email)
+
+      expect(adapter.exact_count(scope)).to eq(2)
+    end
+
+    it "counts one row per group" do
+      first_user = create(:user)
+      create_list(:license, 2, user: first_user)
+      create(:license, user: create(:user))
+      scope = adapter.all
+      scope = scope.joins(:licenses).group("users.id")
+
+      expect(adapter.exact_count(scope)).to eq(2)
+    end
+
+    it "counts the grouped select the index paginates" do
+      create_list(:user, 2)
+      scope = adapter.all
+      scope = scope.select("users.*, COUNT(licenses.id) AS n").left_joins(:licenses).group("users.id")
+
+      expect(adapter.exact_count(scope)).to eq(2)
+    end
+
+    it "defaults to every record" do
+      create(:user)
+
+      expect(adapter.exact_count).to eq(1)
+    end
+  end
+
   describe "#build" do
     it "returns a new unsaved record" do
       record = adapter.build(name: "Test", email: "build@test.com")

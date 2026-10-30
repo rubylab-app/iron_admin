@@ -28,7 +28,7 @@ For the complete component reference, see the [Components Library](../components
 | `IronAdmin::Ui::DropdownComponent` | Dropdown menus |
 | `IronAdmin::Ui::TooltipComponent` | Hover tooltips |
 | `IronAdmin::Ui::PaginationComponent` | Pagination controls |
-| `IronAdmin::Ui::ScopesComponent` | Scope tabs |
+| `IronAdmin::Ui::ScopesComponent` | Scope tabs. Takes `counts:` (see [Scope tab counts](#scope-tab-counts)) |
 | `IronAdmin::Ui::EmptyStateComponent` | Empty state placeholders |
 
 ### Form Components
@@ -115,6 +115,38 @@ is none:
 
 `FlashComponent.new(flash: { notice: "Saved" })` renders the messages you pass instead of the
 request's flash.
+
+## Scope tab counts
+
+The index computes one hash of record counts before it renders, and the built-in scope tabs
+use it. `@scope_counts` is set only on the index. `Ui::ScopesComponent` takes the same hash
+as `counts:`. The keys are Strings. A scope's name in the DSL is a Symbol. Build the tab
+label with `IronAdmin::ScopeCounts.label(scope, counts)` (it returns `"Active (12)"`, not
+the number). Read the number with `counts[scope[:name].to_s]`. The default is `{}`, which
+draws each tab's name and no number. A count of zero renders as zero. A scope with no entry
+renders no number.
+
+A request from the `records` Turbo frame (pagination inside that frame) gets an empty
+`@scope_counts`. Render the tabs outside that frame, as the built-in index does. Tabs
+drawn inside the frame have no numbers on those requests.
+
+There is no `scopes` slot. The index draws its tabs itself, above the `records` frame. An
+`index.html.haml` override that turns counts on still pays one query per counted scope, and
+shows no numbers until it passes `counts: @scope_counts`. Pass the hash when you render the
+component:
+
+```haml
+= render IronAdmin::Ui::ScopesComponent.new(scopes: @resource_class.all_scopes,
+  current_scope: @current_scope,
+  base_path: resources_path(@resource_class.resource_name),
+  params: iron_admin_index_state,
+  counts: @scope_counts)
+```
+
+A `ScopesComponent` subclass template can read `counts` and call `scope_label(scope)`
+(`"Active (12)"`, `"Inactive (0)"` or `"Archived"`). In an `index.html.haml` override, use
+`IronAdmin::ScopeCounts.label(scope, @scope_counts)`. What the number means, what it costs
+and how to turn it on are in the [resources guide](resources.md#scopes).
 
 ## Overriding Components
 

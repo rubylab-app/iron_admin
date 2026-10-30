@@ -40,7 +40,7 @@ module IronAdmin
       return redirect_to_last_page if @pagy.page > @pagy.last
 
       @fields = index_fields
-      @current_scope = current_scope_name
+      assign_index_scope
       @permitted_bulk_actions = @resource_class.defined_bulk_actions.select { |action| listed_bulk_action?(action) }
     end
 

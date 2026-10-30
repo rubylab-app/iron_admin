@@ -39,10 +39,13 @@ module IronAdmin
 
           column = soft_delete_column
           column_sym = column.to_sym
+          # ActiveRecord can run these bodies. Other adapters cannot (no
+          # unscope), so counting them would fail on every index.
+          skip = adapter.is_a?(IronAdmin::Adapters::ActiveRecord) ? {} : { count: false }
 
           self._soft_delete_scopes = [
-            { name: :with_deleted, scope: -> { unscope(where: column_sym) }, default: false },
-            { name: :only_deleted, scope: -> { unscope(where: column_sym).where.not(column => nil) }, default: false },
+            { name: :with_deleted, scope: -> { unscope(where: column_sym) }, default: false, **skip },
+            { name: :only_deleted, scope: -> { unscope(where: column_sym).where.not(column => nil) }, default: false, **skip },
           ]
 
           action :restore, icon: "arrow-path", condition: ->(record) { record.public_send(column).present? } do |record|

@@ -157,4 +157,47 @@ RSpec.describe IronAdmin::Ui::ScopesComponent, type: :component do
       expect(component.render?).to be false
     end
   end
+
+  describe "counts" do
+    let(:counted_scopes) do
+      [
+        { name: :active },
+        { name: :inactive },
+        { name: :archived },
+      ]
+    end
+
+    it "defaults counts to an empty hash" do
+      component = described_class.new(scopes: counted_scopes, current_scope: "active", base_path: "/admin/users")
+
+      expect(component.counts).to eq({})
+    end
+
+    it "keys counts by the scope name as a string" do
+      component = described_class.new(
+        scopes: counted_scopes, current_scope: "active", base_path: "/admin/users", counts: { active: 12 }
+      )
+
+      expect(component.counts).to eq("active" => 12)
+    end
+
+    it "labels a scope for a template override" do
+      component = described_class.new(
+        scopes: counted_scopes, current_scope: "active", base_path: "/admin/users", counts: { "active" => 12 }
+      )
+
+      expect(component.scope_label({ name: :active })).to eq("Active (12)")
+    end
+
+    it "shows a count, keeps zero, and omits a missing count" do
+      rendered = render_inline(described_class.new(
+                                 scopes: counted_scopes,
+                                 current_scope: "active",
+                                 base_path: "/admin/users",
+                                 counts: { "active" => 12, "inactive" => 0 }
+                               ))
+
+      expect(rendered.css("a").map { |tab| tab.text.squish }).to eq(["Active (12)", "Inactive (0)", "Archived"])
+    end
+  end
 end

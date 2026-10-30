@@ -55,11 +55,9 @@ end
 Metrics render using `IronAdmin::Dashboards::MetricCardComponent`. Customize the display in your views:
 
 ```haml
-= render IronAdmin::Dashboards::MetricCardComponent.new(
-  name: :total_users,
+= render IronAdmin::Dashboards::MetricCardComponent.new(name: :total_users,
   value: User.count,
-  format: :number
-)
+  format: :number)
 ```
 
 ## Charts
@@ -89,13 +87,11 @@ end
 Charts render using `IronAdmin::Dashboards::ChartComponent`:
 
 ```haml
-= render IronAdmin::Dashboards::ChartComponent.new(
-  title: "Monthly Signups",
+= render IronAdmin::Dashboards::ChartComponent.new(title: "Monthly Signups",
   type: :line,
   data: [45, 52, 38, 67, 89, 95],
   labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-  height: 300
-)
+  height: 300)
 ```
 
 ### Chart Colors
@@ -146,11 +142,9 @@ current user are left out.
 Recent records render using `IronAdmin::Dashboards::RecentTableComponent`:
 
 ```haml
-= render IronAdmin::Dashboards::RecentTableComponent.new(
-  resource_name: :user,
+= render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: :user,
   records: User.limit(5),
-  current_user: iron_admin_current_user
-)
+  current_user: iron_admin_current_user)
 ```
 
 `current_user:` is optional. Pass it so that fields with a `visible:` proc are checked for that
@@ -172,19 +166,15 @@ for four at `lg`:
 
 ```haml
 = render IronAdmin::Dashboards::StatsGridComponent.new(columns: 4) do |grid|
-  - grid.with_stat(
-    label: "Total Users",
+  - grid.with_stat(label: "Total Users",
     value: User.count,
     change: "+12%",
     change_type: :positive,
-    icon: "users"
-  )
-  - grid.with_stat(
-    label: "Revenue",
+    icon: "users")
+  - grid.with_stat(label: "Revenue",
     value: number_to_currency(Payment.sum(:amount)),
     change: "-3%",
-    change_type: :negative
-  )
+    change_type: :negative)
   - grid.with_stat(label: "Active Sessions", value: session_count)
   - grid.with_stat(label: "Conversion", value: "4.2%")
 ```
@@ -196,13 +186,11 @@ Show recent activity timeline:
 ```haml
 = render IronAdmin::Dashboards::ActivityFeedComponent.new(title: "Recent Activity") do |feed|
   - @activities.each do |activity|
-    - feed.with_item(
-      description: activity.description,
+    - feed.with_item(description: activity.description,
       timestamp: activity.created_at,
       icon: "user",
       icon_color: :blue,
-      href: activity_path(activity)
-    )
+      href: activity_path(activity))
 ```
 
 ## Quick Links
