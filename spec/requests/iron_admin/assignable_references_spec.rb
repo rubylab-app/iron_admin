@@ -109,6 +109,29 @@ RSpec.describe "Assignable references on write", type: :request do
       expect(response).to have_http_status(:redirect)
       expect(note.reload.notable).to be_nil
     end
+
+    it "rejects a polymorphic type outside the allowlist when the id is blank" do
+      admin = create(:user, role: "admin")
+      note = Note.create!(title: "N", body: "B", notable_type: "User", notable_id: admin.id)
+
+      patch iron_admin.resource_path("notes", note), params: {
+        record: { title: "N", body: "B", notable_type: "Tag", notable_id: "" },
+      }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(note.reload.notable_type).to eq("User")
+    end
+
+    it "renders no id options when the stored polymorphic type is outside the allowlist" do
+      Tag.create!(name: "leaked-tag")
+      note = Note.create!(title: "N", body: "B", notable_type: "Tag", notable_id: nil)
+
+      get iron_admin.edit_resource_path("notes", note)
+
+      expect(response).to have_http_status(:ok)
+      expect(notable_id_select).to be_present
+      expect(notable_id_option_values).to eq([])
+    end
   end
 
   describe "many-to-many ids" do
@@ -281,5 +304,16 @@ RSpec.describe "Assignable references on write", type: :request do
         end
       end
     end
+  end
+
+  def notable_id_select
+    response.parsed_body.at_xpath("//select[@name='record[notable_id]']")
+  end
+
+  def notable_id_option_values
+    options = notable_id_select&.css("option")
+    return [] unless options
+
+    options.filter_map { |option| option["value"].presence }
   end
 end

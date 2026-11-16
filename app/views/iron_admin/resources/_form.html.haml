@@ -136,13 +136,14 @@
           - id_col = field.options[:id_column]
           - current_type = @record.public_send(type_col)
           - current_id = @record.public_send(id_col)
+          - type_class = types.find { |klass| klass.name == current_type.to_s }
           .space-y-2
             = f.select type_col,
               types.map { |klass| [klass.model_name.human, klass.name] },
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_type },
               class: cp_select_class(error: has_error)
             = f.select id_col,
-              (current_type.present? ? assignable_records(current_type.constantize).map { |r| [display_record_label(r), r.id] } : []),
+              (type_class ? assignable_records(type_class).map { |r| [display_record_label(r), r.id] } : []),
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_id },
               "aria-label": I18n.t("iron_admin.fields.polymorphic_record_label", field: field.name.to_s.humanize),
               class: cp_select_class(error: has_error)

@@ -2,26 +2,26 @@
 
 module IronAdmin
   module Concerns
-    # Rejects posted foreign keys that are outside the tenant-scoped options.
+    # Rejects foreign keys outside the tenant and polymorphic types outside the allowlist.
     module AssignableReferences
       extend ActiveSupport::Concern
       include PolymorphicReferences
 
       private
 
-      # Whether every posted reference points at a tenant-assignable record.
+      # Whether every posted reference points at an assignable record.
       #
-      # Returns true immediately when no tenant scope is configured, without
-      # querying. Only keys present in +attrs+ are checked. Each rejected
-      # reference adds an error on +record+ and makes this method return false.
+      # The polymorphic type allowlist always applies. Tenant checks run only
+      # when a tenant scope is configured. Only keys present in +attrs+ are
+      # checked. Each rejected reference adds an error on +record+.
       #
       # @param record [ActiveRecord::Base] record about to be saved
       # @param attrs [ActionController::Parameters, Hash] permitted attributes
       # @return [Boolean] true when this check added no error
       def references_assignable?(record, attrs)
-        return true unless IronAdmin::TenantScope.configured?
-
-        reference_checks_pass?(record, deep_stringify(unwrap_params(attrs)))
+        attrs = deep_stringify(unwrap_params(attrs))
+        types_allowed = polymorphic_types_allowed?(record, attrs)
+        IronAdmin::TenantScope.configured? ? reference_checks_pass?(record, attrs) && types_allowed : types_allowed
       end
 
       def reference_checks_pass?(record, attrs)

@@ -31,6 +31,20 @@ RSpec.describe IronAdmin::Concerns::PolymorphicReferences do
     expect(assignable).to be(true)
   end
 
+  it "rejects a submitted type outside the allowlist when the id is blank" do
+    note = Note.new(notable_type: "User", notable_id: nil)
+    attrs = { "notable_type" => "Tag", "notable_id" => "" }.with_indifferent_access
+
+    host = polymorphic_host
+    field = notable_polymorphic_field
+    host.define_singleton_method(:writable_form_fields) { [field] }
+
+    allowed = host.send(:polymorphic_types_allowed?, note, attrs)
+
+    expect(allowed).to be(false)
+    expect(note.errors[:notable]).to include("is not available")
+  end
+
   def polymorphic_host
     host = Class.new { include IronAdmin::Concerns::AssignableReferences }.new
     host.define_singleton_method(:present_attr?) { |attrs, key| attrs[key].present? }
