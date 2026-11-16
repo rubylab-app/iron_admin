@@ -164,20 +164,39 @@ module IronAdmin
         model_class.new(cast_array_attributes(attrs))
       end
 
+      # Plain scalar equalities on +scope+ that are fields of the scope's model.
+      #
+      # Reads the Mongoid selector and keeps keys of +scope.klass+ when the
+      # scope exposes it, otherwise this adapter's model. Hashes such as
+      # +$in+ and arrays are omitted.
+      #
+      # @param scope [Mongoid::Criteria]
+      # @return [Hash{String => Object}]
+      def scope_attributes(scope)
+        return {} unless scope.respond_to?(:selector)
+
+        model = scope.respond_to?(:klass) ? scope.klass : model_class
+        allowed = model.fields.keys.map(&:to_s)
+        scope.selector.each_with_object({}) do |(key, value), kept|
+          name = key.to_s
+          next unless allowed.include?(name)
+          next if value.is_a?(Hash) || value.is_a?(Array)
+
+          kept[name] = value
+        end
+      end
+
       # Builds a record from +scope+ so equality conditions become attributes.
       #
-      # Only plain selector values that are fields of the model are copied.
-      # Operator hashes such as +$in+ are ignored. Array attributes in +attrs+
-      # are cast the same way as {#build}. Attributes in +attrs+ overwrite
-      # values copied from +scope+.
+      # Submitted +attrs+ are applied first, including the array-field cast from
+      # {#build}. {#scope_attributes} is assigned afterwards, so a posted tenant
+      # id cannot move the document to another tenant.
       #
       # @param scope [Mongoid::Criteria] Scope to build from
       # @param attrs [Hash, ActionController::Parameters] Initial attributes
       # @return [Mongoid::Document] New record
       def build_in(scope, attrs = {})
-        selector = scope.respond_to?(:selector) ? scope.selector : {}
-        scoped = selector.slice(*model_class.fields.keys).reject { |_, value| value.is_a?(Hash) }
-        model_class.new(scoped).tap { |record| record.assign_attributes(cast_array_attributes(attrs)) }
+        build(attrs).tap { |record| record.assign_attributes(scope_attributes(scope)) }
       end
 
       def save(record)

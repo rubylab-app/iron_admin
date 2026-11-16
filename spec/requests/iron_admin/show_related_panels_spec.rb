@@ -73,6 +73,51 @@ RSpec.describe "IronAdmin show related panels", type: :request do
       expect(response.body).to include("visible-tag")
       expect(response.body).not_to include("other-tag")
     end
+
+    it "shows a has_one profile inside the tenant scope" do
+      user = create(:user)
+      Profile.create!(user:, bio: "Inside")
+      register_scoped_profile_resource
+      scope_profiles_to("Inside")
+
+      get iron_admin.resource_path("users", user)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Inside")
+    end
+
+    it "hides a has_one profile outside the tenant scope" do
+      user = create(:user)
+      Profile.create!(user:, bio: "Outside")
+      register_scoped_profile_resource
+      scope_profiles_to("Inside")
+
+      get iron_admin.resource_path("users", user)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Outside")
+    end
+  end
+
+  def register_scoped_profile_resource
+    IronAdmin::ResourceRegistry.reset!
+    IronAdmin::ResourceRegistry.register(IronAdmin::Resources::UserResource)
+
+    resource = Class.new(IronAdmin::Resource) do
+      def self.name = "PanelProfileResource"
+      def self.resource_name = "profiles"
+
+      self.model_class_override = Profile
+    end
+    IronAdmin::ResourceRegistry.register(resource)
+  end
+
+  def scope_profiles_to(bio)
+    IronAdmin.configure do |config|
+      config.tenant_scope do |scope|
+        scope.model == Profile ? scope.where(bio: bio) : scope
+      end
+    end
   end
 
   def register_denied_related(resource_name, model)

@@ -162,8 +162,9 @@ module IronAdmin
       end
 
       def validate_record(record, attributes)
-        model_record = record || adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), attributes)
-        assign_attributes(model_record, attributes) if record
+        writable = record ? attributes_without_tenant(attributes) : attributes
+        model_record = record || adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), writable)
+        assign_attributes(model_record, writable) if record
         return [] unless model_record.respond_to?(:valid?) && !model_record.valid?
 
         model_record.errors.full_messages
@@ -229,7 +230,7 @@ module IronAdmin
       # @return [Array(Object, Array<String>)] The saved record and its errors
       def persist_row(record, attributes)
         if record
-          saved = adapter.update_record(record, attributes)
+          saved = adapter.update_record(record, attributes_without_tenant(attributes))
         else
           record = adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), attributes)
           adapter.save(record)
@@ -247,6 +248,13 @@ module IronAdmin
         return [] if !record.respond_to?(:errors) || record.errors.empty?
 
         record.errors.full_messages
+      end
+
+      # Tenant columns are not writable on an existing row.
+      def attributes_without_tenant(attributes)
+        protected_keys = adapter.scope_attributes(IronAdmin::TenantScope.apply(adapter.all)).keys.map(&:to_s)
+        removable = attributes.keys.select { |name| protected_keys.include?(name.to_s) }
+        attributes.except(*removable)
       end
 
       def assign_attributes(record, attributes)

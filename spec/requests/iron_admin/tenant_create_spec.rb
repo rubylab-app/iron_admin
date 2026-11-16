@@ -50,4 +50,16 @@ RSpec.describe "tenant assignment on admin create", type: :request do
 
     expect(selected_values).to include(tenant.id.to_s)
   end
+
+  it "keeps the tenant when the form posts another user id" do
+    other = create(:user)
+
+    post iron_admin.resources_path("tenant_licenses"),
+         params: { record: { license_key: "TEN-002", license_type: "pro", max_devices: 2, user_id: other.id } }
+
+    license = License.find_by!(license_key: "TEN-002")
+
+    expect(license.user_id).to eq(tenant.id)
+    expect(response).to redirect_to(iron_admin.resource_path("tenant_licenses", license))
+  end
 end

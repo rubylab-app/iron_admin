@@ -294,6 +294,10 @@
           %label.inline-flex.items-center.gap-2.cursor-pointer
             = check_box_tag "record[#{ids_attribute}][]", option.id, selected_ids.include?(option.id), id: f.field_id(ids_attribute, option.id), class: cp_checkbox_class
             %span.text-sm{ class: cp_body_text }= display_record_label(option, assoc[:display])
+      - if @record.errors[assoc[:name]].any?
+        .flex.items-center{ class: "gap-1.5 mt-1.5" }
+          = heroicon "exclamation-circle", variant: :mini, options: { class: "h-4 w-4 shrink-0 #{t.error_text}" }
+          %p.text-sm{ class: t.error_text }= @record.errors[assoc[:name]].join(", ")
 
   - @resource_class.nested_associations.each do |nested_assoc|
     .mt-6

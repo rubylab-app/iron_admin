@@ -100,6 +100,7 @@ RSpec.describe "Assignable references on write", type: :request do
       }
 
       expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("is not available")
       expect(post_record.reload.tags).to be_empty
     end
 

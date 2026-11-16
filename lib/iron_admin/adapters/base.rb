@@ -240,6 +240,18 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Plain equality values from +scope+ that are attributes of the scope's model.
+      #
+      # Adapters override this with the scalar equalities they can read. The
+      # default assigns nothing. Keys are attribute names as Strings. Arrays,
+      # ranges, hashes, sets, and relations are not plain equalities.
+      #
+      # @param scope [Object] relation whose equality conditions are read
+      # @return [Hash{String => Object}]
+      def scope_attributes(_scope)
+        {}
+      end
+
       # Builds a new unsaved record inside +scope+.
       #
       # Adapters that copy equality conditions off a scope override this so

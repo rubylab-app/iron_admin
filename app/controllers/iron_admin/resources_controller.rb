@@ -21,6 +21,7 @@ module IronAdmin
     include Concerns::ActionExecutable
     include Concerns::AssignableReferences
     include Concerns::Authorizable
+    include Concerns::BlankPasswordFilterable
     include Concerns::EventEmittable
     include Concerns::Filterable
     include Concerns::IndexReturnable
@@ -29,6 +30,7 @@ module IronAdmin
     include Concerns::NestedPermittable
     include Concerns::Scopeable
     include Concerns::Searchable
+    include Concerns::TenantAssignable
 
     before_action :set_resource_class
     before_action :check_action_allowed, only: %i[index show new create edit update destroy autocomplete]
@@ -77,7 +79,7 @@ module IronAdmin
     #
     # @return [void]
     def create
-      submitted = resource_params
+      submitted = with_nested_tenant_attributes(resource_params)
       @record = adapter.build_in(base_scope, submitted)
       return render_invalid_json(:new) if invalid_json_submission?
 
@@ -97,7 +99,7 @@ module IronAdmin
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def update
       @record = find_record(record_scope, params[:id])
-      attrs = without_blank_passwords(resource_params)
+      attrs = with_nested_tenant_attributes(without_tenant_attributes(without_blank_passwords(resource_params)))
       return render_invalid_json(:edit) if invalid_json_submission?
 
       purge_attachments(@record)
@@ -381,12 +383,6 @@ module IronAdmin
       parsed = record_params.permit(*permitted)
       coerce_json_field_params!(parsed)
       parsed
-    end
-
-    # Password inputs never render the stored value, so a blank one means "unchanged".
-    def without_blank_passwords(attrs)
-      names = password_field_names
-      attrs.reject { |name, value| name.in?(names) && value.blank? }
     end
   end
 end
