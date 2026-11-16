@@ -19,6 +19,7 @@ module IronAdmin
   # @see IronAdmin::Resource
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
+    include Concerns::AssignableReferences
     include Concerns::Authorizable
     include Concerns::EventEmittable
     include Concerns::Filterable
@@ -76,10 +77,11 @@ module IronAdmin
     #
     # @return [void]
     def create
-      @record = adapter.build_in(base_scope, resource_params)
+      submitted = resource_params
+      @record = adapter.build_in(base_scope, submitted)
       return render_invalid_json(:new) if invalid_json_submission?
 
-      if adapter.save(@record)
+      if references_assignable?(@record, submitted) && adapter.save(@record)
         emit_event(:create, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.create.success", model: adapter.human_name)
@@ -100,7 +102,7 @@ module IronAdmin
 
       purge_attachments(@record)
 
-      if adapter.update(@record, attrs)
+      if references_assignable?(@record, attrs) && adapter.update(@record, attrs)
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)

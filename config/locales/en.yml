@@ -13,6 +13,8 @@ en:
     resources:
       errors:
         invalid_json: "Invalid JSON. The record was not saved."
+        not_assignable: "is not available"
+        nested_not_assignable: "%{association} refer to a record that is not available"
       create:
         success: "%{model} created."
       update:
