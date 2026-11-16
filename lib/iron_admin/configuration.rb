@@ -116,6 +116,34 @@ module IronAdmin
     # @see IronAdmin::Tool
     attr_accessor :strict_tool_actions
 
+    # Values accepted by {#default_policy=}.
+    DEFAULT_POLICIES = %i[allow deny].freeze
+
+    # What a resource without a +policy+ block allows: +:allow+ (the
+    # default) lets every user the authenticate block admits run every CRUD,
+    # custom and bulk action; +:deny+ denies them all. Tools without a
+    # +tool_access+ condition follow the same setting. A resource's own
+    # policy, and a tool's own condition, always apply.
+    #
+    # @return [Symbol] +:allow+ or +:deny+ (default: +:allow+)
+    # @see IronAdmin::Resource.policy
+    attr_reader :default_policy
+
+    # @param value [Symbol, String] +:allow+ or +:deny+
+    # @raise [ArgumentError] for any other value
+    # @return [void]
+    def default_policy=(value)
+      policy = value.respond_to?(:to_sym) ? value.to_sym : value
+      raise ArgumentError, "default_policy must be :allow or :deny, got #{value.inspect}" unless DEFAULT_POLICIES.include?(policy)
+
+      @default_policy = policy
+    end
+
+    # @return [Boolean] whether {#default_policy} is +:allow+
+    def default_allow?
+      default_policy == :allow
+    end
+
     # When +true+, each scope tab on a resource index shows how many records
     # that tab would list: the tenant scope, the current filters, that tab's
     # scope and the current search. The selected scope and the page are not
@@ -246,6 +274,7 @@ module IronAdmin
       @live_throttle = 0.5.seconds
       @strict_tool_actions = false
       @scope_counts = false
+      @default_policy = :allow
     end
 
     # Defines the authentication check for admin access.

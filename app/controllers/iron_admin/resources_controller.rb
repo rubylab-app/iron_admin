@@ -224,14 +224,8 @@ module IronAdmin
       render_not_found unless @resource_class
     end
 
-    def resource_policy
-      @resource_class.resource_policy
-    end
-
     def action_authorized?(action_name)
-      return true unless resource_policy
-
-      resource_policy.action_allowed?(action_name, iron_admin_current_user)
+      @resource_class.custom_action_allowed?(action_name, iron_admin_current_user)
     end
 
     def bulk_action_ids

@@ -101,7 +101,16 @@ The user returned by `config.current_user` is available as `iron_admin_current_u
 
 ## Policies
 
-Per-resource access control:
+Per-resource access control. A resource without a `policy` block follows `config.default_policy`: `:allow` (the default) lets every user the `authenticate` block admits run every CRUD, custom and bulk action, and `:deny` denies them all, so each resource needs a policy that allows what its users may do. Once `authenticate` admits users other than administrators, set `:deny`:
+
+```ruby
+IronAdmin.configure do |config|
+  config.default_policy = :deny
+end
+```
+
+In development, IronAdmin logs at boot the resources that have no policy while `default_policy` is `:allow`. The default becomes `:deny` in 1.0.
+
 
 ```ruby
 module IronAdmin

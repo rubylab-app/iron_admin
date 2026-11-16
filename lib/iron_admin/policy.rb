@@ -6,7 +6,8 @@ module IronAdmin
   # Policies define which actions users can perform on resources.
   # They use a simple DSL with `allow` and `deny` to manage permissions.
   #
-  # When no policy is defined for a resource, all actions are allowed.
+  # When no policy is defined for a resource, {Configuration#default_policy}
+  # decides: +:allow+ (the default) allows every action, +:deny+ denies them all.
   # Once a policy block exists, CRUD actions must be explicitly allowed
   # ({#allowed?}). Custom actions and bulk actions stay allowed unless the
   # policy names them ({#action_allowed?}). A deny rule wins over an allow rule.

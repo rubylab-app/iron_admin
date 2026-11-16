@@ -43,6 +43,24 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     expect(hrefs).not_to include(a_string_including("hidden_sidebar_users"))
   end
 
+  it "hides resources without a policy when default_policy is :deny" do
+    IronAdmin.configuration.default_policy = :deny
+    readable = Class.new(IronAdmin::Resource) do
+      self.model_class_override = User
+
+      def self.name = "ReadableSidebarResource"
+      def self.resource_name = "readable_sidebar_users"
+
+      policy { allow :read }
+    end
+    IronAdmin::ResourceRegistry.register(readable)
+
+    hrefs = render_inline(described_class.new(current_user: nil)).css("a").pluck("href")
+
+    expect(hrefs).to include(a_string_including("readable_sidebar_users"))
+    expect(hrefs).not_to include(a_string_including("/licenses"))
+  end
+
   it "groups resources by menu group" do
     result = render_inline(described_class.new)
 

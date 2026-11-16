@@ -437,7 +437,8 @@ module IronAdmin
       # Defines the authorization policy for this resource.
       #
       # Policies control which actions users can perform. Without a policy,
-      # all actions are allowed by default.
+      # {Configuration#default_policy} decides: +:allow+ (the default) allows
+      # every action, +:deny+ denies them all.
       #
       # @yield Block that configures the policy using the Policy DSL
       #
@@ -506,9 +507,22 @@ module IronAdmin
         return false unless action_allowed?(action)
 
         policy = resource_policy
-        return true unless policy
+        return IronAdmin.configuration.default_allow? unless policy
 
         policy.allowed?(action, user)
+      end
+
+      # Checks a custom or bulk action against the resource policy. Without
+      # a policy, {Configuration#default_policy} decides.
+      #
+      # @param action_name [Symbol, String] the action's name
+      # @param user [Object, nil] Current user passed to policy conditions
+      # @return [Boolean]
+      def custom_action_allowed?(action_name, user)
+        policy = resource_policy
+        return IronAdmin.configuration.default_allow? unless policy
+
+        policy.action_allowed?(action_name, user)
       end
 
       # Searchable columns the user is allowed to see. Secret fields
