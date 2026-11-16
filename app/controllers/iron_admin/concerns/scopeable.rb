@@ -153,11 +153,13 @@ module IronAdmin
       end
 
       # Sorting by a concealed field would leak the relative order of its values.
+      # Columns of that field count too, so a hidden belongs_to rejects its foreign key.
       def sortable_column?(name)
         return false unless adapter.has_column?(name)
 
+        column = name.to_s
         @resource_class.resolved_fields.none? do |field|
-          field.name.to_s == name && field.concealed_from?(iron_admin_current_user)
+          field.concealed_from?(iron_admin_current_user) && field.column_names.map(&:to_s).include?(column)
         end
       end
 

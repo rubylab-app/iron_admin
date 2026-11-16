@@ -89,17 +89,20 @@ module IronAdmin
         end
       end
 
-      # Password names plus names concealed from the current user, from fields
-      # the caller already resolved.
+      # Password names plus every column of a field concealed from the current
+      # user. +fields+ were already resolved, so audit keeps a single
+      # resolved_fields call per request. A hidden belongs_to contributes its
+      # foreign key, and a hidden polymorphic belongs_to its type and id columns.
       #
       # @param fields [Array<IronAdmin::Field>] Resolved resource fields
       # @return [Array<String>]
       def concealed_names_for(fields)
         user = iron_admin_current_user
-        concealed = fields.filter_map do |field|
-          next if field.type == :password
+        concealed = fields.flat_map do |field|
+          next [] if field.type == :password
+          next [] unless field.concealed_from?(user)
 
-          field.name.to_s if field.concealed_from?(user)
+          field.column_names.map(&:to_s)
         end
         (password_names_for(fields) + concealed).uniq
       end

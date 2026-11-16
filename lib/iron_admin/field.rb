@@ -142,6 +142,25 @@ module IronAdmin
       secret? || visible == false
     end
 
+    # Columns that store this field's value.
+    #
+    # +:belongs_to+ includes {#name} and +options[:foreign_key]+.
+    # +:polymorphic_belongs_to+ includes {#name}, +options[:type_column]+ and
+    # +options[:id_column]+. Other types include only {#name}. Nil entries are
+    # removed and every name is returned as a Symbol.
+    #
+    # @return [Array<Symbol>]
+    def column_names
+      case type
+      when :belongs_to
+        [name, options[:foreign_key]].compact.map(&:to_sym)
+      when :polymorphic_belongs_to
+        [name, options[:type_column], options[:id_column]].compact.map(&:to_sym)
+      else
+        [name.to_sym]
+      end
+    end
+
     private
 
     # @api private
