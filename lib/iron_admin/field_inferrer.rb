@@ -12,6 +12,10 @@ module IronAdmin
   # - Enum column detection (generates select fields)
   # - belongs_to association detection (generates association fields)
   # - has_many/has_one shadowing (excludes columns named after associations)
+  # - Credential columns ({CREDENTIAL_COLUMNS}, {CREDENTIAL_PATTERN}) are
+  #   inferred hidden and read-only, so hashes and tokens are not shown,
+  #   searched, exported, or edited. A resource may pass visible: true to
+  #   show one; it stays read-only unless readonly: false is passed too.
   #
   # @example Basic usage
   #   fields = IronAdmin::FieldInferrer.call(User)
@@ -27,6 +31,33 @@ module IronAdmin
     # Column name patterns that indicate an email field.
     # @return [Regexp]
     EMAIL_PATTERN = /\A(email|.*_email)\z/
+
+    # Column names that store credentials (Devise, +has_secure_password+, OTP).
+    # Inferred fields for these names are hidden and read-only.
+    #
+    # @return [Array<String>]
+    CREDENTIAL_COLUMNS = %w[
+      encrypted_password
+      password_digest
+      reset_password_token
+      confirmation_token
+      unlock_token
+      remember_token
+      invitation_token
+      authentication_token
+      otp_secret
+      encrypted_otp_secret
+      encrypted_otp_secret_iv
+      encrypted_otp_secret_salt
+      otp_backup_codes
+    ].freeze
+
+    # Custom +has_secure_password+ digest columns, for example
+    # +recovery_password_digest+. Does not match +password_digest+ (listed in
+    # {CREDENTIAL_COLUMNS}) or ordinary names such as +variation_digest+.
+    #
+    # @return [Regexp]
+    CREDENTIAL_PATTERN = /\A\w+_password_digest\z/
 
     # Maps database column types to field types.
     # @return [Hash{Symbol => Symbol}]
@@ -61,6 +92,24 @@ module IronAdmin
                   IronAdmin::Adapters::ActiveRecord.new(model_or_adapter)
                 end
       new(adapter).call
+    end
+
+    # Whether +name+ is a credential column that must stay hidden and read-only.
+    #
+    # True when +name+ is in {CREDENTIAL_COLUMNS}, or when it matches
+    # {CREDENTIAL_PATTERN} (a custom +has_secure_password+ attribute such as
+    # +recovery_password_digest+). +variation_digest+, +token_count+, and
+    # +api_token_expires_at+ are not credentials.
+    #
+    # @param name [String, Symbol]
+    # @return [Boolean]
+    #
+    # @example
+    #   IronAdmin::FieldInferrer.credential_column?("encrypted_password") #=> true
+    #   IronAdmin::FieldInferrer.credential_column?("variation_digest") #=> false
+    def self.credential_column?(name)
+      column_name = name.to_s
+      CREDENTIAL_COLUMNS.include?(column_name) || column_name.match?(CREDENTIAL_PATTERN)
     end
 
     # Creates a new FieldInferrer for the given adapter.
@@ -115,15 +164,24 @@ module IronAdmin
 
     # @api private
     # Builds a field from a database column.
+    # Credential columns stay hidden and read-only; the inferred type is kept.
     def build_field(column)
       name = column.name.to_sym
+      options = credential_field_options(name)
 
       if enum_column?(name)
-        Field.new(name, type: :select, choices: @adapter.enums[name.to_s].keys)
+        Field.new(name, type: :select, choices: @adapter.enums[name.to_s].keys, **options)
       else
-        type = infer_type(column)
-        Field.new(name, type: type)
+        Field.new(name, type: infer_type(column), **options)
       end
+    end
+
+    # @api private
+    # Options that hide a credential column. Empty for every other column.
+    def credential_field_options(name)
+      return {} unless self.class.credential_column?(name)
+
+      { visible: false, readonly: true }
     end
 
     # @api private

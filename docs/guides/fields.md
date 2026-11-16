@@ -63,6 +63,28 @@ Visibility and readonly rules are enforced across:
 - Form fields (readonly fields are not rendered, and values submitted for them are not assigned on create or update; the `<name>_purge` remove-file parameter of a readonly `:file` field is still honored)
 - CSV/JSON exports
 - Search queries
+- Sorting (`?sort=` on a field the user cannot see falls back to the default column)
+- Nested attributes (a hidden field of a nested association is not permitted)
+- Audit changes (a hidden field's values are logged as `[FILTERED]`)
+- Auto-inferred filters
+
+An override keeps the inferred visibility and readonly rule unless it sets them: `field :encrypted_password, label: "Hash"` stays hidden.
+
+### Credential Columns
+
+Columns that store credentials are inferred hidden and read-only, so their values are not shown, searched, exported, sorted or editable: `encrypted_password`, `password_digest`, `reset_password_token`, `confirmation_token`, `unlock_token`, `remember_token`, `invitation_token`, `authentication_token`, `otp_secret`, `encrypted_otp_secret`, `encrypted_otp_secret_iv`, `encrypted_otp_secret_salt`, `otp_backup_codes`, and any `*_password_digest` column (`IronAdmin::FieldInferrer::CREDENTIAL_COLUMNS` and `CREDENTIAL_PATTERN`). Other names, such as `variation_digest` or `api_token_expires_at`, are inferred as usual.
+
+To show one, set `visible: true`. It stays read-only unless you also set `readonly: false`:
+
+```ruby
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :confirmation_token, visible: ->(user) { user&.admin? }
+    end
+  end
+end
+```
 
 ## Badge Colors
 

@@ -385,6 +385,17 @@ module IronAdmin
   module Tools
     class CacheManagerTool < IronAdmin::Tool
       tool_access ->(user) { user&.admin? }
+### 16. Credential columns are hidden by default
+
+IronAdmin now infers well-known credential columns as hidden and read-only: `encrypted_password`, `password_digest`, `reset_password_token`, `confirmation_token`, `unlock_token`, `remember_token`, `invitation_token`, `authentication_token`, `otp_secret`, `encrypted_otp_secret`, `encrypted_otp_secret_iv`, `encrypted_otp_secret_salt`, `otp_backup_codes`, and any `*_password_digest` column. They disappear from the index, the show page, the form, exports, search, sorting and filters. A hidden field is also no longer sortable, writable through nested attributes, or logged in audit changes, whatever made it hidden.
+
+**Action required:** Only if an admin page relied on showing one of these columns. Show it again with `visible:`; it stays read-only unless you also pass `readonly: false`:
+
+```ruby
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :confirmation_token, visible: ->(user) { user&.admin? }
     end
   end
 end
