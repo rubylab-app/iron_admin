@@ -69,25 +69,49 @@ module IronAdmin
         attributes = string_keyed(row)
         return :inside if destroy_row?(attributes)
 
+        child_adapter = nested_adapter(nested)
+        return :unknown if child_adapter.nil?
+
         scope = IronAdmin::TenantScope.apply(nested.reflection.klass.all)
-        candidate = nested_candidate(record, nested, attributes, scope)
+        candidate = nested_candidate(record, nested, attributes, scope, child_adapter)
         return :unknown if candidate.nil?
 
-        adapter.scope_match(scope, candidate)
+        child_adapter.scope_match(scope, candidate)
+      end
+
+      # Memoized per association for this request. +nil+ when the adapter cannot be built.
+      #
+      # @param nested [Object]
+      # @return [Object, nil]
+      def nested_adapter(nested)
+        adapters = (@nested_adapters ||= {})
+        name = nested.name.to_s
+        return adapters[name] if adapters.key?(name)
+
+        adapters[name] = new_nested_adapter(nested)
+      end
+
+      # @param nested [Object]
+      # @return [Object, nil]
+      def new_nested_adapter(nested)
+        adapter.class.new(nested.reflection.klass)
+      rescue StandardError
+        nil
       end
 
       # @param record [Object]
       # @param nested [Object]
       # @param attributes [Hash]
       # @param scope [Object]
+      # @param child_adapter [Object]
       # @return [Object, nil]
-      def nested_candidate(record, nested, attributes, scope)
-        return adapter.build_in(scope, attributes) if attributes["id"].blank?
+      def nested_candidate(record, nested, attributes, scope, child_adapter)
+        return child_adapter.build_in(scope, attributes) if attributes["id"].blank?
 
         child = nested_child(record, nested, attributes["id"])
         return nil if child.nil?
 
-        adapter.preview(child, attributes)
+        child_adapter.preview(child, attributes)
       end
 
       # @param record [Object]

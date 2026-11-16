@@ -127,6 +127,34 @@ RSpec.describe IronAdmin::Concerns::TenantContainment, type: :lib do
     expect(state[:nested_matches]).to eq(1)
   end
 
+  it "builds a new nested row with the child model class" do
+    record, _messages = build_record
+    nested = build_nested_association(name: :profile, kind: :has_one)
+    adapter, built = build_child_model_adapter(nested.reflection.klass)
+    submitted = { "profile_attributes" => { "body" => "inside" } }
+
+    result = build_host(adapter, nested: [nested]).write(record, nil, submitted) { :saved }
+
+    expect(result).to eq(:saved)
+    expect(built.map(&:model_class)).to eq([nested.reflection.klass])
+  end
+
+  it "reports tenant_unverifiable when the child adapter cannot be built" do
+    record, messages = build_record
+    nested = build_nested_association(name: :profile, kind: :has_one)
+    adapter = build_raising_child_adapter(nested.reflection.klass)
+    submitted = { "profile_attributes" => { "body" => "inside" } }
+    yielded = false
+
+    result = build_host(adapter, nested: [nested]).write(record, nil, submitted) { yielded = true }
+
+    expect(result).to be(false)
+    expect(yielded).to be(false)
+    expect(messages[:base]).to eq(
+      ["This change cannot be checked against your tenant, so it was not saved."]
+    )
+  end
+
   def build_record
     messages = Hash.new { |hash, key| hash[key] = [] }
     errors = double("errors")
@@ -192,34 +220,63 @@ RSpec.describe IronAdmin::Concerns::TenantContainment, type: :lib do
   end
 
   def build_nested_adapter(record:, nested_candidate:, nested_verdict:)
-    parent_copy = Object.new
-    destroy_candidate = Object.new
     state = { builds: 0, nested_matches: 0 }
-    adapter = double("adapter")
+    context = {
+      record: record,
+      nested_candidate: nested_candidate,
+      nested_verdict: nested_verdict,
+      parent_copy: Object.new,
+      destroy_candidate: Object.new,
+      state: state,
+    }
     allow(IronAdmin::TenantScope).to receive(:apply) { |scope| scope }
-    allow(adapter).to receive_messages(supports_transactions?: false, primary_key: :id)
-    allow(adapter).to receive(:preview) do |target, _attrs|
-      target.equal?(record) ? parent_copy : nested_candidate
+    [nested_row_adapter_class(context).new, state]
+  end
+
+  def nested_row_adapter_class(context)
+    klass = Class.new do
+      def initialize(_model_class = nil) = nil
+
+      def supports_transactions? = false
+
+      def primary_key = :id
     end
-    allow(adapter).to receive(:build_in) do |_scope, row|
-      state[:builds] += 1
+    define_nested_row_preview(klass, context)
+    define_nested_row_build(klass, context)
+    define_nested_row_scope_match(klass, context)
+    klass
+  end
+
+  def define_nested_row_preview(klass, context)
+    klass.define_method(:preview) do |target, _attrs|
+      target.equal?(context[:record]) ? context[:parent_copy] : context[:nested_candidate]
+    end
+  end
+
+  def define_nested_row_build(klass, context)
+    klass.define_method(:build_in) do |_scope, row|
+      context[:state][:builds] += 1
       if row.is_a?(Hash) && ActiveModel::Type::Boolean.new.cast(row["_destroy"])
-        destroy_candidate
+        context[:destroy_candidate]
       else
-        nested_candidate
+        context[:nested_candidate]
       end
     end
-    allow(adapter).to receive(:scope_match) do |_scope, candidate|
-      if candidate.equal?(destroy_candidate)
-        :outside
-      elsif candidate.equal?(nested_candidate)
-        state[:nested_matches] += 1
-        nested_verdict
-      else
-        :inside
-      end
+  end
+
+  def define_nested_row_scope_match(klass, context)
+    verdict = method(:nested_row_scope_verdict)
+    klass.define_method(:scope_match) do |_scope, candidate|
+      verdict.call(candidate, context)
     end
-    [adapter, state]
+  end
+
+  def nested_row_scope_verdict(candidate, context)
+    return :outside if candidate.equal?(context[:destroy_candidate])
+    return :inside unless candidate.equal?(context[:nested_candidate])
+
+    context[:state][:nested_matches] += 1
+    context[:nested_verdict]
   end
 
   def build_nested_association(name:, kind:)
@@ -228,5 +285,64 @@ RSpec.describe IronAdmin::Concerns::TenantContainment, type: :lib do
     end
     reflection = double("reflection", klass: klass)
     double("association", name: name, kind: kind, reflection: reflection)
+  end
+
+  def build_child_model_adapter(child_class)
+    built = []
+    adapter_class = Class.new do
+      attr_reader :model_class
+
+      def initialize(model_class)
+        @model_class = model_class
+      end
+
+      def supports_transactions? = false
+
+      def primary_key = :id
+
+      def preview(target, _attrs) = target
+    end
+    remember_child_builds(adapter_class, built)
+    match_child_model(adapter_class, child_class)
+    allow(IronAdmin::TenantScope).to receive(:apply) { |scope| scope }
+    [adapter_class.new(Class.new), built]
+  end
+
+  def remember_child_builds(adapter_class, built)
+    row_struct = Struct.new(:model_class, :attrs)
+    adapter_class.define_method(:build_in) do |_scope, attrs|
+      row = row_struct.new(model_class, attrs)
+      built << row
+      row
+    end
+  end
+
+  # Parent records have no model_class. A built row is inside only for the child class.
+  def match_child_model(adapter_class, child_class)
+    adapter_class.define_method(:scope_match) do |_scope, candidate|
+      child_model = candidate.respond_to?(:model_class) && candidate.model_class.equal?(child_class)
+      child_model || !candidate.respond_to?(:model_class) ? :inside : :outside
+    end
+  end
+
+  def build_raising_child_adapter(child_class)
+    adapter_class = Class.new do
+      def supports_transactions? = false
+
+      def primary_key = :id
+
+      def build_in(_scope, _attrs) = Object.new
+
+      def preview(_record, _attrs) = Object.new
+
+      def scope_match(_scope, _candidate) = :inside
+    end
+    adapter_class.define_method(:initialize) do |model_class|
+      raise StandardError, "child adapter unavailable" if model_class.equal?(child_class)
+
+      @model_class = model_class
+    end
+    allow(IronAdmin::TenantScope).to receive(:apply) { |scope| scope }
+    adapter_class.new(Class.new)
   end
 end
