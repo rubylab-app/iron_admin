@@ -414,6 +414,19 @@ class AddTenantKeyToIronAdminAuditEntries < ActiveRecord::Migration[8.0]
   def change
     add_column :iron_admin_audit_entries, :tenant_key, :string
     add_index :iron_admin_audit_entries, :tenant_key
+### 18. The tenant scope also applies to related records and to new records
+
+`config.tenant_scope` now also filters the related records on show pages (the `has_one`, many-to-many and `has_many` panels) and the options of the polymorphic, many-to-many and nested selects, and new records are built inside it. The block therefore runs on every model the admin queries, as it already did for `belongs_to` selects and each resource's own index. A block that adds a condition only some models have (for example `scope.where(organization_id: ...)` when a related model has no `organization_id`) now raises on those pages.
+
+**Action required:** Make the block return the scope unchanged for models that have no tenant column:
+
+```ruby
+IronAdmin.configure do |config|
+  config.tenant_scope do |scope|
+    organization = Current.organization
+    next scope unless organization && scope.model.column_names.include?("organization_id")
+
+    scope.where(organization_id: organization.id)
   end
 end
 ```
