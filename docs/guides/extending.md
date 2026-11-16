@@ -411,7 +411,25 @@ success alerts, `ctx.flash[:alert]` and `ctx.flash[:error]` as error alerts, and
 `ctx.flash[:warning]` and `ctx.flash[:info]` as warning and info alerts. Other keys are not
 shown. See [Flash Messages](components.md#flash-messages).
 
-**Authorization:** The `condition:` proc receives the current user. If it returns false, the action returns 403 (an error page for browser requests) and is hidden from the UI.
+**Authorization:** `tool_access` restricts the whole tool. Its condition receives the current user; when it returns `false` or `nil`, the tool page, every action, every action form and the legacy dispatch return 403, and the sidebar hides the tool. Subclasses inherit it. A tool without `tool_access` follows `config.default_policy`: open while it is `:allow` (the default), 403 when it is `:deny`.
+
+```ruby
+module IronAdmin
+  module Tools
+    class CacheManagerTool < IronAdmin::Tool
+      tool_access ->(user) { user&.admin? }
+
+      tool_action :clear_all, confirm: true
+
+      def clear_all(ctx)
+        Rails.cache.clear
+      end
+    end
+  end
+end
+```
+
+An action's `condition:` proc also receives the current user and applies on top of `tool_access`. If it returns false, the action returns 403 (an error page for browser requests) and is hidden from the UI.
 
 **Form fields:** Actions with `form_fields:` render a form page before execution. Supported types: `:text`, `:textarea`, `:number`, `:boolean`, `:date`, `:datetime`, `:select`.
 

@@ -33,9 +33,13 @@ module IronAdmin
       end
 
       # Returns tools grouped by menu group.
+      # Tools the current user cannot access are omitted.
       # @return [Hash{String => Array<Class>}]
       def grouped_tools
-        IronAdmin::ToolRegistry.grouped
+        IronAdmin::ToolRegistry.grouped.each_with_object({}) do |(group, tools), visible|
+          accessible = tools.select { |tool| tool.accessible_by?(@current_user) }
+          visible[group] = accessible if accessible.any?
+        end
       end
 
       # Returns custom menu items (e.g. from plugins) grouped by menu group.

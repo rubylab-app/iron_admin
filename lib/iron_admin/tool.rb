@@ -43,6 +43,7 @@ module IronAdmin
   class Tool
     class_attribute :menu_options, default: {}
     class_attribute :defined_tool_actions, default: []
+    class_attribute :access_condition, default: nil
 
     # @return [ToolContext, nil] Request context, set by ToolsController before action execution
     attr_accessor :context
@@ -72,6 +73,38 @@ module IronAdmin
       # @option options [Proc] :condition Proc receiving user, returns boolean
       def tool_action(name, **)
         self.defined_tool_actions = defined_tool_actions + [ToolAction.new(name: name, **)]
+      end
+
+      # Restricts who may open this tool and run its actions.
+      #
+      # The condition receives the current user. A truthy value allows; +nil+
+      # and +false+ deny with 403. It guards the tool page, every action and
+      # action form, and the legacy dispatch of undeclared methods, and the
+      # sidebar hides the tool from users it denies. An action's own
+      # +condition:+ still applies on top of it. Subclasses inherit it.
+      # Without it, {Configuration#default_policy} decides.
+      #
+      # @param condition [#call, nil] a callable that takes the user
+      # @yieldparam user [Object, nil] the current user, when given a block
+      # @raise [ArgumentError] when neither a callable nor a block is given
+      # @return [void]
+      # @example
+      #   tool_access ->(user) { user&.admin? }
+      def tool_access(condition = nil, &block)
+        condition ||= block
+        raise ArgumentError, "tool_access needs a callable or a block" unless condition.respond_to?(:call)
+
+        self.access_condition = condition
+      end
+
+      # Whether +user+ may open this tool and run its actions.
+      #
+      # @param user [Object, nil]
+      # @return [Boolean]
+      def accessible_by?(user)
+        return IronAdmin.configuration.default_allow? if access_condition.nil?
+
+        access_condition.call(user) ? true : false
       end
 
       # Finds a declared tool action by name.

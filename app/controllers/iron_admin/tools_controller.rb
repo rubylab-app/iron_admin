@@ -32,6 +32,7 @@ module IronAdmin
     end
 
     before_action :set_tool
+    before_action :authorize_tool!
 
     def show
       tool_template = "iron_admin/tools/#{@tool_class.tool_name}/show"
@@ -69,6 +70,10 @@ module IronAdmin
     def set_tool
       @tool_class = ToolRegistry.find(params.expect(:tool_name))
       render_not_found unless @tool_class
+    end
+
+    def authorize_tool!
+      render_forbidden unless @tool_class.accessible_by?(iron_admin_current_user)
     end
 
     def own_tool_method?(action_name)
