@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-16
+
 ### Added
 
 - **`config.default_policy`** — What a resource without a `policy` block allows. `:allow`, the default, keeps today's behavior: every user the `authenticate` block admits can run every CRUD, custom and bulk action. `:deny` denies them all, so the index, show, forms, exports, imports, search results, the sidebar link and custom and bulk actions of such a resource answer `403` or disappear, and each resource needs a policy that allows what its users may do. A String works too (`"deny"`); any other value raises `ArgumentError`. A resource's own policy, and `deny_actions`, still apply. `Resource.custom_action_allowed?(name, user)` checks a custom or bulk action the way the controller does. In development, IronAdmin logs at boot the resources that have no policy while the setting is `:allow` (`IronAdmin::PolicyCoverageWarning`), again only when that list changes. The default becomes `:deny` in 1.0. ([#136](https://github.com/rubylab-app/iron_admin/issues/136))
@@ -622,7 +624,8 @@ First public release.
 - Policy instances now cached at Resource class level
 - Field visibility filtering applied consistently in index, show, forms, exports, and search
 
-[Unreleased]: https://github.com/rubylab-app/iron_admin/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/rubylab-app/iron_admin/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/rubylab-app/iron_admin/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/rubylab-app/iron_admin/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/rubylab-app/iron_admin/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/rubylab-app/iron_admin/compare/v0.4.0...v0.5.0
