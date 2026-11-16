@@ -19,20 +19,16 @@ IronAdmin::Dashboards::ChartComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Dashboards::ChartComponent.new(
-  title: "Monthly Signups",
+= render IronAdmin::Dashboards::ChartComponent.new(title: "Monthly Signups",
   type: :line,
   data: @monthly_signups.values,
   labels: @monthly_signups.keys,
-  height: 250
-)
+  height: 250)
 
-= render IronAdmin::Dashboards::ChartComponent.new(
-  title: "Users by Role",
+= render IronAdmin::Dashboards::ChartComponent.new(title: "Users by Role",
   type: :pie,
   data: @role_counts.values,
-  labels: @role_counts.keys
-)
+  labels: @role_counts.keys)
 ```
 
 ---
@@ -99,13 +95,11 @@ IronAdmin::Dashboards::ActivityFeedComponent.new(
 ```haml
 = render IronAdmin::Dashboards::ActivityFeedComponent.new(title: "Recent Activity") do |feed|
   - @recent_activities.each do |activity|
-    - feed.with_item(
-      description: activity.description,
+    - feed.with_item(description: activity.description,
       timestamp: activity.created_at,
       icon: activity.icon,
       icon_color: activity.color,
-      href: activity_path(activity)
-    )
+      href: activity_path(activity))
 ```
 
 ---
@@ -155,11 +149,9 @@ IronAdmin::Dashboards::MetricCardComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Dashboards::MetricCardComponent.new(
-  name: :monthly_revenue,
+= render IronAdmin::Dashboards::MetricCardComponent.new(name: :monthly_revenue,
   value: 15000.50,
-  format: :currency
-)
+  format: :currency)
 ```
 
 ---
@@ -189,11 +181,9 @@ IronAdmin::Dashboards::RecentTableComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Dashboards::RecentTableComponent.new(
-  resource_name: :order,
+= render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: :order,
   records: Order.limit(5),
-  current_user: iron_admin_current_user
-)
+  current_user: iron_admin_current_user)
 ```
 
 ---
@@ -207,18 +197,16 @@ Combine components to create a complete dashboard:
   -# Stats row
   = render IronAdmin::Dashboards::StatsGridComponent.new(columns: 4) do |grid|
     - grid.with_stat(label: "Users", value: User.count)
-    - grid.with_stat(label: "Revenue", value: number_to_currency(Payment.sum(:amount)), format: :currency)
+    - grid.with_stat(label: "Revenue", value: number_to_currency(Payment.sum(:amount)))
     - grid.with_stat(label: "Orders", value: Order.count)
     - grid.with_stat(label: "Conversion", value: "3.2%")
 
   .grid.grid-cols-1.lg:grid-cols-2.gap-8
     -# Chart
-    = render IronAdmin::Dashboards::ChartComponent.new(
-      title: "Signups Over Time",
+    = render IronAdmin::Dashboards::ChartComponent.new(title: "Signups Over Time",
       type: :line,
       data: @signup_data,
-      labels: @signup_labels
-    )
+      labels: @signup_labels)
 
     -# Activity feed
     = render IronAdmin::Dashboards::ActivityFeedComponent.new do |feed|
@@ -227,13 +215,9 @@ Combine components to create a complete dashboard:
 
   -# Recent tables
   .grid.grid-cols-1.lg:grid-cols-2.gap-8
-    = render IronAdmin::Dashboards::RecentTableComponent.new(
-      resource_name: :user,
-      records: User.order(created_at: :desc).limit(5)
-    )
+    = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: :user,
+      records: User.order(created_at: :desc).limit(5))
 
-    = render IronAdmin::Dashboards::RecentTableComponent.new(
-      resource_name: :order,
-      records: Order.order(created_at: :desc).limit(5)
-    )
+    = render IronAdmin::Dashboards::RecentTableComponent.new(resource_name: :order,
+      records: Order.order(created_at: :desc).limit(5))
 ```

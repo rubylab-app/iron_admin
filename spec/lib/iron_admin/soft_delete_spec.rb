@@ -251,4 +251,89 @@ RSpec.describe "IronAdmin Soft Delete Support" do
       expect(restore_action).to be_nil
     end
   end
+
+  describe "counting auto scopes" do
+    it "leaves the count key off for ActiveRecord" do
+      IronAdmin::ResourceRegistry.register(article_resource)
+      scope = article_resource.all_scopes.find { |entry| entry[:name] == :with_deleted }
+
+      expect(scope).not_to have_key(:count)
+    end
+
+    context "with a Mongoid model" do
+      let(:record_class) { Struct.new(:status, keyword_init: true) }
+      let(:criteria_class) do
+        Class.new do
+          attr_reader :records
+
+          def initialize(records)
+            @records = records
+          end
+
+          def where(condition)
+            chosen = records.select do |record|
+              condition.all? { |field, expected| record.public_send(field) == expected }
+            end
+            self.class.new(chosen)
+          end
+
+          def count
+            records.size
+          end
+
+          def unscope(*)
+            raise NoMethodError, "Mongoid criteria cannot unscope"
+          end
+        end
+      end
+      let(:model_class) do
+        fields = { "deleted_at" => double("Field", name: "deleted_at", type: DateTime) }
+        double("MongoidModel", fields: fields)
+      end
+      let(:criteria) { criteria_class.new([record_class.new(status: "draft")]) }
+      let(:mongoid_resource) do
+        model = model_class
+        resource = Class.new(IronAdmin::Resource) do
+          def self.name = "MongoidArticleResource"
+          def self.resource_name = "mongoid_articles"
+        end
+        resource.adapter_class = :mongoid
+        resource.model_class_override = model
+        resource.scope_counts true
+        resource.scope :named, -> { where(status: "draft") }
+        resource.register_soft_delete_features
+        resource
+      end
+
+      it "stores count: false on the auto scopes" do
+        scope = mongoid_resource.all_scopes.find { |entry| entry[:name] == :with_deleted }
+
+        expect(scope[:count]).to be(false)
+      end
+
+      def mongoid_counts
+        IronAdmin::ScopeCounts.new(
+          resource: mongoid_resource,
+          adapter: mongoid_resource.adapter,
+          relation_for: lambda { |body|
+            criteria.instance_exec(&body)
+          }
+        ).to_h
+      end
+
+      it "counts the scopes the criteria can run" do
+        allow(Rails.logger).to receive(:error)
+
+        expect(mongoid_counts).to eq("named" => 1)
+      end
+
+      it "does not log an error for the auto scopes" do
+        allow(Rails.logger).to receive(:error)
+
+        mongoid_counts
+
+        expect(Rails.logger).not_to have_received(:error)
+      end
+    end
+  end
 end

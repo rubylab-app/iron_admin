@@ -20,14 +20,12 @@ IronAdmin::Resources::DataTableComponent.new(
 **Example:**
 
 ```haml
-= render IronAdmin::Resources::DataTableComponent.new(
-  records: @users,
-  fields: UserResource.resolved_fields.first(5),
-  resource_class: UserResource,
+= render IronAdmin::Resources::DataTableComponent.new(records: @users,
+  fields: @resource_class.resolved_fields.first(5),
+  resource_class: @resource_class,
   base_url: request.fullpath.split("?").first + "?",
   current_sort: params[:sort],
-  current_direction: params[:direction]
-)
+  current_direction: params[:direction])
 ```
 
 The component appends `sort=<column>&direction=<asc|desc>` to `base_url`. Its sort links have
@@ -54,10 +52,8 @@ IronAdmin::Resources::ShowFieldComponent.new(
 ```haml
 %dl
   - @fields.each do |field|
-    = render IronAdmin::Resources::ShowFieldComponent.new(
-      field: field,
-      record: @user
-    )
+    = render IronAdmin::Resources::ShowFieldComponent.new(field: field,
+      record: @user)
 ```
 
 ---
@@ -101,11 +97,9 @@ passing `condition`. Pass that list instead of `defined_actions` in a custom sho
 **Example:**
 
 ```haml
-= render IronAdmin::Resources::ActionsComponent.new(
-  actions: @member_actions,
+= render IronAdmin::Resources::ActionsComponent.new(actions: @member_actions,
   record: @record,
-  resource_class: @resource_class
-)
+  resource_class: @resource_class)
 ```
 
 ---
@@ -130,8 +124,8 @@ IronAdmin::Resources::BreadcrumbComponent.new
 
 ```haml
 = render IronAdmin::Resources::BreadcrumbComponent.new do |breadcrumb|
-  - breadcrumb.with_item(label: "Dashboard", href: dashboard_path)
-  - breadcrumb.with_item(label: "Users", href: users_path)
+  - breadcrumb.with_item(label: "Dashboard", href: root_path)
+  - breadcrumb.with_item(label: "Users", href: resources_path("users"))
   - breadcrumb.with_item(label: @user.name, current: true)
 ```
 
@@ -175,10 +169,8 @@ With `confirm: true`, the button of an action without `form_fields` asks for con
 **Example:**
 
 ```haml
-= render IronAdmin::Resources::BulkActionsComponent.new(
-  actions: @permitted_bulk_actions,
-  resource_class: UserResource
-)
+= render IronAdmin::Resources::BulkActionsComponent.new(actions: @permitted_bulk_actions,
+  resource_class: @resource_class)
 ```
 
 ---
@@ -229,10 +221,8 @@ the plain index link.
 ```haml
 -# In a show view: @resource_class is OrderResource and @record the order
 - association = @resource_class.has_many_associations.find { |assoc| assoc[:name] == :line_items }
-= render IronAdmin::Resources::RelatedListComponent.new(
-  association: association,
+= render IronAdmin::Resources::RelatedListComponent.new(association: association,
   records: @record.line_items,
   limit: 10,
-  parent: @record
-)
+  parent: @record)
 ```

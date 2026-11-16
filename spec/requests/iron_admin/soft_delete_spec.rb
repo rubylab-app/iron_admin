@@ -357,4 +357,47 @@ RSpec.describe "IronAdmin Soft Delete Integration", type: :request do
       expect(active_post.reload.deleted_at).to be_nil
     end
   end
+
+  describe "scope counts" do
+    let(:counted_resource) do
+      Class.new(IronAdmin::Resource) do
+        self.model_class_override = SoftDeletePost
+
+        def self.name = "CountedSoftDeletePostResource"
+        def self.resource_name = "counted_soft_delete_posts"
+
+        scope_counts true
+      end
+    end
+    let!(:live_post) { SoftDeletePost.create!(title: "Counted Live", body: "Content") }
+    let!(:deleted_post) do
+      SoftDeletePost.unscoped.create!(title: "Counted Gone", body: "Content", deleted_at: Time.current)
+    end
+
+    before { IronAdmin::ResourceRegistry.register(counted_resource) }
+
+    def soft_delete_tab(name)
+      label = name.to_s.humanize
+      pattern = /\A#{Regexp.escape(label)}(?: \(\d+\))?\z/
+      response.parsed_body.css("a").find { |link| link.text.squish.match?(pattern) }&.text&.squish
+    end
+
+    it "counts live and deleted rows on with_deleted" do
+      get iron_admin.resources_path("counted_soft_delete_posts"), as: :html
+
+      expect(soft_delete_tab("with_deleted")).to eq("With deleted (2)")
+    end
+
+    it "counts only deleted rows on only_deleted" do
+      get iron_admin.resources_path("counted_soft_delete_posts"), as: :html
+
+      expect(soft_delete_tab("only_deleted")).to eq("Only deleted (1)")
+    end
+
+    it "keeps the with_deleted count while only_deleted is selected" do
+      get iron_admin.resources_path("counted_soft_delete_posts"), params: { scope: "only_deleted" }, as: :html
+
+      expect(soft_delete_tab("with_deleted")).to eq("With deleted (2)")
+    end
+  end
 end

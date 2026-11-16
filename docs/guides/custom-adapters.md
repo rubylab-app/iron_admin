@@ -72,7 +72,7 @@ end
 
 ## Complete Method Reference
 
-`Adapters::Base` defines 35 methods organized into 9 sections. All methods raise `NotImplementedError` by default except `resource_name` and `human_name` (which use `ActiveModel::Naming`).
+The nine sections below name 37 methods. Most raise `NotImplementedError`. These have a default: `resource_name` and `human_name` (from `ActiveModel::Naming`); `primary_key` (`"id"`) and `polymorphic_inverse_classes` (an empty array); `find_by_keys` (calls `find_by`), `create_record` (builds and saves) and `update_record` (calls `update`); `after_commit` (runs the block now) and `cast_boolean`; `exact_count` (calls `count`, and returns nil, without logging, when `count` raises `NotImplementedError`). `primary_key`, `polymorphic_inverse_classes`, `find_by_keys`, `create_record` and `update_record` are not given their own headings.
 
 ### Schema Introspection (8 methods)
 
@@ -195,7 +195,7 @@ Returns ActionText rich text attribute names. Each name starts with `rich_text_`
 
 Returns the storage name (table, collection, endpoint path). Return `nil` if not applicable.
 
-### Query Building (10 methods)
+### Query Building (10 methods, 1 optional)
 
 These methods build and manipulate query scopes. A "scope" is any chainable query object — an `ActiveRecord::Relation`, a `Mongoid::Criteria`, or your own query builder.
 
@@ -262,6 +262,16 @@ Extracts raw values for a single column from a scope.
 #### `count(scope = nil)` → `Integer`
 
 Counts records. When `scope` is `nil`, count all records.
+
+#### `exact_count(scope = nil)` → `Integer` or `nil` (optional)
+
+The number of records the relation lists, matching the index total, or `nil` when the adapter
+cannot know it exactly. Unknown is not zero: scope tabs then show no number. The default calls
+`count`, and returns nil without logging when `count` raises `NotImplementedError`, so an
+adapter that never implements `count` does not take down an index that has counts on.
+Override it when `count` is not that total. ActiveRecord counts rows with `count(:all)`
+and turns a grouped Hash into its size. The HTTP adapter returns `meta.total`, or `nil` when
+the response has none.
 
 ### Search (2 methods)
 
@@ -582,6 +592,7 @@ Use this checklist when building a new adapter:
 - [ ] `distinct_values(column)` — sorted, compact, unique
 - [ ] `pluck(scope, column)` — raw column values
 - [ ] `count(scope)` — defaults to `all` when scope is `nil`
+- [ ] `exact_count(scope)` — optional; the index total, or `nil` when it is unknown. Defaults to `count`
 
 ### Search
 - [ ] `search_column(scope, column, query)` — case-insensitive, escaped

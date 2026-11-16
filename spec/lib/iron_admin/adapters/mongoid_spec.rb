@@ -367,6 +367,14 @@ RSpec.describe IronAdmin::Adapters::Mongoid do
     end
   end
 
+  describe "#exact_count" do
+    it "uses the criteria count" do
+      scope = double("Criteria", count: 4)
+
+      expect(adapter.exact_count(scope)).to eq(4)
+    end
+  end
+
   # --- Search ---
 
   describe "#search_column" do

@@ -261,6 +261,87 @@ RSpec.describe IronAdmin::Resource do
       expect(scopes.first[:name]).to eq(:active)
       expect(scopes.first[:default]).to be(true)
     end
+
+    it "leaves the count key off unless count is false" do
+      expect(TestLicenseResource.defined_scopes.first).not_to have_key(:count)
+    end
+
+    it "stores no count key when count is nil" do
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "NilCountScopeResource"
+        end
+
+        scope :revoked, -> { where(status: :revoked) }, count: nil
+      end
+
+      expect(resource.defined_scopes.first).not_to have_key(:count)
+    end
+
+    it "stores count: false" do
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "UncountedScopeResource"
+        end
+
+        scope :revoked, -> { where(status: :revoked) }, count: false
+      end
+
+      expect(resource.defined_scopes.first[:count]).to be(false)
+    end
+  end
+
+  describe ".scope_counts" do
+    it "follows the global setting when the resource sets none" do
+      expect(TestLicenseResource.scope_counts_enabled?).to be(false)
+    end
+
+    it "turns counts on for one resource" do
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "CountedScopeResource"
+        end
+
+        scope_counts true
+      end
+
+      expect(resource.scope_counts_enabled?).to be(true)
+    end
+
+    it "turns counts on when the resource calls scope_counts with no argument" do
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "BareScopeCountResource"
+        end
+
+        scope_counts
+      end
+
+      expect(resource.scope_counts_enabled?).to be(true)
+    end
+
+    it "turns counts off for one resource when the global setting is on" do
+      IronAdmin.configuration.scope_counts = true
+      resource = Class.new(IronAdmin::Resource) do
+        self.model_class_override = License
+
+        def self.name
+          "SilentScopeResource"
+        end
+
+        scope_counts false
+      end
+
+      expect(resource.scope_counts_enabled?).to be(false)
+    end
   end
 
   describe "actions" do

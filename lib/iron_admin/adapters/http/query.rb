@@ -37,6 +37,16 @@ module IronAdmin
           @total || @records.length
         end
 
+        # The provider's exact total, or nil when the response did not include
+        # one. Zero stays zero. Unlike {#count}, this never falls back to the
+        # page length.
+        #
+        # @return [Integer, nil]
+        def exact_total
+          fetch!
+          @total
+        end
+
         def first
           fetch!
           @records.first

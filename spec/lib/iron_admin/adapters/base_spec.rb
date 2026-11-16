@@ -89,6 +89,20 @@ RSpec.describe IronAdmin::Adapters::Base do
     end
   end
 
+  describe "#exact_count" do
+    it "returns nil when count is not implemented" do
+      expect(adapter.exact_count).to be_nil
+    end
+
+    it "does not log that the count is missing" do
+      allow(Rails.logger).to receive(:error)
+
+      adapter.exact_count
+
+      expect(Rails.logger).not_to have_received(:error)
+    end
+  end
+
   describe "search" do
     it "raises NotImplementedError for #search_column" do
       expect { adapter.search_column(nil, :name, "query") }.to raise_error(NotImplementedError)

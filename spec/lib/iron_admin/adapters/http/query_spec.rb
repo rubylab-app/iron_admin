@@ -79,6 +79,53 @@ RSpec.describe IronAdmin::Adapters::Http::Query do
     end
   end
 
+  describe "#exact_total" do
+    it "returns nil when the response is a list" do
+      expect(query.exact_total).to be_nil
+    end
+
+    context "when the response includes a total" do
+      before do
+        stub_request(:get, "https://api.example.com/v1/products")
+          .to_return(
+            status: 200,
+            body: { data: [{ id: 1 }], meta: { total: 100 } }.to_json,
+            headers: { "Content-Type" => "application/json" }
+          )
+      end
+
+      it "returns that total" do
+        expect(query.exact_total).to eq(100)
+      end
+    end
+
+    context "when the total is zero and the page is not" do
+      before do
+        stub_request(:get, "https://api.example.com/v1/products")
+          .to_return(
+            status: 200,
+            body: { data: [{ id: 1, name: "Widget" }], meta: { total: 0 } }.to_json,
+            headers: { "Content-Type" => "application/json" }
+          )
+      end
+
+      it "returns zero" do
+        expect(query.exact_total).to eq(0)
+      end
+    end
+
+    context "when the response is an empty list with no total" do
+      before do
+        stub_request(:get, "https://api.example.com/v1/products")
+          .to_return(status: 200, body: [].to_json, headers: { "Content-Type" => "application/json" })
+      end
+
+      it "returns nil" do
+        expect(query.exact_total).to be_nil
+      end
+    end
+  end
+
   describe "#first" do
     it "returns the first record" do
       expect(query.first.name).to eq("Widget")

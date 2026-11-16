@@ -55,6 +55,7 @@ module IronAdmin
     include Concerns::LiveUpdatable
     include Concerns::ComponentOverridable
     include Concerns::FilterDefinable
+    include Concerns::ScopeCountable
 
     class_attribute :field_overrides, default: {}
     class_attribute :_searchable_columns, default: nil
@@ -264,17 +265,25 @@ module IronAdmin
       # @param name [Symbol] The scope name (displayed as tab label)
       # @param lambda [Proc] A lambda that receives and returns an ActiveRecord::Relation
       # @param default [Boolean] Whether this scope is selected by default
+      # @param count [Boolean] Whether the tab shows how many records this scope
+      #   would list when scope counts are on. +false+ stores +count: false+,
+      #   skips that query and draws the name with no number. Any other value,
+      #   including the default, stores no +:count+ key, and a missing key is
+      #   counted.
       #
       # @example Basic scopes
       #   scope :active, -> { where(active: true) }
       #   scope :recent, -> { where("created_at > ?", 1.week.ago) }, default: true
+      #   scope :archived, -> { where(archived: true) }, count: false
       #
       # @example Scope with complex query
       #   scope :high_value, -> { where("total > ?", 1000).order(total: :desc) }
       #
       # @return [void]
-      def scope(name, lambda, default: false)
-        self.defined_scopes = defined_scopes + [{ name: name, scope: lambda, default: default }]
+      def scope(name, lambda, default: false, count: true)
+        definition = { name: name, scope: lambda, default: default }
+        definition[:count] = false if count == false
+        self.defined_scopes = defined_scopes + [definition]
       end
 
       # Defines a custom action for individual records.

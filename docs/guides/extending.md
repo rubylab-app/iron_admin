@@ -68,6 +68,7 @@ end
 ```
 
 The HTTP adapter:
+- Each counted scope sends one more unpaginated list request on every index view, even when the response has no `meta.total`. Without `meta.total` the tab shows its name and no number. Set `scope_counts false` on an HTTP resource whose API returns no total.
 - Auto-discovers fields from the first API response (convention-over-configuration)
 - Infers resource path from name (`ProductResource` → `GET /products`)
 - Full CRUD via standard REST verbs
