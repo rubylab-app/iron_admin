@@ -304,6 +304,45 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Whether {#transaction} can roll a write back.
+      #
+      # Data sources that persist each write immediately return +false+.
+      # Mongoid and HTTP keep this default. Their writes are checked in
+      # memory and rejected unless the candidate is inside the tenant.
+      # Active Record returns +true+ and keeps the post-write rollback.
+      #
+      # @return [Boolean]
+      def supports_transactions?
+        false
+      end
+
+      # Whether +record+ satisfies +scope+, evaluated in memory.
+      #
+      # Returns +:inside+ or +:outside+ when the adapter can decide, and
+      # +:unknown+ when it cannot. Callers write only on +:inside+. +record+
+      # may be unsaved and already carry its new values. The default
+      # cannot tell.
+      #
+      # @param scope [Object] tenant scope to test
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Symbol] +:inside+, +:outside+, or +:unknown+
+      def scope_match(_scope, _record)
+        :unknown
+      end
+
+      # A non-persisted copy of +record+ with +attrs+ applied.
+      #
+      # Used to test an update against the tenant before writing. The copy
+      # is never saved. The default cannot build one and returns +nil+,
+      # which rejects the write.
+      #
+      # @param record [Object] record being updated
+      # @param attrs [Hash] attributes that would be written
+      # @return [Object, nil]
+      def preview(_record, _attrs)
+        nil
+      end
+
       # --- Transactions ---
 
       # Wraps a block in a transaction.

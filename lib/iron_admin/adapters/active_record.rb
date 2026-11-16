@@ -205,6 +205,16 @@ module IronAdmin
 
       # --- Transactions ---
 
+      # Active Record can roll a tenant miss back inside {#transaction}.
+      #
+      # The in-memory check stays unused: {#scope_match} keeps the base
+      # +:unknown+, so a caller that skipped the transactional path fails closed.
+      #
+      # @return [Boolean]
+      def supports_transactions?
+        true
+      end
+
       def transaction(&)
         ::ActiveRecord::Base.transaction(&)
       end

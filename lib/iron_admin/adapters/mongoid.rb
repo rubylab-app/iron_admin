@@ -199,6 +199,48 @@ module IronAdmin
         build(attrs).tap { |record| record.assign_attributes(scope_attributes(scope)) }
       end
 
+      # Whether +record+ matches +scope+ in memory.
+      #
+      # Uses +Mongoid::Matchable#_matches?+ with the criteria selector when
+      # the record implements it. Returns +nil+ when the record or the scope
+      # cannot be checked, and the caller then rejects the write.
+      #
+      # @param scope [Object] criteria whose +selector+ is tested
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Boolean, nil]
+      # Whether +record+ satisfies the criteria +scope+, evaluated in memory.
+      #
+      # Returns +:unknown+ when +record+ cannot run +_matches?+, when +scope+
+      # has no selector, or when +_matches?+ itself returns +nil+.
+      #
+      # @param scope [Object] criteria whose +selector+ is tested
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Symbol] +:inside+, +:outside+, or +:unknown+
+      def scope_match(scope, record)
+        return :unknown unless record.respond_to?(:_matches?)
+        return :unknown unless scope.respond_to?(:selector)
+
+        matched = record._matches?(scope.selector)
+        return :unknown if matched.nil?
+
+        matched ? :inside : :outside
+      end
+
+      # A non-persisted copy of +record+ with +attrs+ applied.
+      #
+      # The copy is built from the document attributes without +_id+, then
+      # {#cast_array_attributes} is assigned. Nothing is saved.
+      #
+      # @param record [Object] document being updated
+      # @param attrs [Hash] attributes that would be written
+      # @return [Object]
+      def preview(record, attrs)
+        attributes = record.attributes.except("_id", :_id)
+        copy = record.class.new(attributes)
+        copy.assign_attributes(cast_array_attributes(attrs))
+        copy
+      end
+
       def save(record)
         record.save
       end

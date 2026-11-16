@@ -104,7 +104,7 @@ module IronAdmin
 
       purge_attachments(@record)
 
-      if references_assignable?(@record, attrs) && write_within_tenant(@record) { adapter.update(@record, preserve_hidden_habtm_ids(attrs)) } # rubocop:disable Layout/LineLength
+      if references_assignable?(@record, attrs) && write_within_tenant(@record, prepared = preserve_hidden_habtm_ids(attrs)) { adapter.update(@record, prepared) } # rubocop:disable Layout/LineLength
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)

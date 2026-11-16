@@ -8,19 +8,21 @@ module IronAdmin
 
       private
 
-      # Runs a write and rolls it back when the record leaves the tenant.
+      # Runs a write and keeps it inside the tenant.
       #
-      # With no tenant scope configured, returns the block's value. Otherwise
-      # the block runs in a transaction. When the write succeeds and the record
-      # or a persisted nested child is outside the tenant scope, an error is
-      # added on +:base+, the result becomes +false+, and {IronAdmin::Rollback}
-      # rolls the transaction back so nothing is written.
+      # With no tenant scope configured, returns the block's value. Adapters
+      # that support transactions run the block inside a transaction and roll
+      # it back when the saved record or a persisted nested child is outside
+      # the tenant. Adapters that cannot roll back verify an in-memory
+      # candidate first and yield only when that check is +:inside+.
       #
       # @param record [Object] record being created or updated
-      # @yield the write to run inside the transaction
-      # @return [Boolean] whether the write succeeded and stayed in the tenant
-      def write_within_tenant(record)
+      # @param attrs [Hash, nil] update attributes, or +nil+ on create
+      # @yield the write, skipped when a non-transactional check is not +:inside+
+      # @return [Boolean, Object] +false+ when rejected, otherwise the block value
+      def write_within_tenant(record, attrs = nil, &)
         return yield unless IronAdmin::TenantScope.configured?
+        return verify_then_write(record, attrs, &) unless adapter.supports_transactions?
 
         outcome = nil
         adapter.transaction do
@@ -34,6 +36,40 @@ module IronAdmin
           end
         end
         outcome
+      end
+
+      # Yields only when the unsaved candidate is inside the tenant.
+      #
+      # +:outside+ is outside the tenant. +:unknown+ means the adapter cannot
+      # tell. Both add an error on +:base+ and skip the write.
+      #
+      # @param record [Object]
+      # @param attrs [Hash, nil]
+      # @yield the write
+      # @return [Boolean, Object]
+      def verify_then_write(record, attrs)
+        verdict = tenant_verdict(record, attrs)
+        return yield if verdict == :inside
+
+        record.errors.add(:base, containment_error(verdict))
+        false
+      end
+
+      # @param record [Object]
+      # @param attrs [Hash, nil] +nil+ uses +record+ itself (create)
+      # @return [Symbol] +:inside+, +:outside+, or +:unknown+
+      def tenant_verdict(record, attrs)
+        candidate = attrs.nil? ? record : adapter.preview(record, attrs)
+        return :unknown if candidate.nil?
+
+        adapter.scope_match(base_scope, candidate)
+      end
+
+      # @param verdict [Symbol] +:outside+ or +:unknown+
+      # @return [String]
+      def containment_error(verdict)
+        key = verdict == :outside ? "outside_tenant" : "tenant_unverifiable"
+        I18n.t("iron_admin.resources.errors.#{key}")
       end
 
       # Whether +record+ and its persisted nested children are inside the tenant.
