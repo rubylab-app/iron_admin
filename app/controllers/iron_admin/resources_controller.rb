@@ -104,7 +104,7 @@ module IronAdmin
 
       purge_attachments(@record)
 
-      if references_assignable?(@record, attrs) && adapter.update(@record, attrs)
+      if references_assignable?(@record, attrs) && adapter.update(@record, preserve_hidden_habtm_ids(attrs))
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)

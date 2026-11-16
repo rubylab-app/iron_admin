@@ -81,6 +81,20 @@ RSpec.describe "Assignable references on write", type: :request do
         }
       end.to change(Note, :count).by(1)
     end
+
+    it "rejects a type change that points the stored id outside the tenant" do
+      admin = create(:user, role: "admin")
+      note = Note.create!(title: "N", body: "B", notable_type: "User", notable_id: admin.id)
+      scope_users_and_no_licenses
+
+      patch iron_admin.resource_path("notes", note), params: {
+        record: { title: "N", body: "B", notable_type: "License" },
+      }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("is not available")
+      expect(note.reload.notable_type).to eq("User")
+    end
   end
 
   describe "many-to-many ids" do
@@ -115,6 +129,21 @@ RSpec.describe "Assignable references on write", type: :request do
       }
 
       expect(post_record.reload.tags).to contain_exactly(visible)
+    end
+
+    it "keeps many-to-many ids the tenant cannot assign" do
+      visible = Tag.create!(name: "visible-tag")
+      other = Tag.create!(name: "other-tag")
+      post_record = Post.create!(title: "Scoped post")
+      post_record.tags = [visible, other]
+      scope_tags_to_visible
+
+      patch iron_admin.resource_path("posts", post_record), params: {
+        record: { title: post_record.title, tag_ids: [visible.id] },
+      }
+
+      expect(response).to have_http_status(:redirect)
+      expect(post_record.reload.tags).to contain_exactly(visible, other)
     end
   end
 
@@ -223,6 +252,20 @@ RSpec.describe "Assignable references on write", type: :request do
   def scope_tags_to_visible
     IronAdmin.configure do |c|
       c.tenant_scope { |scope| scope.model == Tag ? scope.where(name: "visible-tag") : scope }
+    end
+  end
+
+  def scope_users_and_no_licenses
+    IronAdmin.configure do |c|
+      c.tenant_scope do |scope|
+        if scope.model == License
+          scope.none
+        elsif scope.model == User
+          scope.where(role: "admin")
+        else
+          scope
+        end
+      end
     end
   end
 end

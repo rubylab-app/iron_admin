@@ -7,7 +7,7 @@ RSpec.describe IronAdmin::Concerns::TenantAssignable do
 
   let(:resource_class) do
     reflection = Struct.new(:klass).new(License)
-    nested = Struct.new(:name, :reflection).new(:licenses, reflection)
+    nested = Struct.new(:name, :reflection, :kind).new(:licenses, reflection, :has_many)
     Class.new do
       define_singleton_method(:nested_associations) { [nested] }
     end
@@ -48,7 +48,7 @@ RSpec.describe IronAdmin::Concerns::TenantAssignable do
     expect(adapter).not_to have_received(:scope_attributes)
   end
 
-  it "merges tenant equalities into new nested rows and leaves rows with an id" do
+  it "merges tenant equalities into new nested rows and drops the tenant column from rows with an id" do
     configure_tenant
     attrs = {
       "licenses_attributes" => {
@@ -61,7 +61,7 @@ RSpec.describe IronAdmin::Concerns::TenantAssignable do
     expect(harness.stamp(attrs)).to eq(
       "licenses_attributes" => {
         "0" => { "label" => "tenant", "name" => "n" },
-        "1" => { "id" => "5", "label" => "posted" },
+        "1" => { "id" => "5" },
         "2" => { "id" => "", "label" => "tenant" },
       }
     )
@@ -80,7 +80,7 @@ RSpec.describe IronAdmin::Concerns::TenantAssignable do
     expect(harness.stamp(attrs)).to eq(
       "licenses_attributes" => [
         { "label" => "tenant" },
-        { "id" => 4, "label" => "posted" },
+        { "id" => 4 },
       ]
     )
   end

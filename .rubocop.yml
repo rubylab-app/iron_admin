@@ -112,6 +112,7 @@ RSpec/BeforeAfterAll:
     - "spec/requests/iron_admin/assignable_references_spec.rb"
     - "spec/requests/iron_admin/tenant_update_spec.rb"
     - "spec/requests/iron_admin/nested_tenant_params_spec.rb"
+    - "spec/requests/iron_admin/tenant_nested_rows_spec.rb"
 
 RSpec/RemoveConst:
   Enabled: false

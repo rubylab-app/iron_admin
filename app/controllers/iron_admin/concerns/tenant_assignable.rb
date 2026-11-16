@@ -2,20 +2,21 @@
 
 module IronAdmin
   module Concerns
-    # Stamps tenant equalities onto new nested rows and keeps them off updates.
+    # Stamps tenant equalities onto new nested rows, strips them from existing
+    # rows, and keeps hidden many-to-many ids when updating.
     module TenantAssignable
       extend ActiveSupport::Concern
 
       private
 
-      # Copies tenant equalities into new nested rows of the submitted attributes.
+      # Copies tenant equalities into new nested rows and strips them from saved rows.
       #
       # Returns +attrs+ unchanged unless a tenant scope is configured. Otherwise
       # returns a Hash with string keys. For each nested association whose
-      # +"#{name}_attributes"+ entry is present (a Hash of index to row, or an
-      # Array of rows), every row without a present +id+ merges
-      # +scope_attributes+ of +TenantScope.apply(nested.reflection.klass.all)+,
-      # with the tenant values winning.
+      # +"#{name}_attributes"+ entry is present, every row drops the nested
+      # model's tenant columns. A +:has_one+ entry is one row of columns. A
+      # +:has_many+ entry is a Hash of index to row, or an Array of rows. A row
+      # without a present +id+ then merges those tenant values, which win.
       #
       # @param attrs [Hash, ActionController::Parameters] permitted attributes
       # @return [Hash, ActionController::Parameters]
@@ -30,6 +31,31 @@ module IronAdmin
           stamped[key] = stamp_nested_attribute_rows(nested, stamped[key])
         end
         stamped
+      end
+
+      # Keeps many-to-many ids that this tenant is not allowed to assign.
+      #
+      # Update calls this after +references_assignable?+. When a tenant scope is
+      # configured and attrs include +"<singular>_ids"+ for a habtm association,
+      # that value becomes the submitted ids plus the record's current ids that
+      # +assignable_records+ does not include, as unique strings. A new record
+      # has no hidden associations, so create does not call this.
+      #
+      # @param attrs [Hash, ActionController::Parameters] permitted attributes
+      # @return [Hash, ActionController::Parameters]
+      def preserve_hidden_habtm_ids(attrs)
+        return attrs unless IronAdmin::TenantScope.configured?
+
+        preserved = string_keyed_attributes(attrs)
+        replaced = false
+        @resource_class.habtm_associations.each do |assoc|
+          column = "#{assoc[:name].to_s.singularize}_ids"
+          next unless preserved.key?(column)
+
+          preserved[column] = submitted_plus_hidden_ids(assoc, preserved[column])
+          replaced = true
+        end
+        replaced ? preserved : attrs
       end
 
       # Removes tenant columns from submitted attributes.
@@ -47,12 +73,11 @@ module IronAdmin
 
       def stamp_nested_attribute_rows(nested, rows)
         tenant = nested_tenant_attributes(nested)
-        if rows.is_a?(Array)
-          rows.map { |row| merge_tenant_into_new_row(row, tenant) }
-        else
-          string_keyed_attributes(rows).each_with_object({}) do |(index, row), stamped|
-            stamped[index] = merge_tenant_into_new_row(row, tenant)
-          end
+        return apply_nested_tenant_row(rows, tenant) if nested.kind == :has_one
+        return rows.map { |row| apply_nested_tenant_row(row, tenant) } if rows.is_a?(Array)
+
+        string_keyed_attributes(rows).each_with_object({}) do |(index, row), stamped|
+          stamped[index] = apply_nested_tenant_row(row, tenant)
         end
       end
 
@@ -61,11 +86,20 @@ module IronAdmin
         adapter.scope_attributes(scope)
       end
 
-      def merge_tenant_into_new_row(row, tenant)
+      def apply_nested_tenant_row(row, tenant)
         attributes = string_keyed_attributes(row)
-        return attributes if attributes["id"].present?
+        stripped = attributes.except(*tenant.keys.map(&:to_s))
+        return stripped if attributes["id"].present?
 
-        attributes.merge(tenant)
+        stripped.merge(string_keyed_attributes(tenant))
+      end
+
+      def submitted_plus_hidden_ids(assoc, raw_ids)
+        klass = assoc[:reflection].klass
+        hidden = @record.public_send(assoc[:name]).where.not(
+          klass.primary_key => helpers.assignable_records(klass).select(klass.primary_key)
+        ).pluck(klass.primary_key)
+        (Array(raw_ids) + hidden).map(&:to_s).uniq
       end
 
       def string_keyed_attributes(attrs)

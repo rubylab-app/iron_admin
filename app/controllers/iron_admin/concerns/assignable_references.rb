@@ -5,6 +5,7 @@ module IronAdmin
     # Rejects posted foreign keys that are outside the tenant-scoped options.
     module AssignableReferences
       extend ActiveSupport::Concern
+      include PolymorphicReferences
 
       private
 
@@ -47,42 +48,6 @@ module IronAdmin
         false
       end
 
-      def polymorphic_references_assignable?(record, attrs)
-        polymorphic_fields.map { |field| polymorphic_field_assignable?(record, attrs, field) }.all?
-      end
-
-      def polymorphic_fields
-        writable_form_fields.select { |field| field.type == :polymorphic_belongs_to }
-      end
-
-      def polymorphic_field_assignable?(record, attrs, field)
-        return true unless present_attr?(attrs, field.options[:id_column])
-        return true if polymorphic_target_assignable?(record, attrs, field)
-
-        record.errors.add(field.name, message: not_assignable_message)
-        false
-      end
-
-      def polymorphic_target_assignable?(record, attrs, field)
-        type_class = polymorphic_type_class(record, attrs, field)
-        return false unless type_class
-
-        id_column = field.options[:id_column]
-        helpers.assignable_records(type_class).exists?(id: attrs[id_column.to_s])
-      end
-
-      def polymorphic_type_class(record, attrs, field)
-        type_name = polymorphic_type_name(record, attrs, field).to_s
-        Array(field.options[:types]).find { |type| type.name.to_s == type_name }
-      end
-
-      def polymorphic_type_name(record, attrs, field)
-        column = field.options[:type_column].to_s
-        return attrs[column] if attrs.key?(column)
-
-        record.public_send(field.options[:type_column])
-      end
-
       def habtm_references_assignable?(record, attrs)
         @resource_class.habtm_associations.map { |assoc| habtm_association_assignable?(record, attrs, assoc) }.all?
       end
@@ -112,12 +77,16 @@ module IronAdmin
         column = "#{nested.name}_attributes"
         return true unless attrs.key?(column)
 
-        nested_child_rows(attrs[column]).map { |child| nested_child_assignable?(record, nested, child) }.all?
+        nested_child_rows(nested, attrs[column]).map { |child| nested_child_assignable?(record, nested, child) }.all?
       end
 
-      def nested_child_rows(raw)
-        rows = raw.is_a?(Hash) ? raw.values : Array(raw)
+      def nested_child_rows(nested, raw)
+        rows = nested.kind == :has_one ? [raw] : indexed_or_array_rows(raw)
         rows.grep(Hash)
+      end
+
+      def indexed_or_array_rows(raw)
+        raw.is_a?(Hash) ? raw.values : Array(raw)
       end
 
       def nested_child_assignable?(record, nested, child)
