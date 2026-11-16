@@ -137,6 +137,20 @@ module IronAdmin
         model_class.new(attrs)
       end
 
+      # Builds a record from +scope+ so equality conditions become attributes.
+      #
+      # Only equalities that are attributes of the model are copied, so a
+      # tenant scope aimed at another model cannot raise UnknownAttributeError.
+      # Attributes in +attrs+ overwrite values copied from +scope+.
+      #
+      # @param scope [ActiveRecord::Relation] Scope to build from
+      # @param attrs [Hash, ActionController::Parameters] Initial attributes
+      # @return [ActiveRecord::Base] New record
+      def build_in(scope, attrs = {})
+        scoped = scope.respond_to?(:where_values_hash) ? scope.where_values_hash.slice(*model_class.attribute_names) : {}
+        model_class.new(scoped).tap { |record| record.assign_attributes(attrs) }
+      end
+
       def save(record)
         record.save
       end

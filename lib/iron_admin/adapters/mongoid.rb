@@ -164,6 +164,22 @@ module IronAdmin
         model_class.new(cast_array_attributes(attrs))
       end
 
+      # Builds a record from +scope+ so equality conditions become attributes.
+      #
+      # Only plain selector values that are fields of the model are copied.
+      # Operator hashes such as +$in+ are ignored. Array attributes in +attrs+
+      # are cast the same way as {#build}. Attributes in +attrs+ overwrite
+      # values copied from +scope+.
+      #
+      # @param scope [Mongoid::Criteria] Scope to build from
+      # @param attrs [Hash, ActionController::Parameters] Initial attributes
+      # @return [Mongoid::Document] New record
+      def build_in(scope, attrs = {})
+        selector = scope.respond_to?(:selector) ? scope.selector : {}
+        scoped = selector.slice(*model_class.fields.keys).reject { |_, value| value.is_a?(Hash) }
+        model_class.new(scoped).tap { |record| record.assign_attributes(cast_array_attributes(attrs)) }
+      end
+
       def save(record)
         record.save
       end

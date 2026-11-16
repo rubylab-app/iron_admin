@@ -240,6 +240,19 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Builds a new unsaved record inside +scope+.
+      #
+      # Adapters that copy equality conditions off a scope override this so
+      # those conditions become attributes. The default ignores +scope+ and
+      # delegates to {#build}.
+      #
+      # @param scope [Object] Relation the record is built from
+      # @param attrs [Hash] Initial attributes
+      # @return [Object] New record
+      def build_in(_scope, attrs = {})
+        build(attrs)
+      end
+
       # Persists a record.
       # @param record [Object] The record to save
       # @return [Boolean] Success

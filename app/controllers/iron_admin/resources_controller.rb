@@ -59,7 +59,7 @@ module IronAdmin
     #
     # @return [void]
     def new
-      @record = adapter.build
+      @record = adapter.build_in(base_scope)
       @fields = form_fields
     end
 
@@ -76,7 +76,7 @@ module IronAdmin
     #
     # @return [void]
     def create
-      @record = adapter.build(resource_params)
+      @record = adapter.build_in(base_scope, resource_params)
       return render_invalid_json(:new) if invalid_json_submission?
 
       if adapter.save(@record)

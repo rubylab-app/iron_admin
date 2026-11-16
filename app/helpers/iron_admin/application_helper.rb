@@ -176,8 +176,7 @@ module IronAdmin
 
       value_key = foreign_key_target(association)
       scope = referenced_records(association_class, value_key, resource_class.adapter.distinct_values(column_name))
-      tenant_scope = IronAdmin.configuration.tenant_scope_block
-      scope = tenant_scope.call(scope) if tenant_scope
+      scope = IronAdmin::TenantScope.apply(scope)
       scope.map { |record| [display_record_label(record, field.options[:display]), record.public_send(value_key)] }
     end
 

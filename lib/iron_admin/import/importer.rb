@@ -162,7 +162,7 @@ module IronAdmin
       end
 
       def validate_record(record, attributes)
-        model_record = record || adapter.build(attributes)
+        model_record = record || adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), attributes)
         assign_attributes(model_record, attributes) if record
         return [] unless model_record.respond_to?(:valid?) && !model_record.valid?
 
@@ -209,14 +209,13 @@ module IronAdmin
         return nil unless lookup.size == keys.size && lookup.values.all?(&:present?)
 
         # find_by_keys is an IronAdmin adapter hook, not an ActiveRecord dynamic finder.
-        return adapter.find_by_keys(lookup) unless IronAdmin.configuration.tenant_scope_block # rubocop:disable Rails/DynamicFindBy
+        return adapter.find_by_keys(lookup) unless IronAdmin::TenantScope.configured? # rubocop:disable Rails/DynamicFindBy
 
         scoped_existing_record(lookup)
       end
 
       def scoped_existing_record(lookup)
-        scope = adapter.all
-        scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
+        scope = IronAdmin::TenantScope.apply(adapter.all)
 
         lookup.reduce(scope) do |current_scope, (key, value)|
           adapter.filter(current_scope, key, value)
@@ -232,7 +231,8 @@ module IronAdmin
         if record
           saved = adapter.update_record(record, attributes)
         else
-          record = adapter.create_record(attributes)
+          record = adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), attributes)
+          adapter.save(record)
           saved = !record.respond_to?(:persisted?) || record.persisted?
         end
         [record, saved ? [] : save_failure_messages(record)]
