@@ -102,10 +102,10 @@ module IronAdmin
         return collect_existing_errors(row, result_state) if row.errors.any?
 
         record = find_existing_record(row.attributes)
-        validation_errors = validate_record(record, row.attributes)
+        action = record ? :update : :create
+        validation_errors = permission_errors(action).presence || validate_record(record, row.attributes)
         return add_error_messages(row, validation_errors, result_state) if validation_errors.any?
 
-        action = record ? :update : :create
         saved_record, persist_errors = persist_row(record, row.attributes)
         return add_error_messages(row, persist_errors, result_state) if persist_errors.any?
 
@@ -131,9 +131,7 @@ module IronAdmin
         attributes = build_attributes(raw_row, mapping)
         attributes = apply_transform(attributes)
         validation_errors = custom_validation_errors(attributes)
-        # Validate against the record an upsert would update, as execute! does,
-        # so a matching row is not reported as a uniqueness failure.
-        validation_errors += validate_record(find_existing_record(attributes), attributes) if validate_model
+        validation_errors += row_operation_errors(attributes) if validate_model
         row_errors = validation_errors.map { |message| Error.new(row_number: row_number, message: message) }
 
         Row.new(number: row_number, attributes: attributes, errors: row_errors)
@@ -169,6 +167,25 @@ module IronAdmin
         return [] unless model_record.respond_to?(:valid?) && !model_record.valid?
 
         model_record.errors.full_messages
+      end
+
+      # Validate against the record an upsert would update, as execute! does,
+      # so a matching row is not reported as a uniqueness failure, and check
+      # the permission for what the row would do.
+      def row_operation_errors(attributes)
+        existing = find_existing_record(attributes)
+        permission_errors(existing ? :update : :create).presence || validate_record(existing, attributes)
+      end
+
+      # A row that matches an existing record updates it, so it needs the
+      # :update permission; any other row needs :create.
+      #
+      # @param action [Symbol] :create or :update
+      # @return [Array<String>]
+      def permission_errors(action)
+        return [] if @resource_class.crud_allowed?(action, current_user)
+
+        [I18n.t("iron_admin.imports.errors.not_permitted.#{action}")]
       end
 
       def custom_validation_errors(attributes)

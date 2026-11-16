@@ -130,8 +130,8 @@ end
 | Action | Covers |
 |--------|--------|
 | `:read` | Index, show, CSV/JSON export, `belongs_to` autocomplete, global search results, and the sidebar link |
-| `:create` | New, create, and imports (including import rows that update an existing record matched by `import_upsert_key`) |
-| `:update` | Edit and update |
+| `:create` | New, create, opening imports, and each import row that creates a record |
+| `:update` | Edit, update, and each import row that updates an existing record matched by `import_upsert_key` |
 | `:destroy` | Destroy |
 
 You can use either the CRUD action names (`:read`, `:create`, `:update`, `:destroy`) or the controller action names (`:index`, `:show`, `:new`, `:edit`, `:delete`). They are mapped in both directions, in `policy` and in `deny_actions`:
