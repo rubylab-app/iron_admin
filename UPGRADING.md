@@ -1,6 +1,6 @@
 # Upgrading to IronAdmin 0.8.0 (themes and the Neutral look)
 
-Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. Sections 11 to 15 cover the new access controls: the generated `authenticate` block, `config.default_policy`, `tool_access`, import rows that update, and the audit log per tenant. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
+Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. Sections 11 to 15 cover the new access controls: the generated `authenticate` block, `config.default_policy`, `tool_access`, import rows that update, and the audit log per tenant. Section 16 (credential columns are hidden by default) and section 17 (`field :<association>_id` overrides now apply) change what existing resources show. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
 
 ## What changed
 
@@ -385,17 +385,6 @@ module IronAdmin
   module Tools
     class CacheManagerTool < IronAdmin::Tool
       tool_access ->(user) { user&.admin? }
-### 16. Credential columns are hidden by default
-
-IronAdmin now infers well-known credential columns as hidden and read-only: `encrypted_password`, `password_digest`, `reset_password_token`, `confirmation_token`, `unlock_token`, `remember_token`, `invitation_token`, `authentication_token`, `otp_secret`, `encrypted_otp_secret`, `encrypted_otp_secret_iv`, `encrypted_otp_secret_salt`, `otp_backup_codes`, and any `*_password_digest` column. They disappear from the index, the show page, the form, exports, search, sorting and filters. A hidden field is also no longer sortable, writable through nested attributes, or logged in audit changes, whatever made it hidden.
-
-**Action required:** Only if an admin page relied on showing one of these columns. Show it again with `visible:`; it stays read-only unless you also pass `readonly: false`:
-
-```ruby
-module IronAdmin
-  module Resources
-    class UserResource < IronAdmin::Resource
-      field :confirmation_token, visible: ->(user) { user&.admin? }
     end
   end
 end
@@ -428,6 +417,23 @@ class AddTenantKeyToIronAdminAuditEntries < ActiveRecord::Migration[8.0]
   end
 end
 ```
+
+### 16. Credential columns are hidden by default
+
+IronAdmin now infers well-known credential columns as hidden and read-only: `encrypted_password`, `password_digest`, `reset_password_token`, `confirmation_token`, `unlock_token`, `remember_token`, `invitation_token`, `authentication_token`, `otp_secret`, `encrypted_otp_secret`, `encrypted_otp_secret_iv`, `encrypted_otp_secret_salt`, `otp_backup_codes`, and any `*_password_digest` column. They disappear from the index, the show page, the form, exports, search, sorting and filters. A hidden field is also no longer sortable, writable through nested attributes, or logged in audit changes, whatever made it hidden.
+
+**Action required:** Only if an admin page relied on showing one of these columns. Show it again with `visible:`; it stays read-only unless you also pass `readonly: false`:
+
+```ruby
+module IronAdmin
+  module Resources
+    class UserResource < IronAdmin::Resource
+      field :confirmation_token, visible: ->(user) { user&.admin? }
+    end
+  end
+end
+```
+
 ### 17. `field :<association>_id` now applies to the association field
 
 A `field` override named after a `belongs_to` foreign key (`field :organization_id, ...`) used to be ignored, because the inferred field is named after the association (`:organization`). It now applies. If a resource declared such an override and relied on it doing nothing, its options (for example `readonly:` or `visible: false`) now take effect. In development and test, IronAdmin logs at boot every `field` name that still matches no field.
