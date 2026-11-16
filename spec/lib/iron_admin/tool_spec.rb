@@ -167,4 +167,36 @@ RSpec.describe IronAdmin::Tool do
       expect(names).not_to include(:child_action)
     end
   end
+
+  describe ".accessible_by?" do
+    it "follows default_policy when the tool has no tool_access" do
+      tool = Class.new(described_class) { def self.name = "PlainAccessTool" }
+
+      expect(tool.accessible_by?(nil)).to be(true)
+      IronAdmin.configuration.default_policy = :deny
+      expect(tool.accessible_by?(nil)).to be(false)
+    end
+
+    it "is inherited by subclasses" do
+      base = Class.new(described_class) do
+        def self.name = "BaseAccessTool"
+
+        tool_access ->(user) { user == :admin }
+      end
+      child = Class.new(base) { def self.name = "ChildAccessTool" }
+
+      expect(child.accessible_by?(:admin)).to be(true)
+      expect(child.accessible_by?(:reader)).to be(false)
+    end
+
+    it "is false when the condition returns nil" do
+      tool = Class.new(described_class) do
+        def self.name = "NilAccessTool"
+
+        tool_access ->(_user) {}
+      end
+
+      expect(tool.accessible_by?(:admin)).to be(false)
+    end
+  end
 end

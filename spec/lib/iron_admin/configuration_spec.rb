@@ -76,6 +76,10 @@ RSpec.describe IronAdmin::Configuration do
       expect(config.strict_tool_actions).to be false
     end
 
+    it "sets default_policy to :allow" do
+      expect(config.default_policy).to eq(:allow)
+    end
+
     it "sets scope_counts to false" do
       expect(config.scope_counts).to be false
     end
@@ -381,6 +385,26 @@ RSpec.describe IronAdmin do
       described_class.dashboard_class = "MyDashboard"
 
       expect(described_class.dashboard_class).to eq("MyDashboard")
+    end
+  end
+
+  describe "#default_policy=" do
+    let(:config) { IronAdmin::Configuration.new }
+
+    it "accepts :deny" do
+      config.default_policy = :deny
+
+      expect(config.default_policy).to eq(:deny)
+    end
+
+    it "accepts a String" do
+      config.default_policy = "deny"
+
+      expect(config.default_policy).to eq(:deny)
+    end
+
+    it "rejects any other value" do
+      expect { config.default_policy = :maybe }.to raise_error(ArgumentError, /default_policy must be :allow or :deny/)
     end
   end
 end

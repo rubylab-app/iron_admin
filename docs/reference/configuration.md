@@ -13,6 +13,7 @@ IronAdmin.configure do |config|
   config.default_sort_direction = :desc
   config.scope_counts = false # true: each scope tab shows how many records it would list
   config.strict_tool_actions = false # true: only tool_action names dispatch
+  config.default_policy = :allow # :deny: resources without a policy and tools without tool_access answer 403
 
   # --- Multi-Tenant Support ---
   config.tenant_scope do |scope|
@@ -76,6 +77,7 @@ end
 | `scope_counts` | Boolean | `false` | When `true`, each scope tab shows how many records that tab would list. Each counted scope runs one query. A resource overrides this with `scope_counts`. See [Scopes](../guides/resources.md#scopes) |
 | `default_sort` | Symbol | `:created_at` | Default sort column |
 | `default_sort_direction` | Symbol | `:desc` | Default sort direction (`:asc` or `:desc`) |
+| `default_policy` | Symbol | `:allow` | What a resource without a `policy` block, and a tool without `tool_access`, allows. `:allow` allows every action; `:deny` denies them all. Any other value raises `ArgumentError`. See [Policies](../guides/authentication.md#policies) |
 | `strict_tool_actions` | Boolean | `false` | When `true`, tools dispatch only actions declared with `tool_action`. Undeclared names return 404, including the legacy bare-method fallback. See [Custom Tools](../guides/extending.md#custom-tools) |
 
 ### Multi-Tenant Support

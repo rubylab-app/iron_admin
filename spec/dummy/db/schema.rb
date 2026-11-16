@@ -147,10 +147,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000008) do
     t.integer :record_id
     t.text :record_changes
     t.string :ip_address
+    t.string :tenant_key
     t.timestamps
 
     t.index :resource
     t.index :action
     t.index :created_at
+    t.index :tenant_key
   end
 end

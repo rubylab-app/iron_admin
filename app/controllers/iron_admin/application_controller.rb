@@ -47,6 +47,16 @@ module IronAdmin
       @iron_admin_current_user ||= instance_exec(self, &IronAdmin.configuration.current_user_block)
     end
 
+    # The current tenant's audit key from +config.audit_tenant+, as a String;
+    # nil without the block or when it returns nothing.
+    # @api private
+    def iron_admin_audit_tenant_key
+      block = IronAdmin.configuration.audit_tenant_block
+      return unless block
+
+      instance_exec(self, &block)&.to_s.presence
+    end
+
     def iron_admin_filter_param(*keys)
       iron_admin_param_dig(params[:filters], *keys)
     end

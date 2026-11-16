@@ -69,13 +69,23 @@ module IronAdmin
       @resource_labels.to_a + (others - @resource_labels.keys).map { |name| [name, name] }
     end
 
+    # Values of +attribute+ in the entries the page may list: with
+    # +config.audit_tenant+, only the current tenant's.
+    #
     # @api private
     def logged_values(attribute)
-      if AuditLog.database_storage_available?
-        AuditEntry.distinct.pluck(attribute)
-      else
-        AuditLog.entries.map { |entry| entry.public_send(attribute).to_s }
-      end
+      entries = AuditLog.query(tenant_filter)
+      return entries.map { |entry| entry.public_send(attribute).to_s } if entries.is_a?(Array)
+
+      entries.reorder(nil).distinct.pluck(attribute)
+    end
+
+    # @api private
+    # @return [Hash] the +:tenant_key+ filter when +config.audit_tenant+ is set
+    def tenant_filter
+      return {} unless IronAdmin.configuration.audit_tenant_block
+
+      { tenant_key: iron_admin_audit_tenant_key }
     end
 
     # @api private
@@ -86,7 +96,8 @@ module IronAdmin
       filters[:from] = parse_time(params[:from])
       filters[:to] = parse_time(params[:to])&.then { |time| date_only?(params[:to]) ? time.end_of_day : time }
 
-      AuditLog.query(filters.compact)
+      # The tenant filter is added after compact: a nil key must match nothing.
+      AuditLog.query(filters.compact.merge(tenant_filter))
     end
 
     # @api private

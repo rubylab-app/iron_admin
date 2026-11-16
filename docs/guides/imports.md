@@ -48,7 +48,7 @@ end
 |--------|-------------|
 | `imports :csv, :json` | Formats the upload form accepts |
 | `import_fields` | Fields a file can set, in the order the upload form and the preview list them. By default, every field except `id`, `created_at` and `updated_at`, in column order. Fields hidden from or readonly for the current user, associations, `:file`, `:files` and `:rich_text` fields are never imported. |
-| `import_upsert_key` | Fields that identify an existing record. A row whose values match a record (within the tenant scope) updates it; other rows create records. |
+| `import_upsert_key` | Fields that identify an existing record. A row whose values match a record (within the tenant scope) updates it; other rows create records. Each row needs the permission for what it does: `:update` for a row that updates, `:create` for a row that creates. A denied row is reported as an error, in the preview and in the import, and the other rows still import. |
 | `import_transform` | Block that receives the row's attributes (and, with two parameters, a context with `current_user` and `controller`) and returns the attributes to save |
 | `import_validate` | Block that returns an error message, or an array of them, for an invalid row |
 | `import_options max_rows:` | Largest number of rows a file may have (default 5,000) |

@@ -9,11 +9,13 @@ class CreateIronAdminAuditEntries < ActiveRecord::Migration[<%= ActiveRecord::Mi
       t.integer :record_id
       t.text :record_changes
       t.string :ip_address
+      t.string :tenant_key
       t.timestamps
     end
 
     add_index :iron_admin_audit_entries, :resource
     add_index :iron_admin_audit_entries, :action
     add_index :iron_admin_audit_entries, :created_at
+    add_index :iron_admin_audit_entries, :tenant_key
   end
 end

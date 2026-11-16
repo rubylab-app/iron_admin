@@ -116,6 +116,34 @@ module IronAdmin
     # @see IronAdmin::Tool
     attr_accessor :strict_tool_actions
 
+    # Values accepted by {#default_policy=}.
+    DEFAULT_POLICIES = %i[allow deny].freeze
+
+    # What a resource without a +policy+ block allows: +:allow+ (the
+    # default) lets every user the authenticate block admits run every CRUD,
+    # custom and bulk action; +:deny+ denies them all. Tools without a
+    # +tool_access+ condition follow the same setting. A resource's own
+    # policy, and a tool's own condition, always apply.
+    #
+    # @return [Symbol] +:allow+ or +:deny+ (default: +:allow+)
+    # @see IronAdmin::Resource.policy
+    attr_reader :default_policy
+
+    # @param value [Symbol, String] +:allow+ or +:deny+
+    # @raise [ArgumentError] for any other value
+    # @return [void]
+    def default_policy=(value)
+      policy = value.respond_to?(:to_sym) ? value.to_sym : value
+      raise ArgumentError, "default_policy must be :allow or :deny, got #{value.inspect}" unless DEFAULT_POLICIES.include?(policy)
+
+      @default_policy = policy
+    end
+
+    # @return [Boolean] whether {#default_policy} is +:allow+
+    def default_allow?
+      default_policy == :allow
+    end
+
     # When +true+, each scope tab on a resource index shows how many records
     # that tab would list: the tenant scope, the current filters, that tab's
     # scope and the current search. The selected scope and the page are not
@@ -141,6 +169,10 @@ module IronAdmin
     # @return [Proc, nil] Block that labels the users of the audit log page
     # @see #audit_user_labels
     attr_reader :audit_user_labels_block
+
+    # @return [Proc, nil] Block that returns the current tenant's audit key
+    # @see #audit_tenant
+    attr_reader :audit_tenant_block
 
     # @return [Symbol] Name of the theme used when the request resolves no registered theme
     #   (default: :neutral)
@@ -246,6 +278,7 @@ module IronAdmin
       @live_throttle = 0.5.seconds
       @strict_tool_actions = false
       @scope_counts = false
+      @default_policy = :allow
     end
 
     # Defines the authentication check for admin access.
@@ -339,6 +372,23 @@ module IronAdmin
     # @see IronAdmin::AuditLog.user_labels
     def audit_user_labels(&block)
       @audit_user_labels_block = block
+    end
+
+    # Keeps the audit log per tenant. The block runs in the controller, with
+    # the controller as its argument, and returns the current tenant's key.
+    # Each logged change stores it (as a String) in +tenant_key+, and the
+    # audit page lists only the entries whose key is the current one: none
+    # when the block returns nil, and never the entries logged without a key.
+    # With database storage the table needs a +tenant_key+ column (see
+    # UPGRADING.md); without it the audit page raises.
+    #
+    # @yieldparam controller [ActionController::Base] the admin controller
+    # @yieldreturn [Object, nil] the current tenant's key
+    # @example
+    #   config.audit_tenant { |_controller| Current.organization&.id }
+    # @return [void]
+    def audit_tenant(&block)
+      @audit_tenant_block = block
     end
 
     # Registers a block called with one event after a resource change.

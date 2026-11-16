@@ -1,6 +1,7 @@
 # Proves the initializer the install generator wrote, before any fixture
-# replaces it. The generated authenticate and current_user blocks are
-# comments, so they return nil and the request is allowed.
+# replaces it. The generated authenticate block returns false, so a fresh
+# install denies every request with 403 until authentication is wired. The
+# fixture's recipe replaces it, and the admin checks then expect access.
 $stdout.sync = true
 
 title = IronAdmin.configuration.title.to_s
@@ -12,7 +13,6 @@ session.host! "localhost"
 session.accept = "text/html"
 session.get("/admin")
 response = session.response
-raise "GET /admin status #{response.status}, expected 200" unless response.status == 200
-raise "GET /admin did not render #{title.inspect}" unless response.body.include?(title)
+raise "GET /admin status #{response.status}, expected 403" unless response.status == 403
 
 puts "HOST_APP_GATE smoke ok #{title}"

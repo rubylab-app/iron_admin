@@ -43,6 +43,40 @@ RSpec.describe IronAdmin::Layout::SidebarComponent, type: :component do
     expect(hrefs).not_to include(a_string_including("hidden_sidebar_users"))
   end
 
+  it "hides resources without a policy when default_policy is :deny" do
+    IronAdmin.configuration.default_policy = :deny
+    readable = Class.new(IronAdmin::Resource) do
+      self.model_class_override = User
+
+      def self.name = "ReadableSidebarResource"
+      def self.resource_name = "readable_sidebar_users"
+
+      policy { allow :read }
+    end
+    IronAdmin::ResourceRegistry.register(readable)
+
+    hrefs = render_inline(described_class.new(current_user: nil)).css("a").pluck("href")
+
+    expect(hrefs).to include(a_string_including("readable_sidebar_users"))
+    expect(hrefs).not_to include(a_string_including("/licenses"))
+  end
+
+  it "hides tools the user cannot access" do
+    open_tool = Class.new(IronAdmin::Tool) { def self.name = "VisibleSidebarTool" }
+    closed_tool = Class.new(IronAdmin::Tool) do
+      def self.name = "ClosedSidebarTool"
+
+      tool_access ->(_user) { false }
+    end
+    IronAdmin::ToolRegistry.register(open_tool)
+    IronAdmin::ToolRegistry.register(closed_tool)
+
+    hrefs = render_inline(described_class.new(current_user: nil)).css("a").pluck("href")
+
+    expect(hrefs).to include(a_string_including("/tools/visible_sidebar"))
+    expect(hrefs).not_to include(a_string_including("/tools/closed_sidebar"))
+  end
+
   it "groups resources by menu group" do
     result = render_inline(described_class.new)
 

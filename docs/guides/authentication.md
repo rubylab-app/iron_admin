@@ -84,7 +84,9 @@ Redirect or render inside the block to choose the response. To deny the request 
 
 Do not use `return` inside the block. The block runs from the controller, and `return` leaves the method that defined the block, which in an initializer raises `LocalJumpError`. To stop early, use `next false`.
 
-A block that ends with `redirect_to ... unless ...` has the value `nil` when it does not redirect, so the request continues. The initializer from `rails generate iron_admin:install` leaves the block body commented out, which also has the value `nil`.
+A block that ends with `redirect_to ... unless ...` has the value `nil` when it does not redirect, so the request continues.
+
+The initializer from `rails generate iron_admin:install` writes a block whose value is `false`, so a fresh install answers every admin request with `403` until you replace it with one of the recipes above. With no `authenticate` block at all, the admin answers every request; that is a valid setup only when a route constraint protects the mount (for example Devise's `authenticate :user do ... end` around `mount`). In production, IronAdmin logs a warning at boot when no block is set.
 
 ```ruby
 config.authenticate do |controller|
@@ -99,7 +101,16 @@ The user returned by `config.current_user` is available as `iron_admin_current_u
 
 ## Policies
 
-Per-resource access control:
+Per-resource access control. A resource without a `policy` block follows `config.default_policy`: `:allow` (the default) lets every user the `authenticate` block admits run every CRUD, custom and bulk action, and `:deny` denies them all, so each resource needs a policy that allows what its users may do. Once `authenticate` admits users other than administrators, set `:deny`:
+
+```ruby
+IronAdmin.configure do |config|
+  config.default_policy = :deny
+end
+```
+
+In development, IronAdmin logs at boot the resources that have no policy while `default_policy` is `:allow`. The default becomes `:deny` in 1.0.
+
 
 ```ruby
 module IronAdmin
@@ -119,8 +130,8 @@ end
 | Action | Covers |
 |--------|--------|
 | `:read` | Index, show, CSV/JSON export, `belongs_to` autocomplete, global search results, and the sidebar link |
-| `:create` | New, create, and imports (including import rows that update an existing record matched by `import_upsert_key`) |
-| `:update` | Edit and update |
+| `:create` | New, create, opening imports, and each import row that creates a record |
+| `:update` | Edit, update, and each import row that updates an existing record matched by `import_upsert_key` |
 | `:destroy` | Destroy |
 
 You can use either the CRUD action names (`:read`, `:create`, `:update`, `:destroy`) or the controller action names (`:index`, `:show`, `:new`, `:edit`, `:delete`). They are mapped in both directions, in `policy` and in `deny_actions`:
@@ -305,6 +316,27 @@ rails db:migrate
 View audit logs at `/admin/audit`. The page filters entries by resource, action and date. The
 Action filter lists the actions logged so far, custom resource actions included.
 
+#### Audit Log per Tenant
+
+Audit entries carry no tenant of their own, so `config.tenant_scope` cannot filter them. In a
+multi-tenant app, give each entry the current tenant's key with `config.audit_tenant`. The block
+runs in the controller and receives it:
+
+```ruby
+IronAdmin.configure do |config|
+  config.audit_tenant { |_controller| Current.organization&.id }
+end
+```
+
+Each change made in the admin then stores that key (as a String) in `tenant_key`, and the audit
+page, with its Resource and Action filters, lists only the entries of the current key. When the
+block returns `nil`, the page lists nothing, and entries logged without a key (before the block
+was set) never appear. With `config.audit_storage = :database`, the table needs a `tenant_key`
+column: `rails generate iron_admin:install_audit` includes it, and an existing table needs the
+migration in [UPGRADING.md](../../UPGRADING.md). Without the column the audit page raises
+`IronAdmin::ConfigurationError`. Without `audit_tenant`, the audit page is global: every user the
+`authenticate` block admits reads every tenant's entries.
+
 #### User Labels
 
 Database storage keeps each user as an identifier, the user's id as a string, so by default
@@ -403,4 +435,6 @@ The tenant scope is applied to:
 - Export queries (CSV/JSON)
 - Bulk action record validation
 
-This ensures users can only access records belonging to their tenant.
+This ensures users can only access records belonging to their tenant. The audit log page is not
+a resource query: keep it per tenant with `config.audit_tenant` (see
+[Audit Log per Tenant](#audit-log-per-tenant)).
