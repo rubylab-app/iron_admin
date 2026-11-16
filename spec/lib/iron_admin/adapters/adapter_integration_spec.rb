@@ -188,13 +188,13 @@ RSpec.describe "Adapter Integration", type: :request do
       expect(adapter).to have_received(:all)
     end
 
-    it "uses adapter.build for new records instead of model.new" do
-      allow(adapter).to receive(:build).and_call_original
+    it "uses adapter.build_in for new records instead of model.new" do
+      allow(adapter).to receive(:build_in).and_call_original
 
       get iron_admin.new_resource_path("users"), as: :html
 
       expect(response).to have_http_status(:ok)
-      expect(adapter).to have_received(:build)
+      expect(adapter).to have_received(:build_in)
     end
 
     it "uses adapter.find_each for CSV export instead of scope.find_each" do

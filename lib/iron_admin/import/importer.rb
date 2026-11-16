@@ -3,6 +3,8 @@
 module IronAdmin
   module Import
     class Importer
+      include TenantPrecheck
+
       PARSERS = {
         csv: Parser::Csv,
         json: Parser::Json,
@@ -106,7 +108,7 @@ module IronAdmin
         validation_errors = permission_errors(action).presence || validate_record(record, row.attributes)
         return add_error_messages(row, validation_errors, result_state) if validation_errors.any?
 
-        saved_record, persist_errors = persist_row(record, row.attributes)
+        saved_record, persist_errors = persist_inside_savepoint(record, row.attributes)
         return add_error_messages(row, persist_errors, result_state) if persist_errors.any?
 
         increment_success_count(action, result_state)
@@ -162,8 +164,9 @@ module IronAdmin
       end
 
       def validate_record(record, attributes)
-        model_record = record || adapter.build(attributes)
-        assign_attributes(model_record, attributes) if record
+        writable = record ? attributes_without_tenant(attributes) : attributes
+        model_record = record || adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), writable)
+        assign_attributes(model_record, writable) if record
         return [] unless model_record.respond_to?(:valid?) && !model_record.valid?
 
         model_record.errors.full_messages
@@ -209,17 +212,65 @@ module IronAdmin
         return nil unless lookup.size == keys.size && lookup.values.all?(&:present?)
 
         # find_by_keys is an IronAdmin adapter hook, not an ActiveRecord dynamic finder.
-        return adapter.find_by_keys(lookup) unless IronAdmin.configuration.tenant_scope_block # rubocop:disable Rails/DynamicFindBy
+        return adapter.find_by_keys(lookup) unless IronAdmin::TenantScope.configured? # rubocop:disable Rails/DynamicFindBy
 
         scoped_existing_record(lookup)
       end
 
       def scoped_existing_record(lookup)
-        scope = adapter.all
-        scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
+        scope = IronAdmin::TenantScope.apply(adapter.all)
 
         lookup.reduce(scope) do |current_scope, (key, value)|
           adapter.filter(current_scope, key, value)
+        end.first
+      end
+
+      # Persists one row and keeps it inside the tenant.
+      #
+      # Transactional adapters use a savepoint and roll that savepoint back
+      # when the saved record is outside the tenant. Adapters that cannot roll
+      # back are checked in memory first. Anything other than an exact +true+
+      # rejects the row and writes nothing. Other rows in the import stay.
+      #
+      # @param record [Object, nil] existing row to update, or +nil+ to create
+      # @param attributes [Hash] cast attributes for the row
+      # @return [Array(Object, Array<String>)] the saved record and its errors
+      def persist_inside_savepoint(record, attributes)
+        blocked = unverified_import_message(record, attributes)
+        return [nil, [blocked]] if blocked
+
+        saved_record = nil
+        messages = []
+        outside_tenant = false
+
+        adapter.savepoint do
+          adapter.wrap_rollback do
+            saved_record, messages = persist_row(record, attributes)
+            outside_tenant = messages.empty? && !imported_record_in_tenant?(saved_record)
+            raise IronAdmin::Rollback if outside_tenant
+          end
+        end
+
+        messages = [I18n.t("iron_admin.imports.errors.outside_tenant")] if outside_tenant
+        [saved_record, messages]
+      end
+
+      # @param record [Object, nil]
+      # @return [Boolean] +true+ when no tenant scope is configured or the record is inside it
+      def imported_record_in_tenant?(record)
+        return true unless IronAdmin::TenantScope.configured?
+        return false if record.nil?
+
+        scope = IronAdmin::TenantScope.apply(adapter.all)
+        !scoped_record(scope, record).nil?
+      end
+
+      # @param scope [Object]
+      # @param record [Object]
+      # @return [Object, nil]
+      def scoped_record(scope, record)
+        Array(adapter.primary_key).reduce(scope) do |current, column|
+          adapter.filter(current, column.to_sym, record.public_send(column))
         end.first
       end
 
@@ -230,9 +281,10 @@ module IronAdmin
       # @return [Array(Object, Array<String>)] The saved record and its errors
       def persist_row(record, attributes)
         if record
-          saved = adapter.update_record(record, attributes)
+          saved = adapter.update_record(record, attributes_without_tenant(attributes))
         else
-          record = adapter.create_record(attributes)
+          record = adapter.build_in(IronAdmin::TenantScope.apply(adapter.all), attributes)
+          adapter.save(record)
           saved = !record.respond_to?(:persisted?) || record.persisted?
         end
         [record, saved ? [] : save_failure_messages(record)]
@@ -247,6 +299,13 @@ module IronAdmin
         return [] if !record.respond_to?(:errors) || record.errors.empty?
 
         record.errors.full_messages
+      end
+
+      # Tenant columns are not writable on an existing row.
+      def attributes_without_tenant(attributes)
+        protected_keys = adapter.scope_attributes(IronAdmin::TenantScope.apply(adapter.all)).keys.map(&:to_s)
+        removable = attributes.keys.select { |name| protected_keys.include?(name.to_s) }
+        attributes.except(*removable)
       end
 
       def assign_attributes(record, attributes)

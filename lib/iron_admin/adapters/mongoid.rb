@@ -164,6 +164,83 @@ module IronAdmin
         model_class.new(cast_array_attributes(attrs))
       end
 
+      # Plain scalar equalities on +scope+ that are fields of the scope's model.
+      #
+      # Reads the Mongoid selector and keeps keys of +scope.klass+ when the
+      # scope exposes it, otherwise this adapter's model. Hashes such as
+      # +$in+ and arrays are omitted.
+      #
+      # @param scope [Mongoid::Criteria]
+      # @return [Hash{String => Object}]
+      def scope_attributes(scope)
+        return {} unless scope.respond_to?(:selector)
+
+        model = scope.respond_to?(:klass) ? scope.klass : model_class
+        allowed = model.fields.keys.map(&:to_s)
+        scope.selector.each_with_object({}) do |(key, value), kept|
+          name = key.to_s
+          next unless allowed.include?(name)
+          next if value.is_a?(Hash) || value.is_a?(Array)
+
+          kept[name] = value
+        end
+      end
+
+      # Builds a record from +scope+ so equality conditions become attributes.
+      #
+      # Submitted +attrs+ are applied first, including the array-field cast from
+      # {#build}. {#scope_attributes} is assigned afterwards, so a posted tenant
+      # id cannot move the document to another tenant.
+      #
+      # @param scope [Mongoid::Criteria] Scope to build from
+      # @param attrs [Hash, ActionController::Parameters] Initial attributes
+      # @return [Mongoid::Document] New record
+      def build_in(scope, attrs = {})
+        build(attrs).tap { |record| record.assign_attributes(scope_attributes(scope)) }
+      end
+
+      # Whether +record+ matches +scope+ in memory.
+      #
+      # Uses +Mongoid::Matchable#_matches?+ with the criteria selector when
+      # the record implements it. Returns +nil+ when the record or the scope
+      # cannot be checked, and the caller then rejects the write.
+      #
+      # @param scope [Object] criteria whose +selector+ is tested
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Boolean, nil]
+      # Whether +record+ satisfies the criteria +scope+, evaluated in memory.
+      #
+      # Returns +:unknown+ when +record+ cannot run +_matches?+, when +scope+
+      # has no selector, or when +_matches?+ itself returns +nil+.
+      #
+      # @param scope [Object] criteria whose +selector+ is tested
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Symbol] +:inside+, +:outside+, or +:unknown+
+      def scope_match(scope, record)
+        return :unknown unless record.respond_to?(:_matches?)
+        return :unknown unless scope.respond_to?(:selector)
+
+        matched = record._matches?(scope.selector)
+        return :unknown if matched.nil?
+
+        matched ? :inside : :outside
+      end
+
+      # A non-persisted copy of +record+ with +attrs+ applied.
+      #
+      # The copy is built from the document attributes without +_id+, then
+      # {#cast_array_attributes} is assigned. Nothing is saved.
+      #
+      # @param record [Object] document being updated
+      # @param attrs [Hash] attributes that would be written
+      # @return [Object]
+      def preview(record, attrs)
+        attributes = record.attributes.except("_id", :_id)
+        copy = record.class.new(attributes)
+        copy.assign_attributes(cast_array_attributes(attrs))
+        copy
+      end
+
       def save(record)
         record.save
       end

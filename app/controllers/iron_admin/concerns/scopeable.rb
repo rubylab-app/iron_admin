@@ -10,9 +10,7 @@ module IronAdmin
       private
 
       def base_scope
-        scope = adapter.all
-        scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
-        scope
+        IronAdmin::TenantScope.apply(adapter.all)
       end
 
       def collection_scope

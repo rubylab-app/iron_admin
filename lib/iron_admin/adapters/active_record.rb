@@ -137,6 +137,41 @@ module IronAdmin
         model_class.new(attrs)
       end
 
+      # Plain scalar equalities on +scope+ that belong to the scope's model.
+      #
+      # Reads +where_values_hash+ and keeps keys that are attributes of
+      # +scope.klass+ when the scope exposes it, otherwise this adapter's
+      # model. Arrays, ranges, hashes, sets, and relations are omitted: an
+      # +IN+ list must not be written onto a scalar column.
+      #
+      # @param scope [ActiveRecord::Relation]
+      # @return [Hash{String => Object}]
+      def scope_attributes(scope)
+        values = scope_where_values(scope)
+        return {} unless values
+
+        allowed = scope_attribute_names(scope)
+        values.each_with_object({}) do |(key, value), kept|
+          name = key.to_s
+          next unless allowed.include?(name)
+          next if non_scalar_scope_value?(value)
+
+          kept[name] = value
+        end
+      end
+
+      # Builds a record from +scope+ so equality conditions become attributes.
+      #
+      # Submitted +attrs+ are applied first. {#scope_attributes} is assigned
+      # afterwards, so a posted tenant id cannot move the row to another tenant.
+      #
+      # @param scope [ActiveRecord::Relation] Scope to build from
+      # @param attrs [Hash, ActionController::Parameters] Initial attributes
+      # @return [ActiveRecord::Base] New record
+      def build_in(scope, attrs = {})
+        build(attrs).tap { |record| record.assign_attributes(scope_attributes(scope)) }
+      end
+
       def save(record)
         record.save
       end
@@ -170,8 +205,26 @@ module IronAdmin
 
       # --- Transactions ---
 
+      # Active Record can roll a tenant miss back inside {#transaction}.
+      #
+      # The in-memory check stays unused: {#scope_match} keeps the base
+      # +:unknown+, so a caller that skipped the transactional path fails closed.
+      #
+      # @return [Boolean]
+      def supports_transactions?
+        true
+      end
+
       def transaction(&)
         ::ActiveRecord::Base.transaction(&)
+      end
+
+      # Runs the block in a nested transaction that can roll back on its own.
+      #
+      # @yield The block to run inside the savepoint
+      # @return [Object] the block's return value
+      def savepoint(&)
+        ::ActiveRecord::Base.transaction(requires_new: true, &)
       end
 
       # Waits for every open transaction to commit, or runs the block at once
@@ -268,6 +321,24 @@ module IronAdmin
             reflection.options[:as]&.to_sym == polymorphic_name.to_sym
           end
         end
+      end
+
+      def scope_where_values(scope)
+        return unless scope.respond_to?(:where_values_hash)
+
+        scope.where_values_hash
+      end
+
+      # Attribute names a scope may copy: +scope.klass+ when it responds,
+      # otherwise the adapter model.
+      def scope_attribute_names(scope)
+        model = scope.respond_to?(:klass) ? scope.klass : model_class
+        model.attribute_names.map(&:to_s)
+      end
+
+      def non_scalar_scope_value?(value)
+        value.is_a?(Array) || value.is_a?(Range) || value.is_a?(Hash) ||
+          (defined?(::Set) && value.is_a?(::Set)) || value.is_a?(::ActiveRecord::Relation)
       end
     end
   end

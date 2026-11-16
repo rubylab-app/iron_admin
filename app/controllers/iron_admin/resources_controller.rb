@@ -19,7 +19,9 @@ module IronAdmin
   # @see IronAdmin::Resource
   class ResourcesController < ApplicationController
     include Concerns::ActionExecutable
+    include Concerns::AssignableReferences
     include Concerns::Authorizable
+    include Concerns::BlankPasswordFilterable
     include Concerns::EventEmittable
     include Concerns::Filterable
     include Concerns::IndexReturnable
@@ -28,6 +30,7 @@ module IronAdmin
     include Concerns::NestedPermittable
     include Concerns::Scopeable
     include Concerns::Searchable
+    include Concerns::TenantAssignable
 
     before_action :set_resource_class
     before_action :check_action_allowed, only: %i[index show new create edit update destroy autocomplete]
@@ -59,7 +62,7 @@ module IronAdmin
     #
     # @return [void]
     def new
-      @record = adapter.build
+      @record = adapter.build_in(base_scope)
       @fields = form_fields
     end
 
@@ -76,10 +79,11 @@ module IronAdmin
     #
     # @return [void]
     def create
-      @record = adapter.build(resource_params)
+      submitted = with_nested_tenant_attributes(resource_params)
+      @record = adapter.build_in(base_scope, submitted)
       return render_invalid_json(:new) if invalid_json_submission?
 
-      if adapter.save(@record)
+      if references_assignable?(@record, submitted) && write_within_tenant(@record, nil, submitted) { adapter.save(@record) }
         emit_event(:create, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.create.success", model: adapter.human_name)
@@ -95,12 +99,12 @@ module IronAdmin
     # @raise [IronAdmin::RecordNotFound] if record doesn't exist
     def update
       @record = find_record(record_scope, params[:id])
-      attrs = without_blank_passwords(resource_params)
+      attrs = with_nested_tenant_attributes(without_tenant_attributes(without_blank_passwords(resource_params)))
       return render_invalid_json(:edit) if invalid_json_submission?
 
       purge_attachments(@record)
 
-      if adapter.update(@record, attrs)
+      if references_assignable?(@record, attrs) && write_within_tenant(@record, prepared = preserve_hidden_habtm_ids(attrs)) { adapter.update(@record, prepared) } # rubocop:disable Layout/LineLength
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)
@@ -379,12 +383,6 @@ module IronAdmin
       parsed = record_params.permit(*permitted)
       coerce_json_field_params!(parsed)
       parsed
-    end
-
-    # Password inputs never render the stored value, so a blank one means "unchanged".
-    def without_blank_passwords(attrs)
-      names = password_field_names
-      attrs.reject { |name, value| name.in?(names) && value.blank? }
     end
   end
 end

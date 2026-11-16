@@ -24,8 +24,7 @@ module IronAdmin
         next if columns.empty?
 
         resource_adapter = resource_class.adapter
-        scope = resource_adapter.all
-        scope = IronAdmin.configuration.tenant_scope_block.call(scope) if IronAdmin.configuration.tenant_scope_block
+        scope = IronAdmin::TenantScope.apply(resource_adapter.all)
         records = resource_adapter.search_columns(scope, columns, @query)
         records = resource_adapter.limit(records, 5)
 

@@ -23,7 +23,8 @@
           %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_show_field_value(@record, field)
 
   - @resource_class.has_one_associations.each do |assoc|
-    - related_record = @record.public_send(assoc[:name])
+    - next unless related_panel_readable?(assoc)
+    - related_record = self.related_record(@record, assoc)
     - next unless related_record
     .mt-6.overflow-hidden{ class: styles.panel(t) }
       %div{ class: styles.panel_header(t) }
@@ -40,7 +41,8 @@
             %dd.text-sm.break-words{ class: "sm:w-2/3 #{t.body_text}" }= display_show_field_value(related_record, field)
 
   - @resource_class.habtm_associations.each do |assoc|
-    - related_records = @record.public_send(assoc[:name])
+    - next unless related_panel_readable?(assoc)
+    - related_records = self.related_records(@record, assoc)
     - next if related_records.empty?
     .mt-6{ class: styles.panel(t) }
       %div{ class: styles.panel_header(t) }
@@ -57,8 +59,9 @@
               = display_record_label(related, display)
 
   - @resource_class.has_many_associations.each do |assoc|
+    - next unless related_panel_readable?(assoc)
     = render IronAdmin::Resources::RelatedListComponent.new(association: assoc,
-      records: @record.public_send(assoc[:name]), parent: @record)
+      records: self.related_records(@record, assoc), parent: @record)
 
   - if @member_actions.any?
     .mt-6.p-4{ class: styles.panel(t) }

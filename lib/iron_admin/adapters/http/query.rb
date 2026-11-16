@@ -79,6 +79,17 @@ module IronAdmin
           dup_with(params: @params.merge(other.accumulated_params))
         end
 
+        # Filters accumulated by {#where}, including non-scalar values.
+        #
+        # Keys keep the type the caller passed. Does not perform a request.
+        # {IronAdmin::Adapters::Http#scope_attributes} stringifies the scalar
+        # equalities and drops lists.
+        #
+        # @return [Hash]
+        def conditions
+          @params.dup
+        end
+
         protected
 
         def accumulated_params

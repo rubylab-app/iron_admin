@@ -164,6 +164,66 @@ module IronAdmin
         connection.delete(record.id.to_s)
       end
 
+      # Plain scalar equalities on an HTTP query.
+      #
+      # Keys are Strings. Arrays, ranges, hashes, and sets are omitted so an
+      # +IN+ list is not stamped onto a scalar attribute. Reads
+      # {IronAdmin::Adapters::Http::Query#conditions} and does not request.
+      #
+      # @param scope [IronAdmin::Adapters::Http::Query]
+      # @return [Hash{String => Object}]
+      def scope_attributes(scope)
+        return {} unless scope.respond_to?(:conditions)
+
+        scope.conditions.each_with_object({}) do |(key, value), kept|
+          next if composite_scope_value?(value)
+
+          kept[key.to_s] = value
+        end
+      end
+
+      # Builds a record from +scope+ so equality conditions become attributes.
+      #
+      # Submitted +attrs+ are applied first. {#scope_attributes} is assigned
+      # afterwards, so a posted tenant id cannot move the row to another tenant.
+      #
+      # @param scope [IronAdmin::Adapters::Http::Query]
+      # @param attrs [Hash] initial attributes
+      # @return [IronAdmin::Adapters::Http::Record]
+      def build_in(scope, attrs = {})
+        build(attrs).tap { |record| record.assign_attributes(scope_attributes(scope)) }
+      end
+
+      # Whether every condition on +scope+ is a scalar equality that +record+ has.
+      #
+      # Returns +:unknown+ when any condition is an +IN+ list, range, hash, or set,
+      # or when +record+ is missing. An empty condition list is +:inside+.
+      #
+      # @param scope [IronAdmin::Adapters::Http::Query]
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Symbol] +:inside+, +:outside+, or +:unknown+
+      def scope_match(scope, record)
+        return :unknown unless scope.respond_to?(:conditions)
+        return :unknown if record.nil?
+
+        conditions = scope.conditions
+        return :unknown if conditions.any? { |_key, value| composite_scope_value?(value) }
+
+        conditions.all? { |key, value| record[key] == value } ? :inside : :outside
+      end
+
+      # A non-persisted copy of +record+ with +attrs+ merged in.
+      #
+      # The copy is never saved. +_persisted: false+ keeps an id from making
+      # the copy look stored.
+      #
+      # @param record [IronAdmin::Adapters::Http::Record]
+      # @param attrs [Hash]
+      # @return [IronAdmin::Adapters::Http::Record]
+      def preview(record, attrs)
+        Record.new(record.attributes.merge(attrs.to_h).merge(_persisted: false))
+      end
+
       # --- Transactions ---
 
       def transaction
@@ -207,6 +267,10 @@ module IronAdmin
       attr_writer :http_config
 
       private
+
+      def composite_scope_value?(value)
+        value.is_a?(Array) || value.is_a?(Range) || value.is_a?(Hash) || (defined?(Set) && value.is_a?(Set))
+      end
 
       def add_api_errors(record, data) # rubocop:disable Naming/PredicateMethod
         return false unless data.is_a?(Hash) && data["errors"].is_a?(Hash)

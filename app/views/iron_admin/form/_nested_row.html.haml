@@ -37,7 +37,8 @@
           - fk = field.options[:foreign_key]
           - assoc_class = field.options[:association_class]
           - if assoc_class
-            = child_f.select fk, options_from_collection_for_select(assoc_class.all, :id, :name, child.public_send(fk)), { include_blank: true }, class: select_class
+            - value_key = association_value_key(child.class, field.options[:association_name])
+            = child_f.select fk, options_from_collection_for_select(assignable_records(assoc_class), value_key, :name, child.public_send(fk)), { include_blank: true }, class: select_class
           - else
             = child_f.number_field fk, placeholder: field.name.to_s.humanize, class: input_class
         - when :textarea

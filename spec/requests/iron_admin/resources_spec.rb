@@ -2615,10 +2615,10 @@ RSpec.describe "IronAdmin::Resources", type: :request do
   describe "multi-tenant scoping" do
     context "when tenant scope is configured" do
       before do
-        # Configure tenant scope to only show active users
+        # Active users only; other models stay unscoped (licenses have no active column)
         IronAdmin.configure do |config|
           config.tenant_scope do |scope|
-            scope.where(active: true)
+            scope.model == User ? scope.where(active: true) : scope
           end
         end
       end

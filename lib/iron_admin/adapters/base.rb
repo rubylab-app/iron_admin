@@ -240,6 +240,31 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Plain equality values from +scope+ that are attributes of the scope's model.
+      #
+      # Adapters override this with the scalar equalities they can read. The
+      # default assigns nothing. Keys are attribute names as Strings. Arrays,
+      # ranges, hashes, sets, and relations are not plain equalities.
+      #
+      # @param scope [Object] relation whose equality conditions are read
+      # @return [Hash{String => Object}]
+      def scope_attributes(_scope)
+        {}
+      end
+
+      # Builds a new unsaved record inside +scope+.
+      #
+      # Adapters that copy equality conditions off a scope override this so
+      # those conditions become attributes. The default ignores +scope+ and
+      # delegates to {#build}.
+      #
+      # @param scope [Object] Relation the record is built from
+      # @param attrs [Hash] Initial attributes
+      # @return [Object] New record
+      def build_in(_scope, attrs = {})
+        build(attrs)
+      end
+
       # Persists a record.
       # @param record [Object] The record to save
       # @return [Boolean] Success
@@ -279,6 +304,45 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Whether {#transaction} can roll a write back.
+      #
+      # Data sources that persist each write immediately return +false+.
+      # Mongoid and HTTP keep this default. Their writes are checked in
+      # memory and rejected unless the candidate is inside the tenant.
+      # Active Record returns +true+ and keeps the post-write rollback.
+      #
+      # @return [Boolean]
+      def supports_transactions?
+        false
+      end
+
+      # Whether +record+ satisfies +scope+, evaluated in memory.
+      #
+      # Returns +:inside+ or +:outside+ when the adapter can decide, and
+      # +:unknown+ when it cannot. Callers write only on +:inside+. +record+
+      # may be unsaved and already carry its new values. The default
+      # cannot tell.
+      #
+      # @param scope [Object] tenant scope to test
+      # @param record [Object] candidate, possibly unsaved
+      # @return [Symbol] +:inside+, +:outside+, or +:unknown+
+      def scope_match(_scope, _record)
+        :unknown
+      end
+
+      # A non-persisted copy of +record+ with +attrs+ applied.
+      #
+      # Used to test an update against the tenant before writing. The copy
+      # is never saved. The default cannot build one and returns +nil+,
+      # which rejects the write.
+      #
+      # @param record [Object] record being updated
+      # @param attrs [Hash] attributes that would be written
+      # @return [Object, nil]
+      def preview(_record, _attrs)
+        nil
+      end
+
       # --- Transactions ---
 
       # Wraps a block in a transaction.
@@ -286,6 +350,17 @@ module IronAdmin
       # @return [Object] Block return value
       def transaction(&)
         raise NotImplementedError
+      end
+
+      # Runs the block in a nested transaction that can roll back on its own.
+      #
+      # Adapters without nested transactions, including Mongoid, keep this
+      # default and run the block directly. Active Record opens a savepoint.
+      #
+      # @yield The block to run inside the savepoint
+      # @return [Object] the block's return value
+      def savepoint(&)
+        yield
       end
 
       # Runs the block once the current transaction commits, and never if it
