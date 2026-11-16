@@ -1,6 +1,6 @@
 # Upgrading to IronAdmin 0.8.0 (themes and the Neutral look)
 
-Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. Sections 11 to 15 cover the new access controls: the generated `authenticate` block, `config.default_policy`, `tool_access`, import rows that update, and the audit log per tenant. Section 16 (credential columns are hidden by default) and section 17 (`field :<association>_id` overrides now apply) change what existing resources show. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
+Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. Sections 11 to 15 cover the new access controls: the generated `authenticate` block, `config.default_policy`, `tool_access`, import rows that update, and the audit log per tenant. Section 16 (credential columns are hidden by default) and section 17 (`field :<association>_id` overrides now apply) change what existing resources show. Section 18 explains that `config.tenant_scope` now also runs on related records, the association selects and new records. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
 
 ## What changed
 
@@ -418,23 +418,6 @@ class AddTenantKeyToIronAdminAuditEntries < ActiveRecord::Migration[8.0]
 end
 ```
 
-### 18. The tenant scope also applies to related records and to new records
-
-`config.tenant_scope` now also filters the related records on show pages (the `has_one`, many-to-many and `has_many` panels) and the options of the polymorphic, many-to-many and nested selects, and new records are built inside it. The block therefore runs on every model the admin queries, as it already did for `belongs_to` selects and each resource's own index. A block that adds a condition only some models have (for example `scope.where(organization_id: ...)` when a related model has no `organization_id`) now raises on those pages.
-
-**Action required:** Make the block return the scope unchanged for models that have no tenant column:
-
-```ruby
-IronAdmin.configure do |config|
-  config.tenant_scope do |scope|
-    organization = Current.organization
-    next scope unless organization && scope.model.column_names.include?("organization_id")
-
-    scope.where(organization_id: organization.id)
-  end
-end
-```
-
 ### 16. Credential columns are hidden by default
 
 IronAdmin now infers well-known credential columns as hidden and read-only: `encrypted_password`, `password_digest`, `reset_password_token`, `confirmation_token`, `unlock_token`, `remember_token`, `invitation_token`, `authentication_token`, `otp_secret`, `encrypted_otp_secret`, `encrypted_otp_secret_iv`, `encrypted_otp_secret_salt`, `otp_backup_codes`, and any `*_password_digest` column. They disappear from the index, the show page, the form, exports, search, sorting and filters. A hidden field is also no longer sortable, writable through nested attributes, or logged in audit changes, whatever made it hidden.
@@ -456,6 +439,23 @@ end
 A `field` override named after a `belongs_to` foreign key (`field :organization_id, ...`) used to be ignored, because the inferred field is named after the association (`:organization`). It now applies. If a resource declared such an override and relied on it doing nothing, its options (for example `readonly:` or `visible: false`) now take effect. In development and test, IronAdmin logs at boot every `field` name that still matches no field.
 
 **Action required:** Review `field :*_id` overrides on `belongs_to` foreign keys; each now changes that association's field.
+
+### 18. The tenant scope also applies to related records and to new records
+
+`config.tenant_scope` now also filters the related records on show pages (the `has_one`, many-to-many and `has_many` panels) and the options of the polymorphic, many-to-many and nested selects, and new records are built inside it. The block therefore runs on every model the admin queries, as it already did for `belongs_to` selects and each resource's own index. A block that adds a condition only some models have (for example `scope.where(organization_id: ...)` when a related model has no `organization_id`) now raises on those pages.
+
+**Action required:** Make the block return the scope unchanged for models that have no tenant column:
+
+```ruby
+IronAdmin.configure do |config|
+  config.tenant_scope do |scope|
+    organization = Current.organization
+    next scope unless organization && scope.model.column_names.include?("organization_id")
+
+    scope.where(organization_id: organization.id)
+  end
+end
+```
 
 ## What does NOT change
 
