@@ -35,6 +35,14 @@ end
 
 Overrides merge with inferred fields. You only need to specify the fields you want to change.
 
+A `belongs_to` foreign key column is inferred as a field named after the association (`organization`, not `organization_id`). An override under either name applies to it; when both exist, the association name wins:
+
+```ruby
+field :organization_id, readonly: ->(user) { !user&.admin? } # same as field :organization, readonly: ...
+```
+
+In development and test, IronAdmin logs a warning at boot for each `field` name that matches no field, since its options are ignored.
+
 ## Field Properties
 
 | Property | Type | Description |

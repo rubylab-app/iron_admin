@@ -81,6 +81,7 @@ module IronAdmin
         # steps (soft-delete features, etc.) with the correct adapter.
         IronAdmin::ResourceRegistry.finalize!
         IronAdmin::PolicyCoverageWarning.call
+        IronAdmin::FieldOverrideWarning.call
       end
       # Re-activate registered plugins so their component overrides and menu
       # items survive the per-reload configuration lifecycle. A plugin theme

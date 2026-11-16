@@ -428,6 +428,11 @@ class AddTenantKeyToIronAdminAuditEntries < ActiveRecord::Migration[8.0]
   end
 end
 ```
+### 17. `field :<association>_id` now applies to the association field
+
+A `field` override named after a `belongs_to` foreign key (`field :organization_id, ...`) used to be ignored, because the inferred field is named after the association (`:organization`). It now applies. If a resource declared such an override and relied on it doing nothing, its options (for example `readonly:` or `visible: false`) now take effect. In development and test, IronAdmin logs at boot every `field` name that still matches no field.
+
+**Action required:** Review `field :*_id` overrides on `belongs_to` foreign keys; each now changes that association's field.
 
 ## What does NOT change
 

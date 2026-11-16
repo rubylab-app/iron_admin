@@ -199,6 +199,8 @@ module IronAdmin
       # @example strftime pattern for a date
       #   field :published_on, type: :date, format: "%Y-%m-%d"
       #
+      # A belongs_to foreign key such as +field :organization_id+ configures that association field.
+      #
       # @return [void]
       def field(name, **options)
         self.field_overrides = field_overrides.merge(name => options)
@@ -609,15 +611,18 @@ module IronAdmin
       #
       # Merges auto-inferred fields from the database schema with
       # any customizations made via {.field} and association declarations.
+      # For a belongs_to field, merge association options, then an override
+      # registered under its foreign key, then an override registered under
+      # the association name. Later entries win.
       #
       # @return [Array<IronAdmin::Field>] Configured field objects
       def resolved_fields
-        inferred = FieldInferrer.call(adapter)
-
-        inferred.map do |field|
-          overrides = field_overrides[field.name] || {}
-          assoc_overrides = defined_associations[field.name] || {}
-          merged = assoc_overrides.except(:kind).merge(overrides)
+        FieldInferrer.call(adapter).map do |field|
+          assoc_options = (defined_associations[field.name] || {}).except(:kind)
+          fk_name = field.type == :belongs_to ? field.options[:foreign_key] : nil
+          fk_options = fk_name ? (field_overrides[fk_name] || {}) : {}
+          name_options = field_overrides[field.name] || {}
+          merged = assoc_options.merge(fk_options).merge(name_options)
 
           if merged.any?
             field.merge(**merged)
@@ -625,6 +630,22 @@ module IronAdmin
             field
           end
         end
+      end
+
+      # Names given to {.field} that match neither a resolved field nor the
+      # foreign key of a belongs_to field, in declaration order.
+      #
+      # @return [Array<Symbol>] override names whose options are ignored
+      def unresolved_field_overrides
+        known = resolved_fields.flat_map do |field|
+          if field.type == :belongs_to
+            [field.name, field.options[:foreign_key]]
+          else
+            [field.name]
+          end
+        end
+
+        field_overrides.keys.reject { |name| known.include?(name) }
       end
 
       # Returns associations to preload for index/show queries.
