@@ -105,10 +105,11 @@ module IronAdmin
 
       # What one tab would list: the tenant scope, the current filters, that
       # tab's scope, the current search and the index preloading. Not the
-      # selected scope, not the sorting, and not a page. A nil or false body
-      # is not a relation, so search and preloading stop before they run.
+      # selected scope, not the sorting, and not a page. fallback: false
+      # keeps a nil or false body from becoming a relation, so search and
+      # preloading stop before they run.
       def relation_for_scope_count(scope_body)
-        scoped = apply_resource_scope(apply_filters(base_scope), scope_body)
+        scoped = apply_resource_scope(apply_filters(base_scope), scope_body, fallback: false)
         return scoped if scoped.nil? || scoped == false
 
         apply_preloading(apply_search(scoped))
@@ -123,10 +124,24 @@ module IronAdmin
         apply_resource_scope(scope, defined_scope[:scope])
       end
 
-      def apply_resource_scope(scope, scope_body)
+      # Applies a resource scope body to the relation.
+      #
+      # A callable body runs against the relation. Nil or false with
+      # fallback becomes the incoming scope, as Active Record treats a
+      # scope that returns nil or false as all. Without fallback the nil
+      # or false result is returned. A non-callable body is merged as is.
+      #
+      # @param scope [Object] relation built so far
+      # @param scope_body [Object] callable scope or a mergeable relation
+      # @param fallback [Boolean] replace a nil or false result with scope
+      # @return [Object]
+      def apply_resource_scope(scope, scope_body, fallback: true)
         return scope.merge(scope_body) unless scope_body.respond_to?(:call)
 
-        scope_body.arity.zero? ? scope.instance_exec(&scope_body) : scope_body.call(scope)
+        result = scope_body.arity.zero? ? scope.instance_exec(&scope_body) : scope_body.call(scope)
+        return scope if fallback && (result.nil? || result == false)
+
+        result
       end
 
       def apply_sorting(scope)

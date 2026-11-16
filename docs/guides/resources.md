@@ -247,6 +247,10 @@ end
 Switching tabs keeps the search, the active filters and the sort, and starts back at the first
 page.
 
+A scope body that returns `nil` or `false`, such as
+`scope :mine, -> { where(user_id: Current.user.id) if Current.user }`, lists every record, as
+Active Record's own `scope` does. Its tab shows no count.
+
 A tab can show how many records it would list. That number is the index for that tab: the
 tenant scope, the current filters, that tab's own scope and the current search. It ignores the
 tab you are on and the page you are on. Zero is shown as zero. A scope with `count: false`
