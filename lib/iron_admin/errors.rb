@@ -8,6 +8,9 @@ module IronAdmin
   # Adapter-agnostic replacement for ActiveRecord::RecordNotFound.
   class RecordNotFound < Error; end
 
+  # Raised when the host app's setup cannot support a configured feature.
+  class ConfigurationError < Error; end
+
   # Raised inside a transaction block to trigger a rollback.
   # Adapter-agnostic replacement for ActiveRecord::Rollback.
   class Rollback < Error; end

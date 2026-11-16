@@ -23,7 +23,8 @@ module IronAdmin
           resource: @resource_class.name,
           record_id: record.id.to_s,
           changes: audited_changes(record),
-          ip_address: request.remote_ip
+          ip_address: request.remote_ip,
+          tenant_key: iron_admin_audit_tenant_key
         )
 
         IronAdmin::AuditLog.log(event)

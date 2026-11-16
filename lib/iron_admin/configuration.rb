@@ -170,6 +170,10 @@ module IronAdmin
     # @see #audit_user_labels
     attr_reader :audit_user_labels_block
 
+    # @return [Proc, nil] Block that returns the current tenant's audit key
+    # @see #audit_tenant
+    attr_reader :audit_tenant_block
+
     # @return [Symbol] Name of the theme used when the request resolves no registered theme
     #   (default: :neutral)
     # @see #theme_resolver
@@ -368,6 +372,23 @@ module IronAdmin
     # @see IronAdmin::AuditLog.user_labels
     def audit_user_labels(&block)
       @audit_user_labels_block = block
+    end
+
+    # Keeps the audit log per tenant. The block runs in the controller, with
+    # the controller as its argument, and returns the current tenant's key.
+    # Each logged change stores it (as a String) in +tenant_key+, and the
+    # audit page lists only the entries whose key is the current one: none
+    # when the block returns nil, and never the entries logged without a key.
+    # With database storage the table needs a +tenant_key+ column (see
+    # UPGRADING.md); without it the audit page raises.
+    #
+    # @yieldparam controller [ActionController::Base] the admin controller
+    # @yieldreturn [Object, nil] the current tenant's key
+    # @example
+    #   config.audit_tenant { |_controller| Current.organization&.id }
+    # @return [void]
+    def audit_tenant(&block)
+      @audit_tenant_block = block
     end
 
     # Registers a block called with one event after a resource change.

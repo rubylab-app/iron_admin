@@ -48,6 +48,7 @@ RSpec.describe IronAdmin::AuditLog::Entry do
         record_id: 1,
         changes: { name: %w[old new] },
         ip_address: "127.0.0.1",
+        tenant_key: "42",
         timestamp: timestamp
       )
 
@@ -58,6 +59,7 @@ RSpec.describe IronAdmin::AuditLog::Entry do
                                  record_id: 1,
                                  changes: { name: %w[old new] },
                                  ip_address: "127.0.0.1",
+                                 tenant_key: "42",
                                  timestamp: timestamp,
                                })
     end

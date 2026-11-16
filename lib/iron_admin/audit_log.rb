@@ -55,6 +55,7 @@ module IronAdmin
 
       # @return [String] The IP address of the request
       attr_accessor :ip_address
+      attr_accessor :tenant_key
 
       # @return [Time] When the action occurred
       attr_accessor :timestamp
@@ -92,6 +93,7 @@ module IronAdmin
           record_id: record_id,
           changes: changes,
           ip_address: ip_address,
+          tenant_key: tenant_key,
           timestamp: timestamp,
         }
       end
@@ -131,6 +133,10 @@ module IronAdmin
       # @option filters [Integer, String] :record_id Filter by record ID
       # @option filters [Time, Date] :from Entries after this time
       # @option filters [Time, Date] :to Entries before this time
+      # @option filters [String, nil] :tenant_key Only the entries with this
+      #   tenant key. When the key is given and nil, no entries match.
+      # @raise [ConfigurationError] with database storage, when +:tenant_key+ is
+      #   given and the table has no +tenant_key+ column
       #
       # @return [Array<Entry>, ActiveRecord::Relation] Matching entries
       #
@@ -201,7 +207,8 @@ module IronAdmin
           resource: event.resource,
           record_id: event.record_id,
           changes: event.changes,
-          ip_address: event.ip_address
+          ip_address: event.ip_address,
+          tenant_key: event_tenant_key(event)
         )
 
         entries << entry
@@ -209,18 +216,35 @@ module IronAdmin
       end
 
       def log_to_database(event)
-        AuditEntry.create!(
+        attributes = {
           user_identifier: user_identifier(event.user),
           action: event.action.to_s,
           resource: event.resource.to_s,
           record_id: event.record_id,
           record_changes: event.changes,
-          ip_address: event.ip_address
-        )
+          ip_address: event.ip_address,
+        }
+        attributes[:tenant_key] = event_tenant_key(event) if tenant_column?
+        AuditEntry.create!(attributes)
+      end
+
+      # Events built by the host app may not answer +tenant_key+.
+      def event_tenant_key(event)
+        event.respond_to?(:tenant_key) ? event.tenant_key&.to_s.presence : nil
+      end
+
+      def tenant_column?
+        AuditEntry.column_names.include?("tenant_key")
       end
 
       def query_memory(filters)
-        result = entries
+        return [] if filters.key?(:tenant_key) && filters[:tenant_key].nil?
+
+        result = filters.key?(:tenant_key) ? entries.select { |e| e.tenant_key == filters[:tenant_key] } : entries
+        filter_memory_entries(result, filters)
+      end
+
+      def filter_memory_entries(result, filters)
         result = result.select { |e| e.resource == filters[:resource] } if filters[:resource]
         result = result.select { |e| e.timestamp >= filters[:from] } if filters[:from]
         result = result.select { |e| e.timestamp <= filters[:to] } if filters[:to]
@@ -231,6 +255,15 @@ module IronAdmin
 
       def query_database(filters)
         scope = AuditEntry.all
+        if filters.key?(:tenant_key)
+          unless tenant_column?
+            raise ConfigurationError, "config.audit_tenant needs a tenant_key column on iron_admin_audit_entries. " \
+                                      "See UPGRADING.md."
+          end
+          return AuditEntry.none if filters[:tenant_key].nil?
+
+          scope = scope.where(tenant_key: filters[:tenant_key])
+        end
         scope = scope.by_resource(filters[:resource]) if filters[:resource]
         scope = scope.by_action(filters[:action]) if filters[:action]
         scope = scope.by_record_id(filters[:record_id]) if filters[:record_id]

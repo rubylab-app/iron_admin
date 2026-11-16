@@ -121,5 +121,11 @@ RSpec.describe IronAdmin::Generators::InstallAuditGenerator, type: :generator do
       expect(content).to include("add_index :iron_admin_audit_entries, :action")
       expect(content).to include("add_index :iron_admin_audit_entries, :created_at")
     end
+
+    it "includes the tenant_key column config.audit_tenant needs, with an index" do
+      content = File.read(template_path)
+      expect(content).to include("t.string :tenant_key")
+      expect(content).to include("add_index :iron_admin_audit_entries, :tenant_key")
+    end
   end
 end

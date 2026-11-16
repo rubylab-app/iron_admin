@@ -316,6 +316,27 @@ rails db:migrate
 View audit logs at `/admin/audit`. The page filters entries by resource, action and date. The
 Action filter lists the actions logged so far, custom resource actions included.
 
+#### Audit Log per Tenant
+
+Audit entries carry no tenant of their own, so `config.tenant_scope` cannot filter them. In a
+multi-tenant app, give each entry the current tenant's key with `config.audit_tenant`. The block
+runs in the controller and receives it:
+
+```ruby
+IronAdmin.configure do |config|
+  config.audit_tenant { |_controller| Current.organization&.id }
+end
+```
+
+Each change made in the admin then stores that key (as a String) in `tenant_key`, and the audit
+page, with its Resource and Action filters, lists only the entries of the current key. When the
+block returns `nil`, the page lists nothing, and entries logged without a key (before the block
+was set) never appear. With `config.audit_storage = :database`, the table needs a `tenant_key`
+column: `rails generate iron_admin:install_audit` includes it, and an existing table needs the
+migration in [UPGRADING.md](../../UPGRADING.md). Without the column the audit page raises
+`IronAdmin::ConfigurationError`. Without `audit_tenant`, the audit page is global: every user the
+`authenticate` block admits reads every tenant's entries.
+
 #### User Labels
 
 Database storage keeps each user as an identifier, the user's id as a string, so by default
@@ -414,4 +435,6 @@ The tenant scope is applied to:
 - Export queries (CSV/JSON)
 - Bulk action record validation
 
-This ensures users can only access records belonging to their tenant.
+This ensures users can only access records belonging to their tenant. The audit log page is not
+a resource query: keep it per tenant with `config.audit_tenant` (see
+[Audit Log per Tenant](#audit-log-per-tenant)).

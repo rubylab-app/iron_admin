@@ -1,6 +1,6 @@
 # Upgrading to IronAdmin 0.8.0 (themes and the Neutral look)
 
-Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
+Version 0.8.0 adds named themes that people pick from the navbar, and replaces the default look with **Neutral**, a minimal light look. The Ruby, Rails and dependency requirements are the same as in 0.7.0, and the DSLs and configuration options keep working. Every admin page looks different, though, and apps that customized the theme, override views, or render their own components should read sections 2 to 6. An `authenticate` block whose value is exactly `false` now denies the request (section 9). A tool that declares actions, or inherits them from a base tool, and also defines other public methods should read section 10. Sections 11 to 15 cover the new access controls: the generated `authenticate` block, `config.default_policy`, `tool_access`, import rows that update, and the audit log per tenant. The [theming guide](docs/guides/theming.md) documents the theme system and every property.
 
 ## What changed
 
@@ -352,6 +352,69 @@ To turn the fallback off now, set `strict_tool_actions` in an initializer. Undec
 # config/initializers/iron_admin.rb
 IronAdmin.configure do |config|
   config.strict_tool_actions = true
+end
+```
+
+### 11. A fresh install denies every request until authentication is wired
+
+`rails generate iron_admin:install` now writes an `authenticate` block whose value is `false`, so a new install answers every admin request with `403` until you replace the block with your app's authentication. Initializers that already exist do not change. In production, IronAdmin logs a warning at boot when no `authenticate` block is configured, because the admin then answers every request unless a route constraint protects the mount (for example Devise's `authenticate :user do ... end` around `mount`).
+
+**Action required:** None for existing apps. A script or test that runs the generator and expects the admin to answer `200` must replace the generated block first.
+
+### 12. `config.default_policy` for resources without a policy
+
+A resource without a `policy` block still allows every CRUD, custom and bulk action to every user the `authenticate` block admits. `config.default_policy = :deny` denies them all instead, and also closes tools that declare no `tool_access` (section 13). The default stays `:allow` in 0.8 and becomes `:deny` in 1.0. In development, IronAdmin logs at boot the resources that have no policy while the setting is `:allow`.
+
+**Action recommended:** When `authenticate` admits users other than administrators, add a policy to every resource and set:
+
+```ruby
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.default_policy = :deny
+end
+```
+
+### 13. Tools can restrict who opens them
+
+`tool_access ->(user) { ... }` on a tool guards the tool page, every action (including actions declared without `condition:`), its action forms and the legacy dispatch of undeclared methods, and the sidebar hides the tool from users it denies. A tool without it follows `config.default_policy`.
+
+**Action recommended:** Add `tool_access` to tools that run dangerous operations:
+
+```ruby
+module IronAdmin
+  module Tools
+    class CacheManagerTool < IronAdmin::Tool
+      tool_access ->(user) { user&.admin? }
+    end
+  end
+end
+```
+
+### 14. An import row that updates a record needs `:update`
+
+With `import_upsert_key`, a row that matches an existing record updates it. That row now needs the `:update` permission, and a row that creates a record needs `:create`. A denied row is reported as an error in the preview and counted as failed; the other rows still import. Before, the whole import was checked once with `:create`, so a user allowed only to create could update every matched record.
+
+**Action required:** If a policy allows `:create` but not `:update` and its users relied on imports updating records, allow `:update` for them.
+
+### 15. Keeping the audit log per tenant
+
+`/admin/audit` lists every entry to every user the `authenticate` block admits. In a multi-tenant app, set `config.audit_tenant` so each logged change stores the current tenant's key and the page lists only the current tenant's entries:
+
+```ruby
+# config/initializers/iron_admin.rb
+IronAdmin.configure do |config|
+  config.audit_tenant { |_controller| Current.organization&.id }
+end
+```
+
+Entries logged before the block was set have no key and no longer appear on the page. With `config.audit_storage = :database`, an existing `iron_admin_audit_entries` table needs the column, or the audit page raises `IronAdmin::ConfigurationError`:
+
+```ruby
+class AddTenantKeyToIronAdminAuditEntries < ActiveRecord::Migration[8.0]
+  def change
+    add_column :iron_admin_audit_entries, :tenant_key, :string
+    add_index :iron_admin_audit_entries, :tenant_key
+  end
 end
 ```
 
