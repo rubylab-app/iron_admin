@@ -95,6 +95,20 @@ RSpec.describe "Assignable references on write", type: :request do
       expect(response.body).to include("is not available")
       expect(note.reload.notable_type).to eq("User")
     end
+
+    it "clears an optional polymorphic notable when type and id are submitted blank" do
+      admin = create(:user, role: "admin")
+      create(:user, role: "member")
+      note = Note.create!(title: "N", body: "B", notable_type: "User", notable_id: admin.id)
+      scope_users_to_admins
+
+      patch iron_admin.resource_path("notes", note), params: {
+        record: { title: note.title, notable_type: "", notable_id: "" },
+      }
+
+      expect(response).to have_http_status(:redirect)
+      expect(note.reload.notable).to be_nil
+    end
   end
 
   describe "many-to-many ids" do

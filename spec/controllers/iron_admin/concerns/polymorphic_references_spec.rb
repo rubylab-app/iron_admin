@@ -15,4 +15,41 @@ RSpec.describe IronAdmin::Concerns::PolymorphicReferences do
       :polymorphic_references_assignable?
     )
   end
+
+  it "treats a blank submitted id as assignable when the stored id is outside the tenant" do
+    outsider = create(:user, role: "member")
+    note = Note.new(notable_type: "User", notable_id: outsider.id)
+    attrs = { "notable_id" => "" }.with_indifferent_access
+
+    assignable = polymorphic_host.send(
+      :polymorphic_field_assignable?,
+      note,
+      attrs,
+      notable_polymorphic_field
+    )
+
+    expect(assignable).to be(true)
+  end
+
+  def polymorphic_host
+    host = Class.new { include IronAdmin::Concerns::AssignableReferences }.new
+    host.define_singleton_method(:present_attr?) { |attrs, key| attrs[key].present? }
+    host.define_singleton_method(:not_assignable_message) { "is not available" }
+    host.define_singleton_method(:helpers) { assignable_admin_users }
+    host
+  end
+
+  def notable_polymorphic_field
+    Struct.new(:name, :type, :options).new(
+      :notable,
+      :polymorphic_belongs_to,
+      { type_column: :notable_type, id_column: :notable_id, types: [User] }
+    )
+  end
+
+  def assignable_admin_users
+    helper = Object.new
+    helper.define_singleton_method(:assignable_records) { |model| model.where(role: "admin") }
+    helper
+  end
 end

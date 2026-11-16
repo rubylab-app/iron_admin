@@ -43,7 +43,8 @@ module IronAdmin
 
       def polymorphic_target_id(record, attrs, field)
         column = field.options[:id_column].to_s
-        return attrs[column] if present_attr?(attrs, column)
+        # Blank is a submitted clear; fall back only when the key was omitted.
+        return attrs[column] if attrs.key?(column)
 
         record.public_send(field.options[:id_column])
       end
