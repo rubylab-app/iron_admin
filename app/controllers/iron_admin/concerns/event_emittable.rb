@@ -42,7 +42,7 @@ module IronAdmin
         @resource_class.adapter.after_commit { emit_event(action, record) }
       end
 
-      # The record's saved changes, with password fields and the host app's
+      # The record's saved changes, with concealed fields and the host app's
       # filter_parameters replaced by "[FILTERED]".
       #
       # @param record [Object]
@@ -53,19 +53,58 @@ module IronAdmin
 
       # Built once per request: bulk actions and imports emit one event per
       # record, and resolving the resource's fields for each would repeat the
-      # same work for every row.
+      # same work for every row. The filter is built from a single
+      # +resolved_fields+ call.
       #
       # @return [ActiveSupport::ParameterFilter]
       def audit_parameter_filter
         @audit_parameter_filter ||= begin
-          exact_passwords = password_field_names.map { |name| /\A#{Regexp.escape(name)}\z/ }
-          ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters + exact_passwords)
+          fields = @resource_class.resolved_fields
+          exact_names = concealed_names_for(fields).map { |name| /\A#{Regexp.escape(name)}\z/ }
+          ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters + exact_names)
         end
       end
 
-      # @return [Array<String>] Names of the resource's password fields
+      # Names of fields declared with type :password.
+      #
+      # @return [Array<String>]
       def password_field_names
-        @resource_class.resolved_fields.select { |field| field.type == :password }.map { |field| field.name.to_s }
+        password_names_for(@resource_class.resolved_fields)
+      end
+
+      # Password fields plus fields concealed from the current user.
+      #
+      # @return [Array<String>]
+      def concealed_field_names
+        concealed_names_for(@resource_class.resolved_fields)
+      end
+
+      # Names of the given fields declared with type :password.
+      #
+      # @param fields [Array<IronAdmin::Field>] Resolved resource fields
+      # @return [Array<String>]
+      def password_names_for(fields)
+        fields.filter_map do |field|
+          field.name.to_s if field.type == :password
+        end
+      end
+
+      # Password names plus every column of a field concealed from the current
+      # user. +fields+ were already resolved, so audit keeps a single
+      # resolved_fields call per request. A hidden belongs_to contributes its
+      # foreign key, and a hidden polymorphic belongs_to its type and id columns.
+      #
+      # @param fields [Array<IronAdmin::Field>] Resolved resource fields
+      # @return [Array<String>]
+      def concealed_names_for(fields)
+        user = iron_admin_current_user
+        concealed = fields.flat_map do |field|
+          next [] if field.type == :password
+          next [] unless field.concealed_from?(user)
+
+          field.column_names.map(&:to_s)
+        end
+        (password_names_for(fields) + concealed).uniq
       end
     end
   end

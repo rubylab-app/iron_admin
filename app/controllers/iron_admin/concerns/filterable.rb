@@ -30,17 +30,42 @@ module IronAdmin
         scope
       end
 
+      # Filters the current user may apply.
+      #
+      # A filter declared with +filter+ stays unless its name is a resolved
+      # field this user cannot see. An inferred filter also drops when its
+      # name is a column of such a field, so a concealed +belongs_to+ hides
+      # an inferred filter on its foreign key. A filter no field claims stays.
+      #
+      # @return [Array<Hash>] Visible filter configurations
       def iron_admin_visible_filters
-        @iron_admin_visible_filters ||= begin
-          resolved_fields = @resource_class.resolved_fields
-          resolved_names = resolved_fields.map(&:name)
-          visible_names = resolved_fields.select { |field| field.visible?(iron_admin_current_user) }.map(&:name)
+        @iron_admin_visible_filters ||= iron_admin_select_visible_filters
+      end
 
-          @resource_class.all_filters.select do |filter|
-            filter_name = filter[:name].to_sym
-            resolved_names.exclude?(filter_name) || visible_names.include?(filter_name)
-          end
+      def iron_admin_select_visible_filters
+        fields = @resource_class.resolved_fields
+        user = iron_admin_current_user
+        visible_fields = fields.select { |field| field.visible?(user) }
+        declared = @resource_class.defined_filters.map { |entry| entry[:name].to_sym }
+
+        @resource_class.all_filters.select do |filter|
+          name = filter[:name].to_sym
+          # Declared filters compare field names; inferred filters compare columns.
+          reader = declared.include?(name) ? :name : :column_names
+          iron_admin_name_visible?(name, fields, visible_fields, reader)
         end
+      end
+
+      # @return [Boolean] true when the filter stays offered
+      def iron_admin_name_visible?(filter_name, fields, visible_fields, reader)
+        names = iron_admin_claim_names(fields, reader)
+        visible = iron_admin_claim_names(visible_fields, reader)
+
+        names.exclude?(filter_name) || visible.include?(filter_name)
+      end
+
+      def iron_admin_claim_names(fields, reader)
+        fields.flat_map { |field| Array(field.public_send(reader)) }.map(&:to_sym)
       end
 
       def apply_operator_filter(scope, filter)

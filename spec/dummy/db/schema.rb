@@ -55,6 +55,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_01_000008) do
     t.index [:post_id, :tag_id], unique: true
   end
 
+  create_table :accounts, force: :cascade do |t|
+    t.string :name, null: false
+    t.string :email, null: false
+    t.string :encrypted_password
+    t.string :reset_password_token
+    t.string :password_digest
+    t.string :otp_secret
+    t.string :variation_digest
+    t.timestamps
+  end
+
   create_table :documents, force: :cascade do |t|
     t.string :title, null: false
     t.boolean :published, default: false

@@ -4,9 +4,10 @@ require "active_support/concern"
 
 module IronAdmin
   module Concerns
-    # Adds the auto-registered soft-delete features (`with_deleted` /
-    # `only_deleted` scopes and the `:restore` action) when the underlying
-    # model has a `deleted_at` column.
+    # Adds the auto-registered soft-delete features when the underlying
+    # model has a `deleted_at` column. `:restore` is always registered.
+    # `with_deleted` and `only_deleted` are registered only when
+    # `adapter.supports_soft_delete_tabs?` is true.
     #
     # Extracted from `IronAdmin::Resource` so the registration logic can
     # evolve independently — and so the parent class stays under the
@@ -38,15 +39,10 @@ module IronAdmin
           return @soft_delete_features_registered = true unless soft_delete?
 
           column = soft_delete_column
-          column_sym = column.to_sym
           # ActiveRecord can run these bodies. Other adapters cannot (no
           # unscope), so counting them would fail on every index.
           skip = adapter.is_a?(IronAdmin::Adapters::ActiveRecord) ? {} : { count: false }
-
-          self._soft_delete_scopes = [
-            { name: :with_deleted, scope: -> { unscope(where: column_sym) }, default: false, **skip },
-            { name: :only_deleted, scope: -> { unscope(where: column_sym).where.not(column => nil) }, default: false, **skip },
-          ]
+          self._soft_delete_scopes = SoftDeletable.scope_tabs(self, column, skip)
 
           action :restore, icon: "arrow-path", condition: ->(record) { record.public_send(column).present? } do |record|
             record.update(column => nil)
@@ -58,6 +54,26 @@ module IronAdmin
           (defined?(Rails) ? Rails.logger : nil)&.warn(msg)
           nil
         end
+      end
+
+      # The `with_deleted` and `only_deleted` tabs, or none when the
+      # resource's adapter cannot run them. Zero-arity bodies:
+      # Relation#merge and Scopeable#apply_resource_scope run them with
+      # instance_exec and no argument, so self is the relation. The adapter
+      # is resolved at call time; registration clears `@adapter`.
+      #
+      # @api private
+      # @param resource [Class] the resource class
+      # @param column [String] the soft-delete column
+      # @param skip [Hash] extra keys for each tab (`{ count: false }` or `{}`)
+      # @return [Array<Hash>]
+      def self.scope_tabs(resource, column, skip)
+        return [] unless resource.adapter.supports_soft_delete_tabs?
+
+        [
+          { name: :with_deleted, scope: -> { resource.adapter.unscope_column(self, column) }, default: false, **skip },
+          { name: :only_deleted, scope: -> { resource.adapter.only_soft_deleted(self, column) }, default: false, **skip },
+        ]
       end
     end
   end

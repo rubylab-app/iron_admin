@@ -71,9 +71,12 @@ module IronAdmin
         private
 
         def sensitive_field_names
-          field_overrides.filter_map do |name, options|
+          from_overrides = field_overrides.filter_map do |name, options|
             name.to_sym if Field::SECRET_TYPES.include?(options[:type]) || options[:visible] == false
           end
+          from_fields = resolved_fields.select(&:always_concealed?).flat_map(&:column_names)
+
+          (from_overrides + from_fields).uniq
         end
 
         # A declared :select on an enum with no options of its own offers the enum values.

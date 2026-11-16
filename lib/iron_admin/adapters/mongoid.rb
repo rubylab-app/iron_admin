@@ -192,6 +192,19 @@ module IronAdmin
         new_scope
       end
 
+      # @return [Boolean]
+      def supports_soft_delete_tabs?
+        true
+      end
+
+      # The scope without the column's condition, keeping only rows whose column is not nil.
+      # @param scope [Object] The current query scope
+      # @param column [Symbol, String] Soft-delete column
+      # @return [Object]
+      def only_soft_deleted(scope, column)
+        unscope_column(scope, column).where(column.to_s => { "$ne" => nil })
+      end
+
       # --- Batch ---
 
       def find_each(scope, &)

@@ -888,6 +888,18 @@ RSpec.describe IronAdmin::Resource do
           def self.model_name
             OpenStruct.new(plural: "non_enums", human: "Non Enum")
           end
+
+          def self.reflect_on_all_associations(*)
+            []
+          end
+
+          def self.attachment_reflections
+            {}
+          end
+
+          def self.rich_text_association_names
+            []
+          end
         end
 
         Class.new(IronAdmin::Resource) do

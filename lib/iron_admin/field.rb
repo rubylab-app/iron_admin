@@ -107,6 +107,60 @@ module IronAdmin
       SECRET_TYPES.include?(type)
     end
 
+    # Returns a new field with the same name, applying +overrides+.
+    #
+    # The override's :type, :visible and :readonly win when those keys are
+    # present; otherwise the current raw values are kept, procs included.
+    # Every other key is merged into {#options}. Does not modify +self+.
+    #
+    # @param overrides [Hash]
+    # @return [IronAdmin::Field]
+    def merge(**overrides)
+      Field.new(
+        name,
+        type: overrides.fetch(:type, type),
+        visible: overrides.fetch(:visible, visible),
+        readonly: overrides.fetch(:readonly, readonly),
+        **options.merge(overrides.except(:type, :visible, :readonly))
+      )
+    end
+
+    # Whether the user must not see or probe this field.
+    #
+    # @param user [Object, nil] Current user, passed through to a visibility proc
+    # @return [Boolean] true when {#secret?} or the field is not visible
+    def concealed_from?(user)
+      secret? || !visible?(user)
+    end
+
+    # Whether the field is concealed for every user.
+    #
+    # A visibility Proc is not always concealed. {SECRET_TYPES} are.
+    #
+    # @return [Boolean]
+    def always_concealed?
+      secret? || visible == false
+    end
+
+    # Columns that store this field's value.
+    #
+    # +:belongs_to+ includes {#name} and +options[:foreign_key]+.
+    # +:polymorphic_belongs_to+ includes {#name}, +options[:type_column]+ and
+    # +options[:id_column]+. Other types include only {#name}. Nil entries are
+    # removed and every name is returned as a Symbol.
+    #
+    # @return [Array<Symbol>]
+    def column_names
+      case type
+      when :belongs_to
+        [name, options[:foreign_key]].compact.map(&:to_sym)
+      when :polymorphic_belongs_to
+        [name, options[:type_column], options[:id_column]].compact.map(&:to_sym)
+      else
+        [name.to_sym]
+      end
+    end
+
     private
 
     # @api private

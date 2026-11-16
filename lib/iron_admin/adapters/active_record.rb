@@ -155,6 +155,19 @@ module IronAdmin
         scope.unscope(where: column.to_sym)
       end
 
+      # @return [Boolean]
+      def supports_soft_delete_tabs?
+        true
+      end
+
+      # The scope without the column's condition, keeping only rows whose column is not nil.
+      # @param scope [Object] The current query scope
+      # @param column [Symbol, String] Soft-delete column
+      # @return [Object]
+      def only_soft_deleted(scope, column)
+        unscope_column(scope, column).where.not(column.to_sym => nil)
+      end
+
       # --- Transactions ---
 
       def transaction(&)
