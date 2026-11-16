@@ -321,7 +321,7 @@ end
 
 Runs the block once the current transaction commits, and never if it rolls back. IronAdmin writes audit entries and calls `on_action` through it, so a member action, bulk action or import that rolls back records nothing. `Adapters::Base` runs the block at once, which is right for a data source without transactions, where each write is kept as soon as it is made. If your `transaction` is atomic, override it to run the block after the commit. The ActiveRecord adapter uses `ActiveRecord.after_all_transactions_commit`.
 
-### Scope Manipulation (1 method)
+### Scope Manipulation (3 methods)
 
 #### `unscope_column(scope, column)` → `Scope`
 
@@ -334,6 +334,14 @@ def unscope_column(scope, column)
   # Rebuild scope excluding the column from conditions
 end
 ```
+
+#### `supports_soft_delete_tabs?` → `Boolean`
+
+Whether the `with_deleted` and `only_deleted` scope tabs can run on this adapter. `Adapters::Base` returns `false`, so a resource whose records have a `deleted_at` column gets the `:restore` action but no tabs. The ActiveRecord and Mongoid adapters return `true`. Return `true` only when `unscope_column` and `only_soft_deleted` both work.
+
+#### `only_soft_deleted(scope, column)` → `Scope`
+
+The scope without the column's condition, keeping only the records whose column is not nil. Backs the `only_deleted` tab. `Adapters::Base` raises `NotImplementedError`.
 
 ### Batch (1 method)
 
@@ -608,6 +616,7 @@ Use this checklist when building a new adapter:
 - [ ] `transaction(&block)` — atomic or yield
 - [ ] `after_commit(&block)` — optional; override when `transaction` is atomic
 - [ ] `unscope_column(scope, column)` — removes condition
+- [ ] `supports_soft_delete_tabs?` / `only_soft_deleted(scope, column)` — optional; enable the soft-delete tabs
 - [ ] `find_each(scope, &block)` — batched or `.each`, in the scope's order
 
 ### Adapter-Agnostic

@@ -296,9 +296,10 @@ end
 
 IronAdmin auto-detects models with a `deleted_at` column and provides:
 
-- **Auto-registered scopes**: `with_deleted` and `only_deleted`. With scope counts on,
-  ActiveRecord counts both tabs, one query each. `scope_counts false` on the resource is what
-  turns them off. An HTTP or Mongoid resource does not count them.
+- **Auto-registered scopes**: `with_deleted` and `only_deleted`, on ActiveRecord and Mongoid
+  resources. An HTTP resource does not get them (its adapter cannot drop the condition). With
+  scope counts on, ActiveRecord counts both tabs, one query each. `scope_counts false` on the
+  resource is what turns them off. A Mongoid resource does not count them.
 - **Auto-registered restore action**: Restores soft-deleted records
 
 ```ruby

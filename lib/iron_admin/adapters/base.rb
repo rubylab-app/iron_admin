@@ -308,6 +308,20 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Whether `with_deleted` / `only_deleted` tabs can be registered.
+      # @return [Boolean]
+      def supports_soft_delete_tabs?
+        false
+      end
+
+      # The scope without the column's condition, keeping only rows whose column is not nil.
+      # @param scope [Object] The current query scope
+      # @param column [Symbol, String] Soft-delete column
+      # @return [Object]
+      def only_soft_deleted(_scope, _column)
+        raise NotImplementedError
+      end
+
       # --- Batch ---
 
       # Iterates records in memory-efficient batches.

@@ -443,10 +443,12 @@ RSpec.describe "Scope counts", type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      it "shows the soft-delete tabs with no number" do
+      it "omits the soft-delete tabs and still renders the index" do
         get iron_admin.resources_path("remote_products"), as: :html
 
-        expect(scope_tab_text("with_deleted")).to eq("With deleted")
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("with_deleted")
+        expect(response.body).not_to include("only_deleted")
       end
 
       it "does not log a failed count" do
