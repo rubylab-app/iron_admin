@@ -60,7 +60,7 @@ end
 
 ## Step 4: Configure Authentication
 
-Edit `config/initializers/iron_admin.rb`:
+The generated initializer denies every admin request with `403` until you replace its `authenticate` block. Edit `config/initializers/iron_admin.rb`:
 
 ```ruby
 IronAdmin.configure do |config|

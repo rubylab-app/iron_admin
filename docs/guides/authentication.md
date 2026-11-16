@@ -84,7 +84,9 @@ Redirect or render inside the block to choose the response. To deny the request 
 
 Do not use `return` inside the block. The block runs from the controller, and `return` leaves the method that defined the block, which in an initializer raises `LocalJumpError`. To stop early, use `next false`.
 
-A block that ends with `redirect_to ... unless ...` has the value `nil` when it does not redirect, so the request continues. The initializer from `rails generate iron_admin:install` leaves the block body commented out, which also has the value `nil`.
+A block that ends with `redirect_to ... unless ...` has the value `nil` when it does not redirect, so the request continues.
+
+The initializer from `rails generate iron_admin:install` writes a block whose value is `false`, so a fresh install answers every admin request with `403` until you replace it with one of the recipes above. With no `authenticate` block at all, the admin answers every request; that is a valid setup only when a route constraint protects the mount (for example Devise's `authenticate :user do ... end` around `mount`). In production, IronAdmin logs a warning at boot when no block is set.
 
 ```ruby
 config.authenticate do |controller|

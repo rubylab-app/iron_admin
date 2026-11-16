@@ -1,8 +1,13 @@
 IronAdmin.configure do |config|
   config.title = "<%= Rails.application.class.module_parent_name %> Admin"
 
-  config.authenticate do |controller|
-    # controller.redirect_to "/login" unless controller.session[:user_id]
+  # Every request is denied (403) until you replace this block with your
+  # app's authentication: return false to deny, redirect to your sign-in
+  # page, or return anything else to allow. Recipes for Devise and the
+  # Rails 8 authentication generator:
+  # https://rubylab-app.github.io/iron_admin/authorization/
+  config.authenticate do |_controller|
+    false
   end
 
   config.current_user do |controller|

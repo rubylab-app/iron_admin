@@ -48,6 +48,19 @@ RSpec.describe IronAdmin::Generators::InstallGenerator, type: :generator do
       expect(content).to include("config.title")
     end
 
+    # A fresh install must not answer requests until authentication is wired:
+    # only an exact false denies (403), so the generated block returns false.
+    it "generates an authenticate block that denies every request" do
+      load File.join(destination, "config/initializers/iron_admin.rb")
+
+      expect(IronAdmin.configuration.authenticate_block.call(Object.new)).to be(false)
+    end
+
+    it "points the generated authenticate block to the authentication guide" do
+      content = File.read(File.join(destination, "config/initializers/iron_admin.rb"))
+      expect(content).to include("https://rubylab-app.github.io/iron_admin/authorization/")
+    end
+
     it "creates the default dashboard" do
       dashboard_path = File.join(destination, "app/iron_admin/dashboards/admin_dashboard.rb")
       expect(File.exist?(dashboard_path)).to be true

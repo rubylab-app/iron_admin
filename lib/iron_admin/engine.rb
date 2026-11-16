@@ -42,6 +42,12 @@ module IronAdmin
       end
     end
 
+    # Production with no authenticate block answers every request unless a
+    # route constraint protects the mount, so say so once at boot.
+    config.after_initialize do
+      IronAdmin::AuthenticationWarning.call
+    end
+
     initializer "iron_admin.importmap", before: "importmap" do |app|
       app.config.importmap.paths << root.join("config/importmap.rb") if app.config.respond_to?(:importmap)
     end
