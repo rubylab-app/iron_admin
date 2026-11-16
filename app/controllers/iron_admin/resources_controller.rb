@@ -83,7 +83,7 @@ module IronAdmin
       @record = adapter.build_in(base_scope, submitted)
       return render_invalid_json(:new) if invalid_json_submission?
 
-      if references_assignable?(@record, submitted) && adapter.save(@record)
+      if references_assignable?(@record, submitted) && write_within_tenant(@record) { adapter.save(@record) }
         emit_event(:create, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.create.success", model: adapter.human_name)
@@ -104,7 +104,7 @@ module IronAdmin
 
       purge_attachments(@record)
 
-      if references_assignable?(@record, attrs) && adapter.update(@record, preserve_hidden_habtm_ids(attrs))
+      if references_assignable?(@record, attrs) && write_within_tenant(@record) { adapter.update(@record, preserve_hidden_habtm_ids(attrs)) } # rubocop:disable Layout/LineLength
         emit_event(:update, @record)
         redirect_to resource_path(@resource_class.resource_name, @record),
                     notice: I18n.t("iron_admin.resources.update.success", model: adapter.human_name)

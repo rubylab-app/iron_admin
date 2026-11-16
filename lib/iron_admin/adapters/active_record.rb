@@ -209,6 +209,14 @@ module IronAdmin
         ::ActiveRecord::Base.transaction(&)
       end
 
+      # Runs the block in a nested transaction that can roll back on its own.
+      #
+      # @yield The block to run inside the savepoint
+      # @return [Object] the block's return value
+      def savepoint(&)
+        ::ActiveRecord::Base.transaction(requires_new: true, &)
+      end
+
       # Waits for every open transaction to commit, or runs the block at once
       # when none is open.
       def after_commit(&)

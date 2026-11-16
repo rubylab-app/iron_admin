@@ -313,6 +313,17 @@ module IronAdmin
         raise NotImplementedError
       end
 
+      # Runs the block in a nested transaction that can roll back on its own.
+      #
+      # Adapters without nested transactions, including Mongoid, keep this
+      # default and run the block directly. Active Record opens a savepoint.
+      #
+      # @yield The block to run inside the savepoint
+      # @return [Object] the block's return value
+      def savepoint(&)
+        yield
+      end
+
       # Runs the block once the current transaction commits, and never if it
       # rolls back. IronAdmin audits changes and calls on_action through it.
       # Data sources without transactions persist each write at once, so the

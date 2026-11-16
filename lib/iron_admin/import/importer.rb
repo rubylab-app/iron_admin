@@ -106,7 +106,7 @@ module IronAdmin
         validation_errors = permission_errors(action).presence || validate_record(record, row.attributes)
         return add_error_messages(row, validation_errors, result_state) if validation_errors.any?
 
-        saved_record, persist_errors = persist_row(record, row.attributes)
+        saved_record, persist_errors = persist_inside_savepoint(record, row.attributes)
         return add_error_messages(row, persist_errors, result_state) if persist_errors.any?
 
         increment_success_count(action, result_state)
@@ -220,6 +220,48 @@ module IronAdmin
 
         lookup.reduce(scope) do |current_scope, (key, value)|
           adapter.filter(current_scope, key, value)
+        end.first
+      end
+
+      # Persists one row in a savepoint and rolls that savepoint back when the
+      # saved record is outside the tenant. Other rows in the import stay.
+      #
+      # @param record [Object, nil] existing row to update, or +nil+ to create
+      # @param attributes [Hash] cast attributes for the row
+      # @return [Array(Object, Array<String>)] the saved record and its errors
+      def persist_inside_savepoint(record, attributes)
+        saved_record = nil
+        messages = []
+        outside_tenant = false
+
+        adapter.savepoint do
+          adapter.wrap_rollback do
+            saved_record, messages = persist_row(record, attributes)
+            outside_tenant = messages.empty? && !imported_record_in_tenant?(saved_record)
+            raise IronAdmin::Rollback if outside_tenant
+          end
+        end
+
+        messages = [I18n.t("iron_admin.imports.errors.outside_tenant")] if outside_tenant
+        [saved_record, messages]
+      end
+
+      # @param record [Object, nil]
+      # @return [Boolean] +true+ when no tenant scope is configured or the record is inside it
+      def imported_record_in_tenant?(record)
+        return true unless IronAdmin::TenantScope.configured?
+        return false if record.nil?
+
+        scope = IronAdmin::TenantScope.apply(adapter.all)
+        !scoped_record(scope, record).nil?
+      end
+
+      # @param scope [Object]
+      # @param record [Object]
+      # @return [Object, nil]
+      def scoped_record(scope, record)
+        Array(adapter.primary_key).reduce(scope) do |current, column|
+          adapter.filter(current, column.to_sym, record.public_send(column))
         end.first
       end
 

@@ -444,6 +444,8 @@ A `field` override named after a `belongs_to` foreign key (`field :organization_
 
 `config.tenant_scope` now also filters the related records on show pages (the `has_one`, many-to-many and `has_many` panels) and the options of the polymorphic, many-to-many and nested selects, and new records are built inside it. The block therefore runs on every model the admin queries, as it already did for `belongs_to` selects and each resource's own index. A block that adds a condition only some models have (for example `scope.where(organization_id: ...)` when a related model has no `organization_id`) now raises on those pages.
 
+Every create and update also checks, inside a transaction, that the saved record and its nested rows are still inside the tenant scope; a write that would leave it is rolled back with `422`, and such an import row fails. With an `IN` list, a range or a join in the block, new records get no tenant column automatically, so the form must submit a value inside the scope.
+
 **Action required:** Make the block return the scope unchanged for models that have no tenant column:
 
 ```ruby

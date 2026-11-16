@@ -15,6 +15,7 @@ en:
         invalid_json: "Invalid JSON. The record was not saved."
         not_assignable: "is not available"
         nested_not_assignable: "%{association} refer to a record that is not available"
+        outside_tenant: "This change would put the record outside your tenant."
       create:
         success: "%{model} created."
       update:
@@ -92,6 +93,7 @@ en:
         missing_file: "Choose a file to import."
         file_too_large: "The file is larger than %{size}. Split it into smaller files."
         not_saved: "The record could not be saved."
+        outside_tenant: "This row would put the record outside your tenant."
         not_permitted:
           create: "You are not allowed to create this record."
           update: "You are not allowed to update this record."

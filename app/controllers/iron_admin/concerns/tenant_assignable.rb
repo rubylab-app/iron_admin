@@ -6,6 +6,7 @@ module IronAdmin
     # rows, and keeps hidden many-to-many ids when updating.
     module TenantAssignable
       extend ActiveSupport::Concern
+      include TenantContainment
 
       private
 
