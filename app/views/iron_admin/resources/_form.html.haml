@@ -142,7 +142,7 @@
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_type },
               class: cp_select_class(error: has_error)
             = f.select id_col,
-              (current_type.present? ? current_type.constantize.all.map { |r| [display_record_label(r), r.id] } : []),
+              (current_type.present? ? assignable_records(current_type.constantize).map { |r| [display_record_label(r), r.id] } : []),
               { include_blank: I18n.t("iron_admin.fields.select_placeholder"), selected: current_id },
               "aria-label": I18n.t("iron_admin.fields.polymorphic_record_label", field: field.name.to_s.humanize),
               class: cp_select_class(error: has_error)
@@ -287,7 +287,7 @@
     - ids_attribute = "#{assoc[:name].to_s.singularize}_ids"
     .md:col-span-2.2xl:col-span-3.mt-4
       %span.block.text-sm.font-medium.mb-2{ id: f.field_id(ids_attribute, :label), class: "#{cp_label_text} #{t.field_label_transform}" }= assoc[:name].to_s.humanize
-      - all_options = assoc[:reflection].klass.all
+      - all_options = assignable_records(assoc[:reflection].klass)
       - selected_ids = @record.public_send(assoc[:name]).pluck(:id)
       .flex.flex-wrap.gap-3{ role: "group", "aria-labelledby": f.field_id(ids_attribute, :label) }
         - all_options.each do |option|

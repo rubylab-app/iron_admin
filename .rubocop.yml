@@ -108,6 +108,7 @@ RSpec/BeforeAfterAll:
   Exclude:
     - "spec/lib/iron_admin/soft_delete_spec.rb"
     - "spec/requests/iron_admin/soft_delete_spec.rb"
+    - "spec/requests/iron_admin/assignable_selects_spec.rb"
 
 RSpec/RemoveConst:
   Enabled: false
