@@ -5,7 +5,7 @@ IronAdmin.configure do |config|
   # app's authentication: return false to deny, redirect to your sign-in
   # page, or return anything else to allow. Recipes for Devise and the
   # Rails 8 authentication generator:
-  # https://rubylab-app.github.io/iron_admin/authorization/
+  # https://github.com/rubylab-app/iron_admin/blob/main/docs/guides/authentication.md
   config.authenticate do |_controller|
     false
   end

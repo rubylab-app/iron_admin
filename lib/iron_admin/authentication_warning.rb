@@ -13,7 +13,7 @@ module IronAdmin
     MESSAGE = "[IronAdmin] config.authenticate is not set: the admin answers every request " \
               "unless its mount is protected by a route constraint. Set config.authenticate " \
               "in config/initializers/iron_admin.rb. See " \
-              "https://rubylab-app.github.io/iron_admin/authorization/"
+              "https://github.com/rubylab-app/iron_admin/blob/main/docs/guides/authentication.md"
 
     # Logs {MESSAGE} when +env+ is production and no authenticate block is set.
     #

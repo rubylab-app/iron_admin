@@ -58,7 +58,7 @@ RSpec.describe IronAdmin::Generators::InstallGenerator, type: :generator do
 
     it "points the generated authenticate block to the authentication guide" do
       content = File.read(File.join(destination, "config/initializers/iron_admin.rb"))
-      expect(content).to include("https://rubylab-app.github.io/iron_admin/authorization/")
+      expect(content).to include("https://github.com/rubylab-app/iron_admin/blob/main/docs/guides/authentication.md")
     end
 
     it "creates the default dashboard" do
