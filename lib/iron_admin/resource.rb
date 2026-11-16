@@ -525,13 +525,13 @@ module IronAdmin
         policy.action_allowed?(action_name, user)
       end
 
-      # Searchable columns the user is allowed to see. Secret fields
-      # ({Field::SECRET_TYPES}) are left out, even when {.searchable} lists them.
+      # Searchable columns the user is allowed to see. Concealed fields
+      # are left out, even when {.searchable} lists them.
       #
       # @param user [Object, nil]
       # @return [Array<Symbol>]
       def visible_searchable_columns(user)
-        visible_names = resolved_fields.select { |field| field.visible?(user) && !field.secret? }.map(&:name)
+        visible_names = resolved_fields.reject { |field| field.concealed_from?(user) }.map(&:name)
         searchable_columns.select { |column| visible_names.include?(column.to_sym) }
       end
 
@@ -620,7 +620,7 @@ module IronAdmin
           merged = assoc_overrides.except(:kind).merge(overrides)
 
           if merged.any?
-            Field.new(field.name, type: field.type, **field.options, **merged)
+            field.merge(**merged)
           else
             field
           end

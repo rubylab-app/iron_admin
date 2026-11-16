@@ -74,14 +74,14 @@ module IronAdmin
         @visible_searchable_columns ||= @resource_class.visible_searchable_columns(iron_admin_current_user)
       end
 
-      # A field query searches only fields the user sees, and never a secret one.
+      # A field query searches only fields the user is allowed to see.
       def field_searchable?(field_name)
         searchable_field_names.include?(field_name)
       end
 
       def searchable_field_names
         @searchable_field_names ||= @resource_class.resolved_fields
-          .select { |f| f.visible?(iron_admin_current_user) && !f.secret? }
+          .reject { |f| f.concealed_from?(iron_admin_current_user) }
           .map(&:name)
       end
     end

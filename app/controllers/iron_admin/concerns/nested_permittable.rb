@@ -10,13 +10,15 @@ module IronAdmin
 
       # Builds the permit list for a nested association's attributes.
       #
-      # Includes all non-readonly field names, :id for matching existing records,
-      # :_destroy when allow_destroy is true, and the position_field when present.
+      # Includes fields that are neither read-only nor concealed, :id for
+      # matching existing records, :_destroy when allow_destroy is true, and
+      # the position_field when present.
       #
       # @param nested [IronAdmin::NestedAssociation]
       # @return [Array] Permit list for strong params
       def build_nested_permit_list(nested)
-        nested_fields = nested.fields.reject { |f| f.readonly?(iron_admin_current_user) }
+        user = iron_admin_current_user
+        nested_fields = nested.fields.reject { |f| f.readonly?(user) || f.concealed_from?(user) }
         permit_list = nested_fields.flat_map { |f| nested_field_permit(f) }
         permit_list << :id
         permit_list << :_destroy if nested.allow_destroy

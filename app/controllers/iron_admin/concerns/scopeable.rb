@@ -137,9 +137,13 @@ module IronAdmin
         adapter.order_by(scope, sort_col, sort_dir)
       end
 
-      # Sorting by a secret field would leak the relative order of its values.
+      # Sorting by a concealed field would leak the relative order of its values.
       def sortable_column?(name)
-        adapter.has_column?(name) && @resource_class.resolved_fields.none? { |f| f.name.to_s == name && f.secret? }
+        return false unless adapter.has_column?(name)
+
+        @resource_class.resolved_fields.none? do |field|
+          field.name.to_s == name && field.concealed_from?(iron_admin_current_user)
+        end
       end
 
       def apply_preloading(scope)
