@@ -35,18 +35,22 @@ module IronAdmin
 
       # Keeps many-to-many ids that this tenant is not allowed to assign.
       #
-      # Update calls this after +references_assignable?+. When a tenant scope is
-      # configured and attrs include +"<singular>_ids"+ for a habtm association,
-      # that value becomes the submitted ids plus the record's current ids that
-      # +assignable_records+ does not include, as unique strings. A new record
-      # has no hidden associations, so create does not call this.
+      # Update calls this after +references_assignable?+. It first removes a
+      # blank polymorphic type and id whose stored type is outside the
+      # allowlist, so that pair does not clear the association. When a tenant
+      # scope is configured and attrs include +"<singular>_ids"+ for a habtm
+      # association, that value becomes the submitted ids plus the record's
+      # current ids that +assignable_records+ does not include, as unique
+      # strings. A new record has no hidden associations, so create does not
+      # call this.
       #
       # @param attrs [Hash, ActionController::Parameters] permitted attributes
       # @return [Hash, ActionController::Parameters]
       def preserve_hidden_habtm_ids(attrs)
-        return attrs unless IronAdmin::TenantScope.configured?
+        kept = keep_unlisted_polymorphic_targets(@record, attrs)
+        return kept unless IronAdmin::TenantScope.configured?
 
-        preserved = string_keyed_attributes(attrs)
+        preserved = string_keyed_attributes(kept)
         replaced = false
         @resource_class.habtm_associations.each do |assoc|
           column = "#{assoc[:name].to_s.singularize}_ids"
@@ -55,7 +59,7 @@ module IronAdmin
           preserved[column] = submitted_plus_hidden_ids(assoc, preserved[column])
           replaced = true
         end
-        replaced ? preserved : attrs
+        replaced ? preserved : kept
       end
 
       # Removes tenant columns from submitted attributes.

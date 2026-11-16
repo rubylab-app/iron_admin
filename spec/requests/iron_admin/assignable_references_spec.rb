@@ -110,6 +110,21 @@ RSpec.describe "Assignable references on write", type: :request do
       expect(note.reload.notable).to be_nil
     end
 
+    it "keeps a stored polymorphic type outside the allowlist when type and id are blank" do
+      tag = Tag.create!(name: "kept-tag")
+      note = Note.create!(title: "N", body: "B", notable_type: "Tag", notable_id: tag.id)
+
+      patch iron_admin.resource_path("notes", note), params: {
+        record: { title: "Renamed", notable_type: "", notable_id: "" },
+      }
+
+      expect(response).to have_http_status(:redirect)
+      note.reload
+      expect(note.title).to eq("Renamed")
+      expect(note.notable_type).to eq("Tag")
+      expect(note.notable_id).to eq(tag.id)
+    end
+
     it "rejects a polymorphic type outside the allowlist when the id is blank" do
       admin = create(:user, role: "admin")
       note = Note.create!(title: "N", body: "B", notable_type: "User", notable_id: admin.id)
