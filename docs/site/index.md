@@ -26,8 +26,8 @@ password needed) and see how resource policies change what each role can do. Its
 [source on GitHub](https://github.com/rubylab-app/meridian_magazine) has the resources,
 dashboard, policies and theme behind it.
 
-For what changed in 0.7.0 and how it was tested, read
-[IronAdmin 0.7: The Whole Roadmap Shipped, Then I Tried to Break It](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-7-the-whole-roadmap-shipped-then-i-tried-to-break-it-6be683936023).
+For what changed in 0.8.0 and how to upgrade from 0.7, read
+[IronAdmin 0.8: A New Look, and Closed by Default](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-8-a-new-look-and-closed-by-default-7890b5100662).
 
 ---
 
