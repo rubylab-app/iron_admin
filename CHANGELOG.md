@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **0.8.0 release post** — The README and the documentation site's home page now link to the post about what changed in 0.8.0 and how to upgrade from 0.7: [IronAdmin 0.8: A New Look, and Closed by Default](https://medium.com/@pedroperafncarrasco_83095/ironadmin-0-8-a-new-look-and-closed-by-default-7890b5100662).
+
 ## [0.8.0] - 2026-11-16
 
 ### Added
